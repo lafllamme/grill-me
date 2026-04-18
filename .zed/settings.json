@@ -1,0 +1,65 @@
+{
+  "format_on_save": "on",
+  "lsp": {
+    "eslint": {
+      "settings": {
+        "workingDirectory": {
+          "mode": "auto",
+        },
+        "codeActionOnSave": {
+          "mode": "all",
+        },
+      },
+    },
+  },
+  "languages": {
+    "JavaScript": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true,
+        },
+      },
+    },
+    "JSX": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true,
+        },
+      },
+    },
+    "TypeScript": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true,
+        },
+      },
+    },
+    "TSX": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true,
+        },
+      },
+    },
+    "Vue": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true,
+        },
+      },
+    },
+    "Vue.js": {
+      "formatter": {
+        "code_actions": {
+          "source.fixAll.eslint": true,
+          "source.organizeImports": true,
+        },
+      },
+    },
+  },
+}
