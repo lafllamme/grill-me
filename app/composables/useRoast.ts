@@ -5,7 +5,9 @@ import type {
   RoastStreamDoneEvent,
   RoastStreamErrorEvent,
   RoastStreamEvent,
+  RoastStreamFeedbackItemEvent,
   RoastStreamFeedbackEvent,
+  RoastStreamTypingRoastEvent,
   RoastStreamTypingEvent,
 } from "~~/shared/roast/contracts"
 import { requestRoastStream, requestRoastSync } from "../utils/roast-api"
@@ -27,29 +29,6 @@ export const useRoast = () => {
   const streamError = useState<string | null>("roast-stream-error", () => null)
 
   const activeController = useState<AbortController | null>("roast-abort-controller", () => null)
-
-  const splitLiveRoastAndFeedback = (value: string): { roastText: string, feedbackItems: string[] } => {
-    const markerMatch = /(?:^|\n)\s*FEEDBACK:\s*/i.exec(value)
-    if (!markerMatch) {
-      return {
-        roastText: value,
-        feedbackItems: [],
-      }
-    }
-
-    const markerIndex = markerMatch.index
-    const roastText = value.slice(0, markerIndex).trimEnd()
-    const feedbackText = value.slice(markerIndex).replace(/^[\s\S]*?FEEDBACK:\s*/i, "")
-    const feedbackItems = feedbackText
-      .split(/\n+/)
-      .map(line => line.replace(/^[-*•\d.)\s]+/, "").trim())
-      .filter(Boolean)
-
-    return {
-      roastText,
-      feedbackItems,
-    }
-  }
 
   const resetStreamState = () => {
     isStreaming.value = false
@@ -94,12 +73,15 @@ export const useRoast = () => {
       }
 
       if (event.type === "typing") {
+        // Legacy compatibility for older server versions.
         const typingEvent = event as RoastStreamTypingEvent
-        const combined = `${partialRoast.value}${typingEvent.chunk}`
-        const separated = splitLiveRoastAndFeedback(combined)
-        partialRoast.value = separated.roastText
-        if (separated.feedbackItems.length > 0)
-          partialFeedback.value = separated.feedbackItems
+        partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
+        return
+      }
+
+      if (event.type === "typing_roast") {
+        const typingEvent = event as RoastStreamTypingRoastEvent
+        partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
         return
       }
 
@@ -110,7 +92,14 @@ export const useRoast = () => {
       }
 
       if (event.type === "feedback") {
+        // Legacy compatibility for older server versions.
         const feedbackEvent = event as RoastStreamFeedbackEvent
+        partialFeedback.value = [...feedbackEvent.feedback]
+        return
+      }
+
+      if (event.type === "feedback_item") {
+        const feedbackEvent = event as RoastStreamFeedbackItemEvent
         partialFeedback.value = [...feedbackEvent.feedback]
         return
       }
@@ -125,7 +114,9 @@ export const useRoast = () => {
         result.value = doneEvent.data
         if (!partialRoast.value.trim())
           partialRoast.value = doneEvent.data.roastLines.join("\n")
-        if (partialFeedback.value.length === 0)
+        const shouldHydrateFeedback = partialFeedback.value.length === 0
+          || doneEvent.data.feedback.length > partialFeedback.value.length
+        if (shouldHydrateFeedback)
           partialFeedback.value = [...doneEvent.data.feedback]
         return
       }

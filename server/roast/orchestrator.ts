@@ -87,6 +87,115 @@ const emitStatus = async (hooks: RoastSyncHooks | undefined, phase: RoastStatusP
   await hooks?.onStatus?.(phase, message)
 }
 
+const FEEDBACK_DELIMITER_REGEX = /(?:^|\n)\s*FEEDBACK:\s*(?:\n|$)/i
+const FEEDBACK_BULLET_REGEX = /^[-*•\d.)]\s+/
+
+const normalizeFeedbackLine = (value: string): string => {
+  return value.replace(/^[-*•\d.)\s]+/, "").trim()
+}
+
+interface StreamSegmenter {
+  pushChunk: (chunk: string) => Promise<void>
+  flush: () => Promise<void>
+  feedbackItems: string[]
+}
+
+const createStreamSegmenter = (
+  emit: (event: RoastStreamEvent) => Promise<void>,
+): StreamSegmenter => {
+  let mode: "roast" | "feedback" = "roast"
+  let pending = ""
+  const feedbackItems: string[] = []
+  const delimiterTailReserve = 24
+
+  const emitFeedbackFromLine = async (line: string): Promise<void> => {
+    const trimmed = line.trim()
+    if (!trimmed || /^FEEDBACK:\s*$/i.test(trimmed))
+      return
+
+    const normalized = FEEDBACK_BULLET_REGEX.test(trimmed)
+      ? normalizeFeedbackLine(trimmed)
+      : trimmed
+
+    if (!normalized)
+      return
+
+    feedbackItems.push(normalized)
+    await emit({
+      type: "feedback_item",
+      item: normalized,
+      feedback: [...feedbackItems],
+    })
+  }
+
+  const processFeedback = async (chunk: string, flush = false): Promise<void> => {
+    const combined = pending + chunk
+    const lines = combined.split("\n")
+    pending = flush ? "" : (lines.pop() || "")
+
+    for (const line of lines)
+      await emitFeedbackFromLine(line)
+
+    if (flush && pending.trim()) {
+      await emitFeedbackFromLine(pending)
+      pending = ""
+    }
+  }
+
+  const processRoast = async (chunk: string, flush = false): Promise<void> => {
+    const combined = pending + chunk
+    const delimiterMatch = FEEDBACK_DELIMITER_REGEX.exec(combined)
+
+    if (delimiterMatch) {
+      const delimiterIndex = delimiterMatch.index
+      const roastChunk = combined.slice(0, delimiterIndex)
+      if (roastChunk)
+        await emit({ type: "typing_roast", chunk: roastChunk })
+
+      const feedbackStartIndex = delimiterIndex + delimiterMatch[0].length
+      const feedbackChunk = combined.slice(feedbackStartIndex)
+      mode = "feedback"
+      pending = ""
+      await processFeedback(feedbackChunk, flush)
+      return
+    }
+
+    if (flush) {
+      if (combined)
+        await emit({ type: "typing_roast", chunk: combined })
+      pending = ""
+      return
+    }
+
+    if (combined.length <= delimiterTailReserve) {
+      pending = combined
+      return
+    }
+
+    const boundary = combined.length - delimiterTailReserve
+    const roastChunk = combined.slice(0, boundary)
+    pending = combined.slice(boundary)
+    if (roastChunk)
+      await emit({ type: "typing_roast", chunk: roastChunk })
+  }
+
+  return {
+    feedbackItems,
+    pushChunk: async (chunk: string) => {
+      if (mode === "roast")
+        await processRoast(chunk)
+      else
+        await processFeedback(chunk)
+    },
+    flush: async () => {
+      if (mode === "roast")
+        await processRoast("", true)
+      else
+        await processFeedback("", true)
+    },
+  }
+}
+
 /**
  * Collects and prepares roast context before calling the model.
  */
@@ -272,18 +381,16 @@ export const runRoastStream = async (
   }
 
   const prepared = await prepareContext(input, "stream", statusHooks)
+  const streamSegmenter = createStreamSegmenter(emit)
   if ("roast" in prepared) {
     for (const line of prepared.roastLines) {
-      await emit({
-        type: "typing",
-        chunk: `${line}\n`,
-      })
+      await emit({ type: "typing_roast", chunk: `${line}\n` })
     }
 
     const feedbackItems: string[] = []
     for (const item of prepared.feedback) {
       feedbackItems.push(item)
-      await emit({ type: "feedback", item, feedback: [...feedbackItems] })
+      await emit({ type: "feedback_item", item, feedback: [...feedbackItems] })
     }
 
     if (prepared.debug)
@@ -316,10 +423,7 @@ export const runRoastStream = async (
       },
       async (chunk) => {
         rawText += chunk
-        await emit({
-          type: "typing",
-          chunk,
-        })
+        await streamSegmenter.pushChunk(chunk)
       },
     )
 
@@ -350,12 +454,11 @@ export const runRoastStream = async (
     parserPath = extracted.parserPath
     rawText = extracted.rawText
     if (rawText.trim()) {
-      await emit({
-        type: "typing",
-        chunk: rawText,
-      })
+      await streamSegmenter.pushChunk(rawText)
     }
   }
+
+  await streamSegmenter.flush()
 
   input.debug.ai = {
     model: input.env.cfAiModel,
@@ -375,10 +478,12 @@ export const runRoastStream = async (
 
   const finalPayload = await finalizeFromRawText(input, prepared, rawText, parserPath, statusHooks)
 
-  const feedbackItems: string[] = []
-  for (const item of finalPayload.feedback) {
-    feedbackItems.push(item)
-    await emit({ type: "feedback", item, feedback: [...feedbackItems] })
+  if (streamSegmenter.feedbackItems.length === 0) {
+    const feedbackItems: string[] = []
+    for (const item of finalPayload.feedback) {
+      feedbackItems.push(item)
+      await emit({ type: "feedback_item", item, feedback: [...feedbackItems] })
+    }
   }
 
   if (finalPayload.debug)

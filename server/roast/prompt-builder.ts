@@ -124,7 +124,7 @@ export const buildRoastPrompt = (
   }
 
   const outputLine = mode === "stream"
-    ? "Output as plain text only. First output roast lines (6-10), then a section header 'FEEDBACK:' and then 3-5 bullet feedback lines."
+    ? "Output as plain text only. First output roast lines (6-10). Then output exactly one line: FEEDBACK:. After that output only 3-5 bullet feedback lines. No extra headings, wrappers, or prose after FEEDBACK:."
     : "Output strictly as JSON with keys: roastLines, feedback. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets."
 
   const systemPrompt = [

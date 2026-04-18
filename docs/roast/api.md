@@ -1,4 +1,4 @@
-# Roast API (v2)
+# Roast API (v4)
 
 This document describes the current GitHub roast system (sync + stream), module responsibilities, contracts, and diagnostics.
 
@@ -121,14 +121,19 @@ Common error codes:
 }
 ```
 
-### `typing`
+### `typing_roast`
 
 ```json
 {
-  "type": "typing",
+  "type": "typing_roast",
   "chunk": "Initial hero section had 72 lines..."
 }
 ```
+
+Legacy compatibility:
+
+- older servers may still emit `typing`.
+- clients should treat legacy `typing` as roast text.
 
 ### `status`
 
@@ -149,15 +154,20 @@ Common error codes:
 - `parsing_output`
 - `finalizing`
 
-### `feedback`
+### `feedback_item`
 
 ```json
 {
-  "type": "feedback",
+  "type": "feedback_item",
   "item": "Trim redundant Vue component boilerplate...",
   "feedback": ["Trim redundant Vue component boilerplate..."]
 }
 ```
+
+Legacy compatibility:
+
+- older servers may still emit `feedback`.
+- clients should accept both and hydrate the feedback list from either shape.
 
 ### `debug` (optional)
 
@@ -218,8 +228,10 @@ Stream endpoint behavior is stream-first with robust fallback:
 
 1. emit `meta`
 2. emit progress `status` while preparing context
-3. call Cloudflare in `stream=true` mode and forward real token `typing` chunks
-4. parse/finalize output and emit `feedback`
+3. call Cloudflare in `stream=true` mode and segment stream on server:
+   - roast chunks are emitted as `typing_roast`
+   - feedback bullets are emitted as `feedback_item`
+4. parse/finalize output and emit any missing feedback items
 5. emit optional `debug`
 6. emit `done`
 7. if real stream fails before usable text, fallback internally to sync generation and continue protocol
@@ -233,7 +245,17 @@ Stream endpoint behavior is stream-first with robust fallback:
 - noise commit messages are penalized (`chore`, `typo`, `lint`, etc.)
 - merge commits are heavily penalized
 - prompt includes `RunSalt=<requestId>` to reduce repeated phrasing across retries
-- stream prompt enforces roast-first plain-text output with `FEEDBACK:` section for deterministic parsing
+- stream prompt enforces roast-first plain-text output:
+  - roast lines first
+  - exact delimiter line `FEEDBACK:`
+  - then only bullet feedback lines
+
+## Stream segmentation guarantee
+
+- Server uses a delimiter-aware state machine (`roast -> feedback`) while forwarding live model output.
+- Once `FEEDBACK:` is detected, no additional roast chunks are emitted.
+- Feedback emits only complete items; partial bullet fragments are buffered server-side until complete.
+- This prevents roast/feedback reclassification jitter in the client terminal.
 
 ## Non-static behavior guarantee
 

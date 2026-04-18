@@ -143,6 +143,12 @@ export const roastStreamTypingEventSchema = z.object({
 })
 export type RoastStreamTypingEvent = z.infer<typeof roastStreamTypingEventSchema>
 
+export const roastStreamTypingRoastEventSchema = z.object({
+  type: z.literal("typing_roast"),
+  chunk: z.string(),
+})
+export type RoastStreamTypingRoastEvent = z.infer<typeof roastStreamTypingRoastEventSchema>
+
 export const roastStreamStatusEventSchema = z.object({
   type: z.literal("status"),
   phase: z.enum([
@@ -163,6 +169,13 @@ export const roastStreamFeedbackEventSchema = z.object({
   feedback: z.array(z.string()),
 })
 export type RoastStreamFeedbackEvent = z.infer<typeof roastStreamFeedbackEventSchema>
+
+export const roastStreamFeedbackItemEventSchema = z.object({
+  type: z.literal("feedback_item"),
+  item: z.string(),
+  feedback: z.array(z.string()),
+})
+export type RoastStreamFeedbackItemEvent = z.infer<typeof roastStreamFeedbackItemEventSchema>
 
 export const roastStreamDebugEventSchema = z.object({
   type: z.literal("debug"),
@@ -185,8 +198,10 @@ export type RoastStreamErrorEvent = z.infer<typeof roastStreamErrorEventSchema>
 export const roastStreamEventSchema = z.discriminatedUnion("type", [
   roastStreamMetaEventSchema,
   roastStreamTypingEventSchema,
+  roastStreamTypingRoastEventSchema,
   roastStreamStatusEventSchema,
   roastStreamFeedbackEventSchema,
+  roastStreamFeedbackItemEventSchema,
   roastStreamDebugEventSchema,
   roastStreamDoneEventSchema,
   roastStreamErrorEventSchema,
