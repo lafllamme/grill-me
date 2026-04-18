@@ -1,48 +1,47 @@
 <template>
-  <section id="manifesto" class="mx-auto max-w-6xl px-5 py-14 md:px-8">
-    <div class="border border-outline-variant/45 bg-surface-container-lowest">
-      <div class="flex items-center justify-between border-b border-outline-variant/45 bg-surface-container-highest px-4 py-2">
+  <section class="mx-auto max-w-6xl px-6 py-24">
+    <div class="overflow-hidden rounded-xl border border-divider bg-surface-container-lowest shadow-2xl">
+      <div class="flex items-center justify-between bg-surface-container px-4 py-3">
         <div class="flex gap-2">
-          <span class="h-2.5 w-2.5 bg-surface-bright" />
-          <span class="h-2.5 w-2.5 bg-surface-bright" />
-          <span class="h-2.5 w-2.5 bg-surface-bright" />
+          <span class="h-3 w-3 rounded-full border border-red-500/40 bg-red-500/20" />
+          <span class="h-3 w-3 rounded-full border border-amber-500/40 bg-amber-500/20" />
+          <span class="h-3 w-3 rounded-full border border-green-500/40 bg-green-500/20" />
         </div>
-        <span class="font-display text-[10px] font-bold tracking-[0.15em] text-on-surface-variant uppercase">
-          ROOT@GRILLME: ~
+        <span class="font-mono text-xs tracking-[0.14em] text-on-surface-variant uppercase">
+          roast-engine-v2.0.4 --live
         </span>
-        <NuxtIcon class="text-[18px] text-on-surface-variant/60" name="ph:terminal-window" />
       </div>
 
-      <div class="space-y-4 p-6 font-mono text-sm leading-relaxed md:p-10 md:text-base">
-        <div class="flex items-center gap-3">
-          <span class="font-display font-bold text-primary">$</span>
-          <span class="italic text-on-surface-variant">Waiting for input...</span>
+      <div class="min-h-[400px] space-y-4 p-8 font-mono text-sm">
+        <div class="flex gap-4">
+          <span class="text-on-surface-variant/70">[08:42:11]</span>
+          <span class="font-bold text-primary">INIT:</span>
+          <span class="text-on-surface">Targeting repository: "legacy-spaghetti-monster"</span>
         </div>
-
-        <div class="space-y-3 text-on-surface-variant/60 italic opacity-70">
-          <p>// Logic incinerator initialized...</p>
-          <p>// Scanning repositories for poor naming conventions...</p>
-          <p>// Analyzing nested if-statements that make us cry...</p>
+        <div class="flex gap-4">
+          <span class="text-on-surface-variant/70">[08:42:13]</span>
+          <span class="font-bold text-amber-400">SCAN:</span>
+          <span class="text-on-surface">Scanning 427 files for signs of intelligence...</span>
         </div>
-
-        <article class="mt-8 border-l-4 border-error/65 bg-gradient-to-b from-surface-container-high to-surface-container-low p-7">
-          <h3 class="font-display text-xl font-black tracking-tight text-error uppercase">
-            The Verdict
-          </h3>
-          <p class="mt-4 max-w-4xl font-serif text-lg italic text-on-surface-variant">
-            “Your contributions to ‘clean code’ are like a dumpster fire in a vacuum: technically impressive how much
-            energy is wasted while achieving absolutely zero oxygen.”
-          </p>
-
-          <div class="mt-6 flex items-center gap-4">
-            <div class="h-1 flex-1 bg-surface-container-highest">
-              <div class="h-full w-[85%] bg-gradient-to-r from-primary to-error" />
-            </div>
-            <span class="font-display text-[10px] font-black tracking-[0.12em] text-primary-fixed-dim uppercase">
-              Ego Damage 85%
-            </span>
-          </div>
-        </article>
+        <div class="flex gap-4">
+          <span class="text-on-surface-variant/70">[08:42:14]</span>
+          <span class="font-bold text-red-400">ERROR:</span>
+          <span class="text-on-surface">Intelligence not found. Found "temp_final_v4_copy.js" instead.</span>
+        </div>
+        <div class="flex gap-4 pl-12">
+          <span class="italic text-primary-container">"This variable naming is so bad it qualifies as a war crime in 14 countries."</span>
+        </div>
+        <div class="flex gap-4">
+          <span class="text-on-surface-variant/70">[08:42:18]</span>
+          <span class="font-bold text-blue-400">INFO:</span>
+          <span class="text-on-surface">Calculating Cyclomatic Complexity of user's life choices...</span>
+        </div>
+        <div class="flex gap-4">
+          <span class="text-on-surface-variant/70">[08:42:20]</span>
+          <span class="font-bold text-green-400">SUCCESS:</span>
+          <span class="text-on-surface">Roast generated. Ego destruction at 98.4%.</span>
+        </div>
+        <div class="animate-pulse pt-4 text-primary">_</div>
       </div>
     </div>
   </section>

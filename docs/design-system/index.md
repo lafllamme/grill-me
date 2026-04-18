@@ -4,6 +4,9 @@ Diese Dokumentation beschreibt die verbindlichen UI-Richtlinien für `grillme.de
 
 Aktuell umfasst das Design-System:
 
+- Colors
 - Typography
 
-Siehe: [font.md](./font.md)
+Siehe:
+- [colors.md](./colors.md)
+- [font.md](./font.md)

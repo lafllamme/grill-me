@@ -38,7 +38,10 @@ Use this file as the primary source of repository level instructions. If additio
 ## Design system governance
 
 - Follow the design system docs in `docs/design-system/`.
+- Color tokens are mandatory and must follow `docs/design-system/colors.md`.
 - Typography is mandatory and must follow `docs/design-system/font.md`.
+- Use the Magma & Basalt token set as the default palette for all UI work in this project.
+- Do not use ad-hoc color values outside UnoCSS theme tokens unless explicitly documented in the design system.
 - For all font-related implementation, use only:
 - `@nuxt/fonts` in `nuxt.config.ts` for font loading
 - UnoCSS theme tokens/utilities in `uno.config.ts` for font usage

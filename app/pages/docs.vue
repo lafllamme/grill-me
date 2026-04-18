@@ -19,15 +19,15 @@
       </NuxtLink>
       <NuxtLink
         class="rounded-xl border border-orange-400/40 bg-black px-4 py-2 text-sm font-semibold text-orange-100 transition hover:bg-orange-500/15"
-        to="/#manifesto"
+        to="/#wall-of-shame"
       >
-        Manifesto
+        Wall of Shame
       </NuxtLink>
       <NuxtLink
         class="rounded-xl border border-orange-400/40 bg-black px-4 py-2 text-sm font-semibold text-orange-100 transition hover:bg-orange-500/15"
-        to="/#leaderboard"
+        to="/#metrics"
       >
-        Leaderboard
+        Metrics
       </NuxtLink>
     </div>
 
@@ -50,9 +50,9 @@
         </ul>
       </article>
 
-      <article class="rounded-2xl border border-orange-500/30 bg-neutral-900/80 p-5">
+      <article id="api" class="rounded-2xl border border-orange-500/30 bg-neutral-900/80 p-5">
         <p class="mb-2 text-xs tracking-[0.14em] text-orange-300 uppercase">
-          References
+          API
         </p>
         <ul class="space-y-2 text-sm">
           <li>

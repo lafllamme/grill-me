@@ -2,7 +2,9 @@
   <div>
     <LandingHeroSection />
     <LandingResultTerminal />
-    <LandingFeatureGrid />
+    <LandingMetricsSection />
+    <LandingRoastWallSection />
+    <LandingFinalCtaSection />
     <LandingFooter />
   </div>
 </template>
