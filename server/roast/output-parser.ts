@@ -116,22 +116,29 @@ const parseJsonCandidate = (raw: string): ParsedRoastContent | null => {
 }
 
 const parseLineCandidate = (raw: string): ParsedRoastContent => {
-  const lines = raw
+  const normalizedRaw = raw.replace(/\r\n/g, "\n")
+  const feedbackSplit = normalizedRaw.split(/\n?FEEDBACK:\n?/i)
+  const roastSection = feedbackSplit[0] || ""
+  const feedbackSection = feedbackSplit.slice(1).join("\n")
+
+  const roastLines = roastSection
     .split(/\n+/)
     .map(line => line.trim())
     .filter(Boolean)
 
-  const feedback = lines
+  const feedbackCandidates = [
+    ...feedbackSection.split(/\n+/),
+    ...normalizedRaw.split(/\n+/),
+  ]
+  const feedback = feedbackCandidates
+    .map(line => line.trim())
+    .filter(Boolean)
     .filter(line => /^[-*•\d.)]\s+/.test(line))
     .map(line => line.replace(/^[-*•\d.)\s]+/, "").trim())
     .filter(Boolean)
 
-  const roastBody = lines
-    .filter(line => !/^[-*•\d.)]\s+/.test(line))
-    .join("\n")
-
   return {
-    roastLines: toRoastLines(roastBody),
+    roastLines: toRoastLines(roastLines.join("\n")),
     feedback,
     parserPath: "lines",
   }

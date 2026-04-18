@@ -32,7 +32,7 @@ describe("roast contracts", () => {
 
     expect(runtime.debugLevel).toBe("minimal")
     expect(runtime.variationMode).toBe("moderate")
-    expect(runtime.cfAiMaxTokens).toBe(240)
+    expect(runtime.cfAiMaxTokens).toBe(2000)
   })
 
   it("validates roast response", () => {
@@ -54,7 +54,6 @@ describe("roast contracts", () => {
     const parsed = roastStreamEventSchema.parse({
       type: "typing",
       chunk: "hello",
-      roastSoFar: "hello",
     })
 
     expect(parsed.type).toBe("typing")

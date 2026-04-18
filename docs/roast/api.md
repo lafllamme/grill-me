@@ -27,7 +27,7 @@ Contains:
 ```json
 {
   "githubUsername": "lafllamme",
-  "debugLevel": "full",
+  "debugLevel": "minimal",
   "variationMode": "moderate"
 }
 ```
@@ -126,10 +126,28 @@ Common error codes:
 ```json
 {
   "type": "typing",
-  "chunk": "Initial hero section had 72 lines...",
-  "roastSoFar": "Initial hero section had 72 lines..."
+  "chunk": "Initial hero section had 72 lines..."
 }
 ```
+
+### `status`
+
+```json
+{
+  "type": "status",
+  "phase": "fetching_github",
+  "message": "Fetching GitHub activity and commit diffs..."
+}
+```
+
+`phase` values:
+
+- `fetching_github`
+- `selecting_evidence`
+- `building_prompt`
+- `calling_ai`
+- `parsing_output`
+- `finalizing`
 
 ### `feedback`
 
@@ -196,19 +214,15 @@ flowchart TD
 
 ## Stream execution model
 
-Stream endpoint behavior is intentionally deterministic and robust:
+Stream endpoint behavior is stream-first with robust fallback:
 
 1. emit `meta`
-2. run full sync orchestration internally
-3. emit synthetic `typing` chunks from final roast text
-4. emit incremental `feedback`
+2. emit progress `status` while preparing context
+3. call Cloudflare in `stream=true` mode and forward real token `typing` chunks
+4. parse/finalize output and emit `feedback`
 5. emit optional `debug`
 6. emit `done`
-
-Reason:
-
-- avoids brittle upstream token-chunk shape differences
-- keeps frontend UX streaming without depending on model chunk format
+7. if real stream fails before usable text, fallback internally to sync generation and continue protocol
 
 ## Selection + prompting rules
 
@@ -219,6 +233,7 @@ Reason:
 - noise commit messages are penalized (`chore`, `typo`, `lint`, etc.)
 - merge commits are heavily penalized
 - prompt includes `RunSalt=<requestId>` to reduce repeated phrasing across retries
+- stream prompt enforces roast-first plain-text output with `FEEDBACK:` section for deterministic parsing
 
 ## Non-static behavior guarantee
 
@@ -258,7 +273,6 @@ Reason:
 - `/Users/flame/Developer/Projects/grill-me/app/composables/useRoast.ts`
   - UI state orchestration and endpoint fallback strategy.
 - `/Users/flame/Developer/Projects/grill-me/app/utils/roast-api.ts`
-  - transport layer (`/api/roast`, `/api/roast/stream`).
+  - transport layer (`/api/roast`, `/api/roast/stream`) with `minimal` debug default and optional override.
 - `/Users/flame/Developer/Projects/grill-me/app/utils/roast-sse.ts`
   - SSE block parsing and typed stream consumption.
-

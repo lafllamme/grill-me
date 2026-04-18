@@ -51,6 +51,8 @@ export interface BuiltPrompt {
   effectiveTemperature: number
 }
 
+export type RoastPromptMode = "sync" | "stream"
+
 const compactMessage = (value: string): string => {
   const singleLine = value
     .replace(/\s+/g, " ")
@@ -70,6 +72,7 @@ export const buildRoastPrompt = (
   variationMode: RoastVariationMode,
   baseTemperature: number,
   requestSalt?: string,
+  mode: RoastPromptMode = "sync",
 ): BuiltPrompt => {
   const profile = TONE_PROFILE[variationMode]
   let totalFiles = 0
@@ -120,6 +123,10 @@ export const buildRoastPrompt = (
     prs: evidence.prs,
   }
 
+  const outputLine = mode === "stream"
+    ? "Output as plain text only. First output roast lines (6-10), then a section header 'FEEDBACK:' and then 3-5 bullet feedback lines."
+    : "Output strictly as JSON with keys: roastLines, feedback. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets."
+
   const systemPrompt = [
     `PromptVersion=${PROMPT_VERSION}`,
     requestSalt ? `RunSalt=${requestSalt}` : "",
@@ -131,10 +138,8 @@ export const buildRoastPrompt = (
     "Prefer precise technical jabs over generic internet slang.",
     profile.styleLine,
     "If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.",
-    "Output strictly as JSON with keys: roastLines, feedback.",
-    "roastLines: array of 6-10 short punchy lines.",
-    "feedback: array of 3-5 actionable one-sentence bullets.",
-    "No markdown, no code fences, no extra keys.",
+    outputLine,
+    "No markdown fences, no wrapper text, no extra sections.",
     "Never leak or repeat secrets in any form.",
   ].join(" ")
 

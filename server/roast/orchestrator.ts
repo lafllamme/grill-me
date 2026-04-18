@@ -6,14 +6,14 @@ import {
   type RoastRuntimeOptions,
   type RoastStreamEvent,
 } from "~~/shared/roast/contracts"
-import { runAiSync } from "./ai-client"
+import { runAiStream, runAiSync } from "./ai-client"
 import { shapeDebugPayload } from "./debug"
 import type { RoastDebugReport } from "./debug"
 import { selectEvidence } from "./evidence-selector"
 import { createFallbackRoast } from "./fallback"
 import { collectGithubContext } from "./github-collector"
 import { extractModelText, normalizeRoastParts, parseRoastOutput } from "./output-parser"
-import { PROMPT_VERSION, buildRoastPrompt } from "./prompt-builder"
+import { PROMPT_VERSION, buildRoastPrompt, type BuiltPrompt, type RoastPromptMode } from "./prompt-builder"
 
 export interface RoastServiceEnv {
   cfAccountId?: string
@@ -29,6 +29,24 @@ export interface RoastOrchestratorInput {
   env: RoastServiceEnv
   includeDebugInResponse?: boolean
   debug: RoastDebugReport
+}
+
+type RoastStatusPhase =
+  | "fetching_github"
+  | "selecting_evidence"
+  | "building_prompt"
+  | "calling_ai"
+  | "parsing_output"
+  | "finalizing"
+
+interface RoastSyncHooks {
+  onStatus?: (phase: RoastStatusPhase, message: string) => Promise<void>
+}
+
+interface PreparedRoastContext {
+  meta: RoastMeta
+  prompt: BuiltPrompt
+  startedAt: number
 }
 
 /**
@@ -65,13 +83,22 @@ const createResponse = (
   return response
 }
 
+const emitStatus = async (hooks: RoastSyncHooks | undefined, phase: RoastStatusPhase, message: string): Promise<void> => {
+  await hooks?.onStatus?.(phase, message)
+}
+
 /**
- * Runs full roast pipeline and returns one final JSON payload.
+ * Collects and prepares roast context before calling the model.
  */
-export const runRoastSync = async (input: RoastOrchestratorInput): Promise<RoastResponse> => {
+const prepareContext = async (
+  input: RoastOrchestratorInput,
+  mode: RoastPromptMode,
+  hooks?: RoastSyncHooks,
+): Promise<PreparedRoastContext | RoastResponse> => {
   const startedAt = Date.now()
   const githubStartedAt = Date.now()
 
+  await emitStatus(hooks, "fetching_github", "Fetching GitHub activity and commit diffs...")
   const githubContext = await collectGithubContext(
     input.username,
     input.env.githubToken,
@@ -83,6 +110,7 @@ export const runRoastSync = async (input: RoastOrchestratorInput): Promise<Roast
 
   input.debug.timingsMs.githubFetch = Date.now() - githubStartedAt
 
+  await emitStatus(hooks, "selecting_evidence", "Scoring commits and selecting roast-worthy evidence...")
   const evidence = selectEvidence(githubContext)
   input.debug.selectionSummary = evidence.summary
 
@@ -108,65 +136,47 @@ export const runRoastSync = async (input: RoastOrchestratorInput): Promise<Roast
     )
   }
 
-  const builtPrompt = buildRoastPrompt(
+  await emitStatus(hooks, "building_prompt", "Preparing compact roast context for the model...")
+  const prompt = buildRoastPrompt(
     evidence,
     input.runtime.variationMode,
     input.runtime.cfAiTemperature,
     input.requestId,
+    mode,
   )
-  input.debug.promptVersion = builtPrompt.promptVersion
 
-  const aiStartedAt = Date.now()
-  const aiPayload = await runAiSync({
-    accountId: input.env.cfAccountId,
-    apiToken: input.env.cfApiToken,
-    model: input.env.cfAiModel,
-    timeoutMs: input.runtime.cfAiTimeoutMs,
-    maxTokens: input.runtime.cfAiMaxTokens,
-    temperature: builtPrompt.effectiveTemperature,
-    topP: input.runtime.cfAiTopP,
-    systemPrompt: builtPrompt.systemPrompt,
-    userPrompt: JSON.stringify(builtPrompt.payload),
-    debug: input.debug,
-  })
+  input.debug.promptVersion = prompt.promptVersion
 
-  input.debug.timingsMs.aiGenerate = Date.now() - aiStartedAt
-
-  const extracted = extractModelText(aiPayload)
-  input.debug.parserPath = extracted.parserPath
-
-  input.debug.ai = {
-    model: input.env.cfAiModel,
-    maxTokens: input.runtime.cfAiMaxTokens,
-    timeoutMs: input.runtime.cfAiTimeoutMs,
-    temperature: builtPrompt.effectiveTemperature,
-    topP: input.runtime.cfAiTopP,
-    systemPrompt: builtPrompt.systemPrompt,
-    userPayload: {
-      username: builtPrompt.payload.username,
-      commits: builtPrompt.payload.commits.length,
-      prs: builtPrompt.payload.prs.length,
-      payload: builtPrompt.payload,
-    },
-    responsePreview: extracted.rawText.slice(0, 1000),
+  return {
+    meta,
+    prompt,
+    startedAt,
   }
+}
 
-  const fallbackReason = extracted.rawText.trim() ? "" : "empty_ai_response"
-  if (fallbackReason) {
+const finalizeFromRawText = async (
+  input: RoastOrchestratorInput,
+  context: PreparedRoastContext,
+  rawText: string,
+  parserPath: string,
+  hooks?: RoastSyncHooks,
+): Promise<RoastResponse> => {
+  if (!rawText.trim()) {
     throw createError({
       statusCode: 502,
       statusMessage: "Cloudflare AI returned empty output",
       data: {
         code: "cloudflare_ai_empty_output",
-        parserPath: extracted.parserPath,
+        parserPath,
       },
     })
   }
 
-  const parsed = parseRoastOutput(extracted.rawText)
-  input.debug.parserPath = `${extracted.parserPath}->${parsed.parserPath}`
-  const normalized = normalizeRoastParts(parsed)
+  await emitStatus(hooks, "parsing_output", "Parsing model output and extracting roast lines...")
+  const parsed = parseRoastOutput(rawText)
+  input.debug.parserPath = `${parserPath}->${parsed.parserPath}`
 
+  const normalized = normalizeRoastParts(parsed)
   if (normalized.roastLines.length === 0) {
     throw createError({
       statusCode: 502,
@@ -178,17 +188,64 @@ export const runRoastSync = async (input: RoastOrchestratorInput): Promise<Roast
     })
   }
 
-  input.debug.timingsMs.total = Date.now() - startedAt
+  await emitStatus(hooks, "finalizing", "Finalizing roast output...")
+  input.debug.timingsMs.total = Date.now() - context.startedAt
 
   return createResponse(
     input.username,
     normalized.roastLines,
     normalized.feedback,
-    meta,
+    context.meta,
     input.debug,
     input.runtime,
     input.includeDebugInResponse,
   )
+}
+
+/**
+ * Runs full roast pipeline and returns one final JSON payload.
+ */
+export const runRoastSync = async (input: RoastOrchestratorInput): Promise<RoastResponse> => {
+  const prepared = await prepareContext(input, "sync")
+  if ("roast" in prepared)
+    return prepared
+
+  await emitStatus(undefined, "calling_ai", "Calling Cloudflare Workers AI...")
+  const aiStartedAt = Date.now()
+  const aiPayload = await runAiSync({
+    accountId: input.env.cfAccountId,
+    apiToken: input.env.cfApiToken,
+    model: input.env.cfAiModel,
+    timeoutMs: input.runtime.cfAiTimeoutMs,
+    maxTokens: input.runtime.cfAiMaxTokens,
+    temperature: prepared.prompt.effectiveTemperature,
+    topP: input.runtime.cfAiTopP,
+    systemPrompt: prepared.prompt.systemPrompt,
+    userPrompt: JSON.stringify(prepared.prompt.payload),
+    debug: input.debug,
+  })
+
+  input.debug.timingsMs.aiGenerate = Date.now() - aiStartedAt
+  const extracted = extractModelText(aiPayload)
+  input.debug.parserPath = extracted.parserPath
+
+  input.debug.ai = {
+    model: input.env.cfAiModel,
+    maxTokens: input.runtime.cfAiMaxTokens,
+    timeoutMs: input.runtime.cfAiTimeoutMs,
+    temperature: prepared.prompt.effectiveTemperature,
+    topP: input.runtime.cfAiTopP,
+    systemPrompt: prepared.prompt.systemPrompt,
+    userPayload: {
+      username: prepared.prompt.payload.username,
+      commits: prepared.prompt.payload.commits.length,
+      prs: prepared.prompt.payload.prs.length,
+      payload: prepared.prompt.payload,
+    },
+    responsePreview: extracted.rawText.slice(0, 1000),
+  }
+
+  return finalizeFromRawText(input, prepared, extracted.rawText, extracted.parserPath)
 }
 
 /**
@@ -203,35 +260,131 @@ export const runRoastStream = async (
     requestId: input.requestId,
     username: input.username,
   })
-  const finalPayload = await runRoastSync(input)
-  const roastText = finalPayload.roastLines.join("\n")
-  let roastSoFar = ""
 
-  for (let index = 0; index < roastText.length; index += 96) {
-    const chunk = roastText.slice(index, index + 96)
-    roastSoFar += chunk
-    await emit({
-      type: "typing",
-      chunk,
-      roastSoFar,
-    })
+  const statusHooks: RoastSyncHooks = {
+    onStatus: async (phase, message) => {
+      await emit({
+        type: "status",
+        phase,
+        message,
+      })
+    },
   }
+
+  const prepared = await prepareContext(input, "stream", statusHooks)
+  if ("roast" in prepared) {
+    for (const line of prepared.roastLines) {
+      await emit({
+        type: "typing",
+        chunk: `${line}\n`,
+      })
+    }
+
+    const feedbackItems: string[] = []
+    for (const item of prepared.feedback) {
+      feedbackItems.push(item)
+      await emit({ type: "feedback", item, feedback: [...feedbackItems] })
+    }
+
+    if (prepared.debug)
+      await emit({ type: "debug", debug: prepared.debug })
+
+    await emit({ type: "done", data: prepared })
+    return prepared
+  }
+
+  await emitStatus(statusHooks, "calling_ai", "Calling Cloudflare Workers AI...")
+  const aiStartedAt = Date.now()
+
+  let rawText = ""
+  let parserPath = "stream/chunks"
+  let streamFailed = false
+
+  try {
+    const streamResult = await runAiStream(
+      {
+        accountId: input.env.cfAccountId,
+        apiToken: input.env.cfApiToken,
+        model: input.env.cfAiModel,
+        timeoutMs: input.runtime.cfAiTimeoutMs,
+        maxTokens: input.runtime.cfAiMaxTokens,
+        temperature: prepared.prompt.effectiveTemperature,
+        topP: input.runtime.cfAiTopP,
+        systemPrompt: prepared.prompt.systemPrompt,
+        userPrompt: JSON.stringify(prepared.prompt.payload),
+        debug: input.debug,
+      },
+      async (chunk) => {
+        rawText += chunk
+        await emit({
+          type: "typing",
+          chunk,
+        })
+      },
+    )
+
+    rawText = streamResult.rawText || rawText
+  }
+  catch {
+    streamFailed = true
+  }
+
+  input.debug.timingsMs.aiGenerate = Date.now() - aiStartedAt
+
+  if (streamFailed && rawText.trim().length === 0) {
+    // Stream fallback to sync generation when no usable content was emitted.
+    const fallbackPayload = await runAiSync({
+      accountId: input.env.cfAccountId,
+      apiToken: input.env.cfApiToken,
+      model: input.env.cfAiModel,
+      timeoutMs: input.runtime.cfAiTimeoutMs,
+      maxTokens: input.runtime.cfAiMaxTokens,
+      temperature: prepared.prompt.effectiveTemperature,
+      topP: input.runtime.cfAiTopP,
+      systemPrompt: prepared.prompt.systemPrompt,
+      userPrompt: JSON.stringify(prepared.prompt.payload),
+      debug: input.debug,
+    })
+
+    const extracted = extractModelText(fallbackPayload)
+    parserPath = extracted.parserPath
+    rawText = extracted.rawText
+    if (rawText.trim()) {
+      await emit({
+        type: "typing",
+        chunk: rawText,
+      })
+    }
+  }
+
+  input.debug.ai = {
+    model: input.env.cfAiModel,
+    maxTokens: input.runtime.cfAiMaxTokens,
+    timeoutMs: input.runtime.cfAiTimeoutMs,
+    temperature: prepared.prompt.effectiveTemperature,
+    topP: input.runtime.cfAiTopP,
+    systemPrompt: prepared.prompt.systemPrompt,
+    userPayload: {
+      username: prepared.prompt.payload.username,
+      commits: prepared.prompt.payload.commits.length,
+      prs: prepared.prompt.payload.prs.length,
+      payload: prepared.prompt.payload,
+    },
+    responsePreview: rawText.slice(0, 1000),
+  }
+
+  const finalPayload = await finalizeFromRawText(input, prepared, rawText, parserPath, statusHooks)
 
   const feedbackItems: string[] = []
   for (const item of finalPayload.feedback) {
     feedbackItems.push(item)
-    await emit({
-      type: "feedback",
-      item,
-      feedback: [...feedbackItems],
-    })
+    await emit({ type: "feedback", item, feedback: [...feedbackItems] })
   }
 
   if (finalPayload.debug)
     await emit({ type: "debug", debug: finalPayload.debug })
 
   await emit({ type: "done", data: finalPayload })
-
   return finalPayload
 }
 

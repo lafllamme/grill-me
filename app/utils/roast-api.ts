@@ -1,11 +1,16 @@
 import type {
+  RoastDebugLevel,
   RoastErrorResponse,
   RoastResponse,
   RoastStreamEvent,
 } from "~~/shared/roast/contracts"
 import { consumeRoastSse } from "./roast-sse"
 
-const DEFAULT_DEBUG_LEVEL = "full"
+const DEFAULT_DEBUG_LEVEL: RoastDebugLevel = "minimal"
+
+interface RoastRequestOptions {
+  debugLevel?: RoastDebugLevel
+}
 
 /**
  * Extracts a user-facing error message from a roast API error response.
@@ -17,12 +22,16 @@ const toRoastErrorMessage = (response: RoastErrorResponse): string => {
 /**
  * Calls the sync roast endpoint and returns a normalized success payload.
  */
-export const requestRoastSync = async (githubUsername: string): Promise<RoastResponse> => {
+export const requestRoastSync = async (
+  githubUsername: string,
+  options?: RoastRequestOptions,
+): Promise<RoastResponse> => {
+  const debugLevel = options?.debugLevel ?? DEFAULT_DEBUG_LEVEL
   const response = await $fetch<RoastResponse | RoastErrorResponse>("/api/roast", {
     method: "POST",
     body: {
       githubUsername,
-      debugLevel: DEFAULT_DEBUG_LEVEL,
+      debugLevel,
     },
   })
 
@@ -41,7 +50,9 @@ export const requestRoastStream = async (
   githubUsername: string,
   onEvent: (event: RoastStreamEvent) => void,
   signal: AbortSignal,
+  options?: RoastRequestOptions,
 ): Promise<void> => {
+  const debugLevel = options?.debugLevel ?? DEFAULT_DEBUG_LEVEL
   const response = await fetch("/api/roast/stream", {
     method: "POST",
     headers: {
@@ -49,7 +60,7 @@ export const requestRoastStream = async (
     },
     body: JSON.stringify({
       githubUsername,
-      debugLevel: DEFAULT_DEBUG_LEVEL,
+      debugLevel,
     }),
     signal,
   })
@@ -59,4 +70,3 @@ export const requestRoastStream = async (
 
   await consumeRoastSse(response, onEvent)
 }
-

@@ -6,6 +6,7 @@ const {
   result,
   pending,
   isStreaming,
+  streamStatus,
   partialRoast,
   partialFeedback,
   streamError,
@@ -46,6 +47,16 @@ const partialRoastLines = computed(() => {
               v-for="(line, index) in partialRoastLines"
               :key="`line-${index}-${line}`"
               class="text-on-surface leading-relaxed"
+            >
+              {{ line }}
+            </p>
+          </div>
+
+          <div v-if="streamStatus.length > 0" class="text-on-surface-variant/90 space-y-1">
+            <p
+              v-for="(line, index) in streamStatus"
+              :key="`status-${index}-${line}`"
+              class="leading-relaxed"
             >
               {{ line }}
             </p>

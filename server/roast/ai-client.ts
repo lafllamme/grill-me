@@ -37,47 +37,6 @@ const extractStreamTextChunk = (payload: any): string => {
       return candidate
   }
 
-  const recursiveExtract = (value: unknown, depth = 0): string => {
-    if (depth > 5 || value == null)
-      return ""
-
-    if (typeof value === "string" && value.trim().length > 0)
-      return value
-
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        const extracted = recursiveExtract(item, depth + 1)
-        if (extracted)
-          return extracted
-      }
-      return ""
-    }
-
-    if (typeof value === "object") {
-      const entries = Object.entries(value as Record<string, unknown>)
-      const preferredKeys = ["content", "text", "response", "delta", "message", "output"]
-      const sorted = entries.sort(([left], [right]) => {
-        const leftPriority = preferredKeys.findIndex(key => left.toLowerCase().includes(key))
-        const rightPriority = preferredKeys.findIndex(key => right.toLowerCase().includes(key))
-        const a = leftPriority >= 0 ? leftPriority : 999
-        const b = rightPriority >= 0 ? rightPriority : 999
-        return a - b
-      })
-
-      for (const [, item] of sorted) {
-        const extracted = recursiveExtract(item, depth + 1)
-        if (extracted)
-          return extracted
-      }
-    }
-
-    return ""
-  }
-
-  const fallbackChunk = recursiveExtract(payload)
-  if (fallbackChunk)
-    return fallbackChunk
-
   return ""
 }
 
