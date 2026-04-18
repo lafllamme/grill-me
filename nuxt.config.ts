@@ -12,6 +12,37 @@ export default defineNuxtConfig({
     "@nuxt/scripts",
     "@unocss/nuxt",
   ],
+  fonts: {
+    defaults: {
+      subsets: ["latin", "latin-ext"],
+    },
+    families: [
+      {
+        name: "Bricolage Grotesque",
+        provider: "google",
+        weights: [200, 300, 400, 500, 600, 700, 800],
+        styles: ["normal"],
+      },
+      {
+        name: "DM Serif Display",
+        provider: "google",
+        weights: [400],
+        styles: ["normal", "italic"],
+      },
+      {
+        name: "Outfit",
+        provider: "google",
+        weights: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+        styles: ["normal"],
+      },
+      {
+        name: "Space Mono",
+        provider: "google",
+        weights: [400, 700],
+        styles: ["normal", "italic"],
+      },
+    ],
+  },
   experimental: {
     serverAppConfig: false,
   },

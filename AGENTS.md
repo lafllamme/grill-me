@@ -34,6 +34,17 @@ Use this file as the primary source of repository level instructions. If additio
 - install `fd` when absent
 - After installing, rerun the command with the fast tool instead of continuing with slower alternatives.
 
+
+## Design system governance
+
+- Follow the design system docs in `docs/design-system/`.
+- Typography is mandatory and must follow `docs/design-system/font.md`.
+- For all font-related implementation, use only:
+- `@nuxt/fonts` in `nuxt.config.ts` for font loading
+- UnoCSS theme tokens/utilities in `uno.config.ts` for font usage
+- Do not introduce standalone typography CSS files (for example `~/assets/css/typography.css`).
+- Do not add inline or component-level external font links/styles.
+
 ## Tech stack
 
 - Nuxt 4

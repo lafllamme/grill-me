@@ -5,24 +5,24 @@
         <span class="flex h-8 w-8 items-center justify-center border border-orange-500/35 bg-black text-orange-400">
           <NuxtIcon class="text-[18px]" name="ph:fire" />
         </span>
-        <span class="font-sans text-lg font-black tracking-tight text-orange-500 uppercase group-hover:text-orange-400">
+        <span class="font-display text-lg font-black tracking-tight text-orange-500 uppercase group-hover:text-orange-400">
           Grillme.dev
         </span>
       </NuxtLink>
 
       <div class="hidden items-center gap-8 md:flex">
-        <NuxtLink class="font-sans text-xs tracking-[0.12em] text-zinc-500 uppercase transition hover:bg-orange-500/10 hover:text-zinc-100" to="/#manifesto">
+        <NuxtLink class="font-display text-xs tracking-[0.12em] text-zinc-500 uppercase transition hover:bg-orange-500/10 hover:text-zinc-100" to="/#manifesto">
           Manifesto
         </NuxtLink>
-        <NuxtLink class="font-sans text-xs tracking-[0.12em] text-zinc-500 uppercase transition hover:bg-orange-500/10 hover:text-zinc-100" to="/#leaderboard">
+        <NuxtLink class="font-display text-xs tracking-[0.12em] text-zinc-500 uppercase transition hover:bg-orange-500/10 hover:text-zinc-100" to="/#leaderboard">
           Leaderboard
         </NuxtLink>
-        <NuxtLink class="font-sans text-xs tracking-[0.12em] text-zinc-500 uppercase transition hover:bg-orange-500/10 hover:text-zinc-100" to="/docs">
+        <NuxtLink class="font-display text-xs tracking-[0.12em] text-zinc-500 uppercase transition hover:bg-orange-500/10 hover:text-zinc-100" to="/docs">
           Docs
         </NuxtLink>
       </div>
 
-      <button class="border border-orange-500/35 bg-black px-5 py-2 font-sans text-[11px] font-bold tracking-[0.18em] text-orange-500 uppercase transition hover:bg-orange-500 hover:text-black">
+      <button class="border border-orange-500/35 bg-black px-5 py-2 font-display text-[11px] font-bold tracking-[0.18em] text-orange-500 uppercase transition hover:bg-orange-500 hover:text-black">
         Login
       </button>
     </nav>
