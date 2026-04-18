@@ -1,65 +1,87 @@
 <template>
-  <section id="wall-of-shame" class="mx-auto max-w-7xl px-6 py-24">
-    <div class="grid grid-cols-1 gap-16 lg:grid-cols-12">
+  <section id="wall-of-shame" class="mx-auto px-6 py-24 max-w-7xl">
+    <div class="gap-16 grid grid-cols-1 lg:grid-cols-12">
       <div class="lg:col-span-7">
-        <h2 class="mb-8 font-headline text-3xl font-black tracking-tight uppercase">Roast of the Day</h2>
-        <article class="relative overflow-hidden rounded-2xl bg-surface-container-high p-12">
-          <div class="absolute top-0 right-0 p-8 text-9xl font-black text-on-surface-variant/10 select-none">“</div>
+        <h2 class="text-3xl tracking-tight font-black font-headline mb-8 uppercase">
+          Roast of the Day
+        </h2>
+        <article class="p-12 rounded-2xl bg-surface-container-high relative overflow-hidden">
+          <div class="text-9xl text-on-surface-variant/10 font-black p-8 select-none right-0 top-0 absolute">
+            “
+          </div>
           <div class="relative z-10">
-            <div class="mb-8 flex items-center gap-4">
-              <div class="h-16 w-16 rounded-full bg-gradient-to-br from-surface-container-highest to-surface-container-lowest" />
+            <div class="mb-8 flex gap-4 items-center">
+              <div class="rounded-full h-16 w-16 from-surface-container-highest to-surface-container-lowest bg-gradient-to-br" />
               <div>
-                <p class="font-body text-lg font-bold">Senior Dev @ Big Tech</p>
-                <p class="font-mono text-sm text-on-surface-variant">repo: microservice-hell</p>
+                <p class="text-lg font-body font-bold">
+                  Senior Dev @ Big Tech
+                </p>
+                <p class="text-sm text-on-surface-variant font-mono">
+                  repo: microservice-hell
+                </p>
               </div>
             </div>
 
-            <blockquote class="mb-8 font-serif text-2xl leading-relaxed italic text-on-surface">
+            <blockquote class="text-2xl text-on-surface leading-relaxed font-serif mb-8 italic">
               "Grillme told me that my clean architecture was just a series of over-engineered nested folders containing empty interfaces and sadness. I haven't opened VS Code in three days."
             </blockquote>
 
             <div class="flex flex-wrap gap-2">
-              <span class="bg-primary/10 px-2 py-1 font-display text-[10px] font-bold tracking-[0.1em] text-primary uppercase">Emotional Damage</span>
-              <span class="bg-primary/10 px-2 py-1 font-display text-[10px] font-bold tracking-[0.1em] text-primary uppercase">Verified Roast</span>
+              <span class="text-[10px] text-on-surface tracking-[0.1em] font-bold font-display px-2 py-1 bg-primary/20 uppercase">Emotional Damage</span>
+              <span class="text-[10px] text-on-surface tracking-[0.1em] font-bold font-display px-2 py-1 bg-primary/20 uppercase">Verified Roast</span>
             </div>
           </div>
         </article>
       </div>
 
       <div class="lg:col-span-5">
-        <h2 class="mb-8 font-headline text-3xl font-black tracking-tight uppercase">Wall of Shame</h2>
+        <h2 class="text-3xl tracking-tight font-black font-headline mb-8 uppercase">
+          Wall of Shame
+        </h2>
         <div class="space-y-4">
-          <article class="group flex cursor-pointer items-center justify-between bg-surface-container-low px-6 py-5 transition-colors hover:bg-surface-container-high">
-            <div class="flex items-center gap-4">
-              <span class="font-headline text-xl font-black text-primary">01</span>
+          <article class="group px-6 py-5 bg-surface-container-low flex cursor-pointer transition-colors items-center justify-between hover:bg-surface-container-high">
+            <div class="flex gap-4 items-center">
+              <span class="text-xl text-primary font-black font-headline">01</span>
               <div>
-                <p class="font-headline font-bold tracking-tight">facebook-killer-final</p>
-                <p class="font-display text-xs font-bold tracking-[0.12em] text-on-surface-variant uppercase">Destroyed 2m ago</p>
+                <p class="tracking-tight font-bold font-headline">
+                  facebook-killer-final
+                </p>
+                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-bold font-display uppercase">
+                  Destroyed 2m ago
+                </p>
               </div>
             </div>
-            <NuxtIcon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
+            <Icon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
           </article>
 
-          <article class="group flex cursor-pointer items-center justify-between bg-surface-container-low px-6 py-5 transition-colors hover:bg-surface-container-high">
-            <div class="flex items-center gap-4">
-              <span class="font-headline text-xl font-black text-primary">02</span>
+          <article class="group px-6 py-5 bg-surface-container-low flex cursor-pointer transition-colors items-center justify-between hover:bg-surface-container-high">
+            <div class="flex gap-4 items-center">
+              <span class="text-xl text-primary font-black font-headline">02</span>
               <div>
-                <p class="font-headline font-bold tracking-tight">ai-powered-todo-app</p>
-                <p class="font-display text-xs font-bold tracking-[0.12em] text-on-surface-variant uppercase">Destroyed 14m ago</p>
+                <p class="tracking-tight font-bold font-headline">
+                  ai-powered-todo-app
+                </p>
+                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-bold font-display uppercase">
+                  Destroyed 14m ago
+                </p>
               </div>
             </div>
-            <NuxtIcon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
+            <Icon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
           </article>
 
-          <article class="group flex cursor-pointer items-center justify-between bg-surface-container-low px-6 py-5 transition-colors hover:bg-surface-container-high">
-            <div class="flex items-center gap-4">
-              <span class="font-headline text-xl font-black text-primary">03</span>
+          <article class="group px-6 py-5 bg-surface-container-low flex cursor-pointer transition-colors items-center justify-between hover:bg-surface-container-high">
+            <div class="flex gap-4 items-center">
+              <span class="text-xl text-primary font-black font-headline">03</span>
               <div>
-                <p class="font-headline font-bold tracking-tight">legacy-cobol-wrapper</p>
-                <p class="font-display text-xs font-bold tracking-[0.12em] text-on-surface-variant uppercase">Destroyed 1h ago</p>
+                <p class="tracking-tight font-bold font-headline">
+                  legacy-cobol-wrapper
+                </p>
+                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-bold font-display uppercase">
+                  Destroyed 1h ago
+                </p>
               </div>
             </div>
-            <NuxtIcon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
+            <Icon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
           </article>
         </div>
       </div>

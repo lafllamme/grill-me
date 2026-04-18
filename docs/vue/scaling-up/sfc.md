@@ -18,7 +18,9 @@ export default {
 </script>
 
 <template>
-  <p class="greeting">{{ greeting }}</p>
+  <p class="greeting">
+    {{ greeting }}
+  </p>
 </template>
 
 <style>
@@ -36,11 +38,14 @@ export default {
 ```vue
 <script setup>
 import { ref } from 'vue'
+
 const greeting = ref('Hello World!')
 </script>
 
 <template>
-  <p class="greeting">{{ greeting }}</p>
+  <p class="greeting">
+    {{ greeting }}
+  </p>
 </template>
 
 <style>

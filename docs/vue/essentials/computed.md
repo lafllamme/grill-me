@@ -105,7 +105,7 @@ See also: [Typing Computed Properties](/guide/typescript/options-api#typing-comp
 
 ```vue
 <script setup>
-import { reactive, computed } from 'vue'
+import { computed, reactive } from 'vue'
 
 const author = reactive({
   name: 'John Doe',
@@ -216,7 +216,7 @@ export default {
     fullName: {
       // getter
       get() {
-        return this.firstName + ' ' + this.lastName
+        return `${this.firstName} ${this.lastName}`
       },
       // setter
       set(newValue) {
@@ -236,7 +236,7 @@ Now when you run `this.fullName = 'John Doe'`, the setter will be invoked and `t
 
 ```vue
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const firstName = ref('John')
 const lastName = ref('Doe')
@@ -244,7 +244,7 @@ const lastName = ref('Doe')
 const fullName = computed({
   // getter
   get() {
-    return firstName.value + ' ' + lastName.value
+    return `${firstName.value} ${lastName.value}`
   },
   // setter
   set(newValue) {
@@ -302,7 +302,7 @@ export default {
 
 ```vue
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const count = ref(2)
 
@@ -338,7 +338,7 @@ export default {
           return this.count
         }
 
-        return previous;
+        return previous
       },
       set(newValue) {
         this.count = newValue * 2
@@ -353,7 +353,7 @@ export default {
 
 ```vue
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const count = ref(2)
 

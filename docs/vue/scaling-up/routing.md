@@ -29,9 +29,9 @@ Here's a bare-bone example:
 
 ```vue
 <script setup>
-import { ref, computed } from 'vue'
-import Home from './Home.vue'
+import { computed, ref } from 'vue'
 import About from './About.vue'
+import Home from './Home.vue'
 import NotFound from './NotFound.vue'
 
 const routes = {
@@ -66,8 +66,8 @@ const currentView = computed(() => {
 
 ```vue
 <script>
-import Home from './Home.vue'
 import About from './About.vue'
+import Home from './Home.vue'
 import NotFound from './NotFound.vue'
 
 const routes = {
@@ -88,8 +88,8 @@ export default {
   },
   mounted() {
     window.addEventListener('hashchange', () => {
-		  this.currentPath = window.location.hash
-		})
+      this.currentPath = window.location.hash
+    })
   }
 }
 </script>

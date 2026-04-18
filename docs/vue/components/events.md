@@ -247,7 +247,8 @@ const emit = defineEmits({
   submit: ({ email, password }) => {
     if (email && password) {
       return true
-    } else {
+    }
+    else {
       console.warn('Invalid submit event payload!')
       return false
     }
@@ -273,7 +274,8 @@ export default {
     submit: ({ email, password }) => {
       if (email && password) {
         return true
-      } else {
+      }
+      else {
         console.warn('Invalid submit event payload!')
         return false
       }

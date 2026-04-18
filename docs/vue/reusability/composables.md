@@ -23,7 +23,7 @@ If we were to implement the mouse tracking functionality using the Composition A
 
 ```vue [MouseComponent.vue]
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const x = ref(0)
 const y = ref(0)
@@ -37,13 +37,15 @@ onMounted(() => window.addEventListener('mousemove', update))
 onUnmounted(() => window.removeEventListener('mousemove', update))
 </script>
 
-<template>Mouse position is at: {{ x }}, {{ y }}</template>
+<template>
+  Mouse position is at: {{ x }}, {{ y }}
+</template>
 ```
 
 But what if we want to reuse the same logic in multiple components? We can extract the logic into an external file, as a composable function:
 
 ```js [mouse.js]
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 // by convention, composable function names start with "use"
 export function useMouse() {
@@ -76,7 +78,9 @@ import { useMouse } from './mouse.js'
 const { x, y } = useMouse()
 </script>
 
-<template>Mouse position is at: {{ x }}, {{ y }}</template>
+<template>
+  Mouse position is at: {{ x }}, {{ y }}
+</template>
 ```
 
 <div class="demo">
@@ -137,18 +141,22 @@ const data = ref(null)
 const error = ref(null)
 
 fetch('...')
-  .then((res) => res.json())
-  .then((json) => (data.value = json))
-  .catch((err) => (error.value = err))
+  .then(res => res.json())
+  .then(json => (data.value = json))
+  .catch(err => (error.value = err))
 </script>
 
 <template>
-  <div v-if="error">Oops! Error encountered: {{ error.message }}</div>
+  <div v-if="error">
+    Oops! Error encountered: {{ error.message }}
+  </div>
   <div v-else-if="data">
     Data loaded:
     <pre>{{ data }}</pre>
   </div>
-  <div v-else>Loading...</div>
+  <div v-else>
+    Loading...
+  </div>
 </template>
 ```
 
@@ -162,9 +170,9 @@ export function useFetch(url) {
   const error = ref(null)
 
   fetch(url)
-    .then((res) => res.json())
-    .then((json) => (data.value = json))
-    .catch((err) => (error.value = err))
+    .then(res => res.json())
+    .then(json => (data.value = json))
+    .catch(err => (error.value = err))
 
   return { data, error }
 }
@@ -331,8 +339,8 @@ To some extent, you can think of these extracted composables as component-scoped
 If you are using Options API, composables must be called inside `setup()`, and the returned bindings must be returned from `setup()` so that they are exposed to `this` and the template:
 
 ```js
-import { useMouse } from './mouse.js'
 import { useFetch } from './fetch.js'
+import { useMouse } from './mouse.js'
 
 export default {
   setup() {

@@ -34,15 +34,15 @@ $ npm create vue@latest
 ```sh [pnpm]
 $ pnpm create vue@latest
 ```
-  
+
 ```sh [yarn]
 # For Yarn Modern (v2+)
 $ yarn create vue@latest
-  
+
 # For Yarn ^v4.11
 $ yarn dlx create-vue@latest
 ```
-  
+
 ```sh [bun]
 $ bun create vue@latest
 ```

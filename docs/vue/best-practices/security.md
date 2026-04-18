@@ -12,7 +12,7 @@ The most fundamental security rule when using Vue is **never use non-trusted con
 
 ```js
 Vue.createApp({
-  template: `<div>` + userProvidedString + `</div>` // NEVER DO THIS
+  template: `<div>${userProvidedString}</div>` // NEVER DO THIS
 }).mount('#app')
 ```
 

@@ -8,7 +8,7 @@ links:
     size: xs
 ---
 
-`refreshNuxtData` is used to refetch all or specific `asyncData` instances, including those from [`useAsyncData`](/docs/4.x/api/composables/use-async-data), [`useLazyAsyncData`](/docs/4.x/api/composables/use-lazy-async-data), [`useFetch`](/docs/4.x/api/composables/use-fetch), and [`useLazyFetch`](/docs/4.x/api/composables/use-lazy-fetch).  
+`refreshNuxtData` is used to refetch all or specific `asyncData` instances, including those from [`useAsyncData`](/docs/4.x/api/composables/use-async-data), [`useLazyAsyncData`](/docs/4.x/api/composables/use-lazy-async-data), [`useFetch`](/docs/4.x/api/composables/use-fetch), and [`useLazyFetch`](/docs/4.x/api/composables/use-lazy-fetch).
 
 ::note
 If your component is cached by `<KeepAlive>` and enters a deactivated state, the `asyncData` inside the component will still be refetched until the component is unmounted.
@@ -38,11 +38,12 @@ This example below refreshes all data being fetched using `useAsyncData` and `us
 <script setup lang="ts">
 const refreshing = ref(false)
 
-async function refreshAll () {
+async function refreshAll() {
   refreshing.value = true
   try {
     await refreshNuxtData()
-  } finally {
+  }
+  finally {
     refreshing.value = false
   }
 }
@@ -68,12 +69,13 @@ This example below refreshes only data where the key matches to `count` and `use
 <script setup lang="ts">
 const refreshing = ref(false)
 
-async function refresh () {
+async function refresh() {
   refreshing.value = true
   try {
     // you could also pass an array of keys to refresh multiple data
     await refreshNuxtData(['count', 'user'])
-  } finally {
+  }
+  finally {
     refreshing.value = false
   }
 }

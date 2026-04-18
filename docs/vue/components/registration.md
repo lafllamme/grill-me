@@ -120,7 +120,7 @@ For each property in the `components` object, the key will be the registered nam
 ```js
 export default {
   components: {
-    ComponentA: ComponentA
+    ComponentA
   }
   // ...
 }

@@ -69,7 +69,7 @@ The bound object doesn't have to be inline:
 
 ```js
 const classObject = reactive({
-  active: true,
+  'active': true,
   'text-danger': false
 })
 ```
@@ -110,7 +110,7 @@ const isActive = ref(true)
 const error = ref(null)
 
 const classObject = computed(() => ({
-  active: isActive.value && !error.value,
+  'active': isActive.value && !error.value,
   'text-danger': error.value && error.value.type === 'fatal'
 }))
 ```

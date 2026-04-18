@@ -20,7 +20,9 @@ function increment() {
 </script>
 
 <!-- view -->
-<template>{{ count }}</template>
+<template>
+  {{ count }}
+</template>
 ```
 
 </div>
@@ -45,7 +47,9 @@ export default {
 </script>
 
 <!-- view -->
-<template>{{ count }}</template>
+<template>
+  {{ count }}
+</template>
 ```
 
 </div>
@@ -98,7 +102,9 @@ export const store = reactive({
 import { store } from './store.js'
 </script>
 
-<template>From A: {{ store.count }}</template>
+<template>
+  From A: {{ store.count }}
+</template>
 ```
 
 ```vue [ComponentB.vue]
@@ -106,7 +112,9 @@ import { store } from './store.js'
 import { store } from './store.js'
 </script>
 
-<template>From B: {{ store.count }}</template>
+<template>
+  From B: {{ store.count }}
+</template>
 ```
 
 </div>
@@ -125,7 +133,9 @@ export default {
 }
 </script>
 
-<template>From A: {{ store.count }}</template>
+<template>
+  From A: {{ store.count }}
+</template>
 ```
 
 ```vue [ComponentB.vue]
@@ -141,7 +151,9 @@ export default {
 }
 </script>
 
-<template>From B: {{ store.count }}</template>
+<template>
+  From B: {{ store.count }}
+</template>
 ```
 
 </div>

@@ -195,7 +195,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <input type="text" @change="handleChange" />
+  <input type="text" @change="handleChange">
 </template>
 ```
 

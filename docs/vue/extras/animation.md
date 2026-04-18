@@ -152,8 +152,8 @@ With some creativity, we can use watchers to animate anything based on some nume
 <div class="composition-api">
 
 ```js
-import { ref, reactive, watch } from 'vue'
 import gsap from 'gsap'
+import { reactive, ref, watch } from 'vue'
 
 const number = ref(0)
 const tweened = reactive({

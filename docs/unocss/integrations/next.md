@@ -160,7 +160,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable}  ${geistMono.variable}`}>
         {children}
       </body>
     </html>
@@ -191,9 +191,9 @@ export default function Home() {
 ```js [page.js]
 export default function Home() {
   return (
-    <main className="py-20 px-12 text-center flex flex-col items-center gap-20px">
-      <span className="text-blue text-5xl text-hover:red cursor-default">Nextjs</span>
-      <div className="i-carbon-car inline-block text-4xl" />
+    <main className="px-12 py-20 text-center flex flex-col gap-20px items-center">
+      <span className="text-hover:red text-5xl text-blue cursor-default">Nextjs</span>
+      <div className="i-carbon-car text-4xl inline-block" />
       <button className="btn w-10rem">Button</button>
     </main>
   )

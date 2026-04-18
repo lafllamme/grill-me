@@ -324,7 +324,7 @@ function handleChange(event) {
 </script>
 
 <template>
-  <input type="text" @change="handleChange" />
+  <input type="text" @change="handleChange">
 </template>
 ```
 
@@ -390,9 +390,9 @@ Template refs should be created with an explicit generic type argument and an in
 
 ```vue
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
-const el = ref<HTMLInputElement | null>(null)
+const el = ref < HTMLInputElement | null > (null)
 
 onMounted(() => {
   el.value?.focus()
@@ -400,7 +400,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <input ref="el" />
+  <input ref="el">
 </template>
 ```
 
@@ -513,6 +513,8 @@ Usage in component
 
 ```vue [App.vue]
 <template>
-  <p v-highlight="'blue'">This sentence is important!</p>
+  <p v-highlight="'blue'">
+    This sentence is important!
+  </p>
 </template>
 ```

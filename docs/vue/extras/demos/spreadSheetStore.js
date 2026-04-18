@@ -4,9 +4,9 @@ const COLS = 3
 const ROWS = 3
 
 export const cells = reactive(
-  Array.from(Array(COLS).keys()).map((i) =>
-    Array.from(Array(ROWS).keys()).map((i) => '')
-  )
+  Array.from(Array.from({ length: COLS }).keys()).map(i =>
+    Array.from(Array.from({ length: ROWS }).keys()).map(i => ''),
+  ),
 )
 
 // initial state for demo
@@ -26,12 +26,13 @@ export function evalCell(exp) {
     .slice(1)
     .replace(
       /\b([A-Z])(\d{1,2})\b/g,
-      (_, c, r) => `get(${c.charCodeAt(0) - 65},${r})`
+      (_, c, r) => `get(${c.charCodeAt(0) - 65},${r})`,
     )
 
   try {
     return new Function('get', `return ${exp}`)(getCellValue)
-  } catch (e) {
+  }
+  catch (e) {
     return `#ERROR ${e}`
   }
 }

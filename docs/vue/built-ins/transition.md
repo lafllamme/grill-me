@@ -592,10 +592,11 @@ Take this counter component for example:
 
 ```vue
 <script setup>
-import { ref } from 'vue';
-const count = ref(0);
+import { ref } from 'vue'
 
-setInterval(() => count.value++, 1000);
+const count = ref(0)
+
+setInterval(() => count.value++, 1000)
 </script>
 
 <template>
@@ -614,15 +615,15 @@ export default {
   data() {
     return {
       count: 1,
-      interval: null 
+      interval: null
     }
   },
   mounted() {
     this.interval = setInterval(() => {
-      this.count++;
+      this.count++
     }, 1000)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     clearInterval(this.interval)
   }
 }

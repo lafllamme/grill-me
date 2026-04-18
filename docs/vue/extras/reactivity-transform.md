@@ -28,7 +28,9 @@ function increment() {
 </script>
 
 <template>
-  <button @click="increment">{{ count }}</button>
+  <button @click="increment">
+    {{ count }}
+  </button>
 </template>
 ```
 
@@ -61,7 +63,7 @@ These macros are globally available and do not need to be imported when Reactivi
 ```js
 import { $ref } from 'vue/macros'
 
-let count = $ref(0)
+const count = $ref(0)
 ```
 
 ## Destructuring with `$()` {#destructuring-with}
@@ -79,12 +81,12 @@ console.log(x, y)
 Compiled output:
 
 ```js
-import { toRef } from 'vue'
 import { useMouse } from '@vueuse/core'
+import { toRef } from 'vue'
 
-const __temp = useMouse(),
-  x = toRef(__temp, 'x'),
-  y = toRef(__temp, 'y')
+const __temp = useMouse()
+const x = toRef(__temp, 'x')
+const y = toRef(__temp, 'y')
 
 console.log(x.value, y.value)
 ```
@@ -102,7 +104,7 @@ function myCreateRef() {
   return ref(0)
 }
 
-let count = $(myCreateRef())
+const count = $(myCreateRef())
 ```
 
 ## Reactive Props Destructure {#reactive-props-destructure}
@@ -195,7 +197,7 @@ The above compiles to:
 ```js
 import { ref } from 'vue'
 
-let count = ref(0)
+const count = ref(0)
 trackChange(count)
 ```
 

@@ -50,7 +50,7 @@ const route = useRoute()
 
 const { data } = useLazyFetch(`/api/posts/${route.params.id}`, {
   key: `post-${route.params.id}`,
-  default () {
+  default() {
     // Find the individual post from the cache and set it as the default value.
     return posts.value.find(post => post.id === route.params.id)
   },
@@ -79,24 +79,24 @@ let previousTodos = []
 // Access to the cached value of useAsyncData in todos.vue
 const { data: todos } = useNuxtData('todos')
 
-async function addTodo () {
+async function addTodo() {
   await $fetch('/api/addTodo', {
     method: 'post',
     body: {
       todo: newTodo.value,
     },
-    onRequest () {
+    onRequest() {
       // Store the previously cached value to restore if fetch fails.
       previousTodos = todos.value
 
       // Optimistically update the todos.
       todos.value = [...todos.value, newTodo.value]
     },
-    onResponseError () {
+    onResponseError() {
       // Rollback the data if the request failed.
       todos.value = previousTodos
     },
-    async onResponse () {
+    async onResponse() {
       // Invalidate todos in the background if the request succeeded.
       await refreshNuxtData('todos')
     },

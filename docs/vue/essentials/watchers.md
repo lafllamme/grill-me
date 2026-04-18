@@ -32,9 +32,11 @@ export default {
       try {
         const res = await fetch('https://yesno.wtf/api')
         this.answer = (await res.json()).answer
-      } catch (error) {
-        this.answer = 'Error! Could not reach the API. ' + error
-      } finally {
+      }
+      catch (error) {
+        this.answer = `Error! Could not reach the API. ${error}`
+      }
+      finally {
         this.loading = false
       }
     }
@@ -58,7 +60,7 @@ The `watch` option also supports a dot-delimited path as the key:
 export default {
   watch: {
     // Note: only simple paths. Expressions are not supported.
-    'some.nested.key'(newValue) {
+    'some.nested.key': function (newValue) {
       // ...
     }
   }
@@ -87,9 +89,11 @@ watch(question, async (newQuestion, oldQuestion) => {
     try {
       const res = await fetch('https://yesno.wtf/api')
       answer.value = (await res.json()).answer
-    } catch (error) {
-      answer.value = 'Error! Could not reach the API. ' + error
-    } finally {
+    }
+    catch (error) {
+      answer.value = `Error! Could not reach the API. ${error}`
+    }
+    finally {
       loading.value = false
     }
   }
@@ -99,7 +103,7 @@ watch(question, async (newQuestion, oldQuestion) => {
 <template>
   <p>
     Ask a yes/no question:
-    <input v-model="question" :disabled="loading" />
+    <input v-model="question" :disabled="loading">
   </p>
   <p>{{ answer }}</p>
 </template>
@@ -404,7 +408,7 @@ We can use the [`onWatcherCleanup()`](/api/reactivity-core#onwatchercleanup) <su
 <div class="composition-api">
 
 ```js {10-13}
-import { watch, onWatcherCleanup } from 'vue'
+import { onWatcherCleanup, watch } from 'vue'
 
 watch(id, (newId) => {
   const controller = new AbortController()

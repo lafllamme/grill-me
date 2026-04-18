@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-background text-on-surface selection:bg-primary selection:text-on-surface">
-    <div class="pointer-events-none fixed inset-0 -z-0">
-      <div class="absolute inset-0 bg-gradient-to-br from-surface via-background to-surface-container-lowest" />
-      <div class="absolute inset-0 opacity-15 [background:radial-gradient(circle_at_20%_15%,rgba(255,51,0,0.08),transparent_40%),radial-gradient(circle_at_75%_70%,rgba(255,51,0,0.06),transparent_45%)]" />
-      <div class="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-primary/12 to-transparent" />
-      <div class="absolute bottom-20 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-[120px]" />
+  <div class="text-on-surface bg-background min-h-screen selection:text-on-surface selection:bg-primary">
+    <div class="-z-0 pointer-events-none inset-0 fixed">
+      <div class="inset-0 absolute from-surface to-surface-container-lowest via-background bg-gradient-to-br" />
+      <div class="opacity-15 [background:radial-gradient(circle_at_20%_15%,rgba(255,51,0,0.08),transparent_40%),radial-gradient(circle_at_75%_70%,rgba(255,51,0,0.06),transparent_45%)] inset-0 absolute" />
+      <div class="h-40 inset-x-0 top-0 absolute from-primary/12 to-transparent bg-gradient-to-b" />
+      <div class="rounded-full bg-primary/10 h-96 w-96 bottom-20 left-1/2 absolute blur-[120px] -translate-x-1/2" />
     </div>
 
     <div class="relative z-10">

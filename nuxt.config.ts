@@ -43,7 +43,20 @@ export default defineNuxtConfig({
       },
     ],
   },
+  runtimeConfig: {
+    // Nuxt auto-maps these from:
+    // NUXT_CF_ACCOUNT_ID, NUXT_CF_API_TOKEN, NUXT_CF_AI_MODEL, NUXT_GITHUB_TOKEN,
+    // NUXT_GITHUB_TIMEOUT_MS, NUXT_CF_AI_TIMEOUT_MS, NUXT_CF_AI_MAX_TOKENS
+    cfAccountId: "",
+    cfApiToken: "",
+    cfAiModel: "@cf/meta/llama-3.1-8b-instruct",
+    githubTimeoutMs: "12000",
+    cfAiTimeoutMs: "30000",
+    cfAiMaxTokens: "240",
+    roastDebug: "false",
+    githubToken: "",
+  },
   experimental: {
     serverAppConfig: false,
   },
-});
+})

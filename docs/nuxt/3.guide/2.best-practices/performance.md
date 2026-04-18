@@ -228,16 +228,16 @@ The [Nuxt DevTools](https://devtools.nuxt.com/) gives you insights and transpare
 ![Nuxt DevTools example](https://user-images.githubusercontent.com/11247099/217670806-fb39aeff-3881-44e5-b9c8-6c757f5925fc.png)
 
 It comes with several features we can use to measure performance of Nuxt apps:
-1. **Timeline** – Tracks time spent on rendering, updating, and initializing components to identify performance bottlenecks.  
-2. **Assets** – Displays file sizes (e.g., images) without transformations.  
-3. **Render Tree** – Shows connections between Vue components, scripts, and styles to optimize dynamic loading.  
+1. **Timeline** – Tracks time spent on rendering, updating, and initializing components to identify performance bottlenecks.
+2. **Assets** – Displays file sizes (e.g., images) without transformations.
+3. **Render Tree** – Shows connections between Vue components, scripts, and styles to optimize dynamic loading.
 4. **Inspect** – Lists all files used in the Vue app with their size and evaluation time.
 
 ### Chrome DevTools
 
 Chrome DevTools come with two useful tabs for measuring performance; `Performance` and `Lighthouse`.
 
-When you open the [Performance](https://developer.chrome.com/docs/devtools/performance/overview) panel, it instantly shows your local **Largest Contentful Paint (LCP)** and **Cumulative Layout Shift (CLS)** scores (good, needs improvement, or bad).  
+When you open the [Performance](https://developer.chrome.com/docs/devtools/performance/overview) panel, it instantly shows your local **Largest Contentful Paint (LCP)** and **Cumulative Layout Shift (CLS)** scores (good, needs improvement, or bad).
 
 If you interact with the page, it also captures **Interaction to Next Paint (INP)**, giving you a full view of your Core Web Vitals based on your device and network.
 

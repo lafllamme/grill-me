@@ -19,7 +19,7 @@ If you are using Vue with a build setup, the option should be passed via build c
 ```js
 // Only works if using in-browser compilation.
 // If using build tools, see config examples below.
-app.config.compilerOptions.isCustomElement = (tag) => tag.includes('-')
+app.config.compilerOptions.isCustomElement = tag => tag.includes('-')
 ```
 
 #### Example Vite Config {#example-vite-config}
@@ -33,7 +33,7 @@ export default {
       template: {
         compilerOptions: {
           // treat all tags with a dash as custom elements
-          isCustomElement: (tag) => tag.includes('-')
+          isCustomElement: tag => tag.includes('-')
         }
       }
     })
@@ -49,11 +49,11 @@ module.exports = {
     config.module
       .rule('vue')
       .use('vue-loader')
-      .tap((options) => ({
+      .tap(options => ({
         ...options,
         compilerOptions: {
           // treat any tag that starts with ion- as custom elements
-          isCustomElement: (tag) => tag.startsWith('ion-')
+          isCustomElement: tag => tag.startsWith('ion-')
         }
       }))
   }
@@ -218,16 +218,15 @@ If the custom elements will be used in an application that is also using Vue, yo
 It is recommended to export the individual element constructors to give your users the flexibility to import them on-demand and register them with desired tag names. You can also export a convenience function to automatically register all elements. Here's an example entry point of a Vue custom element library:
 
 ```js [elements.js]
-
 import { defineCustomElement } from 'vue'
-import Foo from './MyFoo.ce.vue'
 import Bar from './MyBar.ce.vue'
+import Foo from './MyFoo.ce.vue'
 
 const MyFoo = defineCustomElement(Foo)
 const MyBar = defineCustomElement(Bar)
 
 // export individual elements
-export { MyFoo, MyBar }
+export { MyBar, MyFoo }
 
 export function register() {
   customElements.define('my-foo', MyFoo)
@@ -240,12 +239,13 @@ A consumer can use the elements in a Vue file:
 ```vue
 <script setup>
 import { register } from 'path/to/elements.js'
+
 register()
 </script>
 
 <template>
   <my-foo ...>
-    <my-bar ...></my-bar>
+    <my-bar ... />
   </my-foo>
 </template>
 ```
@@ -290,9 +290,9 @@ customElements.define('some-element', SomeElement)
 // Add the new element type to Vue's GlobalComponents type.
 declare module 'vue' {
   interface GlobalComponents {
-    // Be sure to pass in the Vue component type here 
+    // Be sure to pass in the Vue component type here
     // (SomeComponent, *not* SomeElement).
-    // Custom Elements require a hyphen in their name, 
+    // Custom Elements require a hyphen in their name,
     // so use the hyphenated element name here.
     'some-element': typeof SomeComponent
   }
@@ -358,7 +358,7 @@ type DefineCustomElement<
   // specifically reads prop definitions from the `$props` type. Note that we
   // combine the element's props with the global HTML props and Vue's special
   // props.
-  /** @deprecated Do not use the $props property on a Custom Element ref, 
+  /** @deprecated Do not use the $props property on a Custom Element ref,
     this is for template prop types only. */
   $props: HTMLAttributes &
     Partial<Pick<ElementType, SelectedAttributes>> &
@@ -367,7 +367,7 @@ type DefineCustomElement<
   // Use $emit to specifically define event types. Vue specifically reads event
   // types from the `$emit` type. Note that `$emit` expects a particular format
   // that we map `Events` to.
-  /** @deprecated Do not use the $emit property on a Custom Element ref, 
+  /** @deprecated Do not use the $emit property on a Custom Element ref,
     this is for template prop types only. */
   $emit: VueEmit<Events>
 }

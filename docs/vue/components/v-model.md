@@ -23,7 +23,9 @@ function update() {
 
 <template>
   <div>Parent bound v-model is: {{ model }}</div>
-  <button @click="update">Increment</button>
+  <button @click="update">
+    Increment
+  </button>
 </template>
 ```
 
@@ -46,7 +48,7 @@ const model = defineModel()
 </script>
 
 <template>
-  <input v-model="model" />
+  <input v-model="model">
 </template>
 ```
 
@@ -71,7 +73,7 @@ const emit = defineEmits(['update:modelValue'])
   <input
     :value="props.modelValue"
     @input="emit('update:modelValue', $event.target.value)"
-  />
+  >
 </template>
 ```
 
@@ -111,7 +113,7 @@ const myRef = ref()
 </script>
 
 <template>
-  <Child v-model="myRef"></Child>
+  <Child v-model="myRef" />
 </template>
 ```
 
@@ -164,7 +166,7 @@ export default {
   <input
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
-  />
+  >
 </template>
 ```
 
@@ -197,7 +199,7 @@ export default {
 </script>
 
 <template>
-  <input v-model="value" />
+  <input v-model="value">
 </template>
 ```
 
@@ -221,7 +223,7 @@ const title = defineModel('title')
 </script>
 
 <template>
-  <input type="text" v-model="title" />
+  <input v-model="title" type="text">
 </template>
 ```
 
@@ -251,7 +253,7 @@ defineEmits(['update:title'])
     type="text"
     :value="title"
     @input="$emit('update:title', $event.target.value)"
-  />
+  >
 </template>
 ```
 
@@ -276,7 +278,7 @@ export default {
     type="text"
     :value="title"
     @input="$emit('update:title', $event.target.value)"
-  />
+  >
 </template>
 ```
 
@@ -306,8 +308,8 @@ const lastName = defineModel('lastName')
 </script>
 
 <template>
-  <input type="text" v-model="firstName" />
-  <input type="text" v-model="lastName" />
+  <input v-model="firstName" type="text">
+  <input v-model="lastName" type="text">
 </template>
 ```
 
@@ -331,12 +333,12 @@ defineEmits(['update:firstName', 'update:lastName'])
     type="text"
     :value="firstName"
     @input="$emit('update:firstName', $event.target.value)"
-  />
+  >
   <input
     type="text"
     :value="lastName"
     @input="$emit('update:lastName', $event.target.value)"
-  />
+  >
 </template>
 ```
 
@@ -362,12 +364,12 @@ export default {
     type="text"
     :value="firstName"
     @input="$emit('update:firstName', $event.target.value)"
-  />
+  >
   <input
     type="text"
     :value="lastName"
     @input="$emit('update:lastName', $event.target.value)"
-  />
+  >
 </template>
 ```
 

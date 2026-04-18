@@ -40,7 +40,9 @@ const vHighlight = {
 </script>
 
 <template>
-  <p v-highlight>This sentence is important!</p>
+  <p v-highlight>
+    This sentence is important!
+  </p>
 </template>
 ```
 
@@ -50,7 +52,7 @@ const vHighlight = {
 
 ```js
 const highlight = {
-  mounted: (el) => el.classList.add('is-highlight')
+  mounted: el => el.classList.add('is-highlight')
 }
 
 export default {
@@ -80,7 +82,7 @@ If you are not using `<script setup>`, custom directives can be registered using
 ```js
 export default {
   setup() {
-    /*...*/
+    /* ... */
   },
   directives: {
     // enables v-highlight in template
@@ -126,12 +128,12 @@ A common example of this is a `v-focus` custom directive that brings an element 
 <script setup>
 // enables v-focus in templates
 const vFocus = {
-  mounted: (el) => el.focus()
+  mounted: el => el.focus()
 }
 </script>
 
 <template>
-  <input v-focus />
+  <input v-focus>
 </template>
 ```
 
@@ -141,7 +143,7 @@ const vFocus = {
 
 ```js
 const focus = {
-  mounted: (el) => el.focus()
+  mounted: el => el.focus()
 }
 
 export default {

@@ -164,7 +164,7 @@ const LazyHydrationMyComponent = defineLazyHydrationComponent(
 
 const isReady = ref(false)
 
-function myFunction () {
+function myFunction() {
   // Trigger custom hydration strategy...
   isReady.value = true
 }
@@ -211,7 +211,7 @@ const LazyHydrationMyComponent = defineLazyHydrationComponent(
   () => import('./components/MyComponent.vue'),
 )
 
-function onHydrate () {
+function onHydrate() {
   console.log('Component has been hydrated!')
 }
 </script>

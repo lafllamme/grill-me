@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue'
 import gsap from 'gsap'
+import { ref } from 'vue'
 
 const show = ref(true)
 
@@ -8,7 +8,7 @@ function onBeforeEnter(el) {
   gsap.set(el, {
     scaleX: 0.25,
     scaleY: 0.25,
-    opacity: 1
+    opacity: 1,
   })
 }
 
@@ -18,7 +18,7 @@ function onEnter(el, done) {
     scaleX: 1,
     scaleY: 1,
     ease: 'elastic.inOut(2.5, 1)',
-    onComplete: done
+    onComplete: done,
   })
 }
 
@@ -28,28 +28,30 @@ function onLeave(el, done) {
     scaleX: 1,
     scaleY: 1,
     x: 300,
-    ease: 'elastic.inOut(2.5, 1)'
+    ease: 'elastic.inOut(2.5, 1)',
   })
   gsap.to(el, {
     duration: 0.2,
     delay: 0.5,
     opacity: 0,
-    onComplete: done
+    onComplete: done,
   })
 }
 </script>
 
 <template>
   <div class="demo">
-    <button @click="show = !show">Toggle</button>
+    <button @click="show = !show">
+      Toggle
+    </button>
 
     <Transition
+      :css="false"
       @before-enter="onBeforeEnter"
       @enter="onEnter"
       @leave="onLeave"
-      :css="false"
     >
-      <div class="gsap-box" v-if="show"></div>
+      <div v-if="show" class="gsap-box" />
     </Transition>
   </div>
 </template>

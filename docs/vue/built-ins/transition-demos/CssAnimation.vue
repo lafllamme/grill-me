@@ -1,11 +1,14 @@
 <script setup>
 import { ref } from 'vue'
+
 const show = ref(true)
 </script>
 
 <template>
   <div class="demo">
-    <button @click="show = !show">Toggle</button>
+    <button @click="show = !show">
+      Toggle
+    </button>
     <Transition name="bounce">
       <p v-if="show" style="margin-top: 20px; text-align: center">
         Hello here is some bouncy text!

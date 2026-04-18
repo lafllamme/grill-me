@@ -49,7 +49,7 @@ The `provide()` function accepts two arguments. The first argument is called the
 The second argument is the provided value. The value can be of any type, including reactive state such as refs:
 
 ```js
-import { ref, provide } from 'vue'
+import { provide, ref } from 'vue'
 
 const count = ref(0)
 provide('key', count)
@@ -284,7 +284,7 @@ Finally, you can wrap the provided value with [`readonly()`](/api/reactivity-cor
 
 ```vue
 <script setup>
-import { ref, provide, readonly } from 'vue'
+import { provide, readonly, ref } from 'vue'
 
 const count = ref(0)
 provide('read-only-count', readonly(count))

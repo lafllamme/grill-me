@@ -4,7 +4,7 @@ import { cells, evalCell } from './spreadSheetStore.js'
 
 const props = defineProps({
   c: Number,
-  r: Number
+  r: Number,
 })
 
 const editing = ref(false)
@@ -23,7 +23,7 @@ function update(e) {
       @change="update"
       @blur="update"
       @vue:mounted="({ el }) => el.focus()"
-    />
+    >
     <span v-else>{{ evalCell(cells[c][r]) }}</span>
   </div>
 </template>

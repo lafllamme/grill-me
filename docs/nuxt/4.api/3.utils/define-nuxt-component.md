@@ -25,7 +25,7 @@ If you choose not to use `setup()` in your app, you can use the `asyncData()` me
 ```vue [app/pages/index.vue]
 <script lang="ts">
 export default defineNuxtComponent({
-  asyncData () {
+  asyncData() {
     return {
       data: {
         greetings: 'hello world!',
@@ -43,7 +43,7 @@ If you choose not to use `setup()` in your app, you can use the `head()` method 
 ```vue [app/pages/index.vue]
 <script lang="ts">
 export default defineNuxtComponent({
-  head (nuxtApp) {
+  head(nuxtApp) {
     return {
       title: 'My site',
     }

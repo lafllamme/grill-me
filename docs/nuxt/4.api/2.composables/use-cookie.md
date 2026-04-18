@@ -140,12 +140,12 @@ const list = useCookie(
   },
 )
 
-function add () {
+function add() {
   list.value?.push(Math.round(Math.random() * 1000))
   // list cookie won't be updated with this change
 }
 
-function save () {
+function save() {
   // the actual `list` cookie will be updated
   list.value &&= [...list.value]
 }
@@ -170,11 +170,13 @@ function save () {
 ```vue
 <script setup lang="ts">
 const session = useCookie(
-  'session', {
+  'session',
+  {
     maxAge: 60 * 60, // 1 hour
     refresh: true,
     default: () => 'active',
-  })
+  }
+)
 
 // Even if the value does not change,
 // the cookie expiration will be refreshed

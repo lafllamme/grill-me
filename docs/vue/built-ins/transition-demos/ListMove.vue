@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+
 const items = ref([1, 2, 3, 4, 5])
 let nextNum = items.value.length + 1
 
@@ -23,7 +24,7 @@ function shuffle(array) {
     currentIndex--
     ;[array[currentIndex], array[randomIndex]] = [
       array[randomIndex],
-      array[currentIndex]
+      array[currentIndex],
     ]
   }
   return array
@@ -32,11 +33,17 @@ function shuffle(array) {
 
 <template>
   <div class="demo">
-    <button @click="add">Add</button>
-    <button @click="remove">Remove</button>
-    <button @click="shuffle(items)">Shuffle</button>
+    <button @click="add">
+      Add
+    </button>
+    <button @click="remove">
+      Remove
+    </button>
+    <button @click="shuffle(items)">
+      Shuffle
+    </button>
     <TransitionGroup name="list2" tag="ul" style="margin-top: 20px">
-      <li class="list-item" v-for="item in items" :key="item">
+      <li v-for="item in items" :key="item" class="list-item">
         {{ item }}
       </li>
     </TransitionGroup>

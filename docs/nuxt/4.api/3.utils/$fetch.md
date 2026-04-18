@@ -41,7 +41,7 @@ You can use `$fetch` in any methods that are executed only on client-side.
 
 ```vue [app/pages/contact.vue]
 <script setup lang="ts">
-async function contactForm () {
+async function contactForm() {
   await $fetch('/api/contact', {
     method: 'POST',
     body: { hello: 'world' },

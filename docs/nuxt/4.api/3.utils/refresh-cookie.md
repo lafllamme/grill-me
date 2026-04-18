@@ -24,7 +24,7 @@ This is useful for updating the `useCookie` ref when we know the new cookie valu
 <script setup lang="ts">
 const tokenCookie = useCookie('token')
 
-const login = async (username, password) => {
+async function login(username, password) {
   const token = await $fetch('/api/token', { /** ... */ }) // Sets `token` cookie on response
   refreshCookie('token')
 }

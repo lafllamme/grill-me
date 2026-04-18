@@ -10,13 +10,13 @@ const activeComponent = ref(CompA)
 <template>
   <div class="demo">
     <label>
-      <input type="radio" v-model="activeComponent" :value="CompA" /> A
+      <input v-model="activeComponent" type="radio" :value="CompA"> A
     </label>
     <label>
-      <input type="radio" v-model="activeComponent" :value="CompB" /> B
+      <input v-model="activeComponent" type="radio" :value="CompB"> B
     </label>
     <Transition name="fade" mode="out-in">
-      <component :is="activeComponent"></component>
+      <component :is="activeComponent" />
     </Transition>
   </div>
 </template>

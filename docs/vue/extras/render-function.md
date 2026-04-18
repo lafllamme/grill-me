@@ -83,7 +83,7 @@ The full `VNode` interface contains many other internal properties, but it is st
 When using templates with Composition API, the return value of the `setup()` hook is used to expose data to the template. When using render functions, however, we can directly return the render function instead:
 
 ```js
-import { ref, h } from 'vue'
+import { h, ref } from 'vue'
 
 export default {
   props: {
@@ -227,7 +227,9 @@ const vnode = h('button', ['Hello'])
 
 <template>
   <!-- Via <component /> -->
-  <component :is="vnode">Hi</component>
+  <component :is="vnode">
+    Hi
+  </component>
 
   <!-- Or directly as element -->
   <vnode />
@@ -254,7 +256,12 @@ const vnode = <div>hello</div>
 Inside JSX expressions, use curly braces to embed dynamic values:
 
 ```jsx
-const vnode = <div id={dynamicId}>hello, {userName}</div>
+const vnode = (
+  <div id={dynamicId}>
+    hello,
+    {userName}
+  </div>
+)
 ```
 
 `create-vue` and Vue CLI both have options for scaffolding projects with pre-configured JSX support. If you are configuring JSX manually, please refer to the documentation of [`@vue/babel-plugin-jsx`](https://github.com/vuejs/jsx-next) for details.
@@ -455,8 +462,8 @@ h('div', {
 To create a vnode for a component, the first argument passed to `h()` should be the component definition. This means when using render functions, it is unnecessary to register components - you can just use the imported components directly:
 
 ```js
-import Foo from './Foo.vue'
 import Bar from './Bar.jsx'
+import Foo from './Foo.vue'
 
 function render() {
   return h('div', [h(Foo), h(Bar)])
@@ -479,8 +486,8 @@ As we can see, `h` can work with components imported from any file format as lon
 Dynamic components are straightforward with render functions:
 
 ```js
-import Foo from './Foo.vue'
 import Bar from './Bar.jsx'
+import Foo from './Foo.vue'
 
 function render() {
   return ok.value ? h(Foo) : h(Bar)
@@ -634,9 +641,11 @@ export default {
 JSX equivalent:
 
 ```jsx
-<MyComponent>{{
-  default: ({ text }) => <p>{ text }</p>  
-}}</MyComponent>
+<MyComponent>
+  {{
+    default: ({ text }) => <p>{ text }</p>
+  }}
+</MyComponent>
 ```
 
 ### Built-in Components {#built-in-components}
@@ -649,7 +658,7 @@ JSX equivalent:
 import { h, KeepAlive, Teleport, Transition, TransitionGroup } from 'vue'
 
 export default {
-  setup () {
+  setup() {
     return () => h(Transition, { mode: 'out-in' }, /* ... */)
   }
 }
@@ -662,7 +671,7 @@ export default {
 import { h, KeepAlive, Teleport, Transition, TransitionGroup } from 'vue'
 
 export default {
-  render () {
+  render() {
     return h(Transition, { mode: 'out-in' }, /* ... */)
   }
 }
@@ -683,8 +692,8 @@ export default {
   setup(props, { emit }) {
     return () =>
       h(SomeComponent, {
-        modelValue: props.modelValue,
-        'onUpdate:modelValue': (value) => emit('update:modelValue', value)
+        'modelValue': props.modelValue,
+        'onUpdate:modelValue': value => emit('update:modelValue', value)
       })
   }
 }
@@ -699,8 +708,8 @@ export default {
   emits: ['update:modelValue'],
   render() {
     return h(SomeComponent, {
-      modelValue: this.modelValue,
-      'onUpdate:modelValue': (value) => this.$emit('update:modelValue', value)
+      'modelValue': this.modelValue,
+      'onUpdate:modelValue': value => this.$emit('update:modelValue', value)
     })
   }
 }

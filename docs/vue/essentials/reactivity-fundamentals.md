@@ -565,7 +565,7 @@ import { debounce } from 'lodash-es'
 export default {
   methods: {
     // Debouncing with Lodash
-    click: debounce(function () {
+    click: debounce(() => {
       // ... respond to click ...
     }, 500)
   }

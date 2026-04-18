@@ -341,14 +341,14 @@ Mutation methods, as the name suggests, mutate the original array they are calle
 
 ```js
 // `items` is a ref with array value
-items.value = items.value.filter((item) => item.message.match(/Foo/))
+items.value = items.value.filter(item => item.message.match(/Foo/))
 ```
 
 </div>
 <div class="options-api">
 
 ```js
-this.items = this.items.filter((item) => item.message.match(/Foo/))
+this.items = this.items.filter(item => item.message.match(/Foo/))
 ```
 
 </div>
@@ -367,7 +367,7 @@ For example:
 const numbers = ref([1, 2, 3, 4, 5])
 
 const evenNumbers = computed(() => {
-  return numbers.value.filter((n) => n % 2 === 0)
+  return numbers.value.filter(n => n % 2 === 0)
 })
 ```
 
@@ -404,7 +404,7 @@ const sets = ref([
 ])
 
 function even(numbers) {
-  return numbers.filter((number) => number % 2 === 0)
+  return numbers.filter(number => number % 2 === 0)
 }
 ```
 

@@ -1,14 +1,19 @@
 <script setup>
 import { ref } from 'vue'
+
 const show = ref(true)
 </script>
 
 <template>
   <div class="demo">
-    <button @click="show = !show" style="margin-bottom: 20px">Toggle</button>
+    <button style="margin-bottom: 20px" @click="show = !show">
+      Toggle
+    </button>
     <Transition duration="550" name="nested">
       <div v-if="show" class="transition-demo-outer">
-        <div class="transition-demo-inner">Hello</div>
+        <div class="transition-demo-inner">
+          Hello
+        </div>
       </div>
     </Transition>
   </div>

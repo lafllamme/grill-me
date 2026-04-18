@@ -1,19 +1,19 @@
 <script setup>
-import { ref, computed } from 'vue'
 import gsap from 'gsap'
+import { computed, ref } from 'vue'
 
 const list = [
   { msg: 'Bruce Lee' },
   { msg: 'Jackie Chan' },
   { msg: 'Chuck Norris' },
   { msg: 'Jet Li' },
-  { msg: 'Kung Fury' }
+  { msg: 'Kung Fury' },
 ]
 
 const query = ref('')
 
 const computedList = computed(() => {
-  return list.filter((item) => item.msg.toLowerCase().includes(query.value.toLowerCase()))
+  return list.filter(item => item.msg.toLowerCase().includes(query.value.toLowerCase()))
 })
 
 function onBeforeEnter(el) {
@@ -26,7 +26,7 @@ function onEnter(el, done) {
     opacity: 1,
     height: '1.6em',
     delay: el.dataset.index * 0.15,
-    onComplete: done
+    onComplete: done,
   })
 }
 
@@ -35,14 +35,14 @@ function onLeave(el, done) {
     opacity: 0,
     height: 0,
     delay: el.dataset.index * 0.15,
-    onComplete: done
+    onComplete: done,
   })
 }
 </script>
 
 <template>
   <div class="demo" style="height: 265px">
-    <input v-model="query" style="margin-bottom: 20px" />
+    <input v-model="query" style="margin-bottom: 20px">
     <TransitionGroup
       tag="ul"
       :css="false"

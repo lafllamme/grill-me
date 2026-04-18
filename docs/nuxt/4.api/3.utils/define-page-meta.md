@@ -66,7 +66,7 @@ interface PageMeta {
     You may define a [custom regular expression](/docs/4.x/api/utils/define-page-meta#using-a-custom-regular-expression) if you have a more complex pattern than can be expressed with the file name.
 
   **`props`**
-  
+
   - **Type**: [`RouteRecordRaw['props']`](https://router.vuejs.org/guide/essentials/passing-props)
 
     Allows accessing the route `params` as props passed to the page component.

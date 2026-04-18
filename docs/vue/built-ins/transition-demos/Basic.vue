@@ -1,13 +1,18 @@
 <script setup>
 import { ref } from 'vue'
+
 const show = ref(true)
 </script>
 
 <template>
   <div class="demo">
-    <button @click="show = !show">Toggle Fade</button>
+    <button @click="show = !show">
+      Toggle Fade
+    </button>
     <Transition name="fade">
-      <p style="margin-top: 20px" v-if="show">hello</p>
+      <p v-if="show" style="margin-top: 20px">
+        hello
+      </p>
     </Transition>
   </div>
 </template>

@@ -128,7 +128,9 @@ export default {
 </script>
 
 <template>
-  <button @click="count++">Count is: {{ count }}</button>
+  <button @click="count++">
+    Count is: {{ count }}
+  </button>
 </template>
 
 <style scoped>
@@ -144,11 +146,14 @@ button {
 ```vue
 <script setup>
 import { ref } from 'vue'
+
 const count = ref(0)
 </script>
 
 <template>
-  <button @click="count++">Count is: {{ count }}</button>
+  <button @click="count++">
+    Count is: {{ count }}
+  </button>
 </template>
 
 <style scoped>
@@ -181,25 +186,27 @@ export default {
     }
   },
 
+  // Lifecycle hooks are called at different stages
+  // of a component's lifecycle.
+  // This function will be called when the component is mounted.
+  mounted() {
+    console.log(`The initial count is ${this.count}.`)
+  },
+
   // Methods are functions that mutate state and trigger updates.
   // They can be bound as event handlers in templates.
   methods: {
     increment() {
       this.count++
     }
-  },
-
-  // Lifecycle hooks are called at different stages
-  // of a component's lifecycle.
-  // This function will be called when the component is mounted.
-  mounted() {
-    console.log(`The initial count is ${this.count}.`)
   }
 }
 </script>
 
 <template>
-  <button @click="increment">Count is: {{ count }}</button>
+  <button @click="increment">
+    Count is: {{ count }}
+  </button>
 </template>
 ```
 
@@ -213,7 +220,7 @@ Here is the same component, with the exact same template, but using Composition 
 
 ```vue
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 // reactive state
 const count = ref(0)
@@ -230,7 +237,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <button @click="increment">Count is: {{ count }}</button>
+  <button @click="increment">
+    Count is: {{ count }}
+  </button>
 </template>
 ```
 

@@ -33,11 +33,15 @@ const open = ref(false)
 </script>
 
 <template>
-  <button @click="open = true">Open Modal</button>
+  <button @click="open = true">
+    Open Modal
+  </button>
 
   <div v-if="open" class="modal">
     <p>Hello from the modal!</p>
-    <button @click="open = false">Close</button>
+    <button @click="open = false">
+      Close
+    </button>
   </div>
 </template>
 
@@ -68,11 +72,15 @@ export default {
 </script>
 
 <template>
-  <button @click="open = true">Open Modal</button>
+  <button @click="open = true">
+    Open Modal
+  </button>
 
   <div v-if="open" class="modal">
     <p>Hello from the modal!</p>
-    <button @click="open = false">Close</button>
+    <button @click="open = false">
+      Close
+    </button>
   </div>
 </template>
 

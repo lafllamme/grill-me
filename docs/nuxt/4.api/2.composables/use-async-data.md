@@ -47,7 +47,8 @@ const { data: posts } = await useAsyncData(
       page: page.value,
     },
     signal,
-  }), {
+  }),
+  {
     watch: [page],
   },
 )

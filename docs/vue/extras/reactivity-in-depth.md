@@ -22,8 +22,8 @@ JavaScript doesn’t usually work like this. If we were to write something compa
 
 ```js
 let A0 = 1
-let A1 = 2
-let A2 = A0 + A1
+const A1 = 2
+const A2 = A0 + A1
 
 console.log(A2) // 3
 
@@ -130,7 +130,7 @@ Inside `trigger()`, we again lookup the subscriber effects for the property. But
 ```js
 function trigger(target, key) {
   const effects = getSubscribersForProperty(target, key)
-  effects.forEach((effect) => effect())
+  effects.forEach(effect => effect())
 }
 ```
 
@@ -172,7 +172,7 @@ A0.value = 2
 Using a reactive effect to mutate a ref isn't the most interesting use case - in fact, using a computed property makes it more declarative:
 
 ```js
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const A0 = ref(0)
 const A1 = ref(1)
@@ -377,16 +377,16 @@ export function useImmer(baseState) {
 One of the most popular state machine implementations in JavaScript is [XState](https://xstate.js.org/). Here's a composable that integrates with it:
 
 ```js
-import { createMachine, interpret } from 'xstate'
 import { shallowRef } from 'vue'
+import { createMachine, interpret } from 'xstate'
 
 export function useMachine(options) {
   const machine = createMachine(options)
   const state = shallowRef(machine.initialState)
   const service = interpret(machine)
-    .onTransition((newState) => (state.value = newState))
+    .onTransition(newState => (state.value = newState))
     .start()
-  const send = (event) => service.send(event)
+  const send = event => service.send(event)
 
   return [state, send]
 }
@@ -436,7 +436,8 @@ export function createSignal(value, options) {
   const get = () => r.value
   const set = (v) => {
     r.value = typeof v === 'function' ? v(r.value) : v
-    if (options?.equals === false) triggerRef(r)
+    if (options?.equals === false)
+      triggerRef(r)
   }
   return [get, set]
 }
@@ -453,7 +454,7 @@ const count = signal(0)
 
 count() // access the value
 count.set(1) // set new value
-count.update((v) => v + 1) // update based on previous value
+count.update(v => v + 1) // update based on previous value
 ```
 
 Again, we can easily replicate the API in Vue:

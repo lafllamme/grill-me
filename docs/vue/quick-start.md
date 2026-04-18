@@ -46,7 +46,7 @@ $ yarn create vue
 
 # For Yarn Modern (v2+)
 $ yarn create vue@latest
-  
+
 # For Yarn ^v4.11
 $ yarn dlx create-vue@latest
 ```
@@ -378,6 +378,7 @@ export default {
 
 ```js [my-component.js]
 import { ref } from 'vue'
+
 export default {
   setup() {
     const count = ref(0)

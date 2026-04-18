@@ -24,7 +24,7 @@ Composition API is a built-in feature of Vue 3 and [Vue 2.7](https://blog.vuejs.
 
 ```vue
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 // reactive state
 const count = ref(0)
@@ -41,7 +41,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <button @click="increment">Count is: {{ count }}</button>
+  <button @click="increment">
+    Count is: {{ count }}
+  </button>
 </template>
 ```
 

@@ -16,7 +16,7 @@ To obtain the reference with Composition API, we can use the [`useTemplateRef()`
 
 ```vue
 <script setup>
-import { useTemplateRef, onMounted } from 'vue'
+import { onMounted, useTemplateRef } from 'vue'
 
 // the first argument must match the ref value in the template
 const input = useTemplateRef('my-input')
@@ -27,7 +27,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <input ref="my-input" />
+  <input ref="my-input">
 </template>
 ```
 
@@ -40,7 +40,7 @@ In versions before 3.5 where `useTemplateRef()` was not introduced, we need to d
 
 ```vue
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 // declare a ref to hold the element reference
 // the name must match template ref value
@@ -52,7 +52,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <input ref="input" />
+  <input ref="input">
 </template>
 ```
 
@@ -87,7 +87,7 @@ export default {
 </script>
 
 <template>
-  <input ref="input" />
+  <input ref="input">
 </template>
 ```
 
@@ -103,7 +103,8 @@ If you are trying to watch the changes of a template ref, make sure to account f
 watchEffect(() => {
   if (input.value) {
     input.value.focus()
-  } else {
+  }
+  else {
     // not mounted yet, or the element was unmounted (e.g. by v-if)
   }
 })
@@ -123,7 +124,7 @@ See also: [Typing Template Refs](/guide/typescript/composition-api#typing-templa
 
 ```vue
 <script setup>
-import { useTemplateRef, onMounted } from 'vue'
+import { onMounted, useTemplateRef } from 'vue'
 import Child from './Child.vue'
 
 const childRef = useTemplateRef('child')
@@ -143,7 +144,7 @@ onMounted(() => {
 
 ```vue
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import Child from './Child.vue'
 
 const child = ref(null)
@@ -207,7 +208,7 @@ defineExpose({
 
 When a parent gets an instance of this component via template refs, the retrieved instance will be of the shape `{ a: number, b: number }` (refs are automatically unwrapped just like on normal instances).
 
-Note that defineExpose must be called before any await operation. Otherwise, properties and methods exposed after the await operation will not be accessible. 
+Note that defineExpose must be called before any await operation. Otherwise, properties and methods exposed after the await operation will not be accessible.
 
 See also: [Typing Component Template Refs](/guide/typescript/composition-api#typing-component-template-refs) <sup class="vt-badge ts" />
 
@@ -250,7 +251,7 @@ When `ref` is used inside `v-for`, the corresponding ref should contain an Array
 
 ```vue
 <script setup>
-import { ref, useTemplateRef, onMounted } from 'vue'
+import { onMounted, ref, useTemplateRef } from 'vue'
 
 const list = ref([
   /* ... */
@@ -279,7 +280,7 @@ In versions before 3.5 where `useTemplateRef()` was not introduced, we need to d
 
 ```vue
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 const list = ref([
   /* ... */

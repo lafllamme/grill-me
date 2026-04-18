@@ -10,9 +10,9 @@ function onMousemove(e) {
 
 <template>
   <div
-    @mousemove="onMousemove"
     :style="{ backgroundColor: `hsl(${x}, 80%, 50%)` }"
     class="demo movearea"
+    @mousemove="onMousemove"
   >
     <p>Move your mouse across this div...</p>
     <p>x: {{ x }}</p>
