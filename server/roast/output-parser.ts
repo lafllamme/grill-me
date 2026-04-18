@@ -151,19 +151,29 @@ export const parseRoastOutput = (raw: string): ParsedRoastContent => {
   const parsedJson = parseJsonCandidate(raw)
   const parsed = parsedJson ?? parseLineCandidate(raw)
 
-  const roastWords = parsed.roastLines
-    .join(" ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, ROAST_LIMITS.maxRoastWords)
+  let remainingWords = ROAST_LIMITS.maxRoastWords
+  const roastLines: string[] = []
 
-  const roastText = roastWords.join(" ").trim()
-  const roastLines = toRoastLines(roastText)
+  for (const line of parsed.roastLines) {
+    if (remainingWords <= 0)
+      break
+
+    const words = line
+      .split(/\s+/)
+      .filter(Boolean)
+
+    if (words.length === 0)
+      continue
+
+    const limitedLineWords = words.slice(0, remainingWords)
+    roastLines.push(limitedLineWords.join(" "))
+    remainingWords -= limitedLineWords.length
+  }
 
   const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
 
   return {
-    roastLines,
+    roastLines: toRoastLines(roastLines.join("\n")),
     feedback,
     parserPath: parsed.parserPath,
   }

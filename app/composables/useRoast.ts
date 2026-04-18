@@ -28,6 +28,29 @@ export const useRoast = () => {
 
   const activeController = useState<AbortController | null>("roast-abort-controller", () => null)
 
+  const splitLiveRoastAndFeedback = (value: string): { roastText: string, feedbackItems: string[] } => {
+    const markerMatch = /(?:^|\n)\s*FEEDBACK:\s*/i.exec(value)
+    if (!markerMatch) {
+      return {
+        roastText: value,
+        feedbackItems: [],
+      }
+    }
+
+    const markerIndex = markerMatch.index
+    const roastText = value.slice(0, markerIndex).trimEnd()
+    const feedbackText = value.slice(markerIndex).replace(/^[\s\S]*?FEEDBACK:\s*/i, "")
+    const feedbackItems = feedbackText
+      .split(/\n+/)
+      .map(line => line.replace(/^[-*•\d.)\s]+/, "").trim())
+      .filter(Boolean)
+
+    return {
+      roastText,
+      feedbackItems,
+    }
+  }
+
   const resetStreamState = () => {
     isStreaming.value = false
     streamStatus.value = []
@@ -72,7 +95,11 @@ export const useRoast = () => {
 
       if (event.type === "typing") {
         const typingEvent = event as RoastStreamTypingEvent
-        partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
+        const combined = `${partialRoast.value}${typingEvent.chunk}`
+        const separated = splitLiveRoastAndFeedback(combined)
+        partialRoast.value = separated.roastText
+        if (separated.feedbackItems.length > 0)
+          partialFeedback.value = separated.feedbackItems
         return
       }
 
@@ -96,8 +123,10 @@ export const useRoast = () => {
       if (event.type === "done") {
         const doneEvent = event as RoastStreamDoneEvent
         result.value = doneEvent.data
-        partialRoast.value = doneEvent.data.roastLines.join("\n")
-        partialFeedback.value = [...doneEvent.data.feedback]
+        if (!partialRoast.value.trim())
+          partialRoast.value = doneEvent.data.roastLines.join("\n")
+        if (partialFeedback.value.length === 0)
+          partialFeedback.value = [...doneEvent.data.feedback]
         return
       }
 

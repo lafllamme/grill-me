@@ -12,6 +12,10 @@ const {
   streamError,
 } = useRoast()
 
+const hasSessionOutput = computed(() => {
+  return streamStatus.value.length > 0 || partialRoast.value.trim().length > 0 || partialFeedback.value.length > 0
+})
+
 const partialRoastLines = computed(() => {
   return partialRoast.value
     .split(/\n+/)
@@ -35,21 +39,20 @@ const partialRoastLines = computed(() => {
       </div>
 
       <div class="text-sm font-mono p-8 min-h-[400px] space-y-4">
-        <div v-if="pending && isStreaming" class="space-y-4">
+        <div v-if="hasSessionOutput || pending || result" class="space-y-4">
           <div class="flex gap-4">
-            <span class="text-on-surface-variant/90">[live]</span>
-            <span class="text-primary font-bold">STREAM:</span>
-            <span class="text-on-surface">Receiving live roast output...</span>
-          </div>
-
-          <div v-if="partialRoastLines.length > 0" class="space-y-2">
-            <p
-              v-for="(line, index) in partialRoastLines"
-              :key="`line-${index}-${line}`"
-              class="text-on-surface leading-relaxed"
-            >
-              {{ line }}
-            </p>
+            <span class="text-on-surface-variant/90">{{ isStreaming ? "[live]" : pending ? "[prep]" : "[done]" }}</span>
+            <span :class="isStreaming ? 'text-primary' : pending ? 'text-amber-400' : 'text-green-400'" class="font-bold">
+              {{ isStreaming ? "STREAM:" : pending ? "PREP:" : "SUCCESS:" }}
+            </span>
+            <span class="text-on-surface">
+              <template v-if="isStreaming">Receiving live roast output...</template>
+              <template v-else-if="pending">Preparing roast stream...</template>
+              <template v-else-if="result">
+                Roast generated for @{{ result.username }} ({{ result.meta.commitCount }} commits / {{ result.meta.prCount }} PRs)
+              </template>
+              <template v-else>Session completed.</template>
+            </span>
           </div>
 
           <div v-if="streamStatus.length > 0" class="text-on-surface-variant/90 space-y-1">
@@ -62,9 +65,18 @@ const partialRoastLines = computed(() => {
             </p>
           </div>
 
+          <blockquote v-if="partialRoastLines.length > 0" class="text-lg text-on-surface leading-relaxed font-body pl-4 border-l-4 border-primary italic space-y-2">
+            <p
+              v-for="(line, index) in partialRoastLines"
+              :key="`line-${index}-${line}`"
+            >
+              {{ line }}
+            </p>
+          </blockquote>
+
           <div v-if="partialFeedback.length > 0" class="pt-2">
             <p class="text-xs text-primary tracking-[0.14em] font-display mb-2 uppercase">
-              Feedback (live)
+              Feedback
             </p>
             <ul class="space-y-2">
               <li
@@ -82,36 +94,8 @@ const partialRoastLines = computed(() => {
             {{ streamError }}
           </p>
 
-          <div class="text-primary pt-4 animate-pulse">
+          <div v-if="isStreaming" class="text-primary pt-4 animate-pulse">
             _
-          </div>
-        </div>
-
-        <div v-else-if="result" class="space-y-4">
-          <div class="flex flex-wrap gap-4">
-            <span class="text-on-surface-variant/90">[done]</span>
-            <span class="text-green-400 font-bold">SUCCESS:</span>
-            <span class="text-on-surface">
-              Roast generated for @{{ result.username }} ({{ result.meta.commitCount }} commits / {{ result.meta.prCount }} PRs)
-            </span>
-          </div>
-
-          <blockquote class="text-lg text-on-surface leading-relaxed font-serif pl-4 border-l-4 border-primary italic">
-            <p v-for="(line, index) in result.roastLines" :key="`result-line-${index}-${line}`">
-              {{ line }}
-            </p>
-          </blockquote>
-
-          <div class="pt-2">
-            <p class="text-xs text-primary tracking-[0.14em] font-display mb-2 uppercase">
-              Feedback
-            </p>
-            <ul class="space-y-2">
-              <li v-for="(item, index) in result.feedback" :key="`${index}-${item}`" class="text-on-surface-variant flex gap-2">
-                <span class="text-primary">-</span>
-                <span>{{ item }}</span>
-              </li>
-            </ul>
           </div>
         </div>
 
