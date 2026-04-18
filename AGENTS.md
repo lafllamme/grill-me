@@ -263,5 +263,5 @@ Typical structure for this project should follow Nuxt conventions such as:
 
 Additional project specific guidance can live in:
 
-- `docs/unocss`
-- `docs/nuxt`
+- `docs/unocss` - everything related to styling configuration
+- `docs/nuxt` - everything related to Nuxt in all forms
