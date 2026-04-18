@@ -1,4 +1,4 @@
-import { ROAST_LIMITS, toRoastLines } from "~~/shared/roast/contracts"
+import { ROAST_LIMITS, toRoastLines } from '~~/shared/roast/contracts'
 
 interface ParsedRoastContent {
   roastLines: string[]
@@ -14,48 +14,48 @@ export interface ParsedModelEnvelope {
 /**
  * Extracts generated text from multiple Cloudflare/OpenAI-compatible response shapes.
  */
-export const extractModelText = (payload: any): ParsedModelEnvelope => {
+export function extractModelText(payload: any): ParsedModelEnvelope {
   const joinContentArray = (value: unknown): string => {
     if (!Array.isArray(value))
-      return ""
+      return ''
 
     const chunks = value
       .map((item) => {
-        if (typeof item === "string")
+        if (typeof item === 'string')
           return item
-        if (item && typeof item === "object" && typeof (item as any).text === "string")
+        if (item && typeof item === 'object' && typeof (item as any).text === 'string')
           return String((item as any).text)
-        if (item && typeof item === "object" && typeof (item as any).content === "string")
+        if (item && typeof item === 'object' && typeof (item as any).content === 'string')
           return String((item as any).content)
-        return ""
+        return ''
       })
       .filter(Boolean)
 
-    return chunks.join("")
+    return chunks.join('')
   }
 
   const candidates: Array<{ path: string, value: unknown }> = [
-    { path: "result.response", value: payload?.result?.response },
-    { path: "result.output_text", value: payload?.result?.output_text },
-    { path: "result.text", value: payload?.result?.text },
-    { path: "result.choices[0].message.content", value: payload?.result?.choices?.[0]?.message?.content },
-    { path: "result.choices[0].delta.content", value: payload?.result?.choices?.[0]?.delta?.content },
-    { path: "result.output[0].content[0].text", value: payload?.result?.output?.[0]?.content?.[0]?.text },
-    { path: "result.output[0].content[0]", value: payload?.result?.output?.[0]?.content?.[0] },
-    { path: "response", value: payload?.response },
-    { path: "output_text", value: payload?.output_text },
-    { path: "text", value: payload?.text },
-    { path: "choices[0].message.content", value: payload?.choices?.[0]?.message?.content },
-    { path: "choices[0].message.content[]", value: joinContentArray(payload?.choices?.[0]?.message?.content) },
-    { path: "choices[0].text", value: payload?.choices?.[0]?.text },
-    { path: "choices[0].delta.content[]", value: joinContentArray(payload?.choices?.[0]?.delta?.content) },
-    { path: "output[0].content[0].text", value: payload?.output?.[0]?.content?.[0]?.text },
-    { path: "output[0].content[0]", value: payload?.output?.[0]?.content?.[0] },
-    { path: "output[0].content[]", value: joinContentArray(payload?.output?.[0]?.content) },
+    { path: 'result.response', value: payload?.result?.response },
+    { path: 'result.output_text', value: payload?.result?.output_text },
+    { path: 'result.text', value: payload?.result?.text },
+    { path: 'result.choices[0].message.content', value: payload?.result?.choices?.[0]?.message?.content },
+    { path: 'result.choices[0].delta.content', value: payload?.result?.choices?.[0]?.delta?.content },
+    { path: 'result.output[0].content[0].text', value: payload?.result?.output?.[0]?.content?.[0]?.text },
+    { path: 'result.output[0].content[0]', value: payload?.result?.output?.[0]?.content?.[0] },
+    { path: 'response', value: payload?.response },
+    { path: 'output_text', value: payload?.output_text },
+    { path: 'text', value: payload?.text },
+    { path: 'choices[0].message.content', value: payload?.choices?.[0]?.message?.content },
+    { path: 'choices[0].message.content[]', value: joinContentArray(payload?.choices?.[0]?.message?.content) },
+    { path: 'choices[0].text', value: payload?.choices?.[0]?.text },
+    { path: 'choices[0].delta.content[]', value: joinContentArray(payload?.choices?.[0]?.delta?.content) },
+    { path: 'output[0].content[0].text', value: payload?.output?.[0]?.content?.[0]?.text },
+    { path: 'output[0].content[0]', value: payload?.output?.[0]?.content?.[0] },
+    { path: 'output[0].content[]', value: joinContentArray(payload?.output?.[0]?.content) },
   ]
 
   for (const candidate of candidates) {
-    if (typeof candidate.value === "string" && candidate.value.trim()) {
+    if (typeof candidate.value === 'string' && candidate.value.trim()) {
       return {
         rawText: candidate.value,
         parserPath: candidate.path,
@@ -64,24 +64,24 @@ export const extractModelText = (payload: any): ParsedModelEnvelope => {
   }
 
   return {
-    rawText: "",
-    parserPath: "none",
+    rawText: '',
+    parserPath: 'none',
   }
 }
 
-const parseJsonCandidate = (raw: string): ParsedRoastContent | null => {
+function parseJsonCandidate(raw: string): ParsedRoastContent | null {
   const normalized = raw
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```\s*$/i, "")
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/, '')
     .trim()
 
   const jsonCandidates = [
     raw,
     normalized,
     (() => {
-      const first = raw.indexOf("{")
-      const last = raw.lastIndexOf("}")
-      return first >= 0 && last > first ? raw.slice(first, last + 1) : ""
+      const first = raw.indexOf('{')
+      const last = raw.lastIndexOf('}')
+      return first >= 0 && last > first ? raw.slice(first, last + 1) : ''
     })(),
   ].filter(Boolean)
 
@@ -89,13 +89,13 @@ const parseJsonCandidate = (raw: string): ParsedRoastContent | null => {
     try {
       const parsed = JSON.parse(candidate)
       const roastLines = Array.isArray(parsed?.roastLines)
-        ? parsed.roastLines.filter((item: unknown) => typeof item === "string").map((item: string) => item.trim()).filter(Boolean)
+        ? parsed.roastLines.filter((item: unknown) => typeof item === 'string').map((item: string) => item.trim()).filter(Boolean)
         : []
       const feedback = Array.isArray(parsed?.feedback)
-        ? parsed.feedback.filter((item: unknown) => typeof item === "string").map((item: string) => item.trim()).filter(Boolean)
+        ? parsed.feedback.filter((item: unknown) => typeof item === 'string').map((item: string) => item.trim()).filter(Boolean)
         : []
 
-      const joinedRoast = typeof parsed?.roast === "string" ? parsed.roast.trim() : ""
+      const joinedRoast = typeof parsed?.roast === 'string' ? parsed.roast.trim() : ''
       const normalizedRoastLines = roastLines.length > 0 ? roastLines : toRoastLines(joinedRoast)
 
       if (normalizedRoastLines.length === 0)
@@ -104,7 +104,7 @@ const parseJsonCandidate = (raw: string): ParsedRoastContent | null => {
       return {
         roastLines: normalizedRoastLines,
         feedback,
-        parserPath: "json",
+        parserPath: 'json',
       }
     }
     catch {
@@ -115,11 +115,11 @@ const parseJsonCandidate = (raw: string): ParsedRoastContent | null => {
   return null
 }
 
-const parseLineCandidate = (raw: string): ParsedRoastContent => {
-  const normalizedRaw = raw.replace(/\r\n/g, "\n")
+function parseLineCandidate(raw: string): ParsedRoastContent {
+  const normalizedRaw = raw.replace(/\r\n/g, '\n')
   const feedbackSplit = normalizedRaw.split(/\n?FEEDBACK:\n?/i)
-  const roastSection = feedbackSplit[0] || ""
-  const feedbackSection = feedbackSplit.slice(1).join("\n")
+  const roastSection = feedbackSplit[0] || ''
+  const feedbackSection = feedbackSplit.slice(1).join('\n')
 
   const roastLines = roastSection
     .split(/\n+/)
@@ -134,20 +134,20 @@ const parseLineCandidate = (raw: string): ParsedRoastContent => {
     .map(line => line.trim())
     .filter(Boolean)
     .filter(line => /^[-*•\d.)]\s+/.test(line))
-    .map(line => line.replace(/^[-*•\d.)\s]+/, "").trim())
+    .map(line => line.replace(/^[-*•\d.)\s]+/, '').trim())
     .filter(Boolean)
 
   return {
-    roastLines: toRoastLines(roastLines.join("\n")),
+    roastLines: toRoastLines(roastLines.join('\n')),
     feedback,
-    parserPath: "lines",
+    parserPath: 'lines',
   }
 }
 
 /**
  * Parses model text into roast lines and feedback bullets with normalization.
  */
-export const parseRoastOutput = (raw: string): ParsedRoastContent => {
+export function parseRoastOutput(raw: string): ParsedRoastContent {
   const parsedJson = parseJsonCandidate(raw)
   const parsed = parsedJson ?? parseLineCandidate(raw)
 
@@ -166,14 +166,14 @@ export const parseRoastOutput = (raw: string): ParsedRoastContent => {
       continue
 
     const limitedLineWords = words.slice(0, remainingWords)
-    roastLines.push(limitedLineWords.join(" "))
+    roastLines.push(limitedLineWords.join(' '))
     remainingWords -= limitedLineWords.length
   }
 
   const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
 
   return {
-    roastLines: toRoastLines(roastLines.join("\n")),
+    roastLines: toRoastLines(roastLines.join('\n')),
     feedback,
     parserPath: parsed.parserPath,
   }
@@ -182,20 +182,18 @@ export const parseRoastOutput = (raw: string): ParsedRoastContent => {
 /**
  * Ensures minimal viable response shape with fallback feedback fillers.
  */
-export const normalizeRoastParts = (
-  parsed: ParsedRoastContent,
-): { roastLines: string[], feedback: string[] } => {
+export function normalizeRoastParts(parsed: ParsedRoastContent): { roastLines: string[], feedback: string[] } {
   const fallbackFeedback = [
-    "Ship smaller diffs with one concern per commit.",
-    "Name symbols for intent, not implementation details.",
-    "Add tests near risky changes before refactors.",
+    'Ship smaller diffs with one concern per commit.',
+    'Name symbols for intent, not implementation details.',
+    'Add tests near risky changes before refactors.',
   ]
 
   const feedbackPool = parsed.feedback.length > 0 ? parsed.feedback : fallbackFeedback
   const feedback = feedbackPool.slice(0, ROAST_LIMITS.maxFeedbackItems)
 
   while (feedback.length < ROAST_LIMITS.minFeedbackItems) {
-    feedback.push("Keep commit messages explicit about why the change exists.")
+    feedback.push('Keep commit messages explicit about why the change exists.')
   }
 
   return {

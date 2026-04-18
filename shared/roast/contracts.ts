@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from 'zod'
 
 /**
  * GitHub username constraints from GitHub docs:
@@ -39,14 +39,14 @@ export const ROAST_DEFAULTS = {
   aiMaxTokens: 2200,
   aiTemperature: 0.55,
   aiTopP: 0.92,
-  promptVariationMode: "moderate",
-  debugLevel: "minimal",
+  promptVariationMode: 'moderate',
+  debugLevel: 'minimal',
 } as const
 
-export const roastDebugLevelSchema = z.enum(["off", "minimal", "full"])
+export const roastDebugLevelSchema = z.enum(['off', 'minimal', 'full'])
 export type RoastDebugLevel = z.infer<typeof roastDebugLevelSchema>
 
-export const roastVariationModeSchema = z.enum(["stable", "moderate", "wild"])
+export const roastVariationModeSchema = z.enum(['stable', 'moderate', 'wild'])
 export type RoastVariationMode = z.infer<typeof roastVariationModeSchema>
 
 export const roastRequestBodySchema = z.object({
@@ -74,7 +74,7 @@ export const roastMetaSchema = z.object({
 export type RoastMeta = z.infer<typeof roastMetaSchema>
 
 export const debugRequestInfoSchema = z.object({
-  stage: z.enum(["github_profile", "github_events", "github_commit", "cloudflare_ai"]),
+  stage: z.enum(['github_profile', 'github_events', 'github_commit', 'cloudflare_ai']),
   url: z.string(),
   durationMs: z.number().nonnegative(),
   ok: z.boolean(),
@@ -131,71 +131,71 @@ export const roastErrorSchema = z.object({
 export type RoastErrorResponse = z.infer<typeof roastErrorSchema>
 
 export const roastStreamMetaEventSchema = z.object({
-  type: z.literal("meta"),
+  type: z.literal('meta'),
   requestId: z.string(),
   username: z.string(),
 })
 export type RoastStreamMetaEvent = z.infer<typeof roastStreamMetaEventSchema>
 
 export const roastStreamTypingEventSchema = z.object({
-  type: z.literal("typing"),
+  type: z.literal('typing'),
   chunk: z.string(),
 })
 export type RoastStreamTypingEvent = z.infer<typeof roastStreamTypingEventSchema>
 
 export const roastStreamTypingRoastEventSchema = z.object({
-  type: z.literal("typing_roast"),
+  type: z.literal('typing_roast'),
   chunk: z.string(),
 })
 export type RoastStreamTypingRoastEvent = z.infer<typeof roastStreamTypingRoastEventSchema>
 
 export const roastStreamStatusEventSchema = z.object({
-  type: z.literal("status"),
+  type: z.literal('status'),
   phase: z.enum([
-    "fetching_github",
-    "selecting_evidence",
-    "building_prompt",
-    "calling_ai",
-    "parsing_output",
-    "finalizing",
+    'fetching_github',
+    'selecting_evidence',
+    'building_prompt',
+    'calling_ai',
+    'parsing_output',
+    'finalizing',
   ]),
   message: z.string(),
 })
 export type RoastStreamStatusEvent = z.infer<typeof roastStreamStatusEventSchema>
 
 export const roastStreamFeedbackEventSchema = z.object({
-  type: z.literal("feedback"),
+  type: z.literal('feedback'),
   item: z.string(),
   feedback: z.array(z.string()),
 })
 export type RoastStreamFeedbackEvent = z.infer<typeof roastStreamFeedbackEventSchema>
 
 export const roastStreamFeedbackItemEventSchema = z.object({
-  type: z.literal("feedback_item"),
+  type: z.literal('feedback_item'),
   item: z.string(),
   feedback: z.array(z.string()),
 })
 export type RoastStreamFeedbackItemEvent = z.infer<typeof roastStreamFeedbackItemEventSchema>
 
 export const roastStreamDebugEventSchema = z.object({
-  type: z.literal("debug"),
+  type: z.literal('debug'),
   debug: roastDebugSchema,
 })
 export type RoastStreamDebugEvent = z.infer<typeof roastStreamDebugEventSchema>
 
 export const roastStreamDoneEventSchema = z.object({
-  type: z.literal("done"),
+  type: z.literal('done'),
   data: roastResponseSchema,
 })
 export type RoastStreamDoneEvent = z.infer<typeof roastStreamDoneEventSchema>
 
 export const roastStreamErrorEventSchema = z.object({
-  type: z.literal("error"),
+  type: z.literal('error'),
   error: roastErrorSchema.shape.error,
 })
 export type RoastStreamErrorEvent = z.infer<typeof roastStreamErrorEventSchema>
 
-export const roastStreamEventSchema = z.discriminatedUnion("type", [
+export const roastStreamEventSchema = z.discriminatedUnion('type', [
   roastStreamMetaEventSchema,
   roastStreamTypingEventSchema,
   roastStreamTypingRoastEventSchema,
@@ -223,14 +223,14 @@ export interface RoastRuntimeOptions {
 /**
  * Parses common truthy values from payload/env.
  */
-export const parseBoolean = (value: unknown): boolean => {
-  if (typeof value === "boolean")
+export function parseBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean')
     return value
 
-  if (typeof value === "string")
-    return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase())
+  if (typeof value === 'string')
+    return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())
 
-  if (typeof value === "number")
+  if (typeof value === 'number')
     return value === 1
 
   return false
@@ -239,7 +239,7 @@ export const parseBoolean = (value: unknown): boolean => {
 /**
  * Parses a positive number from unknown input with safe fallback.
  */
-export const parsePositiveNumber = (value: unknown, fallback: number): number => {
+export function parsePositiveNumber(value: unknown, fallback: number): number {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
@@ -247,7 +247,7 @@ export const parsePositiveNumber = (value: unknown, fallback: number): number =>
 /**
  * Parses a finite bounded number from unknown input.
  */
-export const parseBoundedNumber = (value: unknown, fallback: number, min: number, max: number): number => {
+export function parseBoundedNumber(value: unknown, fallback: number, min: number, max: number): number {
   const parsed = Number(value)
   if (!Number.isFinite(parsed))
     return fallback
@@ -257,24 +257,24 @@ export const parseBoundedNumber = (value: unknown, fallback: number, min: number
 /**
  * Normalizes runtime options from request payload + Nuxt runtime config.
  */
-export const resolveRoastRuntimeOptions = (config: Record<string, unknown>, body: RoastRequestBody): RoastRuntimeOptions => {
+export function resolveRoastRuntimeOptions(config: Record<string, unknown>, body: RoastRequestBody): RoastRuntimeOptions {
   const explicitDebugLevel = body.debugLevel
-    ?? (typeof config.roastDebugLevel === "string" ? config.roastDebugLevel : undefined)
+    ?? (typeof config.roastDebugLevel === 'string' ? config.roastDebugLevel : undefined)
 
   const normalizedDebugLevel = roastDebugLevelSchema.safeParse(explicitDebugLevel).success
     ? (explicitDebugLevel as RoastDebugLevel)
     : parseBoolean(body.includeDebug) || parseBoolean(config.roastDebug)
-      ? "full"
+      ? 'full'
       : (ROAST_DEFAULTS.debugLevel as RoastDebugLevel)
 
   const variationModeInput = body.variationMode
-    ?? (typeof config.roastVariationMode === "string" ? config.roastVariationMode : undefined)
+    ?? (typeof config.roastVariationMode === 'string' ? config.roastVariationMode : undefined)
   const normalizedVariation = roastVariationModeSchema.safeParse(variationModeInput).success
     ? (variationModeInput as RoastVariationMode)
     : (ROAST_DEFAULTS.promptVariationMode as RoastVariationMode)
 
   return {
-    includeDebug: normalizedDebugLevel !== "off",
+    includeDebug: normalizedDebugLevel !== 'off',
     debugLevel: normalizedDebugLevel,
     githubTimeoutMs: parsePositiveNumber(config.githubTimeoutMs, ROAST_DEFAULTS.githubTimeoutMs),
     cfAiTimeoutMs: parsePositiveNumber(config.cfAiTimeoutMs, ROAST_DEFAULTS.aiTimeoutMs),
@@ -288,7 +288,7 @@ export const resolveRoastRuntimeOptions = (config: Record<string, unknown>, body
 /**
  * Converts roast text to line-based representation for UI typewriter rendering.
  */
-export const toRoastLines = (value: string): string[] => {
+export function toRoastLines(value: string): string[] {
   const lines = value
     .split(/\n+/)
     .map(line => line.trim())

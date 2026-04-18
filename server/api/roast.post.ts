@@ -1,8 +1,8 @@
-import { getRequestIP, setResponseStatus } from "h3"
-import { parseRoastRequest } from "../roast/contracts-adapter"
-import { createDebugReport, logServerError, logServerInfo } from "../roast/debug"
-import { runRoastSync, toErrorBody, toHandledError } from "../roast/orchestrator"
-import { checkRateLimit } from "../roast/rate-limit"
+import { getRequestIP, setResponseStatus } from 'h3'
+import { parseRoastRequest } from '../roast/contracts-adapter'
+import { createDebugReport, logServerError, logServerInfo } from '../roast/debug'
+import { runRoastSync, toErrorBody, toHandledError } from '../roast/orchestrator'
+import { checkRateLimit } from '../roast/rate-limit'
 
 export default defineEventHandler(async (event) => {
   const requestId = crypto.randomUUID().slice(0, 8)
@@ -12,10 +12,10 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig(event)
     const debug = createDebugReport(parsed.username)
 
-    const clientIp = getRequestIP(event, { xForwardedFor: true }) || "unknown"
+    const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
     checkRateLimit(clientIp)
 
-    logServerInfo("request", {
+    logServerInfo('request', {
       requestId,
       username: parsed.username,
       clientIp,
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
       debug,
     })
 
-    logServerInfo("success", {
+    logServerInfo('success', {
       requestId,
       username: parsed.username,
       roastLineCount: response.roastLines.length,
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
     const handled = toHandledError(error)
     setResponseStatus(event, handled.statusCode)
 
-    logServerError("failed", {
+    logServerError('failed', {
       requestId,
       statusCode: handled.statusCode,
       statusMessage: handled.statusMessage,

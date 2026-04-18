@@ -1,5 +1,5 @@
-import { createError } from "h3"
-import { ROAST_DEFAULTS } from "~~/shared/roast/contracts"
+import { createError } from 'h3'
+import { ROAST_DEFAULTS } from '~~/shared/roast/contracts'
 
 interface RateLimitEntry {
   count: number
@@ -11,11 +11,7 @@ const rateLimitStore = new Map<string, RateLimitEntry>()
 /**
  * Enforces a simple in-memory IP based rate limit.
  */
-export const checkRateLimit = (
-  ip: string,
-  max = ROAST_DEFAULTS.rateLimitMax,
-  windowMs = ROAST_DEFAULTS.rateLimitWindowMs,
-): void => {
+export function checkRateLimit(ip: string, max = ROAST_DEFAULTS.rateLimitMax, windowMs = ROAST_DEFAULTS.rateLimitWindowMs): void {
   const now = Date.now()
   const entry = rateLimitStore.get(ip)
 
@@ -27,9 +23,9 @@ export const checkRateLimit = (
   if (entry.count >= max) {
     throw createError({
       statusCode: 429,
-      statusMessage: "Too many requests",
+      statusMessage: 'Too many requests',
       data: {
-        code: "rate_limited",
+        code: 'rate_limited',
       },
     })
   }

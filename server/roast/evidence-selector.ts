@@ -1,47 +1,48 @@
-import { ROAST_LIMITS, type SelectionSummary } from "~~/shared/roast/contracts"
-import type { GithubCommit, GithubContext } from "./github-collector"
+import type { SelectionSummary } from '~~/shared/roast/contracts'
+import type { GithubCommit, GithubContext } from './github-collector'
+import { ROAST_LIMITS } from '~~/shared/roast/contracts'
 
 export interface SelectedEvidence {
   username: string
   commits: GithubCommit[]
-  prs: GithubContext["prs"]
+  prs: GithubContext['prs']
   summary: SelectionSummary
 }
 
 const NOISE_KEYWORDS = [
-  "readme",
-  "chore",
-  "typo",
-  "format",
-  "lint",
-  "deps",
-  "version",
-  "bump",
-  "lockfile",
+  'readme',
+  'chore',
+  'typo',
+  'format',
+  'lint',
+  'deps',
+  'version',
+  'bump',
+  'lockfile',
 ]
 
 const CODE_HINTS = [
-  ".ts",
-  ".tsx",
-  ".js",
-  ".jsx",
-  ".vue",
-  ".go",
-  ".rs",
-  ".py",
-  ".rb",
-  ".java",
-  ".kt",
-  ".cs",
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.vue',
+  '.go',
+  '.rs',
+  '.py',
+  '.rb',
+  '.java',
+  '.kt',
+  '.cs',
 ]
 
 /**
  * Scores one commit based on code density, size and non-noise signals.
  */
-const scoreCommit = (commit: GithubCommit): number => {
+function scoreCommit(commit: GithubCommit): number {
   const message = commit.message.toLowerCase()
   const messagePenalty = NOISE_KEYWORDS.some(keyword => message.includes(keyword)) ? -2 : 0
-  const mergePenalty = message.startsWith("merge ") ? -8 : 0
+  const mergePenalty = message.startsWith('merge ') ? -8 : 0
   const sizeScore = Math.min(6, Math.floor((commit.additions + commit.deletions) / 40))
   const changedFilesScore = Math.min(4, Math.floor(commit.changedFiles / 2))
 
@@ -62,7 +63,7 @@ const scoreCommit = (commit: GithubCommit): number => {
 /**
  * Selects the highest-value evidence for prompt context.
  */
-export const selectEvidence = (context: GithubContext): SelectedEvidence => {
+export function selectEvidence(context: GithubContext): SelectedEvidence {
   const candidates = context.commits
     .map(commit => ({ commit, score: scoreCommit(commit) }))
     .sort((left, right) => right.score - left.score)

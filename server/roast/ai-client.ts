@@ -1,7 +1,7 @@
-import { createError } from "h3"
-import { type RoastDebug } from "~~/shared/roast/contracts"
-import { ROAST_LIMITS } from "~~/shared/roast/contracts"
-import { pushDebugRequest } from "./debug"
+import type { RoastDebug } from '~~/shared/roast/contracts'
+import { createError } from 'h3'
+import { ROAST_LIMITS } from '~~/shared/roast/contracts'
+import { pushDebugRequest } from './debug'
 
 export interface AiRequestInput {
   accountId?: string
@@ -16,7 +16,7 @@ export interface AiRequestInput {
   debug?: RoastDebug
 }
 
-const extractStreamTextChunk = (payload: any): string => {
+function extractStreamTextChunk(payload: any): string {
   const candidates: unknown[] = [
     payload?.response,
     payload?.output_text,
@@ -33,23 +33,23 @@ const extractStreamTextChunk = (payload: any): string => {
   ]
 
   for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.length > 0)
+    if (typeof candidate === 'string' && candidate.length > 0)
       return candidate
   }
 
-  return ""
+  return ''
 }
 
 /**
  * Ensures Cloudflare model credentials exist before request execution.
  */
-const assertAiConfig = (input: AiRequestInput): void => {
+function assertAiConfig(input: AiRequestInput): void {
   if (!input.accountId || !input.apiToken || !input.model) {
     throw createError({
       statusCode: 503,
-      statusMessage: "Cloudflare AI is not configured",
+      statusMessage: 'Cloudflare AI is not configured',
       data: {
-        code: "cloudflare_ai_not_configured",
+        code: 'cloudflare_ai_not_configured',
       },
     })
   }
@@ -58,7 +58,7 @@ const assertAiConfig = (input: AiRequestInput): void => {
 /**
  * Sends a synchronous Cloudflare Workers AI request.
  */
-export const runAiSync = async (input: AiRequestInput): Promise<any> => {
+export async function runAiSync(input: AiRequestInput): Promise<any> {
   assertAiConfig(input)
 
   const url = `https://api.cloudflare.com/client/v4/accounts/${input.accountId}/ai/v1/chat/completions`
@@ -68,27 +68,27 @@ export const runAiSync = async (input: AiRequestInput): Promise<any> => {
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${input.apiToken}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${input.apiToken}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: input.model,
         messages: [
-          { role: "system", content: input.systemPrompt },
-          { role: "user", content: input.userPrompt },
+          { role: 'system', content: input.systemPrompt },
+          { role: 'user', content: input.userPrompt },
         ],
         max_tokens: input.maxTokens,
         temperature: input.temperature,
         top_p: input.topP,
-        reasoning_effort: "low",
+        reasoning_effort: 'low',
       }),
       signal: controller.signal,
     })
 
     pushDebugRequest(input.debug, {
-      stage: "cloudflare_ai",
+      stage: 'cloudflare_ai',
       url,
       durationMs: Date.now() - startedAt,
       ok: response.ok,
@@ -98,21 +98,21 @@ export const runAiSync = async (input: AiRequestInput): Promise<any> => {
     if (!response.ok) {
       throw createError({
         statusCode: response.status >= 500 ? 503 : 502,
-        statusMessage: "Cloudflare AI upstream failed",
+        statusMessage: 'Cloudflare AI upstream failed',
         data: {
-          code: "cloudflare_ai_error",
+          code: 'cloudflare_ai_error',
         },
       })
     }
 
     const payload = await response.json()
     if (payload?.error) {
-      const message = String(payload?.error?.message || "Cloudflare AI returned an error envelope")
+      const message = String(payload?.error?.message || 'Cloudflare AI returned an error envelope')
       throw createError({
         statusCode: 502,
         statusMessage: message,
         data: {
-          code: "cloudflare_ai_error",
+          code: 'cloudflare_ai_error',
           upstream: payload?.error,
         },
       })
@@ -121,12 +121,12 @@ export const runAiSync = async (input: AiRequestInput): Promise<any> => {
     return payload
   }
   catch (error: any) {
-    if (error?.name === "AbortError") {
+    if (error?.name === 'AbortError') {
       throw createError({
         statusCode: 503,
-        statusMessage: "Cloudflare AI request timed out",
+        statusMessage: 'Cloudflare AI request timed out',
         data: {
-          code: "cloudflare_ai_timeout",
+          code: 'cloudflare_ai_timeout',
         },
       })
     }
@@ -141,10 +141,7 @@ export const runAiSync = async (input: AiRequestInput): Promise<any> => {
 /**
  * Streams Cloudflare Workers AI response and yields incremental text chunks.
  */
-export const runAiStream = async (
-  input: AiRequestInput,
-  onChunk: (chunk: string) => Promise<void> | void,
-): Promise<{ rawText: string }> => {
+export async function runAiStream(input: AiRequestInput, onChunk: (chunk: string) => Promise<void> | void): Promise<{ rawText: string }> {
   assertAiConfig(input)
 
   const url = `https://api.cloudflare.com/client/v4/accounts/${input.accountId}/ai/v1/chat/completions`
@@ -154,28 +151,28 @@ export const runAiStream = async (
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${input.apiToken}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${input.apiToken}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: input.model,
         messages: [
-          { role: "system", content: input.systemPrompt },
-          { role: "user", content: input.userPrompt },
+          { role: 'system', content: input.systemPrompt },
+          { role: 'user', content: input.userPrompt },
         ],
         stream: true,
         max_tokens: input.maxTokens,
         temperature: input.temperature,
         top_p: input.topP,
-        reasoning_effort: "low",
+        reasoning_effort: 'low',
       }),
       signal: controller.signal,
     })
 
     pushDebugRequest(input.debug, {
-      stage: "cloudflare_ai",
+      stage: 'cloudflare_ai',
       url,
       durationMs: Date.now() - startedAt,
       ok: response.ok,
@@ -185,9 +182,9 @@ export const runAiStream = async (
     if (!response.ok) {
       throw createError({
         statusCode: response.status >= 500 ? 503 : 502,
-        statusMessage: "Cloudflare AI upstream failed",
+        statusMessage: 'Cloudflare AI upstream failed',
         data: {
-          code: "cloudflare_ai_error",
+          code: 'cloudflare_ai_error',
         },
       })
     }
@@ -195,17 +192,17 @@ export const runAiStream = async (
     if (!response.body) {
       throw createError({
         statusCode: 503,
-        statusMessage: "Cloudflare AI stream unavailable",
+        statusMessage: 'Cloudflare AI stream unavailable',
         data: {
-          code: "cloudflare_ai_stream_unavailable",
+          code: 'cloudflare_ai_stream_unavailable',
         },
       })
     }
 
     const decoder = new TextDecoder()
     const reader = response.body.getReader()
-    let buffer = ""
-    let rawText = ""
+    let buffer = ''
+    let rawText = ''
     let envelopeError: string | null = null
 
     while (true) {
@@ -214,24 +211,24 @@ export const runAiStream = async (
         break
 
       buffer += decoder.decode(value, { stream: true })
-      const messages = buffer.split("\n\n")
-      buffer = messages.pop() || ""
+      const messages = buffer.split('\n\n')
+      buffer = messages.pop() || ''
 
       for (const message of messages) {
-        const lines = message.split("\n")
+        const lines = message.split('\n')
         for (const line of lines) {
           const trimmed = line.trim()
-          if (!trimmed.startsWith("data:"))
+          if (!trimmed.startsWith('data:'))
             continue
 
           const payloadText = trimmed.slice(5).trim()
-          if (!payloadText || payloadText === "[DONE]")
+          if (!payloadText || payloadText === '[DONE]')
             continue
 
           try {
             const payload = JSON.parse(payloadText)
             if (payload?.error) {
-              envelopeError = String(payload?.error?.message || "Cloudflare AI returned an error envelope")
+              envelopeError = String(payload?.error?.message || 'Cloudflare AI returned an error envelope')
               continue
             }
             const chunk = extractStreamTextChunk(payload)
@@ -253,7 +250,7 @@ export const runAiStream = async (
         statusCode: 502,
         statusMessage: envelopeError,
         data: {
-          code: "cloudflare_ai_error",
+          code: 'cloudflare_ai_error',
         },
       })
     }
@@ -261,12 +258,12 @@ export const runAiStream = async (
     return { rawText }
   }
   catch (error: any) {
-    if (error?.name === "AbortError") {
+    if (error?.name === 'AbortError') {
       throw createError({
         statusCode: 503,
-        statusMessage: "Cloudflare AI request timed out",
+        statusMessage: 'Cloudflare AI request timed out',
         data: {
-          code: "cloudflare_ai_timeout",
+          code: 'cloudflare_ai_timeout',
         },
       })
     }

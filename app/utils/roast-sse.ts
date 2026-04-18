@@ -1,14 +1,14 @@
-import type { RoastStreamEvent } from "~~/shared/roast/contracts"
+import type { RoastStreamEvent } from '~~/shared/roast/contracts'
 
 /**
  * Parses one SSE event block into a typed roast stream event payload.
  */
-const parseRoastSseEvent = (rawEvent: string): RoastStreamEvent | null => {
-  const lines = rawEvent.split("\n")
+function parseRoastSseEvent(rawEvent: string): RoastStreamEvent | null {
+  const lines = rawEvent.split('\n')
   const dataLines: string[] = []
 
   for (const line of lines) {
-    if (line.startsWith("data:"))
+    if (line.startsWith('data:'))
       dataLines.push(line.slice(5).trim())
   }
 
@@ -16,7 +16,7 @@ const parseRoastSseEvent = (rawEvent: string): RoastStreamEvent | null => {
     return null
 
   try {
-    return JSON.parse(dataLines.join("\n")) as RoastStreamEvent
+    return JSON.parse(dataLines.join('\n')) as RoastStreamEvent
   }
   catch {
     return null
@@ -26,16 +26,13 @@ const parseRoastSseEvent = (rawEvent: string): RoastStreamEvent | null => {
 /**
  * Consumes a roast SSE response stream and emits typed events.
  */
-export const consumeRoastSse = async (
-  response: Response,
-  onEvent: (event: RoastStreamEvent) => void,
-): Promise<void> => {
+export async function consumeRoastSse(response: Response, onEvent: (event: RoastStreamEvent) => void): Promise<void> {
   if (!response.body)
-    throw new Error("Stream body is missing")
+    throw new Error('Stream body is missing')
 
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
-  let buffer = ""
+  let buffer = ''
 
   while (true) {
     const { done, value } = await reader.read()
@@ -43,8 +40,8 @@ export const consumeRoastSse = async (
       break
 
     buffer += decoder.decode(value, { stream: true })
-    const eventBlocks = buffer.split("\n\n")
-    buffer = eventBlocks.pop() || ""
+    const eventBlocks = buffer.split('\n\n')
+    buffer = eventBlocks.pop() || ''
 
     for (const eventBlock of eventBlocks) {
       const event = parseRoastSseEvent(eventBlock)
@@ -53,4 +50,3 @@ export const consumeRoastSse = async (
     }
   }
 }
-

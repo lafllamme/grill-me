@@ -1,9 +1,9 @@
-import { getRequestIP, setResponseStatus } from "h3"
-import type { RoastStreamEvent } from "~~/shared/roast/contracts"
-import { parseRoastStreamRequest } from "../../roast/contracts-adapter"
-import { createDebugReport, logServerError, logServerInfo } from "../../roast/debug"
-import { runRoastStream, toErrorBody, toHandledError } from "../../roast/orchestrator"
-import { checkRateLimit } from "../../roast/rate-limit"
+import type { RoastStreamEvent } from '~~/shared/roast/contracts'
+import { getRequestIP, setResponseStatus } from 'h3'
+import { parseRoastStreamRequest } from '../../roast/contracts-adapter'
+import { createDebugReport, logServerError, logServerInfo } from '../../roast/debug'
+import { runRoastStream, toErrorBody, toHandledError } from '../../roast/orchestrator'
+import { checkRateLimit } from '../../roast/rate-limit'
 
 /**
  * Streams roast progress events over SSE.
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
   const debug = createDebugReport(parsed.username)
 
-  const clientIp = getRequestIP(event, { xForwardedFor: true }) || "unknown"
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
   try {
     checkRateLimit(clientIp)
   }
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     return toErrorBody(handled.code, handled.statusMessage)
   }
 
-  logServerInfo("stream-request", {
+  logServerInfo('stream-request', {
     requestId,
     username: parsed.username,
     clientIp,
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
 
   const stream = new ReadableStream<Uint8Array>({
     start: async (controller) => {
-      const writeEvent = (name: RoastStreamEvent["type"], payload: RoastStreamEvent): void => {
+      const writeEvent = (name: RoastStreamEvent['type'], payload: RoastStreamEvent): void => {
         const chunk = `event: ${name}\ndata: ${JSON.stringify(payload)}\n\n`
         controller.enqueue(encoder.encode(chunk))
       }
@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
           },
         )
 
-        logServerInfo("stream-success", {
+        logServerInfo('stream-success', {
           requestId,
           username: parsed.username,
           roastLineCount: finalPayload.roastLines.length,
@@ -86,15 +86,15 @@ export default defineEventHandler(async (event) => {
       }
       catch (error) {
         const handled = toHandledError(error)
-        logServerError("stream-failed", {
+        logServerError('stream-failed', {
           requestId,
           statusCode: handled.statusCode,
           statusMessage: handled.statusMessage,
           code: handled.code,
           details: handled.details,
         })
-        writeEvent("error", {
-          type: "error",
+        writeEvent('error', {
+          type: 'error',
           error: toErrorBody(handled.code, handled.statusMessage).error,
         })
       }
@@ -106,10 +106,10 @@ export default defineEventHandler(async (event) => {
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
     },
   })
 })

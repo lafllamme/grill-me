@@ -3,10 +3,10 @@ import type {
   RoastErrorResponse,
   RoastResponse,
   RoastStreamEvent,
-} from "~~/shared/roast/contracts"
-import { consumeRoastSse } from "./roast-sse"
+} from '~~/shared/roast/contracts'
+import { consumeRoastSse } from './roast-sse'
 
-const DEFAULT_DEBUG_LEVEL: RoastDebugLevel = "minimal"
+const DEFAULT_DEBUG_LEVEL: RoastDebugLevel = 'minimal'
 
 interface RoastRequestOptions {
   debugLevel?: RoastDebugLevel
@@ -15,20 +15,17 @@ interface RoastRequestOptions {
 /**
  * Extracts a user-facing error message from a roast API error response.
  */
-const toRoastErrorMessage = (response: RoastErrorResponse): string => {
-  return response.error?.message || "Roast request failed"
+function toRoastErrorMessage(response: RoastErrorResponse): string {
+  return response.error?.message || 'Roast request failed'
 }
 
 /**
  * Calls the sync roast endpoint and returns a normalized success payload.
  */
-export const requestRoastSync = async (
-  githubUsername: string,
-  options?: RoastRequestOptions,
-): Promise<RoastResponse> => {
+export async function requestRoastSync(githubUsername: string, options?: RoastRequestOptions): Promise<RoastResponse> {
   const debugLevel = options?.debugLevel ?? DEFAULT_DEBUG_LEVEL
-  const response = await $fetch<RoastResponse | RoastErrorResponse>("/api/roast", {
-    method: "POST",
+  const response = await $fetch<RoastResponse | RoastErrorResponse>('/api/roast', {
+    method: 'POST',
     body: {
       githubUsername,
       debugLevel,
@@ -46,17 +43,12 @@ export const requestRoastSync = async (
 /**
  * Calls the streaming roast endpoint and forwards every parsed SSE event.
  */
-export const requestRoastStream = async (
-  githubUsername: string,
-  onEvent: (event: RoastStreamEvent) => void,
-  signal: AbortSignal,
-  options?: RoastRequestOptions,
-): Promise<void> => {
+export async function requestRoastStream(githubUsername: string, onEvent: (event: RoastStreamEvent) => void, signal: AbortSignal, options?: RoastRequestOptions): Promise<void> {
   const debugLevel = options?.debugLevel ?? DEFAULT_DEBUG_LEVEL
-  const response = await fetch("/api/roast/stream", {
-    method: "POST",
+  const response = await fetch('/api/roast/stream', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       githubUsername,

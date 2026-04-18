@@ -1,39 +1,39 @@
-import { consola } from "consola"
 import type {
   RoastDebugLevel,
   RoastResponse,
   RoastStreamDoneEvent,
   RoastStreamErrorEvent,
   RoastStreamEvent,
-  RoastStreamFeedbackItemEvent,
   RoastStreamFeedbackEvent,
-  RoastStreamTypingRoastEvent,
+  RoastStreamFeedbackItemEvent,
   RoastStreamTypingEvent,
-} from "~~/shared/roast/contracts"
-import { requestRoastStream, requestRoastSync } from "../utils/roast-api"
+  RoastStreamTypingRoastEvent,
+} from '~~/shared/roast/contracts'
+import { consola } from 'consola'
+import { requestRoastStream, requestRoastSync } from '../utils/roast-api'
 
 export type RoastResult = RoastResponse
 
 /**
  * Handles roast request state for both sync and stream endpoint modes.
  */
-export const useRoast = () => {
-  const result = useState<RoastResult | null>("roast-result", () => null)
-  const pending = useState<boolean>("roast-pending", () => false)
-  const error = useState<string | null>("roast-error", () => null)
+export function useRoast() {
+  const result = useState<RoastResult | null>('roast-result', () => null)
+  const pending = useState<boolean>('roast-pending', () => false)
+  const error = useState<string | null>('roast-error', () => null)
 
-  const isStreaming = useState<boolean>("roast-streaming", () => false)
-  const streamStatus = useState<string[]>("roast-stream-status", () => [])
-  const partialRoast = useState<string>("roast-partial-roast", () => "")
-  const partialFeedback = useState<string[]>("roast-partial-feedback", () => [])
-  const streamError = useState<string | null>("roast-stream-error", () => null)
+  const isStreaming = useState<boolean>('roast-streaming', () => false)
+  const streamStatus = useState<string[]>('roast-stream-status', () => [])
+  const partialRoast = useState<string>('roast-partial-roast', () => '')
+  const partialFeedback = useState<string[]>('roast-partial-feedback', () => [])
+  const streamError = useState<string | null>('roast-stream-error', () => null)
 
-  const activeController = useState<AbortController | null>("roast-abort-controller", () => null)
+  const activeController = useState<AbortController | null>('roast-abort-controller', () => null)
 
   const resetStreamState = () => {
     isStreaming.value = false
     streamStatus.value = []
-    partialRoast.value = ""
+    partialRoast.value = ''
     partialFeedback.value = []
     streamError.value = null
   }
@@ -43,15 +43,15 @@ export const useRoast = () => {
     activeController.value = null
     pending.value = false
     isStreaming.value = false
-    streamError.value = "Request cancelled"
+    streamError.value = 'Request cancelled'
   }
 
   const roastUsernameSync = async (githubUsername: string, debugLevel?: RoastDebugLevel): Promise<void> => {
     result.value = await requestRoastSync(githubUsername, { debugLevel })
-    partialRoast.value = result.value.roastLines.join("\n")
+    partialRoast.value = result.value.roastLines.join('\n')
     partialFeedback.value = [...result.value.feedback]
 
-    consola.debug("[client/roast/sync]", {
+    consola.debug('[client/roast/sync]', {
       username: result.value.username,
       roastLength: result.value.roast.length,
       feedbackCount: result.value.feedback.length,
@@ -66,54 +66,54 @@ export const useRoast = () => {
     activeController.value = controller
 
     await requestRoastStream(githubUsername, (event: RoastStreamEvent) => {
-      if (event.type === "meta") {
+      if (event.type === 'meta') {
         const metaEvent = event
-        consola.debug("[client/roast/stream-meta]", metaEvent)
+        consola.debug('[client/roast/stream-meta]', metaEvent)
         return
       }
 
-      if (event.type === "typing") {
+      if (event.type === 'typing') {
         // Legacy compatibility for older server versions.
         const typingEvent = event as RoastStreamTypingEvent
         partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
         return
       }
 
-      if (event.type === "typing_roast") {
+      if (event.type === 'typing_roast') {
         const typingEvent = event as RoastStreamTypingRoastEvent
         partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
         return
       }
 
-      if (event.type === "status") {
+      if (event.type === 'status') {
         const line = `[${event.phase}] ${event.message}`
         streamStatus.value = [...streamStatus.value, line]
         return
       }
 
-      if (event.type === "feedback") {
+      if (event.type === 'feedback') {
         // Legacy compatibility for older server versions.
         const feedbackEvent = event as RoastStreamFeedbackEvent
         partialFeedback.value = [...feedbackEvent.feedback]
         return
       }
 
-      if (event.type === "feedback_item") {
+      if (event.type === 'feedback_item') {
         const feedbackEvent = event as RoastStreamFeedbackItemEvent
         partialFeedback.value = [...feedbackEvent.feedback]
         return
       }
 
-      if (event.type === "debug") {
-        consola.debug("[client/roast/stream-debug]", event.debug)
+      if (event.type === 'debug') {
+        consola.debug('[client/roast/stream-debug]', event.debug)
         return
       }
 
-      if (event.type === "done") {
+      if (event.type === 'done') {
         const doneEvent = event as RoastStreamDoneEvent
         result.value = doneEvent.data
         if (!partialRoast.value.trim())
-          partialRoast.value = doneEvent.data.roastLines.join("\n")
+          partialRoast.value = doneEvent.data.roastLines.join('\n')
         const shouldHydrateFeedback = partialFeedback.value.length === 0
           || doneEvent.data.feedback.length > partialFeedback.value.length
         if (shouldHydrateFeedback)
@@ -121,7 +121,7 @@ export const useRoast = () => {
         return
       }
 
-      if (event.type === "error") {
+      if (event.type === 'error') {
         const errorEvent = event as RoastStreamErrorEvent
         throw new Error(errorEvent.error.message)
       }
@@ -143,9 +143,9 @@ export const useRoast = () => {
       await roastUsernameStream(trimmed, options?.debugLevel)
     }
     catch (cause: any) {
-      const message = cause?.message || "Streaming roast failed"
+      const message = cause?.message || 'Streaming roast failed'
       streamError.value = message
-      consola.debug("[client/roast/stream-error]", { message, cause })
+      consola.debug('[client/roast/stream-error]', { message, cause })
 
       try {
         await roastUsernameSync(trimmed, options?.debugLevel)
@@ -154,9 +154,9 @@ export const useRoast = () => {
         const fallbackMessage = fallbackCause?.data?.error?.message
           || fallbackCause?.data?.message
           || fallbackCause?.message
-          || "Roast request failed"
+          || 'Roast request failed'
         error.value = fallbackMessage
-        consola.debug("[client/roast/sync-error]", { message: fallbackMessage, cause: fallbackCause })
+        consola.debug('[client/roast/sync-error]', { message: fallbackMessage, cause: fallbackCause })
       }
     }
     finally {

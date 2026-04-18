@@ -1,13 +1,13 @@
-import { createError, readBody } from "h3"
+import type { RoastRequestBody, RoastRuntimeOptions, RoastStreamRequestBody } from '~~/shared/roast/contracts'
+import { createError, readBody } from 'h3'
 import {
   GITHUB_USERNAME_REGEX,
   resolveRoastRuntimeOptions,
+
   roastRequestBodySchema,
+
   roastStreamRequestBodySchema,
-  type RoastRequestBody,
-  type RoastRuntimeOptions,
-  type RoastStreamRequestBody,
-} from "~~/shared/roast/contracts"
+} from '~~/shared/roast/contracts'
 
 /**
  * Canonical parsed request for roast endpoints.
@@ -21,14 +21,14 @@ export interface ParsedRoastRequest {
 /**
  * Validates and normalizes a GitHub username.
  */
-export const validateGithubUsername = (value: string): string => {
-  const trimmed = value.trim().replace(/^@/, "")
+export function validateGithubUsername(value: string): string {
+  const trimmed = value.trim().replace(/^@/, '')
   if (!GITHUB_USERNAME_REGEX.test(trimmed)) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid GitHub username",
+      statusMessage: 'Invalid GitHub username',
       data: {
-        code: "invalid_username",
+        code: 'invalid_username',
       },
     })
   }
@@ -39,15 +39,15 @@ export const validateGithubUsername = (value: string): string => {
 /**
  * Parses body and runtime options for the sync endpoint.
  */
-export const parseRoastRequest = async (event: Parameters<typeof readBody>[0]): Promise<ParsedRoastRequest> => {
+export async function parseRoastRequest(event: Parameters<typeof readBody>[0]): Promise<ParsedRoastRequest> {
   const rawBody = await readBody(event)
   const parsedBody = roastRequestBodySchema.safeParse(rawBody)
   if (!parsedBody.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: "githubUsername is required",
+      statusMessage: 'githubUsername is required',
       data: {
-        code: "invalid_request",
+        code: 'invalid_request',
         issues: parsedBody.error.issues,
       },
     })
@@ -67,15 +67,15 @@ export const parseRoastRequest = async (event: Parameters<typeof readBody>[0]): 
 /**
  * Parses body and runtime options for the stream endpoint.
  */
-export const parseRoastStreamRequest = async (event: Parameters<typeof readBody>[0]): Promise<ParsedRoastRequest> => {
+export async function parseRoastStreamRequest(event: Parameters<typeof readBody>[0]): Promise<ParsedRoastRequest> {
   const rawBody = await readBody(event)
   const parsedBody = roastStreamRequestBodySchema.safeParse(rawBody)
   if (!parsedBody.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: "githubUsername is required",
+      statusMessage: 'githubUsername is required',
       data: {
-        code: "invalid_request",
+        code: 'invalid_request',
         issues: parsedBody.error.issues,
       },
     })

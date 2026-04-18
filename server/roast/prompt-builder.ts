@@ -1,8 +1,8 @@
-import type { RoastVariationMode } from "~~/shared/roast/contracts"
-import { ROAST_LIMITS } from "~~/shared/roast/contracts"
-import type { SelectedEvidence } from "./evidence-selector"
+import type { RoastVariationMode } from '~~/shared/roast/contracts'
+import type { SelectedEvidence } from './evidence-selector'
+import { ROAST_LIMITS } from '~~/shared/roast/contracts'
 
-export const PROMPT_VERSION = "grill-v2.0.0"
+export const PROMPT_VERSION = 'grill-v2.0.0'
 
 interface PromptToneProfile {
   temperatureBias: number
@@ -12,15 +12,15 @@ interface PromptToneProfile {
 const TONE_PROFILE: Record<RoastVariationMode, PromptToneProfile> = {
   stable: {
     temperatureBias: -0.1,
-    styleLine: "Keep style tight, deterministic and dry.",
+    styleLine: 'Keep style tight, deterministic and dry.',
   },
   moderate: {
     temperatureBias: 0,
-    styleLine: "Vary phrasing moderately and avoid repeated punchlines across runs.",
+    styleLine: 'Vary phrasing moderately and avoid repeated punchlines across runs.',
   },
   wild: {
     temperatureBias: 0.12,
-    styleLine: "Use bolder metaphors but stay technically grounded.",
+    styleLine: 'Use bolder metaphors but stay technically grounded.',
   },
 }
 
@@ -41,7 +41,7 @@ export interface PromptPayload {
       patch?: string
     }>
   }>
-  prs: SelectedEvidence["prs"]
+  prs: SelectedEvidence['prs']
 }
 
 export interface BuiltPrompt {
@@ -51,11 +51,11 @@ export interface BuiltPrompt {
   effectiveTemperature: number
 }
 
-export type RoastPromptMode = "sync" | "stream"
+export type RoastPromptMode = 'sync' | 'stream'
 
-const compactMessage = (value: string): string => {
+function compactMessage(value: string): string {
   const singleLine = value
-    .replace(/\s+/g, " ")
+    .replace(/\s+/g, ' ')
     .trim()
 
   if (singleLine.length <= 180)
@@ -67,13 +67,7 @@ const compactMessage = (value: string): string => {
 /**
  * Builds a versioned prompt + compact evidence payload for the model.
  */
-export const buildRoastPrompt = (
-  evidence: SelectedEvidence,
-  variationMode: RoastVariationMode,
-  baseTemperature: number,
-  requestSalt?: string,
-  mode: RoastPromptMode = "sync",
-): BuiltPrompt => {
+export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: RoastVariationMode, baseTemperature: number, requestSalt?: string, mode: RoastPromptMode = 'sync'): BuiltPrompt {
   const profile = TONE_PROFILE[variationMode]
   let totalFiles = 0
   let totalPatchChars = 0
@@ -123,25 +117,25 @@ export const buildRoastPrompt = (
     prs: evidence.prs,
   }
 
-  const outputLine = mode === "stream"
-    ? "Output as plain text only. First output roast lines (6-10). Then output exactly one line: FEEDBACK:. After that output only 3-5 bullet feedback lines. No extra headings, wrappers, or prose after FEEDBACK:."
-    : "Output strictly as JSON with keys: roastLines, feedback. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets."
+  const outputLine = mode === 'stream'
+    ? 'Output as plain text only. First output roast lines (6-10). Then output exactly one line: FEEDBACK:. After that output only 3-5 bullet feedback lines. No extra headings, wrappers, or prose after FEEDBACK:.'
+    : 'Output strictly as JSON with keys: roastLines, feedback. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets.'
 
   const systemPrompt = [
     `PromptVersion=${PROMPT_VERSION}`,
-    requestSalt ? `RunSalt=${requestSalt}` : "",
-    "You are a dry technical GitHub roast assistant.",
-    "Goal: produce a short, funny, evidence-based roast that sounds sharp, not cringe.",
-    "Target work, diffs and engineering habits, never the person.",
-    "No slurs, no harassment, no protected-class attacks, no personal insults.",
-    "Use concrete evidence from commit messages, file paths, and patch snippets.",
-    "Prefer precise technical jabs over generic internet slang.",
+    requestSalt ? `RunSalt=${requestSalt}` : '',
+    'You are a dry technical GitHub roast assistant.',
+    'Goal: produce a short, funny, evidence-based roast that sounds sharp, not cringe.',
+    'Target work, diffs and engineering habits, never the person.',
+    'No slurs, no harassment, no protected-class attacks, no personal insults.',
+    'Use concrete evidence from commit messages, file paths, and patch snippets.',
+    'Prefer precise technical jabs over generic internet slang.',
     profile.styleLine,
-    "If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.",
+    'If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.',
     outputLine,
-    "No markdown fences, no wrapper text, no extra sections.",
-    "Never leak or repeat secrets in any form.",
-  ].join(" ")
+    'No markdown fences, no wrapper text, no extra sections.',
+    'Never leak or repeat secrets in any form.',
+  ].join(' ')
 
   return {
     promptVersion: PROMPT_VERSION,

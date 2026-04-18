@@ -1,7 +1,7 @@
-import { createError } from "h3"
-import type { RoastDebug } from "~~/shared/roast/contracts"
-import { ROAST_DEFAULTS, ROAST_LIMITS } from "~~/shared/roast/contracts"
-import { pushDebugRequest } from "./debug"
+import type { RoastDebug } from '~~/shared/roast/contracts'
+import { createError } from 'h3'
+import { ROAST_DEFAULTS, ROAST_LIMITS } from '~~/shared/roast/contracts'
+import { pushDebugRequest } from './debug'
 
 export interface GithubCommitFile {
   filename: string
@@ -43,17 +43,17 @@ interface GithubCommitRef {
 /**
  * Redacts likely secret patterns from patch snippets.
  */
-const redactSecrets = (value: string): string => {
+function redactSecrets(value: string): string {
   return value
-    .replace(/gh[pousr]_[A-Za-z0-9]{20,}/g, "[REDACTED_GITHUB_TOKEN]")
-    .replace(/(api[_-]?key|token|secret)\s*[:=]\s*['\"]?[^'\"\s]{8,}/gi, "$1=[REDACTED]")
-    .replace(/-----BEGIN [A-Z ]+-----[\s\S]*?-----END [A-Z ]+-----/g, "[REDACTED_KEY_BLOCK]")
+    .replace(/gh[pousr]_[A-Za-z0-9]{20,}/g, '[REDACTED_GITHUB_TOKEN]')
+    .replace(/(api[_-]?key|token|secret)\s*[:=]\s*['"]?[^'"\s]{8,}/gi, '$1=[REDACTED]')
+    .replace(/-----BEGIN [A-Z ]+-----[\s\S]*?-----END [A-Z ]+-----/g, '[REDACTED_KEY_BLOCK]')
 }
 
 /**
  * Keeps only a short, safe patch excerpt for prompt evidence.
  */
-const trimPatch = (patch?: string): string | undefined => {
+function trimPatch(patch?: string): string | undefined {
   if (!patch)
     return undefined
 
@@ -67,18 +67,14 @@ const trimPatch = (patch?: string): string | undefined => {
   return `${cleaned.slice(0, ROAST_LIMITS.maxPatchChars)}\n...[truncated]`
 }
 
-const asNumber = (value: unknown): number => {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0
+function asNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
 /**
  * Wraps fetch with abort timeout and normalized upstream timeout errors.
  */
-const fetchWithTimeout = async (
-  url: string,
-  options: RequestInit,
-  timeoutMs: number,
-): Promise<Response> => {
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -89,12 +85,12 @@ const fetchWithTimeout = async (
     })
   }
   catch (error: any) {
-    if (error?.name === "AbortError") {
+    if (error?.name === 'AbortError') {
       throw createError({
         statusCode: 503,
-        statusMessage: "GitHub request timed out",
+        statusMessage: 'GitHub request timed out',
         data: {
-          code: "github_timeout",
+          code: 'github_timeout',
         },
       })
     }
@@ -109,20 +105,14 @@ const fetchWithTimeout = async (
 /**
  * Fetches JSON from GitHub REST API with auth and baseline error mapping.
  */
-const getGithubJson = async (
-  url: string,
-  token: string | undefined,
-  timeoutMs: number,
-  debug: RoastDebug | undefined,
-  stage: "github_profile" | "github_events" | "github_commit",
-): Promise<any> => {
+async function getGithubJson(url: string, token: string | undefined, timeoutMs: number, debug: RoastDebug | undefined, stage: 'github_profile' | 'github_events' | 'github_commit'): Promise<any> {
   const startedAt = Date.now()
   const response = await fetchWithTimeout(
     url,
     {
       headers: {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "grill-me-app",
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'grill-me-app',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     },
@@ -140,9 +130,9 @@ const getGithubJson = async (
   if (response.status === 404) {
     throw createError({
       statusCode: 404,
-      statusMessage: "GitHub user or resource not found",
+      statusMessage: 'GitHub user or resource not found',
       data: {
-        code: "github_not_found",
+        code: 'github_not_found',
       },
     })
   }
@@ -150,9 +140,9 @@ const getGithubJson = async (
   if (!response.ok) {
     throw createError({
       statusCode: 502,
-      statusMessage: "GitHub upstream failed",
+      statusMessage: 'GitHub upstream failed',
       data: {
-        code: "github_upstream_error",
+        code: 'github_upstream_error',
       },
     })
   }
@@ -163,14 +153,10 @@ const getGithubJson = async (
 /**
  * Collects public user activity and enriches commit references with file-level evidence.
  */
-export const collectGithubContext = async (
-  username: string,
-  githubToken: string | undefined,
-  options?: {
-    githubTimeoutMs?: number
-    debug?: RoastDebug
-  },
-): Promise<GithubContext> => {
+export async function collectGithubContext(username: string, githubToken: string | undefined, options?: {
+  githubTimeoutMs?: number
+  debug?: RoastDebug
+}): Promise<GithubContext> {
   const githubTimeoutMs = options?.githubTimeoutMs ?? ROAST_DEFAULTS.githubTimeoutMs
   const debug = options?.debug
 
@@ -179,7 +165,7 @@ export const collectGithubContext = async (
     githubToken,
     githubTimeoutMs,
     debug,
-    "github_profile",
+    'github_profile',
   )
 
   const events = await getGithubJson(
@@ -187,7 +173,7 @@ export const collectGithubContext = async (
     githubToken,
     githubTimeoutMs,
     debug,
-    "github_events",
+    'github_events',
   )
 
   const commitRefs = new Map<string, GithubCommitRef>()
@@ -197,16 +183,16 @@ export const collectGithubContext = async (
   let pullRequestEventCount = 0
 
   for (const event of Array.isArray(events) ? events : []) {
-    if (event.type === "PushEvent" && event.repo?.name) {
+    if (event.type === 'PushEvent' && event.repo?.name) {
       pushEventCount += 1
       const repo = String(event.repo.name)
 
-      const headSha = typeof event.payload?.head === "string" ? String(event.payload.head) : ""
+      const headSha = typeof event.payload?.head === 'string' ? String(event.payload.head) : ''
       if (headSha && !commitRefs.has(headSha)) {
         commitRefs.set(headSha, {
           repo,
           sha: headSha,
-          message: "",
+          message: '',
         })
       }
 
@@ -222,7 +208,7 @@ export const collectGithubContext = async (
           commitRefs.set(sha, {
             repo,
             sha,
-            message: String(commit.message || ""),
+            message: String(commit.message || ''),
           })
 
           if (commitRefs.size >= ROAST_LIMITS.maxCommitRefs)
@@ -231,13 +217,13 @@ export const collectGithubContext = async (
       }
     }
 
-    if (event.type === "PullRequestEvent" && event.repo?.name && event.payload?.pull_request) {
+    if (event.type === 'PullRequestEvent' && event.repo?.name && event.payload?.pull_request) {
       pullRequestEventCount += 1
       prs.push({
         repo: String(event.repo.name),
-        title: String(event.payload.pull_request.title || "Untitled PR"),
-        url: String(event.payload.pull_request.html_url || ""),
-        state: String(event.payload.pull_request.state || "unknown"),
+        title: String(event.payload.pull_request.title || 'Untitled PR'),
+        url: String(event.payload.pull_request.html_url || ''),
+        state: String(event.payload.pull_request.state || 'unknown'),
       })
     }
 
@@ -255,23 +241,23 @@ export const collectGithubContext = async (
         githubToken,
         githubTimeoutMs,
         debug,
-        "github_commit",
+        'github_commit',
       )
       const files = Array.isArray(details.files) ? details.files : []
 
       const commit: GithubCommit = {
         repo: commitRef.repo,
         sha: commitRef.sha,
-        message: String(commitRef.message || details.commit?.message || ""),
+        message: String(commitRef.message || details.commit?.message || ''),
         additions: asNumber(details.stats?.additions),
         deletions: asNumber(details.stats?.deletions),
         changedFiles: asNumber(details.files?.length),
         files: files.slice(0, ROAST_LIMITS.maxFilesPerCommit).map((file: any) => ({
-          filename: String(file.filename || "unknown"),
-          status: String(file.status || "modified"),
+          filename: String(file.filename || 'unknown'),
+          status: String(file.status || 'modified'),
           additions: asNumber(file.additions),
           deletions: asNumber(file.deletions),
-          patch: trimPatch(typeof file.patch === "string" ? file.patch : undefined),
+          patch: trimPatch(typeof file.patch === 'string' ? file.patch : undefined),
         })),
       }
 

@@ -1,19 +1,14 @@
-import { createError } from "h3"
-import {
-  type RoastErrorResponse,
-  type RoastMeta,
-  type RoastResponse,
-  type RoastRuntimeOptions,
-  type RoastStreamEvent,
-} from "~~/shared/roast/contracts"
-import { runAiStream, runAiSync } from "./ai-client"
-import { shapeDebugPayload } from "./debug"
-import type { RoastDebugReport } from "./debug"
-import { selectEvidence } from "./evidence-selector"
-import { createFallbackRoast } from "./fallback"
-import { collectGithubContext } from "./github-collector"
-import { extractModelText, normalizeRoastParts, parseRoastOutput } from "./output-parser"
-import { PROMPT_VERSION, buildRoastPrompt, type BuiltPrompt, type RoastPromptMode } from "./prompt-builder"
+import type { RoastErrorResponse, RoastMeta, RoastResponse, RoastRuntimeOptions, RoastStreamEvent } from '~~/shared/roast/contracts'
+import type { RoastDebugReport } from './debug'
+import type { BuiltPrompt, RoastPromptMode } from './prompt-builder'
+import { createError } from 'h3'
+import { runAiStream, runAiSync } from './ai-client'
+import { shapeDebugPayload } from './debug'
+import { selectEvidence } from './evidence-selector'
+import { createFallbackRoast } from './fallback'
+import { collectGithubContext } from './github-collector'
+import { extractModelText, normalizeRoastParts, parseRoastOutput } from './output-parser'
+import { buildRoastPrompt, PROMPT_VERSION } from './prompt-builder'
 
 export interface RoastServiceEnv {
   cfAccountId?: string
@@ -31,13 +26,13 @@ export interface RoastOrchestratorInput {
   debug: RoastDebugReport
 }
 
-type RoastStatusPhase =
-  | "fetching_github"
-  | "selecting_evidence"
-  | "building_prompt"
-  | "calling_ai"
-  | "parsing_output"
-  | "finalizing"
+type RoastStatusPhase
+  = | 'fetching_github'
+    | 'selecting_evidence'
+    | 'building_prompt'
+    | 'calling_ai'
+    | 'parsing_output'
+    | 'finalizing'
 
 interface RoastSyncHooks {
   onStatus?: (phase: RoastStatusPhase, message: string) => Promise<void>
@@ -52,26 +47,20 @@ interface PreparedRoastContext {
 /**
  * Canonical API error body used by both sync and stream handlers.
  */
-export const toErrorBody = (code: string, message: string): RoastErrorResponse => ({
-  error: {
-    code,
-    message,
-  },
-})
+export function toErrorBody(code: string, message: string): RoastErrorResponse {
+  return {
+    error: {
+      code,
+      message,
+    },
+  }
+}
 
-const createResponse = (
-  username: string,
-  roastLines: string[],
-  feedback: string[],
-  meta: RoastMeta,
-  debug: RoastOrchestratorInput["debug"],
-  runtime: RoastRuntimeOptions,
-  includeDebugInResponse = true,
-): RoastResponse => {
+function createResponse(username: string, roastLines: string[], feedback: string[], meta: RoastMeta, debug: RoastOrchestratorInput['debug'], runtime: RoastRuntimeOptions, includeDebugInResponse = true): RoastResponse {
   const response: RoastResponse = {
     username,
     roastLines,
-    roast: roastLines.join(" "),
+    roast: roastLines.join(' '),
     feedback,
     meta,
   }
@@ -83,15 +72,15 @@ const createResponse = (
   return response
 }
 
-const emitStatus = async (hooks: RoastSyncHooks | undefined, phase: RoastStatusPhase, message: string): Promise<void> => {
+async function emitStatus(hooks: RoastSyncHooks | undefined, phase: RoastStatusPhase, message: string): Promise<void> {
   await hooks?.onStatus?.(phase, message)
 }
 
 const FEEDBACK_DELIMITER_REGEX = /(?:^|\n)\s*FEEDBACK:\s*(?:\n|$)/i
 const FEEDBACK_BULLET_REGEX = /^[-*•\d.)]\s+/
 
-const normalizeFeedbackLine = (value: string): string => {
-  return value.replace(/^[-*•\d.)\s]+/, "").trim()
+function normalizeFeedbackLine(value: string): string {
+  return value.replace(/^[-*•\d.)\s]+/, '').trim()
 }
 
 interface StreamSegmenter {
@@ -100,11 +89,9 @@ interface StreamSegmenter {
   feedbackItems: string[]
 }
 
-const createStreamSegmenter = (
-  emit: (event: RoastStreamEvent) => Promise<void>,
-): StreamSegmenter => {
-  let mode: "roast" | "feedback" = "roast"
-  let pending = ""
+function createStreamSegmenter(emit: (event: RoastStreamEvent) => Promise<void>): StreamSegmenter {
+  let mode: 'roast' | 'feedback' = 'roast'
+  let pending = ''
   const feedbackItems: string[] = []
   const delimiterTailReserve = 24
 
@@ -122,7 +109,7 @@ const createStreamSegmenter = (
 
     feedbackItems.push(normalized)
     await emit({
-      type: "feedback_item",
+      type: 'feedback_item',
       item: normalized,
       feedback: [...feedbackItems],
     })
@@ -130,15 +117,15 @@ const createStreamSegmenter = (
 
   const processFeedback = async (chunk: string, flush = false): Promise<void> => {
     const combined = pending + chunk
-    const lines = combined.split("\n")
-    pending = flush ? "" : (lines.pop() || "")
+    const lines = combined.split('\n')
+    pending = flush ? '' : (lines.pop() || '')
 
     for (const line of lines)
       await emitFeedbackFromLine(line)
 
     if (flush && pending.trim()) {
       await emitFeedbackFromLine(pending)
-      pending = ""
+      pending = ''
     }
   }
 
@@ -150,20 +137,20 @@ const createStreamSegmenter = (
       const delimiterIndex = delimiterMatch.index
       const roastChunk = combined.slice(0, delimiterIndex)
       if (roastChunk)
-        await emit({ type: "typing_roast", chunk: roastChunk })
+        await emit({ type: 'typing_roast', chunk: roastChunk })
 
       const feedbackStartIndex = delimiterIndex + delimiterMatch[0].length
       const feedbackChunk = combined.slice(feedbackStartIndex)
-      mode = "feedback"
-      pending = ""
+      mode = 'feedback'
+      pending = ''
       await processFeedback(feedbackChunk, flush)
       return
     }
 
     if (flush) {
       if (combined)
-        await emit({ type: "typing_roast", chunk: combined })
-      pending = ""
+        await emit({ type: 'typing_roast', chunk: combined })
+      pending = ''
       return
     }
 
@@ -176,22 +163,22 @@ const createStreamSegmenter = (
     const roastChunk = combined.slice(0, boundary)
     pending = combined.slice(boundary)
     if (roastChunk)
-      await emit({ type: "typing_roast", chunk: roastChunk })
+      await emit({ type: 'typing_roast', chunk: roastChunk })
   }
 
   return {
     feedbackItems,
     pushChunk: async (chunk: string) => {
-      if (mode === "roast")
+      if (mode === 'roast')
         await processRoast(chunk)
       else
         await processFeedback(chunk)
     },
     flush: async () => {
-      if (mode === "roast")
-        await processRoast("", true)
+      if (mode === 'roast')
+        await processRoast('', true)
       else
-        await processFeedback("", true)
+        await processFeedback('', true)
     },
   }
 }
@@ -199,15 +186,11 @@ const createStreamSegmenter = (
 /**
  * Collects and prepares roast context before calling the model.
  */
-const prepareContext = async (
-  input: RoastOrchestratorInput,
-  mode: RoastPromptMode,
-  hooks?: RoastSyncHooks,
-): Promise<PreparedRoastContext | RoastResponse> => {
+async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMode, hooks?: RoastSyncHooks): Promise<PreparedRoastContext | RoastResponse> {
   const startedAt = Date.now()
   const githubStartedAt = Date.now()
 
-  await emitStatus(hooks, "fetching_github", "Fetching GitHub activity and commit diffs...")
+  await emitStatus(hooks, 'fetching_github', 'Fetching GitHub activity and commit diffs...')
   const githubContext = await collectGithubContext(
     input.username,
     input.env.githubToken,
@@ -219,7 +202,7 @@ const prepareContext = async (
 
   input.debug.timingsMs.githubFetch = Date.now() - githubStartedAt
 
-  await emitStatus(hooks, "selecting_evidence", "Scoring commits and selecting roast-worthy evidence...")
+  await emitStatus(hooks, 'selecting_evidence', 'Scoring commits and selecting roast-worthy evidence...')
   const evidence = selectEvidence(githubContext)
   input.debug.selectionSummary = evidence.summary
 
@@ -230,8 +213,8 @@ const prepareContext = async (
   }
 
   if (meta.commitCount === 0 && meta.prCount === 0) {
-    const fallback = createFallbackRoast(input.username, meta, "no_public_activity")
-    input.debug.fallbackReason = "no_public_activity"
+    const fallback = createFallbackRoast(input.username, meta, 'no_public_activity')
+    input.debug.fallbackReason = 'no_public_activity'
     input.debug.timingsMs.total = Date.now() - startedAt
 
     return createResponse(
@@ -245,7 +228,7 @@ const prepareContext = async (
     )
   }
 
-  await emitStatus(hooks, "building_prompt", "Preparing compact roast context for the model...")
+  await emitStatus(hooks, 'building_prompt', 'Preparing compact roast context for the model...')
   const prompt = buildRoastPrompt(
     evidence,
     input.runtime.variationMode,
@@ -263,25 +246,19 @@ const prepareContext = async (
   }
 }
 
-const finalizeFromRawText = async (
-  input: RoastOrchestratorInput,
-  context: PreparedRoastContext,
-  rawText: string,
-  parserPath: string,
-  hooks?: RoastSyncHooks,
-): Promise<RoastResponse> => {
+async function finalizeFromRawText(input: RoastOrchestratorInput, context: PreparedRoastContext, rawText: string, parserPath: string, hooks?: RoastSyncHooks): Promise<RoastResponse> {
   if (!rawText.trim()) {
     throw createError({
       statusCode: 502,
-      statusMessage: "Cloudflare AI returned empty output",
+      statusMessage: 'Cloudflare AI returned empty output',
       data: {
-        code: "cloudflare_ai_empty_output",
+        code: 'cloudflare_ai_empty_output',
         parserPath,
       },
     })
   }
 
-  await emitStatus(hooks, "parsing_output", "Parsing model output and extracting roast lines...")
+  await emitStatus(hooks, 'parsing_output', 'Parsing model output and extracting roast lines...')
   const parsed = parseRoastOutput(rawText)
   input.debug.parserPath = `${parserPath}->${parsed.parserPath}`
 
@@ -289,15 +266,15 @@ const finalizeFromRawText = async (
   if (normalized.roastLines.length === 0) {
     throw createError({
       statusCode: 502,
-      statusMessage: "Cloudflare AI returned unparseable output",
+      statusMessage: 'Cloudflare AI returned unparseable output',
       data: {
-        code: "cloudflare_ai_unparseable_output",
+        code: 'cloudflare_ai_unparseable_output',
         parserPath: input.debug.parserPath,
       },
     })
   }
 
-  await emitStatus(hooks, "finalizing", "Finalizing roast output...")
+  await emitStatus(hooks, 'finalizing', 'Finalizing roast output...')
   input.debug.timingsMs.total = Date.now() - context.startedAt
 
   return createResponse(
@@ -314,12 +291,12 @@ const finalizeFromRawText = async (
 /**
  * Runs full roast pipeline and returns one final JSON payload.
  */
-export const runRoastSync = async (input: RoastOrchestratorInput): Promise<RoastResponse> => {
-  const prepared = await prepareContext(input, "sync")
-  if ("roast" in prepared)
+export async function runRoastSync(input: RoastOrchestratorInput): Promise<RoastResponse> {
+  const prepared = await prepareContext(input, 'sync')
+  if ('roast' in prepared)
     return prepared
 
-  await emitStatus(undefined, "calling_ai", "Calling Cloudflare Workers AI...")
+  await emitStatus(undefined, 'calling_ai', 'Calling Cloudflare Workers AI...')
   const aiStartedAt = Date.now()
   const aiPayload = await runAiSync({
     accountId: input.env.cfAccountId,
@@ -360,12 +337,9 @@ export const runRoastSync = async (input: RoastOrchestratorInput): Promise<Roast
 /**
  * Runs roast pipeline and emits SSE events for progressive UX.
  */
-export const runRoastStream = async (
-  input: RoastOrchestratorInput,
-  emit: (event: RoastStreamEvent) => Promise<void>,
-): Promise<RoastResponse> => {
+export async function runRoastStream(input: RoastOrchestratorInput, emit: (event: RoastStreamEvent) => Promise<void>): Promise<RoastResponse> {
   await emit({
-    type: "meta",
+    type: 'meta',
     requestId: input.requestId,
     username: input.username,
   })
@@ -373,38 +347,38 @@ export const runRoastStream = async (
   const statusHooks: RoastSyncHooks = {
     onStatus: async (phase, message) => {
       await emit({
-        type: "status",
+        type: 'status',
         phase,
         message,
       })
     },
   }
 
-  const prepared = await prepareContext(input, "stream", statusHooks)
+  const prepared = await prepareContext(input, 'stream', statusHooks)
   const streamSegmenter = createStreamSegmenter(emit)
-  if ("roast" in prepared) {
+  if ('roast' in prepared) {
     for (const line of prepared.roastLines) {
-      await emit({ type: "typing_roast", chunk: `${line}\n` })
+      await emit({ type: 'typing_roast', chunk: `${line}\n` })
     }
 
     const feedbackItems: string[] = []
     for (const item of prepared.feedback) {
       feedbackItems.push(item)
-      await emit({ type: "feedback_item", item, feedback: [...feedbackItems] })
+      await emit({ type: 'feedback_item', item, feedback: [...feedbackItems] })
     }
 
     if (prepared.debug)
-      await emit({ type: "debug", debug: prepared.debug })
+      await emit({ type: 'debug', debug: prepared.debug })
 
-    await emit({ type: "done", data: prepared })
+    await emit({ type: 'done', data: prepared })
     return prepared
   }
 
-  await emitStatus(statusHooks, "calling_ai", "Calling Cloudflare Workers AI...")
+  await emitStatus(statusHooks, 'calling_ai', 'Calling Cloudflare Workers AI...')
   const aiStartedAt = Date.now()
 
-  let rawText = ""
-  let parserPath = "stream/chunks"
+  let rawText = ''
+  let parserPath = 'stream/chunks'
   let streamFailed = false
 
   try {
@@ -482,25 +456,25 @@ export const runRoastStream = async (
     const feedbackItems: string[] = []
     for (const item of finalPayload.feedback) {
       feedbackItems.push(item)
-      await emit({ type: "feedback_item", item, feedback: [...feedbackItems] })
+      await emit({ type: 'feedback_item', item, feedback: [...feedbackItems] })
     }
   }
 
   if (finalPayload.debug)
-    await emit({ type: "debug", debug: finalPayload.debug })
+    await emit({ type: 'debug', debug: finalPayload.debug })
 
-  await emit({ type: "done", data: finalPayload })
+  await emit({ type: 'done', data: finalPayload })
   return finalPayload
 }
 
 /**
  * Normalizes unknown thrown errors to h3 createError-compatible structure.
  */
-export const toHandledError = (error: unknown): { statusCode: number, statusMessage: string, code: string, details?: unknown } => {
+export function toHandledError(error: unknown): { statusCode: number, statusMessage: string, code: string, details?: unknown } {
   const cause = error as any
   const statusCode = Number(cause?.statusCode || 500)
-  const statusMessage = String(cause?.statusMessage || "Unexpected server error")
-  const code = String(cause?.data?.code || "internal_error")
+  const statusMessage = String(cause?.statusMessage || 'Unexpected server error')
+  const code = String(cause?.data?.code || 'internal_error')
 
   return {
     statusCode,
@@ -513,7 +487,7 @@ export const toHandledError = (error: unknown): { statusCode: number, statusMess
 /**
  * Throws a normalized h3 error from a handled error tuple.
  */
-export const throwHandledError = (error: ReturnType<typeof toHandledError>): never => {
+export function throwHandledError(error: ReturnType<typeof toHandledError>): never {
   throw createError({
     statusCode: error.statusCode,
     statusMessage: error.statusMessage,
