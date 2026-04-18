@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
+  css: ["~/assets/css/main.css"],
 
   modules: [
     "@nuxt/a11y",
@@ -9,6 +10,7 @@ export default defineNuxtConfig({
     "@nuxt/icon",
     "@nuxt/image",
     "@nuxt/scripts",
+    "@unocss/nuxt",
   ],
   experimental: {
     serverAppConfig: false,
