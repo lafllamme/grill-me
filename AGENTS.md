@@ -56,6 +56,7 @@ Use this file as the primary source of repository level instructions. If additio
 - Use descriptive variable names with auxiliary verbs such as `isLoading`, `hasError`, `canSubmit`, `shouldRender`.
 - Use `consola.debug('[scope]', payload)` for debugging logs.
 - Remove temporary debug output before finalizing changes unless it has ongoing developer value.
+- For Icons, always use the built in <NuxtIcon :name="ourName"> where we just need to pass in name and set class stylings.
 
 ## File and naming conventions
 
