@@ -56,6 +56,11 @@
         </p>
         <ul class="text-sm space-y-2">
           <li>
+            <NuxtLink class="text-orange-100 underline-offset-4 hover:text-orange-200 hover:underline" to="/docs#roast-api">
+              Roast API (v2 streaming)
+            </NuxtLink>
+          </li>
+          <li>
             <a class="text-orange-100 underline-offset-4 hover:text-orange-200 hover:underline" href="https://nuxt.com/docs" rel="noreferrer" target="_blank">
               Nuxt Docs
             </a>
@@ -68,5 +73,17 @@
         </ul>
       </article>
     </div>
+
+    <article id="roast-api" class="mt-6 p-5 border border-orange-500/30 rounded-2xl bg-neutral-900/80">
+      <p class="text-xs text-orange-300 tracking-[0.14em] mb-2 uppercase">
+        Roast API Docs
+      </p>
+      <p class="text-sm text-orange-100/85 mb-2">
+        Full API flow and SSE contract documentation:
+      </p>
+      <p class="text-sm text-orange-100 font-mono">
+        docs/roast/api.md
+      </p>
+    </article>
   </section>
 </template>

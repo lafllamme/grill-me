@@ -1,262 +1,264 @@
-# Roast API (v1)
+# Roast API (v2)
 
-This document describes the current `POST /api/roast` flow end-to-end, including validation, GitHub enrichment, Cloudflare AI generation, debug payloads, and error behavior.
+This document describes the current GitHub roast system (sync + stream), module responsibilities, contracts, and diagnostics.
 
-## Overview
+## Endpoints
 
-The roast pipeline is server-first:
+- `POST /api/roast`
+  - returns one final JSON payload.
+- `POST /api/roast/stream`
+  - returns SSE (`text/event-stream`) for live typing UX.
 
-1. Client sends a GitHub username to `POST /api/roast`.
-2. Server validates and normalizes input.
-3. Server fetches public GitHub activity (events + commit details + PR events).
-4. Server compacts this data into a JSON prompt payload.
-5. Server calls Cloudflare Workers AI with strict output constraints.
-6. Server returns normalized roast output (`roast`, `feedback`, `meta`) plus debug information.
+## Shared contracts
 
-No model call is executed from the browser. All tokens and secrets stay server-side.
+Single source of truth:
 
-## Main Files
+- `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
 
-- `/shared/roast/contracts.ts`
-  - Central schemas (Zod), shared types, and defaults/limits.
-- `/server/api/roast.post.ts`
-  - Request orchestration, rate-limit, runtime option resolution, top-level logging.
-- `/server/utils/roast.ts`
-  - GitHub fetch/enrichment, AI call, parsing/recovery, final response normalization.
-- `/app/composables/useRoast.ts`
-  - Client request handling and console debug logs.
+Contains:
 
-## Shared Contracts
+- request/response schemas
+- stream event schemas
+- debug schema
+- runtime defaults/limits
 
-Contracts are defined in `/shared/roast/contracts.ts`:
-
-- `roastRequestBodySchema`
-  - `{ githubUsername: string, includeDebug?: boolean|string|number }`
-- `roastResponseSchema`
-  - `{ username, roast, feedback, meta, debug? }`
-- `resolveRoastRuntimeOptions(...)`
-  - Parses and normalizes env/body values into runtime options.
-
-### Defaults
-
-`ROAST_DEFAULTS`:
-
-- `rateLimitWindowMs`: `60000`
-- `rateLimitMax`: `8`
-- `githubTimeoutMs`: `12000`
-- `aiTimeoutMs`: `25000`
-- `aiMaxTokens`: `240`
-
-### Limits
-
-`ROAST_LIMITS`:
-
-- `eventsPerPage`: `100`
-- `maxCommitRefs`: `8`
-- `maxPrs`: `6`
-- `maxFilesPerCommit`: `4`
-- `maxPatchChars`: `700`
-- `maxResponsePreviewChars`: `1000`
-- `maxRoastWords`: `220`
-- `minFeedbackItems`: `3`
-- `maxFeedbackItems`: `5`
-
-## Request/Response
-
-### Endpoint
-
-- Method: `POST`
-- URL: `/api/roast`
-- Content-Type: `application/json`
-
-### Request body
+## Request
 
 ```json
 {
   "githubUsername": "lafllamme",
-  "includeDebug": true
+  "debugLevel": "full",
+  "variationMode": "moderate"
 }
 ```
 
-### Success response (shape)
+Fields:
+
+- `githubUsername` (required)
+- `includeDebug` (legacy bool-like switch)
+- `debugLevel` (`off | minimal | full`)
+- `variationMode` (`stable | moderate | wild`)
+
+## Final response contract
+
+Used by:
+
+- `POST /api/roast`
+- stream `done` event payload
 
 ```json
 {
   "username": "lafllamme",
-  "roast": "string",
-  "feedback": ["string", "string", "string"],
+  "roastLines": ["Line 1", "Line 2"],
+  "roast": "Line 1 Line 2",
+  "feedback": [
+    "Action 1",
+    "Action 2",
+    "Action 3"
+  ],
   "meta": {
-    "commitCount": 8,
-    "prCount": 0
+    "commitCount": 12,
+    "prCount": 0,
+    "selectedCommitCount": 8
   },
   "debug": {
     "username": "lafllamme",
-    "timingsMs": {
-      "githubFetch": 2066,
-      "aiGenerate": 6107,
-      "total": 8175
+    "promptVersion": "grill-v2.0.0",
+    "parserPath": "choices[0].message.content->json",
+    "selectionSummary": {
+      "candidateCommits": 12,
+      "selectedCommits": 8,
+      "selectedFiles": 35,
+      "selectedPatchChars": 22406
     },
-    "requests": [],
-    "github": {},
-    "ai": {}
+    "timingsMs": {
+      "githubFetch": 1613,
+      "aiGenerate": 16783,
+      "total": 18397
+    }
   }
 }
 ```
 
-### Error response
+Compatibility:
+
+- `roastLines` is primary.
+- `roast` is kept for legacy UI/clients.
+
+## Error envelope
 
 ```json
 {
   "error": {
-    "code": "invalid_request",
-    "message": "githubUsername is required"
+    "code": "cloudflare_ai_timeout",
+    "message": "Cloudflare AI request timed out"
   }
 }
 ```
 
-## Execution Flow
+Common error codes:
 
-```mermaid
-flowchart TD
-  A[Client POST /api/roast] --> B[Parse body with Zod]
-  B --> C[Validate username format]
-  C --> D[Rate-limit by IP]
-  D --> E[Fetch GitHub profile]
-  E --> F[Fetch GitHub public events]
-  F --> G[Collect commit refs and PR events]
-  G --> H[Fetch commit detail payloads in parallel]
-  H --> I[Build compact prompt payload JSON]
-  I --> J[Call Cloudflare Workers AI]
-  J --> K[Parse AI output to roast + feedback]
-  K --> L[Normalize lengths and fallback bullets]
-  L --> M[Return response + debug]
-```
+- `invalid_username`
+- `github_not_found`
+- `github_timeout`
+- `github_upstream_error`
+- `rate_limited`
+- `cloudflare_ai_not_configured`
+- `cloudflare_ai_timeout`
+- `cloudflare_ai_error`
+- `cloudflare_ai_empty_output`
+- `cloudflare_ai_unparseable_output`
 
-## Sequence Diagram
+## SSE event protocol (`/api/roast/stream`)
 
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant API as /api/roast
-  participant GH as GitHub API
-  participant AI as Cloudflare AI
-
-  C->>API: POST { githubUsername, includeDebug? }
-  API->>API: Zod parse + username validation + rate-limit
-  API->>GH: GET /users/:username
-  GH-->>API: profile
-  API->>GH: GET /users/:username/events/public
-  GH-->>API: events
-  API->>GH: GET /repos/:repo/commits/:sha (parallel, up to maxCommitRefs)
-  GH-->>API: commit details
-  API->>AI: POST /ai/run/:model with messages
-  AI-->>API: model output
-  API->>API: parse/recover/normalize
-  API-->>C: roast response (+ debug)
-```
-
-## GitHub Data Collected
-
-The server does not clone repositories. It uses public API endpoints and sends a compact summary to the model.
-
-Collected fields:
-
-- User existence check
-- Public events (`PushEvent`, `PullRequestEvent`)
-- Up to `maxCommitRefs` commit details:
-  - `repo`, `sha`, `message`
-  - `additions`, `deletions`, `changedFiles`
-  - up to `maxFilesPerCommit` file entries:
-    - `filename`, `status`, `additions`, `deletions`, `patch?`
-
-Patch handling:
-
-- Patch snippets are truncated to `maxPatchChars`.
-- Secret-like patterns are redacted before prompting.
-
-## Prompt Input Payload
-
-The user message sent to the model is JSON-stringified. Example:
+### `meta`
 
 ```json
 {
-  "username": "lafllamme",
-  "commits": [
-    {
-      "repo": "lafllamme/grill-me",
-      "sha": "af0896e",
-      "message": "",
-      "additions": 299,
-      "deletions": 199,
-      "changedFiles": 14,
-      "files": [
-        {
-          "filename": "server/utils/roast.ts",
-          "status": "modified",
-          "additions": 45,
-          "deletions": 20,
-          "patch": "@@ -1,4 +1,8 @@ ..."
-        }
-      ]
-    }
-  ],
-  "prs": []
+  "type": "meta",
+  "requestId": "1ea2c0be",
+  "username": "lafllamme"
 }
 ```
 
-System prompt constraints:
+### `typing`
 
-- Output strict JSON: `{"roast":"...","feedback":["...","...","..."]}`
-- No markdown/code fences
-- Roast style/length constraints
-- Technical critique only, no personal attacks
-- Secret-safety requirement
+```json
+{
+  "type": "typing",
+  "chunk": "Initial hero section had 72 lines...",
+  "roastSoFar": "Initial hero section had 72 lines..."
+}
+```
 
-## Debug Payload
+### `feedback`
 
-`debug` includes:
+```json
+{
+  "type": "feedback",
+  "item": "Trim redundant Vue component boilerplate...",
+  "feedback": ["Trim redundant Vue component boilerplate..."]
+}
+```
 
-- `timingsMs`
-  - `githubFetch`, `aiGenerate`, `total`
-- `requests[]`
-  - every upstream call with stage, URL, duration, status
-- `github`
-  - event/commit extraction counters
-- `ai`
-  - model, token/timeouts, system prompt, sent user payload, response preview
+### `debug` (optional)
 
-Use this to trace exactly:
+```json
+{
+  "type": "debug",
+  "debug": {
+    "username": "lafllamme",
+    "parserPath": "choices[0].message.content->json"
+  }
+}
+```
 
-- what was fetched from GitHub,
-- what was sent to the model,
-- how long each step took.
+### `done`
 
-## Error Behavior
+```json
+{
+  "type": "done",
+  "data": {
+    "username": "lafllamme",
+    "roastLines": ["..."],
+    "roast": "...",
+    "feedback": ["..."],
+    "meta": { "commitCount": 12, "prCount": 0, "selectedCommitCount": 8 }
+  }
+}
+```
 
-Common error codes:
+### `error`
 
-- `invalid_request` (400)
-- `invalid_username` (400)
-- `rate_limited` (429)
-- `github_not_found` (404)
-- `github_upstream_error` (502)
-- `github_timeout` (503)
-- `cloudflare_ai_not_configured` (503)
-- `cloudflare_ai_error` (502/503)
-- `cloudflare_ai_timeout` (503)
+```json
+{
+  "type": "error",
+  "error": {
+    "code": "cloudflare_ai_unparseable_output",
+    "message": "Cloudflare AI returned unparseable output"
+  }
+}
+```
 
-## Notes on Runtime Configuration
+## Current flow
 
-Current runtime keys (Nuxt):
+```mermaid
+flowchart TD
+  A["Client request"] --> B["contracts-adapter: parse + runtime options"]
+  B --> C["rate-limit: IP throttle"]
+  C --> D["github-collector: profile + events + commit enrich"]
+  D --> E["evidence-selector: code-first scoring"]
+  E --> F["prompt-builder: prompt + payload + RunSalt"]
+  F --> G["ai-client: Cloudflare chat completion"]
+  G --> H["output-parser: extract + parse + normalize"]
+  H --> I["response shaping + debug"]
+```
 
-- `NUXT_CF_ACCOUNT_ID`
-- `NUXT_CF_API_TOKEN`
-- `NUXT_CF_AI_MODEL`
-- `NUXT_GITHUB_TOKEN`
-- `NUXT_GITHUB_TIMEOUT_MS`
-- `NUXT_CF_AI_TIMEOUT_MS`
-- `NUXT_CF_AI_MAX_TOKENS`
-- `NUXT_ROAST_DEBUG`
+## Stream execution model
 
-`resolveRoastRuntimeOptions(...)` applies defaults when values are missing or invalid.
+Stream endpoint behavior is intentionally deterministic and robust:
+
+1. emit `meta`
+2. run full sync orchestration internally
+3. emit synthetic `typing` chunks from final roast text
+4. emit incremental `feedback`
+5. emit optional `debug`
+6. emit `done`
+
+Reason:
+
+- avoids brittle upstream token-chunk shape differences
+- keeps frontend UX streaming without depending on model chunk format
+
+## Selection + prompting rules
+
+- code-first ranking prefers:
+  - code file extensions
+  - patch-bearing files
+  - larger meaningful diffs
+- noise commit messages are penalized (`chore`, `typo`, `lint`, etc.)
+- merge commits are heavily penalized
+- prompt includes `RunSalt=<requestId>` to reduce repeated phrasing across retries
+
+## Non-static behavior guarantee
+
+- No static parser roast fallback text is injected when model output is empty.
+- Empty or unparseable model output now returns:
+  - `cloudflare_ai_empty_output` or
+  - `cloudflare_ai_unparseable_output`
+- The only intentional fallback roast is for no-public-activity users (`no_public_activity`).
+
+## Module responsibilities
+
+### Server
+
+- `/Users/flame/Developer/Projects/grill-me/server/roast/contracts-adapter.ts`
+  - request parse, username validation, runtime option normalization.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/rate-limit.ts`
+  - in-memory IP rate limiting.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/github-collector.ts`
+  - GitHub fetch and commit-file enrichment.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/evidence-selector.ts`
+  - evidence scoring/selection.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/prompt-builder.ts`
+  - versioned prompt and payload construction.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/ai-client.ts`
+  - Cloudflare request/timeout/upstream error mapping.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/output-parser.ts`
+  - model output extraction and normalization.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/fallback.ts`
+  - no-activity fallback response only.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/debug.ts`
+  - debug report shaping + scoped server logs.
+- `/Users/flame/Developer/Projects/grill-me/server/roast/orchestrator.ts`
+  - sync/stream orchestration and final response assembly.
+
+### Client
+
+- `/Users/flame/Developer/Projects/grill-me/app/composables/useRoast.ts`
+  - UI state orchestration and endpoint fallback strategy.
+- `/Users/flame/Developer/Projects/grill-me/app/utils/roast-api.ts`
+  - transport layer (`/api/roast`, `/api/roast/stream`).
+- `/Users/flame/Developer/Projects/grill-me/app/utils/roast-sse.ts`
+  - SSE block parsing and typed stream consumption.
 

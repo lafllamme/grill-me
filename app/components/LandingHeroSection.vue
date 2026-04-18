@@ -3,9 +3,14 @@ import { useRoast } from '#imports'
 
 const githubUsername = ref('')
 
-const { pending, error, roastUsername } = useRoast()
+const { pending, error, isStreaming, streamError, roastUsername, cancelRoast } = useRoast()
 
 async function submitRoast() {
+  if (pending.value && isStreaming.value) {
+    cancelRoast()
+    return
+  }
+
   await roastUsername(githubUsername.value)
 }
 </script>
@@ -37,14 +42,14 @@ async function submitRoast() {
         </label>
         <button
           class="text-sm text-on-surface tracking-[0.1em] font-black font-display px-10 py-4 rounded-lg uppercase transition duration-150 from-primary to-primary-container bg-gradient-to-r disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 hover:brightness-110"
-          :disabled="pending || !githubUsername.trim()"
+          :disabled="!pending && !githubUsername.trim()"
           @click="submitRoast"
         >
-          {{ pending ? "ROASTING..." : "ROAST" }}
+          {{ pending ? "CANCEL" : "ROAST" }}
         </button>
       </div>
-      <p v-if="error" class="text-sm text-primary font-body mt-3 text-left">
-        {{ error }}
+      <p v-if="error || streamError" class="text-sm text-primary font-body mt-3 text-left">
+        {{ error || streamError }}
       </p>
     </div>
 

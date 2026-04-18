@@ -1,7 +1,22 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useRoast } from '~/composables/useRoast'
 
-const { result, pending } = useRoast()
+const {
+  result,
+  pending,
+  isStreaming,
+  partialRoast,
+  partialFeedback,
+  streamError,
+} = useRoast()
+
+const partialRoastLines = computed(() => {
+  return partialRoast.value
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean)
+})
 </script>
 
 <template>
@@ -14,22 +29,48 @@ const { result, pending } = useRoast()
           <span class="border border-green-500/40 rounded-full bg-green-500/20 h-3 w-3" />
         </div>
         <span class="text-xs text-on-surface-variant tracking-[0.14em] font-mono uppercase">
-          roast-engine-v2.0.4 --live
+          roast-engine-v2.1.0 --stream
         </span>
       </div>
 
       <div class="text-sm font-mono p-8 min-h-[400px] space-y-4">
-        <div v-if="pending" class="space-y-4">
+        <div v-if="pending && isStreaming" class="space-y-4">
           <div class="flex gap-4">
-            <span class="text-on-surface-variant/90">[now]</span>
-            <span class="text-primary font-bold">INIT:</span>
-            <span class="text-on-surface">Fetching GitHub activity and preparing roast payload...</span>
+            <span class="text-on-surface-variant/90">[live]</span>
+            <span class="text-primary font-bold">STREAM:</span>
+            <span class="text-on-surface">Receiving live roast output...</span>
           </div>
-          <div class="flex gap-4">
-            <span class="text-on-surface-variant/90">[now]</span>
-            <span class="text-amber-400 font-bold">SCAN:</span>
-            <span class="text-on-surface">Analyzing commits, patches and PR metadata...</span>
+
+          <div v-if="partialRoastLines.length > 0" class="space-y-2">
+            <p
+              v-for="(line, index) in partialRoastLines"
+              :key="`line-${index}-${line}`"
+              class="text-on-surface leading-relaxed"
+            >
+              {{ line }}
+            </p>
           </div>
+
+          <div v-if="partialFeedback.length > 0" class="pt-2">
+            <p class="text-xs text-primary tracking-[0.14em] font-display mb-2 uppercase">
+              Feedback (live)
+            </p>
+            <ul class="space-y-2">
+              <li
+                v-for="(item, index) in partialFeedback"
+                :key="`live-feedback-${index}-${item}`"
+                class="text-on-surface-variant flex gap-2"
+              >
+                <span class="text-primary">-</span>
+                <span>{{ item }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <p v-if="streamError" class="text-sm text-primary">
+            {{ streamError }}
+          </p>
+
           <div class="text-primary pt-4 animate-pulse">
             _
           </div>
@@ -45,7 +86,9 @@ const { result, pending } = useRoast()
           </div>
 
           <blockquote class="text-lg text-on-surface leading-relaxed font-serif pl-4 border-l-4 border-primary italic">
-            {{ result.roast }}
+            <p v-for="(line, index) in result.roastLines" :key="`result-line-${index}-${line}`">
+              {{ line }}
+            </p>
           </blockquote>
 
           <div class="pt-2">

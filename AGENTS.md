@@ -222,6 +222,9 @@ Use this file as the primary source of repository level instructions. If additio
 - Keep tests close to the feature they cover when possible.
 - Update tests when behavior changes intentionally.
 - Do not add brittle tests for internal implementation details unless necessary.
+- Use `vitest` for unit/contract tests and `playwright` for E2E smoke tests.
+- For roast-related changes (`server/roast/*`, `server/api/roast*`, `app/composables/useRoast.ts`, landing roast components), run both unit and E2E tests before finalizing.
+- Follow `docs/test.md` for commands, flow checks, and debugging procedure.
 
 ## Validation checklist
 
@@ -229,6 +232,7 @@ Before finalizing a change:
 
 - Run lint
 - Run typecheck
+- Run relevant tests from `docs/test.md` (at least unit tests; include E2E for API/UI changes)
 - Verify SSR safety
 - Verify no unnecessary custom CSS was introduced
 - Verify naming and file placement follow repository conventions
@@ -280,3 +284,4 @@ Additional project specific guidance can live in:
 
 - `docs/unocss` - everything related to styling configuration
 - `docs/nuxt` - everything related to Nuxt in all forms
+- `docs/test.md` - test commands, roast endpoint verification, and E2E workflow

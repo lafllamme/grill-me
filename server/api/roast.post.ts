@@ -1,147 +1,72 @@
-import consola from "consola"
-import { createError, getRequestIP, readBody, setResponseStatus } from "h3"
-import {
-  resolveRoastRuntimeOptions,
-  roastRequestBodySchema,
-} from "~~/shared/roast/contracts"
-import {
-  checkRateLimit,
-  createDebugReport,
-  fetchGithubContext,
-  generateRoast,
-  validateGithubUsername,
-} from "../utils/roast"
-
-/**
- * Canonical error envelope returned by this route.
- */
-const errorBody = (code: string, message: string) => ({
-  error: {
-    code,
-    message,
-  },
-})
-
-const logInfo = (scope: string, payload: Record<string, unknown>): void => {
-  consola.info(scope, payload)
-}
+import { getRequestIP, setResponseStatus } from "h3"
+import { parseRoastRequest } from "../roast/contracts-adapter"
+import { createDebugReport, logServerError, logServerInfo } from "../roast/debug"
+import { runRoastSync, toErrorBody, toHandledError } from "../roast/orchestrator"
+import { checkRateLimit } from "../roast/rate-limit"
 
 export default defineEventHandler(async (event) => {
   const requestId = crypto.randomUUID().slice(0, 8)
 
   try {
-    const rawBody = await readBody(event)
-    const parsedBody = roastRequestBodySchema.safeParse(rawBody)
-    if (!parsedBody.success) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "githubUsername is required",
-        data: {
-          code: "invalid_request",
-          issues: parsedBody.error.issues,
-        },
-      })
-    }
-    const body = parsedBody.data
-
+    const parsed = await parseRoastRequest(event)
     const config = useRuntimeConfig(event)
-    const username = validateGithubUsername(body.githubUsername)
-    const runtimeOptions = resolveRoastRuntimeOptions(config, body.includeDebug)
-    const debugReport = createDebugReport(username)
-    const requestStartedAt = Date.now()
+    const debug = createDebugReport(parsed.username)
 
     const clientIp = getRequestIP(event, { xForwardedFor: true }) || "unknown"
     checkRateLimit(clientIp)
 
-    logInfo("[server/roast] request", {
+    logServerInfo("request", {
       requestId,
-      username,
+      username: parsed.username,
       clientIp,
-      includeDebug: runtimeOptions.includeDebug,
+      includeDebug: parsed.runtime.includeDebug,
+      debugLevel: parsed.runtime.debugLevel,
       hasCfAccountId: Boolean(config.cfAccountId),
       hasCfApiToken: Boolean(config.cfApiToken),
       hasGithubToken: Boolean(config.githubToken),
       model: config.cfAiModel,
     })
 
-    const githubStartedAt = Date.now()
-    const githubContext = await fetchGithubContext(username, config.githubToken || undefined, {
-      githubTimeoutMs: runtimeOptions.githubTimeoutMs,
-      debug: debugReport,
-    })
-    if (debugReport)
-      debugReport.timingsMs.githubFetch = Date.now() - githubStartedAt
-
-    logInfo("[server/roast/github] context", {
+    const response = await runRoastSync({
       requestId,
-      username,
-      commitCount: githubContext.commits.length,
-      prCount: githubContext.prs.length,
-      github: debugReport.github,
-      requests: debugReport.requests.filter(request => request.stage.startsWith("github")),
+      username: parsed.username,
+      runtime: parsed.runtime,
+      env: {
+        cfAccountId: config.cfAccountId || undefined,
+        cfApiToken: config.cfApiToken || undefined,
+        cfAiModel: config.cfAiModel || undefined,
+        githubToken: config.githubToken || undefined,
+      },
+      includeDebugInResponse: parsed.runtime.includeDebug,
+      debug,
     })
 
-    const aiStartedAt = Date.now()
-    const roastResult = await generateRoast(githubContext, {
-      accountId: config.cfAccountId || undefined,
-      apiToken: config.cfApiToken || undefined,
-      model: config.cfAiModel || undefined,
-      aiTimeoutMs: runtimeOptions.cfAiTimeoutMs,
-      aiMaxTokens: runtimeOptions.cfAiMaxTokens,
-      debug: debugReport,
-    })
-    if (debugReport) {
-      debugReport.timingsMs.aiGenerate = Date.now() - aiStartedAt
-      debugReport.timingsMs.total = Date.now() - requestStartedAt
-    }
-
-    logInfo("[server/roast/ai] input", {
+    logServerInfo("success", {
       requestId,
-      username,
-      model: config.cfAiModel,
-      prompt: debugReport.ai?.systemPrompt,
-      payload: debugReport.ai?.userPayload?.payload,
+      username: parsed.username,
+      roastLineCount: response.roastLines.length,
+      roastLength: response.roast.length,
+      feedbackCount: response.feedback.length,
+      parserPath: response.debug?.parserPath,
+      fallbackReason: response.debug?.fallbackReason,
+      selectionSummary: response.debug?.selectionSummary,
+      timingsMs: response.debug?.timingsMs,
     })
 
-    logInfo("[server/roast/ai] output", {
-      requestId,
-      username,
-      responsePreview: debugReport.ai?.responsePreview,
-      requests: debugReport.requests.filter(request => request.stage === "cloudflare_ai"),
-    })
-
-    logInfo("[server/roast] success", {
-      requestId,
-      username,
-      roastLength: roastResult.roast.length,
-      feedbackCount: roastResult.feedback.length,
-      timingsMs: debugReport.timingsMs,
-    })
-
-    logInfo("[server/roast] response-payload", {
-      requestId,
-      username,
-      response: roastResult,
-    })
-
-    return roastResult
+    return response
   }
-  catch (error: any) {
-    const statusCode = Number(error?.statusCode || 500)
-    const statusMessage = String(error?.statusMessage || "Unexpected server error")
-    const code = String(error?.data?.code || "internal_error")
+  catch (error) {
+    const handled = toHandledError(error)
+    setResponseStatus(event, handled.statusCode)
 
-    setResponseStatus(event, statusCode)
-
-    consola.error("[server/roast] failed", {
+    logServerError("failed", {
       requestId,
-      statusCode,
-      statusMessage,
-      code,
-      details: error?.data,
-      message: error?.message,
+      statusCode: handled.statusCode,
+      statusMessage: handled.statusMessage,
+      code: handled.code,
+      details: handled.details,
     })
 
-    return errorBody(code, statusMessage)
+    return toErrorBody(handled.code, handled.statusMessage)
   }
 })
