@@ -7,13 +7,13 @@
       <path d="M0 24L12.3604 24C15.087 24 16.3998 27.3431 14.4017 29.1984L6 37" />
     </g>
     <text
-      x="52"
-      y="33.5"
+      x="46"
+      y="35.5"
       fill="#F5F5F5"
-      font-family="Outfit, Bricolage Grotesque, sans-serif"
-      font-size="18"
-      font-weight="600"
-      letter-spacing="0.01em"
+      font-family="Geist, Outfit, Bricolage Grotesque, sans-serif"
+      font-size="25"
+      font-weight="700"
+      letter-spacing="0"
     >
       Grillme
     </text>
