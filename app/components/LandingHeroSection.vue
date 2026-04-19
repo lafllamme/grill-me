@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useRoast } from '#imports'
 
-const githubUsername = ref('')
+const roastStore = useRoastStore()
 
 const { pending, error, isStreaming, streamError, roastUsername, cancelRoast } = useRoast()
 
@@ -11,7 +11,7 @@ async function submitRoast() {
     return
   }
 
-  await roastUsername(githubUsername.value)
+  await roastUsername(roastStore.trimmedUsername)
 }
 </script>
 
@@ -30,19 +30,10 @@ async function submitRoast() {
 
     <div class="p-2 rounded-xl bg-surface-container-lowest max-w-4xl w-full shadow-[0_0_40px_rgba(255,51,0,0.15)]">
       <div class="flex flex-col gap-2 md:flex-row">
-        <label class="px-4 bg-surface-container-lowest flex flex-1 gap-3 items-center">
-          <Icon class="text-[18px] text-on-surface-variant" name="ph:user" />
-          <input
-            v-model="githubUsername"
-            class="text-sm text-on-surface font-mono py-4 outline-none bg-transparent w-full placeholder:text-on-surface-variant/60"
-            placeholder="torvalds"
-            type="text"
-            @keydown.enter.prevent="submitRoast"
-          >
-        </label>
+        <RoastInput :disabled="pending && isStreaming" @submit="submitRoast" />
         <button
           class="text-sm text-on-surface tracking-[0.1em] font-black font-display px-10 py-4 rounded-lg uppercase transition duration-150 from-primary to-primary-container bg-gradient-to-r disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 hover:brightness-110"
-          :disabled="!pending && !githubUsername.trim()"
+          :disabled="!pending && !roastStore.canSubmit"
           @click="submitRoast"
         >
           {{ pending ? "CANCEL" : "ROAST" }}
