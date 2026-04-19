@@ -26,10 +26,10 @@ function onSubmit() {
 
 <template>
   <label class="px-3 rounded-full bg-transparent flex flex-1 gap-3 min-h-[4.25rem] items-center md:px-4">
-    <Icon class="text-[18px] text-primary" name="ph:link-simple-horizontal" />
+    <Icon class="text-[18px] text-primary/90" name="ph:link-simple-horizontal" />
     <input
       v-model="githubUsername"
-      class="text-lg text-on-surface font-body py-3 outline-none bg-transparent w-full placeholder:text-on-surface-variant/35"
+      class="text-lg text-on-surface font-body font-medium py-3 outline-none bg-transparent w-full placeholder:text-on-surface-variant/40"
       placeholder="torvalds"
       type="text"
       :disabled="disabled"

@@ -51,7 +51,7 @@ const errorMessage = computed(() => error.value || streamError.value)
       Our AI doesn't just review your code; it incinerates your technical debt and feeds your ego to the wolves. Enter a GitHub username to begin the roast.
     </p>
 
-    <div class="max-w-4xl w-full">
+    <div class="max-w-5xl w-full">
       <RoastCard
         :pending="pending"
         :is-streaming="isStreaming"
@@ -59,18 +59,6 @@ const errorMessage = computed(() => error.value || streamError.value)
         :error-message="errorMessage"
         @submit="submitRoast"
       />
-    </div>
-
-    <div class="text-[10px] text-on-surface-variant tracking-[0.14em] font-bold font-display mt-8 flex flex-wrap gap-3 uppercase items-center justify-center">
-      <span class="inline-flex gap-1 items-center">
-        <Icon class="text-[12px] text-primary" name="ph:fire" />
-        4,209 repos destroyed today
-      </span>
-      <span class="text-on-surface-variant/50">|</span>
-      <span class="inline-flex gap-1 items-center">
-        <Icon class="text-[12px]" name="ph:skull" />
-        12.4M lines of cringe identified
-      </span>
     </div>
   </section>
 </template>
