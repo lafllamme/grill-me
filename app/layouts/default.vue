@@ -2,8 +2,7 @@
 const INTRO_FADE_MS = 1200
 const INTRO_FADE_DELAY_MS = 140
 const INTRO_FADE_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
-const PATTERN_VARIANTS = ['square', 'circle', 'triangle', 'diamond'] as const
-type PixelBlastVariant = (typeof PATTERN_VARIANTS)[number]
+type PixelBlastVariant = 'square' | 'circle' | 'triangle' | 'diamond'
 
 const isCurtainVisible = ref(true)
 const isCurtainMounted = ref(true)
@@ -51,6 +50,7 @@ function handleCurtainTransitionEnd() {
       </main>
     </div>
 
+    <!-- Pattern menu intentionally disabled for now.
     <div class="pointer-events-none right-4 top-20 fixed z-30">
       <div class="p-2 border border-zinc-800/80 rounded-xl bg-black/70 pointer-events-auto backdrop-blur-md">
         <div class="text-[10px] text-zinc-400 tracking-[0.12em] px-2 pb-2 uppercase">
@@ -72,5 +72,6 @@ function handleCurtainTransitionEnd() {
         </div>
       </div>
     </div>
+    -->
   </div>
 </template>
