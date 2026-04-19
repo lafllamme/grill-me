@@ -1,9 +1,26 @@
 <script lang="ts" setup>
+import { useWindowScroll } from '@vueuse/core'
 import { useRoast } from '#imports'
 
 const roastStore = useRoastStore()
 
 const { pending, error, isStreaming, streamError, roastUsername, cancelRoast } = useRoast()
+const { y } = useWindowScroll({
+  behavior: 'smooth',
+})
+
+function scrollToTerminal() {
+  if (!import.meta.client)
+    return
+
+  const terminalElement = document.getElementById('roast-terminal')
+  if (!terminalElement)
+    return
+
+  const topOffset = 24
+  const targetY = terminalElement.getBoundingClientRect().top + window.scrollY - topOffset
+  y.value = Math.max(0, targetY)
+}
 
 async function submitRoast() {
   if (pending.value && isStreaming.value) {
@@ -11,8 +28,14 @@ async function submitRoast() {
     return
   }
 
+  if (!roastStore.canSubmit)
+    return
+
+  scrollToTerminal()
   await roastUsername(roastStore.trimmedUsername)
 }
+
+const errorMessage = computed(() => error.value || streamError.value)
 </script>
 
 <template>
@@ -28,20 +51,14 @@ async function submitRoast() {
       Our AI doesn't just review your code; it incinerates your technical debt and feeds your ego to the wolves. Enter a GitHub username to begin the roast.
     </p>
 
-    <div class="p-2 rounded-xl bg-surface-container-lowest max-w-4xl w-full shadow-[0_0_40px_rgba(255,51,0,0.15)]">
-      <div class="flex flex-col gap-2 md:flex-row">
-        <RoastInput :disabled="pending && isStreaming" @submit="submitRoast" />
-        <button
-          class="text-sm text-on-surface tracking-[0.1em] font-black font-display px-10 py-4 rounded-lg uppercase transition duration-150 from-primary to-primary-container bg-gradient-to-r disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 hover:brightness-110"
-          :disabled="!pending && !roastStore.canSubmit"
-          @click="submitRoast"
-        >
-          {{ pending ? "CANCEL" : "ROAST" }}
-        </button>
-      </div>
-      <p v-if="error || streamError" class="text-sm text-primary font-body mt-3 text-left">
-        {{ error || streamError }}
-      </p>
+    <div class="max-w-4xl w-full">
+      <RoastCard
+        :pending="pending"
+        :is-streaming="isStreaming"
+        :can-submit="roastStore.canSubmit"
+        :error-message="errorMessage"
+        @submit="submitRoast"
+      />
     </div>
 
     <div class="text-[10px] text-on-surface-variant tracking-[0.14em] font-bold font-display mt-8 flex flex-wrap gap-3 uppercase items-center justify-center">

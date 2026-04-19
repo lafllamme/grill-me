@@ -71,7 +71,7 @@ const roastDisplayLines = computed(() => {
 </script>
 
 <template>
-  <section class="mx-auto px-6 py-24 max-w-6xl">
+  <section id="roast-terminal" class="mx-auto px-6 py-24 max-w-6xl">
     <div class="border border-divider rounded-xl bg-surface-container-lowest shadow-2xl overflow-hidden">
       <div class="px-4 py-3 bg-surface-container flex items-center justify-between">
         <div class="flex gap-2">
