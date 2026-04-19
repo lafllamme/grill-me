@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GrainientSettings } from '~/composables/useGrainientSettings'
+import { useClipboard } from '@vueuse/core'
 import { GRAINIENT_DEFAULT_SETTINGS } from '~/composables/useGrainientSettings'
 
 type NumericSettingKey
@@ -63,6 +64,7 @@ const numericControls: NumericControl[] = [
 ]
 
 const defaultSettings = GRAINIENT_DEFAULT_SETTINGS
+const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 
 const getNumericSetting = (key: NumericSettingKey) => props.settings[key]
 
@@ -82,14 +84,33 @@ function formatValue(value: number) {
     return String(value)
   return value.toFixed(2)
 }
+
+function copySettingsJson() {
+  const payload = JSON.stringify(props.settings, null, 2)
+  copy(payload)
+}
 </script>
 
 <template>
-  <div class="max-h-[calc(100vh-6rem)] w-[340px] pointer-events-none right-4 top-20 fixed z-30">
-    <div class="border border-white/10 rounded-xl bg-black/75 flex flex-col max-h-full pointer-events-auto backdrop-blur-md">
+  <div
+    class="w-[340px] pointer-events-auto right-4 top-20 fixed z-30"
+    :class="isPanelOpen ? 'h-[calc(100vh-6rem)]' : 'h-auto'"
+  >
+    <div
+      class="border border-white/10 rounded-xl bg-black/75 flex flex-col min-h-0 overflow-hidden backdrop-blur-md"
+      :class="isPanelOpen ? 'h-full' : 'h-auto'"
+    >
       <div class="p-3 border-b border-white/10 flex items-center justify-between">
         <span class="text-xs text-white/80 tracking-[0.12em] uppercase">Grainient</span>
         <div class="flex gap-2 items-center">
+          <button
+            v-if="isPanelOpen"
+            type="button"
+            class="text-[10px] text-white/80 px-2 py-1 border border-white/20 rounded-md hover:bg-white/10"
+            @click="copySettingsJson"
+          >
+            {{ copied ? 'Copied' : 'Copy JSON' }}
+          </button>
           <button
             type="button"
             class="text-[10px] text-white/80 px-2 py-1 border border-white/20 rounded-md hover:bg-white/10"
@@ -107,7 +128,7 @@ function formatValue(value: number) {
         </div>
       </div>
 
-      <div v-if="isPanelOpen" class="p-3 overflow-auto space-y-3">
+      <div v-if="isPanelOpen" class="p-3 overscroll-contain flex-1 min-h-0 overflow-y-auto space-y-3">
         <div class="gap-2 grid grid-cols-3">
           <label class="space-y-1">
             <span class="text-[10px] text-white/70 uppercase">Color 1</span>

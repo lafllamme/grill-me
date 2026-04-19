@@ -26,10 +26,11 @@ export interface GrainientSettings {
 }
 
 export const GRAINIENT_STORAGE_KEY = 'grillme:grainient:settings:v1'
+export const GRAINIENT_PANEL_OPEN_STORAGE_KEY = 'grillme:grainient:panel-open:v1'
 
 export const GRAINIENT_DEFAULT_SETTINGS: GrainientSettings = {
-  color1: '#323135',
-  color2: '#FF5633',
+  color1: '#000000',
+  color2: '#A73A25',
   color3: '#2D2D2F',
   timeSpeed: 0.25,
   colorBalance: 0,
@@ -41,7 +42,7 @@ export const GRAINIENT_DEFAULT_SETTINGS: GrainientSettings = {
   blendSoftness: 0.05,
   rotationAmount: 500,
   noiseScale: 2,
-  grainAmount: 0.1,
+  grainAmount: 0.19,
   grainScale: 2,
   grainAnimated: false,
   contrast: 1.5,
@@ -93,7 +94,7 @@ function normalizeSettings(value: unknown): GrainientSettings {
 
 export function useGrainientSettings() {
   const settings = reactive<GrainientSettings>({ ...GRAINIENT_DEFAULT_SETTINGS })
-  const isPanelOpen = ref(true)
+  const isPanelOpen = ref(false)
 
   const loadSettings = () => {
     if (!import.meta.client)
@@ -131,6 +132,12 @@ export function useGrainientSettings() {
 
   onMounted(() => {
     loadSettings()
+    if (!import.meta.client)
+      return
+    const rawPanelOpen = localStorage.getItem(GRAINIENT_PANEL_OPEN_STORAGE_KEY)
+    if (rawPanelOpen === null)
+      return
+    isPanelOpen.value = rawPanelOpen === '1'
   })
 
   watch(
@@ -139,6 +146,16 @@ export function useGrainientSettings() {
       saveSettingsDebounced()
     },
     { deep: true },
+  )
+
+  watch(
+    isPanelOpen,
+    (value) => {
+      if (!import.meta.client)
+        return
+      localStorage.setItem(GRAINIENT_PANEL_OPEN_STORAGE_KEY, value ? '1' : '0')
+    },
+    { immediate: false },
   )
 
   return {
