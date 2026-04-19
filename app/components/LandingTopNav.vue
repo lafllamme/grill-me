@@ -84,34 +84,30 @@ const mobileMenuItemVariants = {
             </button>
             <motion.button
               type="button"
-              class="group rounded-lg flex size-9 cursor-pointer items-center justify-center relative hover:bg-white/5"
+              class="group rounded-lg size-9 cursor-pointer relative hover:bg-white/5"
               :aria-label="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
-              :animate="isMobileMenuOpen ? { rotate: [0, 4, -4, 0] } : { rotate: 0 }"
-              :transition="{ duration: 0.34, ease: 'easeInOut' }"
+              initial="hide"
+              :animate="isMobileMenuOpen ? 'show' : 'hide'"
               @click="toggleMobileMenu"
             >
-              <div class="h-5 w-5 relative">
+              <span class="h-6 w-6 left-1/2 top-1/2 absolute -translate-x-1/2 -translate-y-1/2">
                 <motion.span
-                  class="rounded-full bg-white h-[1.2px] w-[22px] block scale-[0.85] left-0 top-[6px] absolute"
+                  class="rounded-full bg-white h-[1.2px] w-[20px] left-1/2 top-[7px] absolute -translate-x-1/2"
                   :variants="{
                     hide: { rotate: 0, y: 0 },
                     show: { rotate: 45, y: 4 },
                   }"
-                  :initial="false"
-                  :animate="isMobileMenuOpen ? 'show' : 'hide'"
-                  :transition="{ duration: 0.2, ease: 'easeInOut' }"
+                  :transition="{ type: 'spring', stiffness: 620, damping: 22, mass: 0.68 }"
                 />
                 <motion.span
-                  class="rounded-full bg-white h-[1.2px] w-[22px] block scale-[0.85] left-0 top-[12px] absolute"
+                  class="rounded-full bg-white h-[1.2px] w-[20px] left-1/2 top-[15px] absolute -translate-x-1/2"
                   :variants="{
                     hide: { rotate: 0, y: 0 },
-                    show: { rotate: -45, y: -2 },
+                    show: { rotate: -45, y: -4 },
                   }"
-                  :initial="false"
-                  :animate="isMobileMenuOpen ? 'show' : 'hide'"
-                  :transition="{ duration: 0.2, ease: 'easeInOut' }"
+                  :transition="{ type: 'spring', stiffness: 620, damping: 22, mass: 0.68 }"
                 />
-              </div>
+              </span>
             </motion.button>
           </div>
         </div>
@@ -126,7 +122,7 @@ const mobileMenuItemVariants = {
             :transition="{ duration: 0.3, ease: 'easeInOut' }"
           >
             <motion.div
-              class="pb-5 pt-5 space-y-3.5"
+              class="pt-4 space-y-2.5"
               :variants="mobileMenuContainerVariants"
               initial="hidden"
               animate="visible"
@@ -140,7 +136,7 @@ const mobileMenuItemVariants = {
               >
                 <NuxtLink
                   :to="item.to"
-                  class="text-base text-white tracking-tight font-body font-normal px-3 py-1.5 block md:px-0"
+                  class="text-base text-white tracking-tight font-body font-medium px-3 py-1 block transition-colors duration-200 md:px-0"
                   @click="closeMobileMenu"
                 >
                   {{ item.label }}
