@@ -149,3 +149,9 @@ Der Prompt ist an den `github-grill-me` Skill angelehnt:
 - Caching von GitHub-Enrichment pro Username für kürzere Antwortzeiten
 - Async job queue bei Lastspitzen
 - Optional Score-Schema (readability/churn/risk) im Response-Meta
+
+## Positioning note
+
+- Grill.me is a toy with taste: one input, one deliberately theatrical output.
+- The roast must feel crafted, not random — persona consistency beats variety.
+- Session should end in a share moment, not a settings screen.
