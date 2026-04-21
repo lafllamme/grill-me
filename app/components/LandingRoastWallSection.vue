@@ -5,13 +5,13 @@
         <h2 class="text-3xl tracking-tight font-black font-headline mb-8 uppercase">
           Roast of the Day
         </h2>
-        <article class="p-12 rounded-2xl bg-surface-container-high relative overflow-hidden">
+        <article class="p-12 rounded-2xl bg-black relative overflow-hidden">
           <div class="text-9xl text-on-surface-variant/10 font-black p-8 select-none right-0 top-0 absolute">
             “
           </div>
           <div class="relative z-10">
             <div class="mb-8 flex gap-4 items-center">
-              <div class="rounded-full h-16 w-16 from-surface-container-highest to-surface-container-lowest bg-gradient-to-br" />
+              <div class="rounded-full h-16 w-16 bg-black" />
               <div>
                 <p class="text-lg font-body font-bold">
                   Senior Dev @ Big Tech
@@ -39,7 +39,7 @@
           Wall of Shame
         </h2>
         <div class="space-y-4">
-          <article class="group px-6 py-5 bg-surface-container-low flex cursor-pointer transition-colors items-center justify-between hover:bg-surface-container-high">
+          <article class="group px-6 py-5 bg-black flex cursor-pointer transition-colors items-center justify-between hover:bg-black">
             <div class="flex gap-4 items-center">
               <span class="text-xl text-primary font-black font-headline">01</span>
               <div>
@@ -54,7 +54,7 @@
             <Icon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
           </article>
 
-          <article class="group px-6 py-5 bg-surface-container-low flex cursor-pointer transition-colors items-center justify-between hover:bg-surface-container-high">
+          <article class="group px-6 py-5 bg-black flex cursor-pointer transition-colors items-center justify-between hover:bg-black">
             <div class="flex gap-4 items-center">
               <span class="text-xl text-primary font-black font-headline">02</span>
               <div>
@@ -69,7 +69,7 @@
             <Icon class="text-[18px] text-on-surface-variant transition-colors group-hover:text-primary" name="ph:fire" />
           </article>
 
-          <article class="group px-6 py-5 bg-surface-container-low flex cursor-pointer transition-colors items-center justify-between hover:bg-surface-container-high">
+          <article class="group px-6 py-5 bg-black flex cursor-pointer transition-colors items-center justify-between hover:bg-black">
             <div class="flex gap-4 items-center">
               <span class="text-xl text-primary font-black font-headline">03</span>
               <div>

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   pending?: boolean
   isStreaming?: boolean
   canSubmit?: boolean
@@ -14,6 +14,8 @@ withDefaults(defineProps<{
 const emit = defineEmits<{
   submit: []
 }>()
+
+const isBusy = computed(() => props.pending || props.isStreaming)
 
 function onSubmit() {
   emit('submit')
@@ -45,19 +47,19 @@ function onSubmit() {
     </header>
 
     <div class="flex flex-col gap-3 relative md:flex-row md:items-center">
-      <RoastInput :disabled="pending && isStreaming" @submit="onSubmit" />
+      <RoastInput :disabled="isBusy" @submit="onSubmit" />
 
       <button
         class="group/btn text-lg text-background tracking-[0.02em] font-headline font-semibold px-10 rounded-[2rem] shrink-0 h-[4.5rem] uppercase shadow-[0_8px_26px_rgba(255,51,0,0.25)] transition duration-300 relative overflow-hidden from-primary to-primary-container bg-gradient-to-br disabled:opacity-60 md:min-w-[11rem] disabled:cursor-not-allowed hover:shadow-[0_10px_30px_rgba(255,51,0,0.32)] active:scale-95 hover:brightness-110"
-        :disabled="!pending && !canSubmit"
+        :disabled="!isBusy && !canSubmit"
         @click="onSubmit"
       >
         <span class="inline-flex gap-2 items-center relative z-10">
-          {{ pending ? "Grilling..." : "Grill" }}
-          <Icon v-if="!pending" class="text-xl" name="ph:fire-fill" />
+          {{ isBusy ? "Grilling..." : "Grill" }}
+          <Icon class="text-xl" name="ph:fire" />
         </span>
         <span
-          v-if="!pending"
+          v-if="!isBusy"
           class="bg-white/16 opacity-0 pointer-events-none transition-opacity duration-300 inset-0 absolute group-hover/btn:opacity-100"
         />
       </button>

@@ -1,5 +1,5 @@
 <template>
-  <section id="metrics" class="px-6 py-24 bg-surface-container-low">
+  <section id="metrics" class="px-6 py-24 bg-black">
     <div class="mx-auto max-w-7xl">
       <div class="mb-16">
         <h2 class="text-4xl text-on-surface tracking-tight font-black font-headline uppercase md:text-6xl">
@@ -10,7 +10,7 @@
       </div>
 
       <div class="gap-8 grid grid-cols-1 md:grid-cols-3">
-        <article class="p-8 rounded-lg bg-surface transition duration-150 hover:shadow-[0_0_40px_rgba(255,51,0,0.15)]">
+        <article class="p-8 rounded-lg bg-black transition duration-150 hover:shadow-[0_0_40px_rgba(255,51,0,0.15)]">
           <Icon class="text-[26px] text-primary mb-6" name="ph:trend-down" />
           <p class="text-xs text-on-surface-variant tracking-[0.14em] font-bold font-display mb-2 uppercase">
             Ego Reduction Rate
@@ -23,7 +23,7 @@
           </p>
         </article>
 
-        <article class="p-8 rounded-lg bg-surface transition duration-150 hover:shadow-[0_0_40px_rgba(255,51,0,0.15)]">
+        <article class="p-8 rounded-lg bg-black transition duration-150 hover:shadow-[0_0_40px_rgba(255,51,0,0.15)]">
           <Icon class="text-[26px] text-primary mb-6" name="ph:thermometer-hot" />
           <p class="text-xs text-on-surface-variant tracking-[0.14em] font-bold font-display mb-2 uppercase">
             System Temp
@@ -36,7 +36,7 @@
           </p>
         </article>
 
-        <article class="p-8 rounded-lg bg-surface transition duration-150 hover:shadow-[0_0_40px_rgba(255,51,0,0.15)]">
+        <article class="p-8 rounded-lg bg-black transition duration-150 hover:shadow-[0_0_40px_rgba(255,51,0,0.15)]">
           <Icon class="text-[26px] text-primary mb-6" name="ph:notepad" />
           <p class="text-xs text-on-surface-variant tracking-[0.14em] font-bold font-display mb-2 uppercase">
             Cringes Logged
