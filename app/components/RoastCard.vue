@@ -44,25 +44,23 @@ function onSubmit() {
       </div>
     </header>
 
-    <div class="p-3 border border-[lab(100%_0_0_/_0.1)] rounded-[2rem] border-solid bg-[rgba(8,10,12,0.56)] shadow-inner relative md:p-4">
-      <div class="flex flex-col gap-3 md:flex-row md:items-center">
-        <RoastInput :disabled="pending && isStreaming" @submit="onSubmit" />
+    <div class="flex flex-col gap-3 relative md:flex-row md:items-center">
+      <RoastInput :disabled="pending && isStreaming" @submit="onSubmit" />
 
-        <button
-          class="group/btn text-lg text-background tracking-[0.02em] font-headline font-semibold px-10 py-4 rounded-full shrink-0 uppercase shadow-[0_8px_26px_rgba(255,51,0,0.25)] transition duration-300 relative overflow-hidden from-primary to-primary-container bg-gradient-to-br disabled:opacity-60 md:min-w-[11rem] disabled:cursor-not-allowed hover:shadow-[0_10px_30px_rgba(255,51,0,0.32)] active:scale-95 hover:brightness-110"
-          :disabled="!pending && !canSubmit"
-          @click="onSubmit"
-        >
-          <span class="inline-flex gap-2 items-center relative z-10">
-            {{ pending ? "Grilling..." : "Grill" }}
-            <Icon v-if="!pending" class="text-xl" name="ph:fire-fill" />
-          </span>
-          <span
-            v-if="!pending"
-            class="bg-white/16 opacity-0 pointer-events-none transition-opacity duration-300 inset-0 absolute group-hover/btn:opacity-100"
-          />
-        </button>
-      </div>
+      <button
+        class="group/btn text-lg text-background tracking-[0.02em] font-headline font-semibold px-10 rounded-[2rem] shrink-0 h-[4.5rem] uppercase shadow-[0_8px_26px_rgba(255,51,0,0.25)] transition duration-300 relative overflow-hidden from-primary to-primary-container bg-gradient-to-br disabled:opacity-60 md:min-w-[11rem] disabled:cursor-not-allowed hover:shadow-[0_10px_30px_rgba(255,51,0,0.32)] active:scale-95 hover:brightness-110"
+        :disabled="!pending && !canSubmit"
+        @click="onSubmit"
+      >
+        <span class="inline-flex gap-2 items-center relative z-10">
+          {{ pending ? "Grilling..." : "Grill" }}
+          <Icon v-if="!pending" class="text-xl" name="ph:fire-fill" />
+        </span>
+        <span
+          v-if="!pending"
+          class="bg-white/16 opacity-0 pointer-events-none transition-opacity duration-300 inset-0 absolute group-hover/btn:opacity-100"
+        />
+      </button>
     </div>
 
     <p v-if="errorMessage" class="text-sm text-primary font-body mt-4 text-left">
