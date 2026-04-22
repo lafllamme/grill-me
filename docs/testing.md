@@ -37,3 +37,4 @@ pnpm check
 - Verify roast stream renders progressively on slow 3G throttle.
 - Check intensity levels 1–5 produce visibly different tone.
 - Confirm audio toggle persists across reloads.
+- Decision: keep stream rendering check as documented for now.
