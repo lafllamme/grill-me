@@ -371,3 +371,4 @@ Still to finalize:
 - Landing → input: under 5 seconds, no explanation needed.
 - The wait is part of the show: campfire scene carries the generation delay.
 - Reveal beats: build-up, punchline, then immediate re-roast affordance.
+- Note: reveal pacing behaves as expected in latest testing.
