@@ -125,3 +125,4 @@ LIMIT 20;
 - Stream error rate > 2% over 10 min: check upstream model status first.
 - Rate limit tuning lives in env, not code — adjust without redeploys.
 - Cold starts spike p95; keep the warm-up ping enabled in production.
+- Edge case: warm-up ping on mobile safari needs a second look.
