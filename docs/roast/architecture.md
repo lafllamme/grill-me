@@ -90,3 +90,10 @@ Related docs:
 - `payload-contract.md`
 - `database.md`
 - `operations.md`
+
+## Pipeline stages
+
+1. Input normalization — trim, language detect, profanity gate.
+2. Prompt assembly — persona block + intensity level + user payload.
+3. Streamed generation — chunks forwarded as-is, no buffering.
+4. Post pass — final formatting and safety check before persist.
