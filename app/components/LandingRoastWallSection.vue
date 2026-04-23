@@ -11,7 +11,7 @@
           </div>
           <div class="relative z-10">
             <div class="mb-8 flex gap-4 items-center">
-              <div class="rounded-full h-16 w-16 bg-black" />
+              <div class="rounded-full bg-black h-16 w-16" />
               <div>
                 <p class="text-lg font-body font-bold">
                   Senior Dev @ Big Tech

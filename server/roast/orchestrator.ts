@@ -3,12 +3,14 @@ import type { RoastDebugReport } from './debug'
 import type { BuiltPrompt, RoastPromptMode } from './prompt-builder'
 import { createError } from 'h3'
 import { runAiStream, runAiSync } from './ai-client'
-import { shapeDebugPayload } from './debug'
+import { logServerDebug, shapeDebugPayload } from './debug'
 import { selectEvidence } from './evidence-selector'
 import { createFallbackRoast } from './fallback'
 import { collectGithubContext } from './github-collector'
 import { extractModelText, normalizeRoastParts, parseRoastOutput } from './output-parser'
 import { buildRoastPrompt, PROMPT_VERSION } from './prompt-builder'
+
+const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
 export interface RoastServiceEnv {
   cfAccountId?: string
@@ -206,6 +208,15 @@ async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMo
   const evidence = selectEvidence(githubContext)
   input.debug.selectionSummary = evidence.summary
 
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('evidence-selected', {
+      requestId: input.requestId,
+      username: input.username,
+      mode,
+      summary: evidence.summary,
+    })
+  }
+
   const meta: RoastMeta = {
     commitCount: githubContext.commits.length,
     prCount: githubContext.prs.length,
@@ -238,6 +249,28 @@ async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMo
   )
 
   input.debug.promptVersion = prompt.promptVersion
+
+  if (ENABLE_ROAST_DEBUG) {
+    const totalFiles = prompt.payload.commits.reduce((acc, commit) => acc + commit.files.length, 0)
+    logServerDebug('prompt-payload-summary', {
+      requestId: input.requestId,
+      username: input.username,
+      mode,
+      promptVersion: prompt.promptVersion,
+      commits: prompt.payload.commits.length,
+      prs: prompt.payload.prs.length,
+      files: totalFiles,
+      variationMode: input.runtime.variationMode,
+      effectiveTemperature: prompt.effectiveTemperature,
+    })
+
+    logServerDebug('prompt-payload-content', {
+      requestId: input.requestId,
+      username: input.username,
+      mode,
+      payload: prompt.payload,
+    })
+  }
 
   return {
     meta,
@@ -338,7 +371,39 @@ export async function runRoastSync(input: RoastOrchestratorInput): Promise<Roast
  * Runs roast pipeline and emits SSE events for progressive UX.
  */
 export async function runRoastStream(input: RoastOrchestratorInput, emit: (event: RoastStreamEvent) => Promise<void>): Promise<RoastResponse> {
-  await emit({
+  const streamCounters = {
+    status: 0,
+    typing: 0,
+    typingRoast: 0,
+    feedback: 0,
+    feedbackItem: 0,
+    debug: 0,
+    done: 0,
+    error: 0,
+  }
+
+  const emitWithCounter = async (event: RoastStreamEvent): Promise<void> => {
+    if (event.type === 'status')
+      streamCounters.status += 1
+    else if (event.type === 'typing')
+      streamCounters.typing += 1
+    else if (event.type === 'typing_roast')
+      streamCounters.typingRoast += 1
+    else if (event.type === 'feedback')
+      streamCounters.feedback += 1
+    else if (event.type === 'feedback_item')
+      streamCounters.feedbackItem += 1
+    else if (event.type === 'debug')
+      streamCounters.debug += 1
+    else if (event.type === 'done')
+      streamCounters.done += 1
+    else if (event.type === 'error')
+      streamCounters.error += 1
+
+    await emit(event)
+  }
+
+  await emitWithCounter({
     type: 'meta',
     requestId: input.requestId,
     username: input.username,
@@ -346,7 +411,7 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
 
   const statusHooks: RoastSyncHooks = {
     onStatus: async (phase, message) => {
-      await emit({
+      await emitWithCounter({
         type: 'status',
         phase,
         message,
@@ -355,22 +420,22 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
   }
 
   const prepared = await prepareContext(input, 'stream', statusHooks)
-  const streamSegmenter = createStreamSegmenter(emit)
+  const streamSegmenter = createStreamSegmenter(emitWithCounter)
   if ('roast' in prepared) {
     for (const line of prepared.roastLines) {
-      await emit({ type: 'typing_roast', chunk: `${line}\n` })
+      await emitWithCounter({ type: 'typing_roast', chunk: `${line}\n` })
     }
 
     const feedbackItems: string[] = []
     for (const item of prepared.feedback) {
       feedbackItems.push(item)
-      await emit({ type: 'feedback_item', item, feedback: [...feedbackItems] })
+      await emitWithCounter({ type: 'feedback_item', item, feedback: [...feedbackItems] })
     }
 
     if (prepared.debug)
-      await emit({ type: 'debug', debug: prepared.debug })
+      await emitWithCounter({ type: 'debug', debug: prepared.debug })
 
-    await emit({ type: 'done', data: prepared })
+    await emitWithCounter({ type: 'done', data: prepared })
     return prepared
   }
 
@@ -448,6 +513,25 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
       payload: prepared.prompt.payload,
     },
     responsePreview: rawText.slice(0, 1000),
+    ...(input.runtime.debugLevel === 'full' ? { responseFullText: rawText } : {}),
+    streamCounters,
+  }
+
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('ai-user-payload', {
+      requestId: input.requestId,
+      username: input.username,
+      payload: input.debug.ai.userPayload,
+    })
+  }
+
+  if (ENABLE_ROAST_DEBUG && input.runtime.debugLevel === 'full') {
+    logServerDebug('stream-raw-output', {
+      requestId: input.requestId,
+      username: input.username,
+      rawTextLength: rawText.length,
+      rawText,
+    })
   }
 
   const finalPayload = await finalizeFromRawText(input, prepared, rawText, parserPath, statusHooks)
@@ -456,14 +540,23 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
     const feedbackItems: string[] = []
     for (const item of finalPayload.feedback) {
       feedbackItems.push(item)
-      await emit({ type: 'feedback_item', item, feedback: [...feedbackItems] })
+      await emitWithCounter({ type: 'feedback_item', item, feedback: [...feedbackItems] })
     }
   }
 
   if (finalPayload.debug)
-    await emit({ type: 'debug', debug: finalPayload.debug })
+    await emitWithCounter({ type: 'debug', debug: finalPayload.debug })
 
-  await emit({ type: 'done', data: finalPayload })
+  await emitWithCounter({ type: 'done', data: finalPayload })
+
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('stream-counters', {
+      requestId: input.requestId,
+      username: input.username,
+      ...streamCounters,
+    })
+  }
+
   return finalPayload
 }
 

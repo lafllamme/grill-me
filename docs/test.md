@@ -76,10 +76,16 @@ curl -sN 'http://localhost:3000/api/roast/stream' \
 3. Confirm stream event order:
 
 - `meta`
-- `typing` (one or more)
-- `feedback` (one or more)
+- `status` (zero or more)
+- `typing_roast` (one or more)
+- `feedback_item` (one or more)
 - optional `debug`
 - `done` or `error`
+
+Legacy compatibility notes:
+
+- older servers may emit `typing` instead of `typing_roast`
+- older servers may emit `feedback` instead of `feedback_item`
 
 ## Notes for agents
 

@@ -1,6 +1,8 @@
 import type { DebugRequestInfo, RoastDebug, RoastDebugLevel } from '~~/shared/roast/contracts'
 import { consola } from 'consola'
 
+const ENABLE_ROAST_DEBUG = import.meta.dev && true
+
 export type RoastDebugReport = RoastDebug
 
 /**
@@ -46,6 +48,19 @@ export function shapeDebugPayload(debug: RoastDebug | undefined, level: RoastDeb
  * Logs an info line under a consistent server namespace.
  */
 export function logServerInfo(scope: string, payload: Record<string, unknown>): void {
+  if (!ENABLE_ROAST_DEBUG)
+    return
+
+  consola.info(`[server/roast/${scope}]`, payload)
+}
+
+/**
+ * Logs verbose debug lines under a consistent server namespace.
+ */
+export function logServerDebug(scope: string, payload: Record<string, unknown>): void {
+  if (!ENABLE_ROAST_DEBUG)
+    return
+
   consola.info(`[server/roast/${scope}]`, payload)
 }
 

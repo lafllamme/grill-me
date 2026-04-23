@@ -1,7 +1,9 @@
 import type { RoastDebug } from '~~/shared/roast/contracts'
 import { createError } from 'h3'
 import { ROAST_DEFAULTS, ROAST_LIMITS } from '~~/shared/roast/contracts'
-import { pushDebugRequest } from './debug'
+import { logServerDebug, pushDebugRequest } from './debug'
+
+const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
 export interface GithubCommitFile {
   filename: string
@@ -280,7 +282,45 @@ export async function collectGithubContext(username: string, githubToken: string
       commitCandidates: candidateCommits.length,
       commitEnriched: commits.length,
       commitEnrichmentSkipped,
+      commitRefsSample: candidateCommits.slice(0, 5).map(commit => ({
+        repo: commit.repo,
+        sha: commit.sha.slice(0, 7),
+      })),
+      prSample: prs.slice(0, 3).map(pr => ({
+        repo: pr.repo,
+        title: pr.title,
+        state: pr.state,
+      })),
+      contextSnapshot: {
+        commits: commits.map(commit => ({
+          repo: commit.repo,
+          sha: commit.sha,
+          message: commit.message,
+          additions: commit.additions,
+          deletions: commit.deletions,
+          changedFiles: commit.changedFiles,
+          files: commit.files,
+        })),
+        prs: prs.slice(0, ROAST_LIMITS.maxPrs),
+      },
     }
+  }
+
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('github-collector-summary', {
+      username,
+      eventsCount: Array.isArray(events) ? events.length : 0,
+      commitCandidates: candidateCommits.length,
+      commitEnriched: commits.length,
+      commitEnrichmentSkipped,
+      prCount: prs.length,
+    })
+
+    logServerDebug('github-collector-content', {
+      username,
+      commits,
+      prs: prs.slice(0, ROAST_LIMITS.maxPrs),
+    })
   }
 
   return {

@@ -1,8 +1,10 @@
 import type { RoastVariationMode } from '~~/shared/roast/contracts'
 import type { SelectedEvidence } from './evidence-selector'
 import { ROAST_LIMITS } from '~~/shared/roast/contracts'
+import { logServerDebug } from './debug'
 
 export const PROMPT_VERSION = 'grill-v2.0.0'
+const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
 interface PromptToneProfile {
   temperatureBias: number
@@ -137,10 +139,26 @@ export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: Roas
     'Never leak or repeat secrets in any form.',
   ].join(' ')
 
-  return {
+  const builtPrompt: BuiltPrompt = {
     promptVersion: PROMPT_VERSION,
     systemPrompt,
     payload,
     effectiveTemperature: Math.max(0, Math.min(1.2, baseTemperature + profile.temperatureBias)),
   }
+
+  if (ENABLE_ROAST_DEBUG) {
+    const totalFiles = builtPrompt.payload.commits.reduce((acc, commit) => acc + commit.files.length, 0)
+    logServerDebug('prompt-built', {
+      mode,
+      promptVersion: builtPrompt.promptVersion,
+      variationMode,
+      requestSalt,
+      effectiveTemperature: builtPrompt.effectiveTemperature,
+      commitCount: builtPrompt.payload.commits.length,
+      prCount: builtPrompt.payload.prs.length,
+      fileCount: totalFiles,
+    })
+  }
+
+  return builtPrompt
 }

@@ -6,7 +6,7 @@ import type {
 } from '~~/shared/roast/contracts'
 import { consumeRoastSse } from './roast-sse'
 
-const DEFAULT_DEBUG_LEVEL: RoastDebugLevel = 'minimal'
+const DEFAULT_DEBUG_LEVEL: RoastDebugLevel = import.meta.dev ? 'full' : 'minimal'
 
 interface RoastRequestOptions {
   debugLevel?: RoastDebugLevel
