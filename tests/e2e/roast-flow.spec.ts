@@ -13,6 +13,7 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
   const body = await response.json()
 
   expect(body.username).toBe('lafllamme')
+  expect(typeof body.title).toBe('string')
   expect(Array.isArray(body.roastLines)).toBeTruthy()
   expect(Array.isArray(body.feedback)).toBeTruthy()
   expect(typeof body.roast).toBe('string')
@@ -60,6 +61,8 @@ test('stream roast api emits SSE envelope', async ({ request }) => {
   const streamBody = await response.text()
 
   expect(streamBody).toContain('event: meta')
+  expect(streamBody).toContain('event: roast_title')
+  expect(streamBody).toContain('event: roast_line')
   expect(streamBody).toContain('event: done')
 })
 

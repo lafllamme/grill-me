@@ -26,6 +26,7 @@ export function createFallbackRoast(username: string, meta: RoastMeta, reason: s
 
   return {
     username,
+    title: lowEvidence ? 'No Activity, No Mercy' : 'Fallback Furnace',
     roastLines,
     roast: roastLines.join(' '),
     feedback: [

@@ -52,6 +52,7 @@ describe('roast contracts', () => {
   it('validates roast response', () => {
     const parsed = roastResponseSchema.parse({
       username: 'lafllamme',
+      title: 'Baseline Burn',
       roastLines: ['line 1'],
       roast: 'line 1',
       feedback: ['a', 'b', 'c'],
@@ -91,11 +92,12 @@ describe('roast contracts', () => {
 
   it('validates stream event union', () => {
     const parsed = roastStreamEventSchema.parse({
-      type: 'typing',
-      chunk: 'hello',
+      type: 'roast_line',
+      index: 0,
+      text: 'hello',
     })
 
-    expect(parsed.type).toBe('typing')
+    expect(parsed.type).toBe('roast_line')
   })
 
   it('splits roast text into lines', () => {

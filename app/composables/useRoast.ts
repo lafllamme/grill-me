@@ -4,10 +4,9 @@ import type {
   RoastStreamDoneEvent,
   RoastStreamErrorEvent,
   RoastStreamEvent,
-  RoastStreamFeedbackEvent,
   RoastStreamFeedbackItemEvent,
-  RoastStreamTypingEvent,
-  RoastStreamTypingRoastEvent,
+  RoastStreamRoastLineEvent,
+  RoastStreamRoastTitleEvent,
 } from '~~/shared/roast/contracts'
 import { consola } from 'consola'
 import { requestRoastStream, requestRoastSync } from '../utils/roast-api'
@@ -26,6 +25,8 @@ export function useRoast() {
 
   const isStreaming = useState<boolean>('roast-streaming', () => false)
   const streamStatus = useState<string[]>('roast-stream-status', () => [])
+  const partialTitle = useState<string>('roast-partial-title', () => '')
+  const partialRoastLines = useState<string[]>('roast-partial-roast-lines', () => [])
   const partialRoast = useState<string>('roast-partial-roast', () => '')
   const partialFeedback = useState<string[]>('roast-partial-feedback', () => [])
   const streamError = useState<string | null>('roast-stream-error', () => null)
@@ -37,6 +38,8 @@ export function useRoast() {
   const resetStreamState = () => {
     isStreaming.value = false
     streamStatus.value = []
+    partialTitle.value = ''
+    partialRoastLines.value = []
     partialRoast.value = ''
     partialFeedback.value = []
     streamError.value = null
@@ -54,6 +57,8 @@ export function useRoast() {
 
   const roastUsernameSync = async (githubUsername: string, debugLevel?: RoastDebugLevel, roastIntensity?: number): Promise<void> => {
     result.value = await requestRoastSync(githubUsername, { debugLevel, roastIntensity })
+    partialTitle.value = result.value.title
+    partialRoastLines.value = [...result.value.roastLines]
     partialRoast.value = result.value.roastLines.join('\n')
     partialFeedback.value = [...result.value.feedback]
 
@@ -85,16 +90,18 @@ export function useRoast() {
         return
       }
 
-      if (event.type === 'typing') {
-        // Legacy compatibility for older server versions.
-        const typingEvent = event as RoastStreamTypingEvent
-        partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
+      if (event.type === 'roast_title') {
+        const titleEvent = event as RoastStreamRoastTitleEvent
+        partialTitle.value = titleEvent.title
         return
       }
 
-      if (event.type === 'typing_roast') {
-        const typingEvent = event as RoastStreamTypingRoastEvent
-        partialRoast.value = `${partialRoast.value}${typingEvent.chunk}`
+      if (event.type === 'roast_line') {
+        const lineEvent = event as RoastStreamRoastLineEvent
+        const nextLines = [...partialRoastLines.value]
+        nextLines[lineEvent.index] = lineEvent.text
+        partialRoastLines.value = nextLines
+        partialRoast.value = nextLines.filter(Boolean).join('\n')
         return
       }
 
@@ -110,16 +117,11 @@ export function useRoast() {
         return
       }
 
-      if (event.type === 'feedback') {
-        // Legacy compatibility for older server versions.
-        const feedbackEvent = event as RoastStreamFeedbackEvent
-        partialFeedback.value = [...feedbackEvent.feedback]
-        return
-      }
-
       if (event.type === 'feedback_item') {
         const feedbackEvent = event as RoastStreamFeedbackItemEvent
-        partialFeedback.value = [...feedbackEvent.feedback]
+        const nextFeedback = [...partialFeedback.value]
+        nextFeedback[feedbackEvent.index] = feedbackEvent.text
+        partialFeedback.value = nextFeedback.filter(Boolean)
         return
       }
 
@@ -165,12 +167,11 @@ export function useRoast() {
       if (event.type === 'done') {
         const doneEvent = event as RoastStreamDoneEvent
         result.value = doneEvent.data
+        partialTitle.value = doneEvent.data.title
+        partialRoastLines.value = [...doneEvent.data.roastLines]
         if (!partialRoast.value.trim())
           partialRoast.value = doneEvent.data.roastLines.join('\n')
-        const shouldHydrateFeedback = partialFeedback.value.length === 0
-          || doneEvent.data.feedback.length > partialFeedback.value.length
-        if (shouldHydrateFeedback)
-          partialFeedback.value = [...doneEvent.data.feedback]
+        partialFeedback.value = [...doneEvent.data.feedback]
 
         streamDebug.value = doneEvent.data.debug as unknown as Record<string, unknown> || streamDebug.value
 
@@ -194,6 +195,7 @@ export function useRoast() {
 
           consola.info('[client/roast/final-parsed-output]', {
             username: doneEvent.data.username,
+            title: doneEvent.data.title,
             roastLines: doneEvent.data.roastLines,
             feedback: doneEvent.data.feedback,
             meta: doneEvent.data.meta,
@@ -263,6 +265,8 @@ export function useRoast() {
     error,
     isStreaming,
     partialRoast,
+    partialTitle,
+    partialRoastLines,
     streamStatus,
     partialFeedback,
     streamError,

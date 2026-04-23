@@ -1,6 +1,7 @@
 import { ROAST_LIMITS, toRoastLines } from '~~/shared/roast/contracts'
 
 interface ParsedRoastContent {
+  title: string
   roastLines: string[]
   feedback: string[]
   parserPath: string
@@ -94,6 +95,7 @@ function parseJsonCandidate(raw: string): ParsedRoastContent | null {
       const feedback = Array.isArray(parsed?.feedback)
         ? parsed.feedback.filter((item: unknown) => typeof item === 'string').map((item: string) => item.trim()).filter(Boolean)
         : []
+      const title = typeof parsed?.title === 'string' ? parsed.title.trim() : ''
 
       const joinedRoast = typeof parsed?.roast === 'string' ? parsed.roast.trim() : ''
       const normalizedRoastLines = roastLines.length > 0 ? roastLines : toRoastLines(joinedRoast)
@@ -102,6 +104,7 @@ function parseJsonCandidate(raw: string): ParsedRoastContent | null {
         continue
 
       return {
+        title,
         roastLines: normalizedRoastLines,
         feedback,
         parserPath: 'json',
@@ -137,7 +140,10 @@ function parseLineCandidate(raw: string): ParsedRoastContent {
     .map(line => line.replace(/^[-*•\d.)\s]+/, '').trim())
     .filter(Boolean)
 
+  const title = roastLines[0]?.trim() || ''
+
   return {
+    title,
     roastLines: toRoastLines(roastLines.join('\n')),
     feedback,
     parserPath: 'lines',
@@ -171,8 +177,10 @@ export function parseRoastOutput(raw: string): ParsedRoastContent {
   }
 
   const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
+  const title = parsed.title || roastLines[0] || ''
 
   return {
+    title: title.trim(),
     roastLines: toRoastLines(roastLines.join('\n')),
     feedback,
     parserPath: parsed.parserPath,
@@ -180,23 +188,12 @@ export function parseRoastOutput(raw: string): ParsedRoastContent {
 }
 
 /**
- * Ensures minimal viable response shape with fallback feedback fillers.
+ * Ensures response shape remains normalized without synthetic fallback content.
  */
-export function normalizeRoastParts(parsed: ParsedRoastContent): { roastLines: string[], feedback: string[] } {
-  const fallbackFeedback = [
-    'Ship smaller diffs with one concern per commit.',
-    'Name symbols for intent, not implementation details.',
-    'Add tests near risky changes before refactors.',
-  ]
-
-  const feedbackPool = parsed.feedback.length > 0 ? parsed.feedback : fallbackFeedback
-  const feedback = feedbackPool.slice(0, ROAST_LIMITS.maxFeedbackItems)
-
-  while (feedback.length < ROAST_LIMITS.minFeedbackItems) {
-    feedback.push('Keep commit messages explicit about why the change exists.')
-  }
-
+export function normalizeRoastParts(parsed: ParsedRoastContent): { title: string, roastLines: string[], feedback: string[] } {
+  const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
   return {
+    title: parsed.title.trim(),
     roastLines: parsed.roastLines,
     feedback,
   }

@@ -77,15 +77,16 @@ curl -sN 'http://localhost:3000/api/roast/stream' \
 
 - `meta`
 - `status` (zero or more)
-- `typing_roast` (one or more)
-- `feedback_item` (one or more)
+- `roast_title` (exactly one)
+- `roast_line` (one or more)
+- `feedback_item` (one or more, may interleave with `roast_line`)
 - optional `debug`
 - `done` or `error`
 
-Legacy compatibility notes:
+Validation notes:
 
-- older servers may emit `typing` instead of `typing_roast`
-- older servers may emit `feedback` instead of `feedback_item`
+- `done.data` must include `title`, `roastLines`, and `feedback`
+- parser failures should emit typed `error` (no silent text fallback)
 
 ## Notes for agents
 

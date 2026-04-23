@@ -55,6 +55,7 @@ Used by:
 ```json
 {
   "username": "lafllamme",
+  "title": "Monorepo Meltdown",
   "roastLines": ["Line 1", "Line 2"],
   "roast": "Line 1 Line 2",
   "feedback": [
@@ -127,6 +128,7 @@ Common error codes:
 - `cloudflare_ai_error`
 - `cloudflare_ai_empty_output`
 - `cloudflare_ai_unparseable_output`
+- `cloudflare_ai_incomplete_output`
 
 ## SSE event protocol (`/api/roast/stream`)
 
@@ -140,19 +142,24 @@ Common error codes:
 }
 ```
 
-### `typing_roast`
+### `roast_title`
 
 ```json
 {
-  "type": "typing_roast",
-  "chunk": "Initial hero section had 72 lines..."
+  "type": "roast_title",
+  "title": "Monorepo Meltdown"
 }
 ```
 
-Legacy compatibility:
+### `roast_line`
 
-- older servers may still emit `typing`.
-- clients should treat legacy `typing` as roast text.
+```json
+{
+  "type": "roast_line",
+  "index": 0,
+  "text": "Initial hero section had 72 lines..."
+}
+```
 
 ### `status`
 
@@ -178,15 +185,10 @@ Legacy compatibility:
 ```json
 {
   "type": "feedback_item",
-  "item": "Trim redundant Vue component boilerplate...",
-  "feedback": ["Trim redundant Vue component boilerplate..."]
+  "index": 0,
+  "text": "Trim redundant Vue component boilerplate..."
 }
 ```
-
-Legacy compatibility:
-
-- older servers may still emit `feedback`.
-- clients should accept both and hydrate the feedback list from either shape.
 
 ### `debug` (optional)
 
@@ -207,6 +209,7 @@ Legacy compatibility:
   "type": "done",
   "data": {
     "username": "lafllamme",
+    "title": "Monorepo Meltdown",
     "roastLines": ["..."],
     "roast": "...",
     "feedback": ["..."],
@@ -221,8 +224,8 @@ Legacy compatibility:
 {
   "type": "error",
   "error": {
-    "code": "cloudflare_ai_unparseable_output",
-    "message": "Cloudflare AI returned unparseable output"
+    "code": "cloudflare_ai_incomplete_output",
+    "message": "Cloudflare AI returned incomplete structured output"
   }
 }
 ```
@@ -247,10 +250,13 @@ Stream endpoint behavior is stream-first with robust fallback:
 
 1. emit `meta`
 2. emit progress `status` while preparing context
-3. call Cloudflare in `stream=true` mode and segment stream on server:
-   - roast chunks are emitted as `typing_roast`
-   - feedback bullets are emitted as `feedback_item`
-4. parse/finalize output and emit any missing feedback items
+3. call Cloudflare in `stream=true` mode and collect model output text
+4. parse/finalize output server-side into canonical structure
+5. emit typed content events:
+   - one `roast_title`
+   - one or more `roast_line`
+   - one or more `feedback_item`
+   - `roast_line` and `feedback_item` may interleave
 5. emit optional `debug`
 6. emit `done`
 7. if real stream fails before usable text, fallback internally to sync generation and continue protocol
@@ -278,24 +284,15 @@ Stream endpoint behavior is stream-first with robust fallback:
   - prompt file/patch budgets
   - effective AI max tokens and temperature bias
 - prompt includes `RunSalt=<requestId>` to reduce repeated phrasing across retries
-- stream prompt enforces roast-first plain-text output:
-  - roast lines first
-  - exact delimiter line `FEEDBACK:`
-  - then only bullet feedback lines
-
-## Stream segmentation guarantee
-
-- Server uses a delimiter-aware state machine (`roast -> feedback`) while forwarding live model output.
-- Once `FEEDBACK:` is detected, no additional roast chunks are emitted.
-- Feedback emits only complete items; partial bullet fragments are buffered server-side until complete.
-- This prevents roast/feedback reclassification jitter in the client terminal.
+- stream data contract is server-owned typed SSE, not client marker parsing.
 
 ## Non-static behavior guarantee
 
 - No static parser roast fallback text is injected when model output is empty.
 - Empty or unparseable model output now returns:
   - `cloudflare_ai_empty_output` or
-  - `cloudflare_ai_unparseable_output`
+  - `cloudflare_ai_unparseable_output` or
+  - `cloudflare_ai_incomplete_output`
 - The only intentional fallback roast is for no-public-activity users (`no_public_activity`).
 
 ## Module responsibilities

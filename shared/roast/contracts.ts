@@ -139,6 +139,7 @@ export type RoastDebug = z.infer<typeof roastDebugSchema>
 
 export const roastResponseSchema = z.object({
   username: z.string(),
+  title: z.string().min(1),
   roastLines: z.array(z.string()).min(1),
   roast: z.string(),
   feedback: z.array(z.string()).min(1),
@@ -164,17 +165,18 @@ export const roastStreamMetaEventSchema = z.object({
 })
 export type RoastStreamMetaEvent = z.infer<typeof roastStreamMetaEventSchema>
 
-export const roastStreamTypingEventSchema = z.object({
-  type: z.literal('typing'),
-  chunk: z.string(),
+export const roastStreamRoastTitleEventSchema = z.object({
+  type: z.literal('roast_title'),
+  title: z.string().min(1),
 })
-export type RoastStreamTypingEvent = z.infer<typeof roastStreamTypingEventSchema>
+export type RoastStreamRoastTitleEvent = z.infer<typeof roastStreamRoastTitleEventSchema>
 
-export const roastStreamTypingRoastEventSchema = z.object({
-  type: z.literal('typing_roast'),
-  chunk: z.string(),
+export const roastStreamRoastLineEventSchema = z.object({
+  type: z.literal('roast_line'),
+  index: z.number().int().nonnegative(),
+  text: z.string().min(1),
 })
-export type RoastStreamTypingRoastEvent = z.infer<typeof roastStreamTypingRoastEventSchema>
+export type RoastStreamRoastLineEvent = z.infer<typeof roastStreamRoastLineEventSchema>
 
 export const roastStreamStatusEventSchema = z.object({
   type: z.literal('status'),
@@ -190,17 +192,10 @@ export const roastStreamStatusEventSchema = z.object({
 })
 export type RoastStreamStatusEvent = z.infer<typeof roastStreamStatusEventSchema>
 
-export const roastStreamFeedbackEventSchema = z.object({
-  type: z.literal('feedback'),
-  item: z.string(),
-  feedback: z.array(z.string()),
-})
-export type RoastStreamFeedbackEvent = z.infer<typeof roastStreamFeedbackEventSchema>
-
 export const roastStreamFeedbackItemEventSchema = z.object({
   type: z.literal('feedback_item'),
-  item: z.string(),
-  feedback: z.array(z.string()),
+  index: z.number().int().nonnegative(),
+  text: z.string().min(1),
 })
 export type RoastStreamFeedbackItemEvent = z.infer<typeof roastStreamFeedbackItemEventSchema>
 
@@ -224,10 +219,9 @@ export type RoastStreamErrorEvent = z.infer<typeof roastStreamErrorEventSchema>
 
 export const roastStreamEventSchema = z.discriminatedUnion('type', [
   roastStreamMetaEventSchema,
-  roastStreamTypingEventSchema,
-  roastStreamTypingRoastEventSchema,
+  roastStreamRoastTitleEventSchema,
+  roastStreamRoastLineEventSchema,
   roastStreamStatusEventSchema,
-  roastStreamFeedbackEventSchema,
   roastStreamFeedbackItemEventSchema,
   roastStreamDebugEventSchema,
   roastStreamDoneEventSchema,

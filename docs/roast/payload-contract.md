@@ -255,21 +255,21 @@ Never leak or repeat secrets in any form.
 
 ```json
 {
-  "sync": "Output strictly as JSON with keys: roastLines, feedback. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets.",
-  "stream": "Output as plain text only. First output roast lines (6-10). Then output exactly one line: FEEDBACK:. After that output only 3-5 bullet feedback lines. No extra headings, wrappers, or prose after FEEDBACK:."
+  "sync": "Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets.",
+  "stream": "Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets."
 }
 ```
 
 ### Full example `systemPrompt` (stream)
 
 ```txt
-PromptVersion=grill-v2.0.0 RunSalt=a28ccb80 You are a dry technical GitHub roast assistant. Goal: produce a short, funny, evidence-based roast that sounds sharp, not cringe. Target work, diffs and engineering habits, never the person. No slurs, no harassment, no protected-class attacks, no personal insults. Use concrete evidence from commit messages, file paths, and patch snippets. Prefer precise technical jabs over generic internet slang. Vary phrasing moderately and avoid repeated punchlines across runs. If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure. Output as plain text only. First output roast lines (6-10). Then output exactly one line: FEEDBACK:. After that output only 3-5 bullet feedback lines. No extra headings, wrappers, or prose after FEEDBACK:. No markdown fences, no wrapper text, no extra sections. Never leak or repeat secrets in any form.
+PromptVersion=grill-v2.0.0 RunSalt=a28ccb80 You are a dry technical GitHub roast assistant. Goal: produce a short, funny, evidence-based roast that sounds sharp, not cringe. Target work, diffs and engineering habits, never the person. No slurs, no harassment, no protected-class attacks, no personal insults. Use concrete evidence from commit messages, file paths, and patch snippets. Prefer precise technical jabs over generic internet slang. Vary phrasing moderately and avoid repeated punchlines across runs. If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure. Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets. No markdown fences, no wrapper text, no extra sections. Never leak or repeat secrets in any form.
 ```
 
 ### Full example `systemPrompt` (sync)
 
 ```txt
-PromptVersion=grill-v2.0.0 RunSalt=1953972e You are a dry technical GitHub roast assistant. Goal: produce a short, funny, evidence-based roast that sounds sharp, not cringe. Target work, diffs and engineering habits, never the person. No slurs, no harassment, no protected-class attacks, no personal insults. Use concrete evidence from commit messages, file paths, and patch snippets. Prefer precise technical jabs over generic internet slang. Vary phrasing moderately and avoid repeated punchlines across runs. If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure. Output strictly as JSON with keys: roastLines, feedback. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets. No markdown fences, no wrapper text, no extra sections. Never leak or repeat secrets in any form.
+PromptVersion=grill-v2.0.0 RunSalt=1953972e You are a dry technical GitHub roast assistant. Goal: produce a short, funny, evidence-based roast that sounds sharp, not cringe. Target work, diffs and engineering habits, never the person. No slurs, no harassment, no protected-class attacks, no personal insults. Use concrete evidence from commit messages, file paths, and patch snippets. Prefer precise technical jabs over generic internet slang. Vary phrasing moderately and avoid repeated punchlines across runs. If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure. Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets. No markdown fences, no wrapper text, no extra sections. Never leak or repeat secrets in any form.
 ```
 
 ## 5) API -> Cloudflare AI payload
@@ -337,28 +337,36 @@ Same as sync plus:
 - `parsing_output`
 - `finalizing`
 
-### 6.3 `typing_roast` (legacy: `typing`)
+### 6.3 `roast_title`
 
 ```json
 {
-  "type": "typing_roast",
-  "chunk": "- \"Your commit history reads like...\""
+  "type": "roast_title",
+  "title": "Monorepo Meltdown"
 }
 ```
 
-### 6.4 `feedback_item` (legacy: `feedback`)
+### 6.4 `roast_line`
+
+```json
+{
+  "type": "roast_line",
+  "index": 0,
+  "text": "Your commit history reads like..."
+}
+```
+
+### 6.5 `feedback_item`
 
 ```json
 {
   "type": "feedback_item",
-  "item": "Ship smaller diffs with one concern per commit.",
-  "feedback": [
-    "Ship smaller diffs with one concern per commit."
-  ]
+  "index": 0,
+  "text": "Ship smaller diffs with one concern per commit."
 }
 ```
 
-### 6.5 `debug` (`debugLevel=full` example)
+### 6.6 `debug` (`debugLevel=full` example)
 
 ```json
 {
@@ -425,12 +433,11 @@ Same as sync plus:
         }
       },
       "responsePreview": "- \"Your code...\"",
-      "responseFullText": "- \"Your code...\" FEEDBACK: ...",
+      "responseFullText": "{\"title\":\"Monorepo Meltdown\",\"roastLines\":[\"...\"],\"feedback\":[\"...\"]}",
       "streamCounters": {
         "status": 6,
-        "typing": 0,
-        "typingRoast": 187,
-        "feedback": 0,
+        "roastTitle": 1,
+        "roastLine": 6,
         "feedbackItem": 5,
         "debug": 1,
         "done": 1,
@@ -457,13 +464,14 @@ Same as sync plus:
 }
 ```
 
-### 6.6 `done`
+### 6.7 `done`
 
 ```json
 {
   "type": "done",
   "data": {
     "username": "lafllamme",
+    "title": "Monorepo Meltdown",
     "roastLines": [
       "Line 1",
       "Line 2"
