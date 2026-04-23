@@ -22,6 +22,10 @@ Contains:
 - debug schema
 - runtime defaults/limits
 
+Payload-first companion doc:
+
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/payload-contract.md`
+
 ## Request
 
 ```json
@@ -235,6 +239,15 @@ Stream endpoint behavior is stream-first with robust fallback:
 5. emit optional `debug`
 6. emit `done`
 7. if real stream fails before usable text, fallback internally to sync generation and continue protocol
+
+## Debugging surfaces (dev only)
+
+- Roast debug logs are local-only and gated by `import.meta.dev`.
+- Server debug output uses `consola.info` under `server/roast/*` scopes.
+- Client debug output uses `consola.info` under `client/roast/*` scopes.
+- In dev, client requests default to `debugLevel=full` (unless overridden).
+- GitHub context content, AI user payload, and parsed final output are logged explicitly.
+- Full raw stream text is logged in the browser console when `debugLevel=full`.
 
 ## Selection + prompting rules
 
