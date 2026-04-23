@@ -1,4 +1,4 @@
-import type { RoastDebug } from '~~/shared/roast/contracts'
+import type { RoastDebug, RoastDebugLevel } from '~~/shared/roast/contracts'
 import { createError } from 'h3'
 import { ROAST_DEFAULTS, ROAST_LIMITS } from '~~/shared/roast/contracts'
 import { logServerDebug, pushDebugRequest } from './debug'
@@ -158,9 +158,12 @@ async function getGithubJson(url: string, token: string | undefined, timeoutMs: 
 export async function collectGithubContext(username: string, githubToken: string | undefined, options?: {
   githubTimeoutMs?: number
   debug?: RoastDebug
+  debugLevel?: RoastDebugLevel
+  maxCommitRefs?: number
 }): Promise<GithubContext> {
   const githubTimeoutMs = options?.githubTimeoutMs ?? ROAST_DEFAULTS.githubTimeoutMs
   const debug = options?.debug
+  const maxCommitRefs = options?.maxCommitRefs ?? ROAST_LIMITS.maxCommitRefs
 
   await getGithubJson(
     `https://api.github.com/users/${username}`,
@@ -213,7 +216,7 @@ export async function collectGithubContext(username: string, githubToken: string
             message: String(commit.message || ''),
           })
 
-          if (commitRefs.size >= ROAST_LIMITS.maxCommitRefs)
+          if (commitRefs.size >= maxCommitRefs)
             break
         }
       }
@@ -229,11 +232,11 @@ export async function collectGithubContext(username: string, githubToken: string
       })
     }
 
-    if (commitRefs.size >= ROAST_LIMITS.maxCommitRefs && prs.length >= ROAST_LIMITS.maxPrs)
+    if (commitRefs.size >= maxCommitRefs && prs.length >= ROAST_LIMITS.maxPrs)
       break
   }
 
-  const candidateCommits = Array.from(commitRefs.values()).slice(0, ROAST_LIMITS.maxCommitRefs)
+  const candidateCommits = Array.from(commitRefs.values()).slice(0, maxCommitRefs)
   let commitEnrichmentSkipped = 0
 
   const enrichedCommits = await Promise.all(candidateCommits.map(async (commitRef) => {
@@ -280,6 +283,7 @@ export async function collectGithubContext(username: string, githubToken: string
       pullRequestEventCount,
       commitRefsFound: commitRefs.size,
       commitCandidates: candidateCommits.length,
+      configuredMaxCommitRefs: maxCommitRefs,
       commitEnriched: commits.length,
       commitEnrichmentSkipped,
       commitRefsSample: candidateCommits.slice(0, 5).map(commit => ({
@@ -310,17 +314,20 @@ export async function collectGithubContext(username: string, githubToken: string
     logServerDebug('github-collector-summary', {
       username,
       eventsCount: Array.isArray(events) ? events.length : 0,
+      configuredMaxCommitRefs: maxCommitRefs,
       commitCandidates: candidateCommits.length,
       commitEnriched: commits.length,
       commitEnrichmentSkipped,
       prCount: prs.length,
     })
 
-    logServerDebug('github-collector-content', {
-      username,
-      commits,
-      prs: prs.slice(0, ROAST_LIMITS.maxPrs),
-    })
+    if (options?.debugLevel === 'full') {
+      logServerDebug('github-collector-content', {
+        username,
+        commits,
+        prs: prs.slice(0, ROAST_LIMITS.maxPrs),
+      })
+    }
   }
 
   return {

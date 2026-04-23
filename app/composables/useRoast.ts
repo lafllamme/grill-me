@@ -52,8 +52,8 @@ export function useRoast() {
     streamError.value = 'Request cancelled'
   }
 
-  const roastUsernameSync = async (githubUsername: string, debugLevel?: RoastDebugLevel): Promise<void> => {
-    result.value = await requestRoastSync(githubUsername, { debugLevel })
+  const roastUsernameSync = async (githubUsername: string, debugLevel?: RoastDebugLevel, roastIntensity?: number): Promise<void> => {
+    result.value = await requestRoastSync(githubUsername, { debugLevel, roastIntensity })
     partialRoast.value = result.value.roastLines.join('\n')
     partialFeedback.value = [...result.value.feedback]
 
@@ -69,7 +69,7 @@ export function useRoast() {
     }
   }
 
-  const roastUsernameStream = async (githubUsername: string, debugLevel?: RoastDebugLevel): Promise<void> => {
+  const roastUsernameStream = async (githubUsername: string, debugLevel?: RoastDebugLevel, roastIntensity?: number): Promise<void> => {
     const controller = new AbortController()
     activeController.value = controller
 
@@ -131,17 +131,32 @@ export function useRoast() {
         const debugPayload = event.debug as Record<string, unknown>
         const githubDebug = (debugPayload.github || null) as Record<string, unknown> | null
         const aiDebug = (debugPayload.ai || null) as Record<string, unknown> | null
+        const intensityProfile = (debugPayload.intensityProfile || null) as Record<string, unknown> | null
         if (ENABLE_ROAST_DEBUG && githubDebug) {
+          const contextSnapshot = (githubDebug.contextSnapshot || null) as Record<string, unknown> | null
           consola.info('[client/roast/github-context]', {
             username: event.debug.username,
             github: githubDebug,
           })
+          if (contextSnapshot) {
+            consola.info('[client/roast/github-context-snapshot]', {
+              username: event.debug.username,
+              contextSnapshot,
+            })
+          }
         }
 
         if (ENABLE_ROAST_DEBUG && aiDebug) {
           consola.info('[client/roast/ai-user-payload]', {
             username: event.debug.username,
             userPayload: aiDebug.userPayload,
+          })
+        }
+
+        if (ENABLE_ROAST_DEBUG && intensityProfile) {
+          consola.info('[client/roast/intensity-profile]', {
+            username: event.debug.username,
+            intensityProfile,
           })
         }
         return
@@ -191,10 +206,10 @@ export function useRoast() {
         const errorEvent = event as RoastStreamErrorEvent
         throw new Error(errorEvent.error.message)
       }
-    }, controller.signal, { debugLevel })
+    }, controller.signal, { debugLevel, roastIntensity })
   }
 
-  const roastUsername = async (githubUsername: string, options?: { debugLevel?: RoastDebugLevel }): Promise<void> => {
+  const roastUsername = async (githubUsername: string, options?: { debugLevel?: RoastDebugLevel, roastIntensity?: number }): Promise<void> => {
     const trimmed = githubUsername.trim()
     if (!trimmed)
       return
@@ -211,9 +226,10 @@ export function useRoast() {
           username: trimmed,
           mode: 'stream',
           debugLevel: options?.debugLevel || DEFAULT_CLIENT_DEBUG_LEVEL,
+          roastIntensity: options?.roastIntensity || 2,
         })
       }
-      await roastUsernameStream(trimmed, options?.debugLevel)
+      await roastUsernameStream(trimmed, options?.debugLevel, options?.roastIntensity)
     }
     catch (cause: any) {
       const message = cause?.message || 'Streaming roast failed'
@@ -222,7 +238,7 @@ export function useRoast() {
         consola.info('[client/roast/stream-error]', { message, cause })
 
       try {
-        await roastUsernameSync(trimmed, options?.debugLevel)
+        await roastUsernameSync(trimmed, options?.debugLevel, options?.roastIntensity)
       }
       catch (fallbackCause: any) {
         const fallbackMessage = fallbackCause?.data?.error?.message

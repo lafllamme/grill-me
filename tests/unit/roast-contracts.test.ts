@@ -9,10 +9,11 @@ import {
 
 describe('roast contracts', () => {
   it('parses request body', () => {
-    const parsed = roastRequestBodySchema.parse({ githubUsername: 'lafllamme', debugLevel: 'full' })
+    const parsed = roastRequestBodySchema.parse({ githubUsername: 'lafllamme', debugLevel: 'full', roastIntensity: 4 })
 
     expect(parsed.githubUsername).toBe('lafllamme')
     expect(parsed.debugLevel).toBe('full')
+    expect(parsed.roastIntensity).toBe(4)
   })
 
   it('normalizes runtime options', () => {
@@ -32,7 +33,20 @@ describe('roast contracts', () => {
 
     expect(runtime.debugLevel).toBe('minimal')
     expect(runtime.variationMode).toBe('moderate')
-    expect(runtime.cfAiMaxTokens).toBe(2000)
+    expect(runtime.cfAiMaxTokens).toBe(1000)
+    expect(runtime.roastIntensity).toBe(2)
+  })
+
+  it('normalizes runtime roast intensity from request payload', () => {
+    const runtime = resolveRoastRuntimeOptions(
+      {
+        roastDebugLevel: 'minimal',
+        roastVariationMode: 'moderate',
+      },
+      { githubUsername: 'lafllamme', roastIntensity: 3 },
+    )
+
+    expect(runtime.roastIntensity).toBe(3)
   })
 
   it('validates roast response', () => {
@@ -45,9 +59,34 @@ describe('roast contracts', () => {
         commitCount: 4,
         prCount: 1,
       },
+      debug: {
+        username: 'lafllamme',
+        selectionSummary: {
+          candidateCommits: 10,
+          selectedCommits: 6,
+          selectedFiles: 18,
+          selectedPatchChars: 3200,
+          configuredMaxCommitRefs: 10,
+          configuredMaxSelectedCommits: 6,
+        },
+        intensityProfile: {
+          level: 2,
+          label: 'savage',
+          maxCommitRefs: 10,
+          maxSelectedCommits: 6,
+          maxPromptTotalFiles: 14,
+          maxPromptTotalPatchChars: 3500,
+          aiMaxTokens: 1900,
+          temperatureDelta: 0,
+          effectiveTemperature: 0.55,
+        },
+        timingsMs: {},
+        requests: [],
+      },
     })
 
     expect(parsed.roastLines).toHaveLength(1)
+    expect(parsed.debug?.intensityProfile?.label).toBe('savage')
   })
 
   it('validates stream event union', () => {

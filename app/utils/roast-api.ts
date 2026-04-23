@@ -10,6 +10,7 @@ const DEFAULT_DEBUG_LEVEL: RoastDebugLevel = import.meta.dev ? 'full' : 'minimal
 
 interface RoastRequestOptions {
   debugLevel?: RoastDebugLevel
+  roastIntensity?: number
 }
 
 /**
@@ -24,11 +25,13 @@ function toRoastErrorMessage(response: RoastErrorResponse): string {
  */
 export async function requestRoastSync(githubUsername: string, options?: RoastRequestOptions): Promise<RoastResponse> {
   const debugLevel = options?.debugLevel ?? DEFAULT_DEBUG_LEVEL
+  const roastIntensity = options?.roastIntensity ?? 2
   const response = await $fetch<RoastResponse | RoastErrorResponse>('/api/roast', {
     method: 'POST',
     body: {
       githubUsername,
       debugLevel,
+      roastIntensity,
     },
   })
 
@@ -45,6 +48,7 @@ export async function requestRoastSync(githubUsername: string, options?: RoastRe
  */
 export async function requestRoastStream(githubUsername: string, onEvent: (event: RoastStreamEvent) => void, signal: AbortSignal, options?: RoastRequestOptions): Promise<void> {
   const debugLevel = options?.debugLevel ?? DEFAULT_DEBUG_LEVEL
+  const roastIntensity = options?.roastIntensity ?? 2
   const response = await fetch('/api/roast/stream', {
     method: 'POST',
     headers: {
@@ -53,6 +57,7 @@ export async function requestRoastStream(githubUsername: string, onEvent: (event
     body: JSON.stringify({
       githubUsername,
       debugLevel,
+      roastIntensity,
     }),
     signal,
   })

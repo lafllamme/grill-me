@@ -32,7 +32,7 @@ async function submitRoast() {
     return
 
   scrollToTerminal()
-  await roastUsername(roastStore.trimmedUsername)
+  await roastUsername(roastStore.trimmedUsername, { roastIntensity: roastStore.roastIntensity })
 }
 
 const errorMessage = computed(() => error.value || streamError.value)
@@ -56,7 +56,9 @@ const errorMessage = computed(() => error.value || streamError.value)
         :pending="pending"
         :is-streaming="isStreaming"
         :can-submit="roastStore.canSubmit"
+        :roast-intensity="roastStore.roastIntensity"
         :error-message="errorMessage"
+        @update:roast-intensity="roastStore.setRoastIntensity"
         @submit="submitRoast"
       />
     </div>

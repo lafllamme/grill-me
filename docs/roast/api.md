@@ -32,7 +32,8 @@ Payload-first companion doc:
 {
   "githubUsername": "lafllamme",
   "debugLevel": "minimal",
-  "variationMode": "moderate"
+  "variationMode": "moderate",
+  "roastIntensity": 2
 }
 ```
 
@@ -42,6 +43,7 @@ Fields:
 - `includeDebug` (legacy bool-like switch)
 - `debugLevel` (`off | minimal | full`)
 - `variationMode` (`stable | moderate | wild`)
+- `roastIntensity` (`1 | 2 | 3 | 4`, default `2`)
 
 ## Final response contract
 
@@ -73,7 +75,20 @@ Used by:
       "candidateCommits": 12,
       "selectedCommits": 8,
       "selectedFiles": 35,
-      "selectedPatchChars": 22406
+      "selectedPatchChars": 22406,
+      "configuredMaxCommitRefs": 10,
+      "configuredMaxSelectedCommits": 6
+    },
+    "intensityProfile": {
+      "level": 2,
+      "label": "savage",
+      "maxCommitRefs": 10,
+      "maxSelectedCommits": 6,
+      "maxPromptTotalFiles": 14,
+      "maxPromptTotalPatchChars": 3500,
+      "aiMaxTokens": 1900,
+      "temperatureDelta": 0,
+      "effectiveTemperature": 0.55
     },
     "timingsMs": {
       "githubFetch": 1613,
@@ -257,6 +272,11 @@ Stream endpoint behavior is stream-first with robust fallback:
   - larger meaningful diffs
 - noise commit messages are penalized (`chore`, `typo`, `lint`, etc.)
 - merge commits are heavily penalized
+- roast intensity actively controls:
+  - candidate commit pool
+  - selected commit count
+  - prompt file/patch budgets
+  - effective AI max tokens and temperature bias
 - prompt includes `RunSalt=<requestId>` to reduce repeated phrasing across retries
 - stream prompt enforces roast-first plain-text output:
   - roast lines first
@@ -308,6 +328,6 @@ Stream endpoint behavior is stream-first with robust fallback:
 - `/Users/flame/Developer/Projects/grill-me/app/composables/useRoast.ts`
   - UI state orchestration and endpoint fallback strategy.
 - `/Users/flame/Developer/Projects/grill-me/app/utils/roast-api.ts`
-  - transport layer (`/api/roast`, `/api/roast/stream`) with `minimal` debug default and optional override.
+  - transport layer (`/api/roast`, `/api/roast/stream`) with dev-aware debug defaults and optional override.
 - `/Users/flame/Developer/Projects/grill-me/app/utils/roast-sse.ts`
   - SSE block parsing and typed stream consumption.

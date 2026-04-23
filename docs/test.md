@@ -66,11 +66,11 @@ pnpm test:e2e
 ```bash
 curl -sS 'http://localhost:3000/api/roast' \
   -H 'content-type: application/json' \
-  --data '{"githubUsername":"lafllamme","debugLevel":"full"}' | jq '.'
+  --data '{"githubUsername":"lafllamme","debugLevel":"full","roastIntensity":2}' | jq '.'
 
 curl -sN 'http://localhost:3000/api/roast/stream' \
   -H 'content-type: application/json' \
-  --data '{"githubUsername":"lafllamme","debugLevel":"full"}'
+  --data '{"githubUsername":"lafllamme","debugLevel":"full","roastIntensity":2}'
 ```
 
 3. Confirm stream event order:

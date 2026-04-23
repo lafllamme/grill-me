@@ -24,6 +24,7 @@ Used for both:
   "includeDebug": true,
   "debugLevel": "full",
   "variationMode": "moderate",
+  "roastIntensity": 2,
   "stream": true
 }
 ```
@@ -32,6 +33,7 @@ Notes:
 
 - `githubUsername` is required.
 - `debugLevel` valid values: `off | minimal | full`.
+- `roastIntensity` valid values: `1 | 2 | 3 | 4`.
 - In local dev, client defaults to `debugLevel=full` unless overridden.
 - `includeDebug` and `stream` are legacy-compatible bool-like fields.
 
@@ -48,7 +50,8 @@ Built by `resolveRoastRuntimeOptions(...)` before pipeline execution.
   "cfAiMaxTokens": 2200,
   "cfAiTemperature": 0.55,
   "cfAiTopP": 0.92,
-  "variationMode": "moderate"
+  "variationMode": "moderate",
+  "roastIntensity": 2
 }
 ```
 
@@ -171,6 +174,49 @@ Important:
   - `maxPromptFilesPerCommit`
   - `maxPromptTotalFiles`
 
+### Roast intensity contract (active)
+
+```json
+{
+  "1": {
+    "label": "salty",
+    "maxCommitRefs": 6,
+    "maxSelectedCommits": 4,
+    "maxPromptTotalFiles": 10,
+    "maxPromptTotalPatchChars": 2500,
+    "aiMaxTokens": 1400,
+    "temperatureDelta": -0.12
+  },
+  "2": {
+    "label": "savage",
+    "maxCommitRefs": 10,
+    "maxSelectedCommits": 6,
+    "maxPromptTotalFiles": 14,
+    "maxPromptTotalPatchChars": 3500,
+    "aiMaxTokens": 1900,
+    "temperatureDelta": 0
+  },
+  "3": {
+    "label": "unhinged",
+    "maxCommitRefs": 14,
+    "maxSelectedCommits": 9,
+    "maxPromptTotalFiles": 20,
+    "maxPromptTotalPatchChars": 5500,
+    "aiMaxTokens": 2600,
+    "temperatureDelta": 0.08
+  },
+  "4": {
+    "label": "nuke",
+    "maxCommitRefs": 18,
+    "maxSelectedCommits": 12,
+    "maxPromptTotalFiles": 26,
+    "maxPromptTotalPatchChars": 7500,
+    "aiMaxTokens": 3200,
+    "temperatureDelta": 0.16
+  }
+}
+```
+
 ## 4.1) System prompt contract (exact builder structure)
 
 `systemPrompt` is built in:
@@ -188,6 +234,7 @@ No slurs, no harassment, no protected-class attacks, no personal insults.
 Use concrete evidence from commit messages, file paths, and patch snippets.
 Prefer precise technical jabs over generic internet slang.
 <styleLine from variationMode>
+<styleLine from roastIntensity>
 If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.
 <outputLine by mode>
 No markdown fences, no wrapper text, no extra sections.
@@ -325,7 +372,20 @@ Same as sync plus:
       "candidateCommits": 12,
       "selectedCommits": 8,
       "selectedFiles": 37,
-      "selectedPatchChars": 24785
+      "selectedPatchChars": 24785,
+      "configuredMaxCommitRefs": 14,
+      "configuredMaxSelectedCommits": 9
+    },
+    "intensityProfile": {
+      "level": 3,
+      "label": "unhinged",
+      "maxCommitRefs": 14,
+      "maxSelectedCommits": 9,
+      "maxPromptTotalFiles": 20,
+      "maxPromptTotalPatchChars": 5500,
+      "aiMaxTokens": 2600,
+      "temperatureDelta": 0.08,
+      "effectiveTemperature": 0.63
     },
     "timingsMs": {
       "githubFetch": 1610,
@@ -487,14 +547,30 @@ Use this to identify exact pipeline state while debugging:
 Server:
 
 - `server/roast/stream-request`
+- `server/roast/intensity-resolved`
 - `server/roast/github-collector-summary`
 - `server/roast/github-collector-content`
 - `server/roast/evidence-selected`
 - `server/roast/prompt-built`
 - `server/roast/prompt-payload-summary`
 - `server/roast/prompt-payload-content`
+- `server/roast/ai-effective-config`
 - `server/roast/ai-user-payload`
 - `server/roast/stream-raw-output`
 - `server/roast/stream-counters`
 - `server/roast/stream-success`
 - `server/roast/failed` / `server/roast/stream-failed`
+
+## 9) Commit count semantics (candidate vs selected)
+
+These fields represent different stages, not a mismatch bug:
+
+- Candidate pool from GitHub collection:
+  - `resolvedIntensityProfile.maxCommitRefs` (e.g. `6 | 10 | 14 | 18`)
+  - visible in debug via `debug.github.commitCandidates`
+- Selected prompt evidence:
+  - `resolvedIntensityProfile.maxSelectedCommits` (e.g. `4 | 6 | 9 | 12`)
+  - visible via `debug.selectionSummary.selectedCommits`
+  - mirrored in response via `meta.selectedCommitCount`
+- Raw fetched commit total:
+  - visible via `meta.commitCount`

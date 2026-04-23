@@ -63,13 +63,14 @@ function scoreCommit(commit: GithubCommit): number {
 /**
  * Selects the highest-value evidence for prompt context.
  */
-export function selectEvidence(context: GithubContext): SelectedEvidence {
+export function selectEvidence(context: GithubContext, options?: { maxSelectedCommits?: number, maxCommitRefs?: number }): SelectedEvidence {
+  const maxSelectedCommits = options?.maxSelectedCommits ?? ROAST_LIMITS.maxSelectedCommits
   const candidates = context.commits
     .map(commit => ({ commit, score: scoreCommit(commit) }))
     .sort((left, right) => right.score - left.score)
 
   const selectedCommits = candidates
-    .slice(0, ROAST_LIMITS.maxSelectedCommits)
+    .slice(0, maxSelectedCommits)
     .map(item => item.commit)
 
   let selectedFiles = 0
@@ -90,6 +91,8 @@ export function selectEvidence(context: GithubContext): SelectedEvidence {
       selectedCommits: selectedCommits.length,
       selectedFiles,
       selectedPatchChars,
+      configuredMaxCommitRefs: options?.maxCommitRefs,
+      configuredMaxSelectedCommits: maxSelectedCommits,
     },
   }
 }

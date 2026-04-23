@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     logServerInfo('request', {
       requestId,
       username: parsed.username,
+      roastIntensity: parsed.runtime.roastIntensity,
       clientIp,
       includeDebug: parsed.runtime.includeDebug,
       debugLevel: parsed.runtime.debugLevel,
@@ -44,6 +45,7 @@ export default defineEventHandler(async (event) => {
     logServerInfo('success', {
       requestId,
       username: parsed.username,
+      roastIntensity: parsed.runtime.roastIntensity,
       roastLineCount: response.roastLines.length,
       roastLength: response.roast.length,
       feedbackCount: response.feedback.length,

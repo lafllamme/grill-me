@@ -1,7 +1,10 @@
 import type { RoastErrorResponse, RoastMeta, RoastResponse, RoastRuntimeOptions, RoastStreamEvent } from '~~/shared/roast/contracts'
+import type { RoastIntensityProfile } from '~~/shared/roast/intensity'
 import type { RoastDebugReport } from './debug'
 import type { BuiltPrompt, RoastPromptMode } from './prompt-builder'
 import { createError } from 'h3'
+import { ROAST_AI_TOKEN_BOUNDS } from '~~/shared/roast/contracts'
+import { resolveRoastIntensityProfile } from '~~/shared/roast/intensity'
 import { runAiStream, runAiSync } from './ai-client'
 import { logServerDebug, shapeDebugPayload } from './debug'
 import { selectEvidence } from './evidence-selector'
@@ -44,6 +47,8 @@ interface PreparedRoastContext {
   meta: RoastMeta
   prompt: BuiltPrompt
   startedAt: number
+  intensityProfile: RoastIntensityProfile
+  effectiveAiMaxTokens: number
 }
 
 /**
@@ -76,6 +81,13 @@ function createResponse(username: string, roastLines: string[], feedback: string
 
 async function emitStatus(hooks: RoastSyncHooks | undefined, phase: RoastStatusPhase, message: string): Promise<void> {
   await hooks?.onStatus?.(phase, message)
+}
+
+function resolveEffectiveAiMaxTokens(intensityProfile: RoastIntensityProfile): number {
+  return Math.max(
+    ROAST_AI_TOKEN_BOUNDS.min,
+    Math.min(ROAST_AI_TOKEN_BOUNDS.max, intensityProfile.aiMaxTokens),
+  )
 }
 
 const FEEDBACK_DELIMITER_REGEX = /(?:^|\n)\s*FEEDBACK:\s*(?:\n|$)/i
@@ -191,6 +203,24 @@ function createStreamSegmenter(emit: (event: RoastStreamEvent) => Promise<void>)
 async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMode, hooks?: RoastSyncHooks): Promise<PreparedRoastContext | RoastResponse> {
   const startedAt = Date.now()
   const githubStartedAt = Date.now()
+  const intensityProfile = resolveRoastIntensityProfile(input.runtime.roastIntensity)
+  const effectiveAiMaxTokens = resolveEffectiveAiMaxTokens(intensityProfile)
+
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('intensity-resolved', {
+      requestId: input.requestId,
+      username: input.username,
+      mode,
+      level: intensityProfile.level,
+      label: intensityProfile.label,
+      maxCommitRefs: intensityProfile.maxCommitRefs,
+      maxSelectedCommits: intensityProfile.maxSelectedCommits,
+      maxPromptTotalFiles: intensityProfile.maxPromptTotalFiles,
+      maxPromptTotalPatchChars: intensityProfile.maxPromptTotalPatchChars,
+      aiMaxTokens: effectiveAiMaxTokens,
+      temperatureDelta: intensityProfile.temperatureDelta,
+    })
+  }
 
   await emitStatus(hooks, 'fetching_github', 'Fetching GitHub activity and commit diffs...')
   const githubContext = await collectGithubContext(
@@ -199,13 +229,18 @@ async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMo
     {
       githubTimeoutMs: input.runtime.githubTimeoutMs,
       debug: input.debug,
+      debugLevel: input.runtime.debugLevel,
+      maxCommitRefs: intensityProfile.maxCommitRefs,
     },
   )
 
   input.debug.timingsMs.githubFetch = Date.now() - githubStartedAt
 
   await emitStatus(hooks, 'selecting_evidence', 'Scoring commits and selecting roast-worthy evidence...')
-  const evidence = selectEvidence(githubContext)
+  const evidence = selectEvidence(githubContext, {
+    maxCommitRefs: intensityProfile.maxCommitRefs,
+    maxSelectedCommits: intensityProfile.maxSelectedCommits,
+  })
   input.debug.selectionSummary = evidence.summary
 
   if (ENABLE_ROAST_DEBUG) {
@@ -244,11 +279,23 @@ async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMo
     evidence,
     input.runtime.variationMode,
     input.runtime.cfAiTemperature,
+    intensityProfile,
     input.requestId,
     mode,
   )
 
   input.debug.promptVersion = prompt.promptVersion
+  input.debug.intensityProfile = {
+    level: intensityProfile.level,
+    label: intensityProfile.label,
+    maxCommitRefs: intensityProfile.maxCommitRefs,
+    maxSelectedCommits: intensityProfile.maxSelectedCommits,
+    maxPromptTotalFiles: intensityProfile.maxPromptTotalFiles,
+    maxPromptTotalPatchChars: intensityProfile.maxPromptTotalPatchChars,
+    aiMaxTokens: effectiveAiMaxTokens,
+    temperatureDelta: intensityProfile.temperatureDelta,
+    effectiveTemperature: prompt.effectiveTemperature,
+  }
 
   if (ENABLE_ROAST_DEBUG) {
     const totalFiles = prompt.payload.commits.reduce((acc, commit) => acc + commit.files.length, 0)
@@ -261,21 +308,30 @@ async function prepareContext(input: RoastOrchestratorInput, mode: RoastPromptMo
       prs: prompt.payload.prs.length,
       files: totalFiles,
       variationMode: input.runtime.variationMode,
+      roastIntensity: intensityProfile.level,
+      roastIntensityLabel: intensityProfile.label,
+      configuredPromptFileBudget: intensityProfile.maxPromptTotalFiles,
+      configuredPromptPatchBudget: intensityProfile.maxPromptTotalPatchChars,
+      aiMaxTokens: effectiveAiMaxTokens,
       effectiveTemperature: prompt.effectiveTemperature,
     })
 
-    logServerDebug('prompt-payload-content', {
-      requestId: input.requestId,
-      username: input.username,
-      mode,
-      payload: prompt.payload,
-    })
+    if (input.runtime.debugLevel === 'full') {
+      logServerDebug('prompt-payload-content', {
+        requestId: input.requestId,
+        username: input.username,
+        mode,
+        payload: prompt.payload,
+      })
+    }
   }
 
   return {
     meta,
     prompt,
     startedAt,
+    intensityProfile,
+    effectiveAiMaxTokens,
   }
 }
 
@@ -331,12 +387,24 @@ export async function runRoastSync(input: RoastOrchestratorInput): Promise<Roast
 
   await emitStatus(undefined, 'calling_ai', 'Calling Cloudflare Workers AI...')
   const aiStartedAt = Date.now()
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('ai-effective-config', {
+      requestId: input.requestId,
+      username: input.username,
+      maxTokens: prepared.effectiveAiMaxTokens,
+      temperature: prepared.prompt.effectiveTemperature,
+      topP: input.runtime.cfAiTopP,
+      roastIntensity: prepared.intensityProfile.level,
+      roastIntensityLabel: prepared.intensityProfile.label,
+    })
+  }
+
   const aiPayload = await runAiSync({
     accountId: input.env.cfAccountId,
     apiToken: input.env.cfApiToken,
     model: input.env.cfAiModel,
     timeoutMs: input.runtime.cfAiTimeoutMs,
-    maxTokens: input.runtime.cfAiMaxTokens,
+    maxTokens: prepared.effectiveAiMaxTokens,
     temperature: prepared.prompt.effectiveTemperature,
     topP: input.runtime.cfAiTopP,
     systemPrompt: prepared.prompt.systemPrompt,
@@ -350,7 +418,7 @@ export async function runRoastSync(input: RoastOrchestratorInput): Promise<Roast
 
   input.debug.ai = {
     model: input.env.cfAiModel,
-    maxTokens: input.runtime.cfAiMaxTokens,
+    maxTokens: prepared.effectiveAiMaxTokens,
     timeoutMs: input.runtime.cfAiTimeoutMs,
     temperature: prepared.prompt.effectiveTemperature,
     topP: input.runtime.cfAiTopP,
@@ -362,6 +430,14 @@ export async function runRoastSync(input: RoastOrchestratorInput): Promise<Roast
       payload: prepared.prompt.payload,
     },
     responsePreview: extracted.rawText.slice(0, 1000),
+  }
+
+  if (ENABLE_ROAST_DEBUG && input.runtime.debugLevel === 'full') {
+    logServerDebug('ai-user-payload', {
+      requestId: input.requestId,
+      username: input.username,
+      payload: input.debug.ai.userPayload,
+    })
   }
 
   return finalizeFromRawText(input, prepared, extracted.rawText, extracted.parserPath)
@@ -441,6 +517,17 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
 
   await emitStatus(statusHooks, 'calling_ai', 'Calling Cloudflare Workers AI...')
   const aiStartedAt = Date.now()
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('ai-effective-config', {
+      requestId: input.requestId,
+      username: input.username,
+      maxTokens: prepared.effectiveAiMaxTokens,
+      temperature: prepared.prompt.effectiveTemperature,
+      topP: input.runtime.cfAiTopP,
+      roastIntensity: prepared.intensityProfile.level,
+      roastIntensityLabel: prepared.intensityProfile.label,
+    })
+  }
 
   let rawText = ''
   let parserPath = 'stream/chunks'
@@ -453,7 +540,7 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
         apiToken: input.env.cfApiToken,
         model: input.env.cfAiModel,
         timeoutMs: input.runtime.cfAiTimeoutMs,
-        maxTokens: input.runtime.cfAiMaxTokens,
+        maxTokens: prepared.effectiveAiMaxTokens,
         temperature: prepared.prompt.effectiveTemperature,
         topP: input.runtime.cfAiTopP,
         systemPrompt: prepared.prompt.systemPrompt,
@@ -481,7 +568,7 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
       apiToken: input.env.cfApiToken,
       model: input.env.cfAiModel,
       timeoutMs: input.runtime.cfAiTimeoutMs,
-      maxTokens: input.runtime.cfAiMaxTokens,
+      maxTokens: prepared.effectiveAiMaxTokens,
       temperature: prepared.prompt.effectiveTemperature,
       topP: input.runtime.cfAiTopP,
       systemPrompt: prepared.prompt.systemPrompt,
@@ -501,7 +588,7 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
 
   input.debug.ai = {
     model: input.env.cfAiModel,
-    maxTokens: input.runtime.cfAiMaxTokens,
+    maxTokens: prepared.effectiveAiMaxTokens,
     timeoutMs: input.runtime.cfAiTimeoutMs,
     temperature: prepared.prompt.effectiveTemperature,
     topP: input.runtime.cfAiTopP,
@@ -517,7 +604,7 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
     streamCounters,
   }
 
-  if (ENABLE_ROAST_DEBUG) {
+  if (ENABLE_ROAST_DEBUG && input.runtime.debugLevel === 'full') {
     logServerDebug('ai-user-payload', {
       requestId: input.requestId,
       username: input.username,

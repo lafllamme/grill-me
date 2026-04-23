@@ -39,6 +39,7 @@ export function shapeDebugPayload(debug: RoastDebug | undefined, level: RoastDeb
     parserPath: debug.parserPath,
     fallbackReason: debug.fallbackReason,
     selectionSummary: debug.selectionSummary,
+    intensityProfile: debug.intensityProfile,
     timingsMs: debug.timingsMs,
     requests: debug.requests,
   }

@@ -5,6 +5,7 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
     data: {
       githubUsername: 'lafllamme',
       debugLevel: 'minimal',
+      roastIntensity: 4,
     },
   })
 
@@ -17,11 +18,41 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
   expect(typeof body.roast).toBe('string')
 })
 
+test('intensity changes configured commit-selection budgets in debug', async ({ request }) => {
+  const lowResponse = await request.post('/api/roast', {
+    data: {
+      githubUsername: 'lafllamme',
+      debugLevel: 'minimal',
+      roastIntensity: 1,
+    },
+  })
+  const highResponse = await request.post('/api/roast', {
+    data: {
+      githubUsername: 'lafllamme',
+      debugLevel: 'minimal',
+      roastIntensity: 4,
+    },
+  })
+
+  expect(lowResponse.ok()).toBeTruthy()
+  expect(highResponse.ok()).toBeTruthy()
+
+  const lowBody = await lowResponse.json()
+  const highBody = await highResponse.json()
+
+  expect(lowBody.debug.selectionSummary.configuredMaxCommitRefs).toBe(6)
+  expect(lowBody.debug.selectionSummary.configuredMaxSelectedCommits).toBe(4)
+  expect(highBody.debug.selectionSummary.configuredMaxCommitRefs).toBe(18)
+  expect(highBody.debug.selectionSummary.configuredMaxSelectedCommits).toBe(12)
+  expect(highBody.debug.intensityProfile.aiMaxTokens).toBeGreaterThan(lowBody.debug.intensityProfile.aiMaxTokens)
+})
+
 test('stream roast api emits SSE envelope', async ({ request }) => {
   const response = await request.post('/api/roast/stream', {
     data: {
       githubUsername: 'lafllamme',
       debugLevel: 'minimal',
+      roastIntensity: 3,
     },
   })
 
@@ -30,4 +61,15 @@ test('stream roast api emits SSE envelope', async ({ request }) => {
 
   expect(streamBody).toContain('event: meta')
   expect(streamBody).toContain('event: done')
+})
+
+test('ui renders roast intensity slider and levels', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('roast-intensity-slider')).toBeVisible()
+  await expect(page.getByText('Roast Intensity')).toBeVisible()
+  await expect(page.getByText('Critical Temperature')).toBeVisible()
+  await expect(page.getByText('salty')).toBeVisible()
+  await expect(page.getByText('savage')).toBeVisible()
+  await expect(page.getByText('unhinged')).toBeVisible()
+  await expect(page.getByText('nuke')).toBeVisible()
 })

@@ -28,6 +28,11 @@ export const ROAST_LIMITS = {
   maxStreamChunkChars: 140,
 } as const
 
+export const ROAST_AI_TOKEN_BOUNDS = {
+  min: 1000,
+  max: 4000,
+} as const
+
 /**
  * Runtime defaults used if env values are missing or invalid.
  */
@@ -40,6 +45,7 @@ export const ROAST_DEFAULTS = {
   aiTemperature: 0.55,
   aiTopP: 0.92,
   promptVariationMode: 'moderate',
+  roastIntensity: 2,
   debugLevel: 'minimal',
 } as const
 
@@ -49,11 +55,15 @@ export type RoastDebugLevel = z.infer<typeof roastDebugLevelSchema>
 export const roastVariationModeSchema = z.enum(['stable', 'moderate', 'wild'])
 export type RoastVariationMode = z.infer<typeof roastVariationModeSchema>
 
+export const roastIntensitySchema = z.number().int().min(1).max(4)
+export type RoastIntensity = z.infer<typeof roastIntensitySchema>
+
 export const roastRequestBodySchema = z.object({
   githubUsername: z.string().trim().min(1),
   includeDebug: z.union([z.boolean(), z.string(), z.number()]).optional(),
   debugLevel: roastDebugLevelSchema.optional(),
   variationMode: roastVariationModeSchema.optional(),
+  roastIntensity: roastIntensitySchema.optional(),
   stream: z.union([z.boolean(), z.string(), z.number()]).optional(),
 })
 
@@ -88,9 +98,25 @@ export const selectionSummarySchema = z.object({
   selectedCommits: z.number().int().nonnegative(),
   selectedFiles: z.number().int().nonnegative(),
   selectedPatchChars: z.number().int().nonnegative(),
+  configuredMaxCommitRefs: z.number().int().nonnegative().optional(),
+  configuredMaxSelectedCommits: z.number().int().nonnegative().optional(),
 })
 
 export type SelectionSummary = z.infer<typeof selectionSummarySchema>
+
+export const intensityProfileSchema = z.object({
+  level: z.number().int().min(1).max(4),
+  label: z.enum(['salty', 'savage', 'unhinged', 'nuke']),
+  maxCommitRefs: z.number().int().nonnegative(),
+  maxSelectedCommits: z.number().int().nonnegative(),
+  maxPromptTotalFiles: z.number().int().nonnegative(),
+  maxPromptTotalPatchChars: z.number().int().nonnegative(),
+  aiMaxTokens: z.number().int().nonnegative(),
+  temperatureDelta: z.number(),
+  effectiveTemperature: z.number().optional(),
+})
+
+export type IntensityProfile = z.infer<typeof intensityProfileSchema>
 
 export const roastDebugSchema = z.object({
   username: z.string(),
@@ -98,6 +124,7 @@ export const roastDebugSchema = z.object({
   parserPath: z.string().optional(),
   fallbackReason: z.string().optional(),
   selectionSummary: selectionSummarySchema.optional(),
+  intensityProfile: intensityProfileSchema.optional(),
   timingsMs: z.object({
     githubFetch: z.number().optional(),
     aiGenerate: z.number().optional(),
@@ -218,6 +245,7 @@ export interface RoastRuntimeOptions {
   cfAiTemperature: number
   cfAiTopP: number
   variationMode: RoastVariationMode
+  roastIntensity: RoastIntensity
 }
 
 /**
@@ -273,15 +301,21 @@ export function resolveRoastRuntimeOptions(config: Record<string, unknown>, body
     ? (variationModeInput as RoastVariationMode)
     : (ROAST_DEFAULTS.promptVariationMode as RoastVariationMode)
 
+  const roastIntensityInput = body.roastIntensity
+  const normalizedRoastIntensity = roastIntensitySchema.safeParse(roastIntensityInput).success
+    ? (roastIntensityInput as RoastIntensity)
+    : ROAST_DEFAULTS.roastIntensity
+
   return {
     includeDebug: normalizedDebugLevel !== 'off',
     debugLevel: normalizedDebugLevel,
     githubTimeoutMs: parsePositiveNumber(config.githubTimeoutMs, ROAST_DEFAULTS.githubTimeoutMs),
     cfAiTimeoutMs: parsePositiveNumber(config.cfAiTimeoutMs, ROAST_DEFAULTS.aiTimeoutMs),
-    cfAiMaxTokens: parseBoundedNumber(config.cfAiMaxTokens, ROAST_DEFAULTS.aiMaxTokens, 2000, 4000),
+    cfAiMaxTokens: parseBoundedNumber(config.cfAiMaxTokens, ROAST_DEFAULTS.aiMaxTokens, ROAST_AI_TOKEN_BOUNDS.min, ROAST_AI_TOKEN_BOUNDS.max),
     cfAiTemperature: parseBoundedNumber(config.cfAiTemperature, ROAST_DEFAULTS.aiTemperature, 0, 1.2),
     cfAiTopP: parseBoundedNumber(config.cfAiTopP, ROAST_DEFAULTS.aiTopP, 0.1, 1),
     variationMode: normalizedVariation,
+    roastIntensity: normalizedRoastIntensity,
   }
 }
 

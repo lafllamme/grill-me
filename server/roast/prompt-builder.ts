@@ -1,4 +1,5 @@
 import type { RoastVariationMode } from '~~/shared/roast/contracts'
+import type { RoastIntensityProfile } from '~~/shared/roast/intensity'
 import type { SelectedEvidence } from './evidence-selector'
 import { ROAST_LIMITS } from '~~/shared/roast/contracts'
 import { logServerDebug } from './debug'
@@ -69,7 +70,14 @@ function compactMessage(value: string): string {
 /**
  * Builds a versioned prompt + compact evidence payload for the model.
  */
-export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: RoastVariationMode, baseTemperature: number, requestSalt?: string, mode: RoastPromptMode = 'sync'): BuiltPrompt {
+export function buildRoastPrompt(
+  evidence: SelectedEvidence,
+  variationMode: RoastVariationMode,
+  baseTemperature: number,
+  intensityProfile: RoastIntensityProfile,
+  requestSalt?: string,
+  mode: RoastPromptMode = 'sync',
+): BuiltPrompt {
   const profile = TONE_PROFILE[variationMode]
   let totalFiles = 0
   let totalPatchChars = 0
@@ -86,10 +94,10 @@ export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: Roas
         .slice(0, ROAST_LIMITS.maxPromptFilesPerCommit)
 
       const files = rankedFiles
-        .filter(() => totalFiles < ROAST_LIMITS.maxPromptTotalFiles)
+        .filter(() => totalFiles < intensityProfile.maxPromptTotalFiles)
         .map((file) => {
           totalFiles += 1
-          const availablePatchBudget = ROAST_LIMITS.maxPromptTotalPatchChars - totalPatchChars
+          const availablePatchBudget = intensityProfile.maxPromptTotalPatchChars - totalPatchChars
           const hasPatchBudget = availablePatchBudget > 0
           const patch = file.patch && hasPatchBudget
             ? file.patch.slice(0, Math.min(ROAST_LIMITS.maxPromptPatchChars, availablePatchBudget))
@@ -133,6 +141,7 @@ export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: Roas
     'Use concrete evidence from commit messages, file paths, and patch snippets.',
     'Prefer precise technical jabs over generic internet slang.',
     profile.styleLine,
+    intensityProfile.styleLine,
     'If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.',
     outputLine,
     'No markdown fences, no wrapper text, no extra sections.',
@@ -143,7 +152,7 @@ export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: Roas
     promptVersion: PROMPT_VERSION,
     systemPrompt,
     payload,
-    effectiveTemperature: Math.max(0, Math.min(1.2, baseTemperature + profile.temperatureBias)),
+    effectiveTemperature: Math.max(0, Math.min(1.2, baseTemperature + profile.temperatureBias + intensityProfile.temperatureDelta)),
   }
 
   if (ENABLE_ROAST_DEBUG) {
@@ -152,8 +161,12 @@ export function buildRoastPrompt(evidence: SelectedEvidence, variationMode: Roas
       mode,
       promptVersion: builtPrompt.promptVersion,
       variationMode,
+      roastIntensity: intensityProfile.level,
+      roastIntensityLabel: intensityProfile.label,
       requestSalt,
       effectiveTemperature: builtPrompt.effectiveTemperature,
+      maxPromptTotalFiles: intensityProfile.maxPromptTotalFiles,
+      maxPromptTotalPatchChars: intensityProfile.maxPromptTotalPatchChars,
       commitCount: builtPrompt.payload.commits.length,
       prCount: builtPrompt.payload.prs.length,
       fileCount: totalFiles,

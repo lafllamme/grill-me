@@ -3,22 +3,29 @@ const props = withDefaults(defineProps<{
   pending?: boolean
   isStreaming?: boolean
   canSubmit?: boolean
+  roastIntensity?: number
   errorMessage?: string | null
 }>(), {
   pending: false,
   isStreaming: false,
   canSubmit: false,
+  roastIntensity: 2,
   errorMessage: null,
 })
 
 const emit = defineEmits<{
-  submit: []
+  'submit': []
+  'update:roastIntensity': [value: number]
 }>()
 
 const isBusy = computed(() => props.pending || props.isStreaming)
 
 function onSubmit() {
   emit('submit')
+}
+
+function onUpdateRoastIntensity(value: number) {
+  emit('update:roastIntensity', value)
 }
 </script>
 
@@ -64,6 +71,12 @@ function onSubmit() {
         />
       </button>
     </div>
+
+    <RoastLevel
+      :disabled="isBusy"
+      :model-value="roastIntensity"
+      @update:model-value="onUpdateRoastIntensity"
+    />
 
     <p v-if="errorMessage" class="text-sm text-primary font-body mt-4 text-left">
       {{ errorMessage }}
