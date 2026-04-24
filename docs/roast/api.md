@@ -1,18 +1,19 @@
-# Roast API (v5)
+# Roast API (v5.1)
 
-This document describes the current roast pipeline and stream contract after the v3 live-stream cutover.
+This document describes the public roast contract and the current server-owned
+streaming architecture.
 
 ## Endpoints
 
 - `POST /api/roast`
-  - sync JSON response
+  - synchronous JSON response
 - `POST /api/roast/stream`
-  - SSE response (`text/event-stream`)
+  - typed SSE stream (`text/event-stream`)
 
-Source of truth:
+Source of truth for schemas:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
 
-## Request
+## Request Shape
 
 ```json
 {
@@ -23,7 +24,9 @@ Source of truth:
 }
 ```
 
-## Final response (`/api/roast` and stream `done.data`)
+## Final Response Shape
+
+Used by sync endpoint and `done.data` in stream:
 
 ```json
 {
@@ -40,14 +43,14 @@ Source of truth:
 }
 ```
 
-Canonical requirements:
-- `title` required
-- `roastLines` required, non-empty
-- `feedback` required, non-empty
+Canonical final requirements:
+- `title` non-empty
+- `roastLines` non-empty
+- `feedback` non-empty
 
-## Stream events (v3)
+## Stream Event Contract
 
-Allowed stream events:
+Public stream event types (stable):
 - `meta`
 - `status`
 - `roast_title`
@@ -57,21 +60,28 @@ Allowed stream events:
 - `done`
 - `error`
 
-Interleave rule:
+Interleave rules:
 - `roast_line` and `feedback_item` may interleave.
-- `done` is final canonical truth.
+- `done` is canonical final truth.
 
-Typical sequence:
+Expected sequence:
 1. `meta`
 2. `status*`
 3. `roast_title`
-4. `roast_line | feedback_item` (live, interleaved)
+4. `roast_line | feedback_item` (live)
 5. optional `debug`
-6. `done`
+6. `done` or `error`
 
-## Internal model stream contract (server-owned)
+## Internal Stream Architecture
 
-For stream mode, the model is instructed to emit NDJSON lines:
+Server modules:
+- `orchestrator-sync.ts`: sync execution path
+- `orchestrator-stream.ts`: live stream execution path
+- `orchestrator-common.ts`: context prep, response shaping, shared error helpers
+- `stream-ndjson-parser.ts`: incremental model-stream parser
+- `final-normalizer.ts`: canonical final payload normalization/assertion
+
+Model-to-server streaming protocol (internal):
 
 ```json
 {"type":"title","title":"..."}
@@ -80,13 +90,12 @@ For stream mode, the model is instructed to emit NDJSON lines:
 {"type":"done"}
 ```
 
-Important:
-- This NDJSON format is internal model-to-server contract.
-- Public client contract remains SSE typed events listed above.
+Notes:
+- Parser accepts NDJSON and concatenated JSON objects split across chunk boundaries.
+- Invalid fragments are skipped and counted in debug (`ndjsonInvalidLineCount`).
+- Canonical final payload remains server-owned.
 
-## Error behavior
-
-Error envelope:
+## Error Envelope and Codes
 
 ```json
 {
@@ -110,6 +119,6 @@ Common codes:
 - `cloudflare_ai_unparseable_output`
 - `cloudflare_ai_incomplete_output`
 
-Fail-fast rules:
-- No silent fallback to marker parsing for stream events.
-- If mandatory structure is missing (`title`, `roastLines`, `feedback`), stream ends with typed error.
+Fail-fast guarantees:
+- No marker-based textual stream contract.
+- If required structure cannot be formed (`title`, `roastLines`, `feedback`), stream ends with typed `error`.

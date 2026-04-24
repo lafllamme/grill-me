@@ -7,66 +7,13 @@ const {
   pending,
   isStreaming,
   streamStatus,
-  partialRoast,
+  partialRoastLines,
   partialFeedback,
   streamError,
 } = useRoast()
 
 const hasSessionOutput = computed(() => {
-  return streamStatus.value.length > 0 || partialRoast.value.trim().length > 0 || partialFeedback.value.length > 0
-})
-
-const partialRoastLines = computed(() => {
-  return partialRoast.value
-    .split(/\n+/)
-    .map(line => line.trim())
-    .filter(Boolean)
-})
-
-const roastDisplayLines = computed(() => {
-  if (partialRoastLines.value.length === 0)
-    return []
-
-  const lines = [...partialRoastLines.value]
-    .filter(line => !/^feedback:?$/i.test(line))
-
-  if (partialFeedback.value.length === 0)
-    return lines
-
-  const trailingBulletLines = []
-  for (let index = lines.length - 1; index >= 0; index--) {
-    const current = lines[index] ?? ''
-    if (!/^[-*•]\s+/.test(current))
-      break
-    trailingBulletLines.unshift(current.replace(/^[-*•]\s+/, '').trim())
-  }
-
-  if (trailingBulletLines.length === 0)
-    return lines
-
-  const feedbackComparable = partialFeedback.value
-    .map(item => item
-      .toLowerCase()
-      .replace(/[`"'“”‘’]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim())
-    .filter(Boolean)
-  const trailingComparable = trailingBulletLines
-    .map(item => item
-      .toLowerCase()
-      .replace(/[`"'“”‘’]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim())
-    .filter(Boolean)
-
-  const hasExactDuplicate = trailingComparable.length > 0
-    && trailingComparable.length <= feedbackComparable.length
-    && trailingComparable.every((item, index) => item === feedbackComparable[index])
-
-  if (!hasExactDuplicate)
-    return lines
-
-  return lines.slice(0, lines.length - trailingBulletLines.length)
+  return streamStatus.value.length > 0 || partialRoastLines.value.length > 0 || partialFeedback.value.length > 0
 })
 </script>
 
@@ -80,7 +27,7 @@ const roastDisplayLines = computed(() => {
           <span class="border border-green-500/40 rounded-full bg-green-500/20 h-3 w-3" />
         </div>
         <span class="text-xs text-on-surface-variant tracking-[0.14em] font-mono uppercase">
-          roast-engine-v2.1.0 --stream
+          roast-engine-v3.1.0 --stream
         </span>
       </div>
 
@@ -117,9 +64,9 @@ const roastDisplayLines = computed(() => {
           </div>
 
           <div class="min-h-[220px]">
-            <blockquote v-if="roastDisplayLines.length > 0" class="text-lg text-on-surface leading-loose font-body pl-5 border-l-4 border-primary italic space-y-3">
+            <blockquote v-if="partialRoastLines.length > 0" class="text-lg text-on-surface leading-loose font-body pl-5 border-l-4 border-primary italic space-y-3">
               <p
-                v-for="(line, index) in roastDisplayLines"
+                v-for="(line, index) in partialRoastLines"
                 :key="`line-${index}-${line}`"
               >
                 {{ line }}

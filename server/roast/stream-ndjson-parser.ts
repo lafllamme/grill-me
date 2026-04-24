@@ -181,6 +181,23 @@ function parseAvailableObjects(state: NdjsonParserState, source: string): { even
   return { events, rest: '' }
 }
 
+/**
+ * Creates an incremental parser for model output that may arrive as NDJSON
+ * lines or concatenated JSON objects split across arbitrary chunk boundaries.
+ *
+ * @remarks
+ * - Input can contain partial objects.
+ * - Objects are extracted via balanced-brace scanning.
+ * - Invalid fragments are counted in `invalidLineCount` and skipped.
+ * - First value wins for duplicate indexes via parser state rules.
+ *
+ * @returns Stream parser with `push`, `flush`, and `getState`.
+ * @example
+ * const parser = createStreamNdjsonParser()
+ * parser.push('{"type":"title","title":"Build Burn"}')
+ * parser.push('{"type":"roast_line","index":0,"text":"Line"}')
+ * const events = parser.flush()
+ */
 export function createStreamNdjsonParser(): StreamNdjsonParser {
   let buffer = ''
   const state: NdjsonParserState = {

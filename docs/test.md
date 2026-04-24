@@ -1,103 +1,71 @@
 # Testing Guide
 
 This project uses:
+- `vitest` for unit/contract tests
+- `playwright` for E2E smoke/integration checks
 
-- `vitest` for fast unit/schema tests
-- `playwright` for end-to-end smoke tests (API + UI flow)
-
-## Install and setup
+## Install
 
 ```bash
 pnpm install
 pnpm exec playwright install
 ```
 
-## Test commands
-
-- Unit tests (CI-safe):
+## Commands
 
 ```bash
 pnpm test:unit
-```
-
-- Unit tests in watch mode:
-
-```bash
-pnpm test:unit:watch
-```
-
-- E2E tests (starts Nuxt on `:4173` via Playwright webServer):
-
-```bash
 pnpm test:e2e
-```
-
-- E2E with browser UI:
-
-```bash
-pnpm test:e2e:headed
-```
-
-- E2E debug mode:
-
-```bash
-pnpm test:e2e:debug
-```
-
-- Full suite:
-
-```bash
 pnpm test:all
 ```
 
-## Roast-specific verification
+## Roast Pipeline Validation
 
-For changes in roast pipeline (`server/roast/*`, `server/api/roast*`, `app/composables/useRoast.ts`, landing terminal components):
-
-1. Run:
+For roast-related changes (`server/roast/*`, roast APIs, `app/composables/useRoast.ts`, roast terminal components), run:
 
 ```bash
+pnpm exec eslint .
+pnpm exec nuxi typecheck
 pnpm test:unit
 pnpm test:e2e
 ```
 
-2. Manual API sanity checks:
+## Manual Smoke Checks
+
+### Sync
 
 ```bash
 curl -sS 'http://localhost:3000/api/roast' \
   -H 'content-type: application/json' \
   --data '{"githubUsername":"lafllamme","debugLevel":"full","roastIntensity":2}' | jq '.'
+```
 
+### Stream
+
+```bash
 curl -sN 'http://localhost:3000/api/roast/stream' \
   -H 'content-type: application/json' \
   --data '{"githubUsername":"lafllamme","debugLevel":"full","roastIntensity":2}'
 ```
 
-3. Confirm stream event order:
-
+Expected stream order:
 - `meta`
-- `status` (zero or more)
-- `roast_title` (exactly one, should arrive before `done`)
-- `roast_line` / `feedback_item` (one or more, may interleave)
+- `status` (0..n)
+- `roast_title` (1)
+- `roast_line` / `feedback_item` (1..n, interleaved allowed)
 - optional `debug`
 - `done` or `error`
 
-Validation notes:
+## Acceptance Criteria
 
-- `done.data` must include `title`, `roastLines`, and `feedback`
-- parser failures should emit typed `error` (no silent marker/text fallback)
-- with `curl -N`, first content event should appear before the final `done` event
+- First content event appears before `done`.
+- `done.data` includes `title`, `roastLines`, and `feedback`.
+- `done.data` is consistent with previously streamed content events.
+- Parser/normalizer failures produce typed `error` envelopes.
 
-## Notes for agents
+## Reporting Rules
 
-- Prefer deterministic tests and assert contracts first.
-- If E2E fails because browsers are missing, run:
-
-```bash
-pnpm exec playwright install
-```
-
-- Always report:
-  - which commands were run
-  - pass/fail status
-  - first failing assertion or upstream error envelope
+When reporting test results, always include:
+- executed commands
+- pass/fail state
+- first failing assertion or upstream error code

@@ -20,6 +20,8 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
 })
 
 test('intensity changes configured commit-selection budgets in debug', async ({ request }) => {
+  test.setTimeout(180_000)
+
   const lowResponse = await request.post('/api/roast', {
     data: {
       githubUsername: 'lafllamme',

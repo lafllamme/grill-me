@@ -1,11 +1,11 @@
-# Roast Payload Contract (v3)
+# Roast Payload Contract (v3.1)
 
-Payload-first reference for request, AI payload, stream events, and canonical done output.
+Payload-first reference for request, AI payload, stream events, debug blocks, and final canonical output.
 
-Type source of truth:
+Schema source:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
 
-## 1) Client -> API request
+## 1) Client -> API Request
 
 ```json
 {
@@ -16,7 +16,7 @@ Type source of truth:
 }
 ```
 
-## 2) Normalized runtime
+## 2) Normalized Runtime
 
 ```json
 {
@@ -32,7 +32,7 @@ Type source of truth:
 }
 ```
 
-## 3) AI user payload (what is sent as `messages[].content`)
+## 3) AI Payload (`messages[].content`)
 
 ```json
 {
@@ -60,9 +60,9 @@ Type source of truth:
 }
 ```
 
-Yes, prompt payload contains commit file diffs (`files[].patch`) within budget limits.
+Diff patches are included in `files[].patch` within prompt budgets.
 
-## 4) Stream v3 public SSE events
+## 4) Public SSE Events
 
 ```json
 {"type":"meta","requestId":"a28ccb80","username":"lafllamme"}
@@ -73,11 +73,9 @@ Yes, prompt payload contains commit file diffs (`files[].patch`) within budget l
 {"type":"done","data":{"username":"lafllamme","title":"Monorepo Meltdown","roastLines":["..."],"roast":"...","feedback":["..."],"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8}}}
 ```
 
-Interleave is allowed between `roast_line` and `feedback_item`.
+Interleave allowed between `roast_line` and `feedback_item`.
 
-## 5) Internal model -> server NDJSON contract (stream mode)
-
-Model must output NDJSON lines:
+## 5) Internal Model Stream Envelope
 
 ```json
 {"type":"title","title":"Monorepo Meltdown"}
@@ -86,20 +84,28 @@ Model must output NDJSON lines:
 {"type":"done"}
 ```
 
-Server parses incrementally and emits typed SSE events immediately.
+Server parses this incrementally, supports split/concatenated JSON chunks, then emits typed SSE.
 
-## 6) Canonical done payload
+## 6) Canonical `done.data`
 
-Required fields in `done.data`:
+Required fields:
 - `title`
 - `roastLines`
 - `feedback`
 
-If required structure is missing, server returns typed error (`cloudflare_ai_incomplete_output`) instead of auto-filling text.
+If missing after parser normalization, server emits typed `error` (`cloudflare_ai_incomplete_output`).
 
-## 7) Candidate vs selected commit counts
+## 7) Debug Contract Pointers
 
-- `meta.commitCount`: enriched/candidate commit count collected from GitHub.
-- `meta.selectedCommitCount`: commits actually selected into prompt evidence.
-- `debug.selectionSummary.configuredMaxCommitRefs`: configured candidate cap.
-- `debug.selectionSummary.configuredMaxSelectedCommits`: configured selected cap.
+Useful debug fields:
+- `debug.parserPath`: final parse path used for canonical response
+- `debug.ai.ndjsonInvalidLineCount`: skipped invalid stream fragments
+- `debug.selectionSummary`: candidate vs selected summary
+- `debug.intensityProfile`: resolved runtime profile
+
+## 8) Candidate vs Selected Counts
+
+- `meta.commitCount`: enriched/candidate commits fetched from GitHub.
+- `meta.selectedCommitCount`: commits selected into prompt evidence.
+- `debug.selectionSummary.configuredMaxCommitRefs`: candidate cap.
+- `debug.selectionSummary.configuredMaxSelectedCommits`: selected cap.

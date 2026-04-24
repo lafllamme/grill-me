@@ -114,6 +114,15 @@ function parseJsonCandidate(raw: string): ParsedRoastContent | null {
 
 /**
  * Parses model text into strict structured roast output.
+ *
+ * @remarks
+ * This parser is intentionally JSON-first to keep contract behavior deterministic.
+ * No marker-based textual fallback is used in the product stream path.
+ *
+ * @param raw Raw model output text.
+ * @returns Parsed structured roast content or `unparseable` sentinel shape.
+ * @example
+ * const parsed = parseRoastOutput('{\"title\":\"X\",\"roastLines\":[\"a\"],\"feedback\":[\"b\"]}')
  */
 export function parseRoastOutput(raw: string): ParsedRoastContent {
   const parsed = parseJsonCandidate(raw)

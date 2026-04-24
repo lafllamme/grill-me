@@ -80,6 +80,12 @@ function assertAiConfig(input: AiRequestInput): void {
 
 /**
  * Sends a synchronous Cloudflare Workers AI request.
+ *
+ * @param input Request configuration and model payload.
+ * @returns Raw upstream JSON payload.
+ * @throws h3Error `cloudflare_ai_not_configured`
+ * @throws h3Error `cloudflare_ai_timeout`
+ * @throws h3Error `cloudflare_ai_error`
  */
 export async function runAiSync(input: AiRequestInput): Promise<any> {
   assertAiConfig(input)
@@ -163,6 +169,16 @@ export async function runAiSync(input: AiRequestInput): Promise<any> {
 
 /**
  * Streams Cloudflare Workers AI response and yields incremental text chunks.
+ *
+ * @param input Request configuration and model payload.
+ * @param onChunk Callback invoked for each extracted text chunk.
+ * @returns Collected raw text used for final canonical parsing.
+ * @throws h3Error `cloudflare_ai_not_configured`
+ * @throws h3Error `cloudflare_ai_stream_unavailable`
+ * @throws h3Error `cloudflare_ai_timeout`
+ * @throws h3Error `cloudflare_ai_error`
+ * @example
+ * const { rawText } = await runAiStream(input, chunk => parser.push(chunk))
  */
 export async function runAiStream(input: AiRequestInput, onChunk: (chunk: string) => Promise<void> | void): Promise<{ rawText: string }> {
   assertAiConfig(input)
