@@ -102,3 +102,4 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - `heating` — flame ramp during prompt submission.
 - `roasting` — full flame + smoke while the stream is live.
 - `served` — flames settle, plate slide-in with the final roast.
+- Reminder: sync plate slide-in docs with implementation changes.
