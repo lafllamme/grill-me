@@ -1,4 +1,4 @@
-# Roast Payload Contract (v3.1)
+# Roast Payload Contract (v3.2)
 
 Payload-first reference for request, AI payload, stream events, debug blocks, and final canonical output.
 
@@ -62,7 +62,7 @@ Schema source:
 
 Diff patches are included in `files[].patch` within prompt budgets.
 
-## 4) Public SSE Events
+## 4) Public SSE Events (Shape Snapshot)
 
 ```json
 {"type":"meta","requestId":"a28ccb80","username":"lafllamme"}
@@ -74,6 +74,7 @@ Diff patches are included in `files[].patch` within prompt budgets.
 ```
 
 Interleave allowed between `roast_line` and `feedback_item`.
+Event semantics and ordering are defined in `stream-contract.md`.
 
 ## 5) Internal Model Stream Envelope
 
@@ -95,11 +96,15 @@ Required fields:
 
 If missing after parser normalization, server emits typed `error` (`cloudflare_ai_incomplete_output`).
 
+Title contract is defined in `stream-contract.md` (primary source).
+
 ## 7) Debug Contract Pointers
 
 Useful debug fields:
 - `debug.parserPath`: final parse path used for canonical response
 - `debug.ai.ndjsonInvalidLineCount`: skipped invalid stream fragments
+- `debug.ai.titleNormalized`: whether server adjusted the model title
+- `debug.ai.titleNormalizationReasons`: normalization reasons (if any)
 - `debug.selectionSummary`: candidate vs selected summary
 - `debug.intensityProfile`: resolved runtime profile
 
@@ -109,3 +114,41 @@ Useful debug fields:
 - `meta.selectedCommitCount`: commits selected into prompt evidence.
 - `debug.selectionSummary.configuredMaxCommitRefs`: candidate cap.
 - `debug.selectionSummary.configuredMaxSelectedCommits`: selected cap.
+
+## 9) Dev Logging View (Terminal + Browser)
+
+Recommended full debug request:
+
+```json
+{
+  "githubUsername": "lafllamme",
+  "debugLevel": "full",
+  "roastIntensity": 2
+}
+```
+
+Expected high-signal client log scopes:
+- `[client/roast/request-start]`
+- `[client/roast/stream-meta]`
+- `[client/roast/stream-status]`
+- `[client/roast/stream-roast-title]`
+- `[client/roast/stream-roast-line]`
+- `[client/roast/stream-feedback-item]`
+- `[client/roast/stream-debug]`
+- `[client/roast/stream-done]`
+
+Expected high-signal server log scopes:
+- `[server/roast/stream-request]`
+- `[server/roast/intensity-resolved]`
+- `[server/roast/github-collector-summary]`
+- `[server/roast/evidence-selected]`
+- `[server/roast/prompt-payload-summary]`
+- `[server/roast/ai-effective-config]`
+- `[server/roast/stream-counters]`
+- `[server/roast/stream-success]`
+
+## 10) Client Rendering Notes
+
+- `roast_title` is consumed as progressive UI state (`partialTitle`) and rendered in a dedicated terminal title slot.
+- Title rendering uses a typewriter effect during stream and resolves to canonical `done.data.title` after completion.
+- The title slot reserves vertical space before title arrival to keep terminal layout stable.

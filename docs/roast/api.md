@@ -1,14 +1,13 @@
-# Roast API (v5.1)
+# Roast API (v3.2)
 
-This document describes the public roast contract and the current server-owned
-streaming architecture.
+Public endpoint contract for roast generation.
 
 ## Endpoints
 
 - `POST /api/roast`
-  - synchronous JSON response
+  - synchronous JSON response (canonical roast payload)
 - `POST /api/roast/stream`
-  - typed SSE stream (`text/event-stream`)
+  - typed SSE stream (`text/event-stream`, see `stream-contract.md`)
 
 Source of truth for schemas:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
@@ -26,7 +25,7 @@ Source of truth for schemas:
 
 ## Final Response Shape
 
-Used by sync endpoint and `done.data` in stream:
+Used by sync endpoint and by `done.data` in stream:
 
 ```json
 {
@@ -48,52 +47,11 @@ Canonical final requirements:
 - `roastLines` non-empty
 - `feedback` non-empty
 
-## Stream Event Contract
-
-Public stream event types (stable):
-- `meta`
-- `status`
-- `roast_title`
-- `roast_line`
-- `feedback_item`
-- `debug` (optional)
-- `done`
-- `error`
-
-Interleave rules:
-- `roast_line` and `feedback_item` may interleave.
-- `done` is canonical final truth.
-
-Expected sequence:
-1. `meta`
-2. `status*`
-3. `roast_title`
-4. `roast_line | feedback_item` (live)
-5. optional `debug`
-6. `done` or `error`
-
-## Internal Stream Architecture
-
-Server modules:
-- `orchestrator-sync.ts`: sync execution path
-- `orchestrator-stream.ts`: live stream execution path
-- `orchestrator-common.ts`: context prep, response shaping, shared error helpers
-- `stream-ndjson-parser.ts`: incremental model-stream parser
-- `final-normalizer.ts`: canonical final payload normalization/assertion
-
-Model-to-server streaming protocol (internal):
-
-```json
-{"type":"title","title":"..."}
-{"type":"roast_line","index":0,"text":"..."}
-{"type":"feedback_item","index":0,"text":"..."}
-{"type":"done"}
-```
-
-Notes:
-- Parser accepts NDJSON and concatenated JSON objects split across chunk boundaries.
-- Invalid fragments are skipped and counted in debug (`ndjsonInvalidLineCount`).
-- Canonical final payload remains server-owned.
+Related docs:
+- `index.md`
+- `stream-contract.md`
+- `payload-contract.md`
+- `architecture.md`
 
 ## Error Envelope and Codes
 
@@ -118,7 +76,3 @@ Common codes:
 - `cloudflare_ai_empty_output`
 - `cloudflare_ai_unparseable_output`
 - `cloudflare_ai_incomplete_output`
-
-Fail-fast guarantees:
-- No marker-based textual stream contract.
-- If required structure cannot be formed (`title`, `roastLines`, `feedback`), stream ends with typed `error`.

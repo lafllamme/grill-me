@@ -11,6 +11,7 @@ import { createFallbackRoast } from './fallback'
 import { collectGithubContext } from './github-collector'
 import { parseRoastOutput } from './output-parser'
 import { buildRoastPrompt } from './prompt-builder'
+import { normalizeRoastTitle } from './title-normalizer'
 
 export const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
@@ -73,7 +74,19 @@ export function createRoastResponse(
   runtime: RoastRuntimeOptions,
   includeDebugInResponse = true,
 ): RoastResponse {
-  const resolvedTitle = title.trim() || roastLines[0] || 'Code Roast'
+  const normalizedTitle = normalizeRoastTitle(title, {
+    username,
+    roastLines,
+    meta,
+    intensityProfile: resolveRoastIntensityProfile(runtime.roastIntensity),
+  })
+  const resolvedTitle = normalizedTitle.title.trim() || roastLines[0] || 'Code Roast'
+
+  if (debug.ai) {
+    debug.ai.titleNormalized = normalizedTitle.normalized
+    debug.ai.titleNormalizationReasons = normalizedTitle.reasons
+  }
+
   const response: RoastResponse = {
     username,
     title: resolvedTitle,

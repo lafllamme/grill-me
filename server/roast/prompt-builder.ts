@@ -3,6 +3,7 @@ import type { RoastIntensityProfile } from '~~/shared/roast/intensity'
 import type { SelectedEvidence } from './evidence-selector'
 import { ROAST_LIMITS } from '~~/shared/roast/contracts'
 import { logServerDebug } from './debug'
+import { getRoastTitleToneLine, ROAST_TITLE_POLICY } from './title-policy'
 
 export const PROMPT_VERSION = 'grill-v3.0.0'
 const ENABLE_ROAST_DEBUG = import.meta.dev && true
@@ -57,22 +58,29 @@ export interface BuiltPrompt {
 export type RoastPromptMode = 'sync' | 'stream'
 
 function getOutputLine(mode: RoastPromptMode): string {
+  const titleContract = [
+    `Title must be a hook question with ${ROAST_TITLE_POLICY.minWords}-${ROAST_TITLE_POLICY.maxWords} words.`,
+    'Keep title spicy but clean, evidence-grounded, and not generic.',
+    'Avoid summary labels like "Summary" or "Overview".',
+  ].join(' ')
+
   if (mode === 'stream') {
     return [
       'Output strictly as NDJSON (one JSON object per line).',
       'Allowed event objects:',
-      '{"type":"title","title":"short punchy title"}',
+      `{"type":"title","title":"${ROAST_TITLE_POLICY.minWords}-${ROAST_TITLE_POLICY.maxWords} word hook question title"}`,
       '{"type":"roast_line","index":0,"text":"roast line"}',
       '{"type":"feedback_item","index":0,"text":"actionable feedback"}',
       '{"type":"done"}',
       'Emit exactly one title event first.',
       'Then emit roast_line and feedback_item events in any order.',
       'End with one done event.',
+      titleContract,
       'No markdown, no prose, no code fences, no extra keys.',
     ].join(' ')
   }
 
-  return 'Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets.'
+  return `Output strictly as JSON with keys: title, roastLines, feedback. title: ${ROAST_TITLE_POLICY.minWords}-${ROAST_TITLE_POLICY.maxWords} word hook question. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets. ${titleContract}`
 }
 
 function compactMessage(value: string): string {
@@ -159,6 +167,7 @@ export function buildRoastPrompt(
     'Prefer precise technical jabs over generic internet slang.',
     profile.styleLine,
     intensityProfile.styleLine,
+    getRoastTitleToneLine(intensityProfile),
     'If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.',
   ]
 

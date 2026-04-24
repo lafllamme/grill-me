@@ -27,6 +27,7 @@ interface StreamCounters {
 
 interface StreamEmitState {
   titleEmitted: boolean
+  lastEmittedTitle: string
   emittedRoastLineIndexes: Set<number>
   emittedFeedbackIndexes: Set<number>
 }
@@ -80,6 +81,7 @@ async function emitModelEvents(
           title: modelEvent.title,
         })
         state.titleEmitted = true
+        state.lastEmittedTitle = modelEvent.title
       }
       continue
     }
@@ -115,12 +117,13 @@ async function emitMissingFinalItems(
   emit: (event: RoastStreamEvent) => Promise<void>,
   counters: StreamCounters,
 ): Promise<void> {
-  if (!state.titleEmitted) {
+  if (!state.titleEmitted || state.lastEmittedTitle !== finalPayload.title) {
     await emitWithCounter(emit, counters, {
       type: 'roast_title',
       title: finalPayload.title,
     })
     state.titleEmitted = true
+    state.lastEmittedTitle = finalPayload.title
   }
 
   for (let index = 0; index < finalPayload.roastLines.length; index += 1) {
@@ -222,6 +225,7 @@ export async function runRoastStreamPipeline(
   const parser = createStreamNdjsonParser()
   const emitState: StreamEmitState = {
     titleEmitted: false,
+    lastEmittedTitle: '',
     emittedRoastLineIndexes: new Set<number>(),
     emittedFeedbackIndexes: new Set<number>(),
   }

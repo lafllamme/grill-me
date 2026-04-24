@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoast } from '~/composables/useRoast'
 
 const {
   result,
   pending,
   isStreaming,
+  partialTitle,
   streamStatus,
   partialRoastLines,
   partialFeedback,
@@ -14,6 +15,80 @@ const {
 
 const hasSessionOutput = computed(() => {
   return streamStatus.value.length > 0 || partialRoastLines.value.length > 0 || partialFeedback.value.length > 0
+})
+
+const displayTitle = ref('')
+const TITLE_TYPE_SPEED_MS = 16
+let titleTimer: ReturnType<typeof setInterval> | null = null
+
+function stopTitleTyping(): void {
+  if (!titleTimer)
+    return
+
+  clearInterval(titleTimer)
+  titleTimer = null
+}
+
+function startTitleTyping(targetTitle: string): void {
+  if (!import.meta.client) {
+    displayTitle.value = targetTitle
+    return
+  }
+
+  stopTitleTyping()
+
+  if (!targetTitle) {
+    displayTitle.value = ''
+    return
+  }
+
+  if (!targetTitle.startsWith(displayTitle.value))
+    displayTitle.value = ''
+
+  titleTimer = setInterval(() => {
+    if (displayTitle.value.length >= targetTitle.length) {
+      stopTitleTyping()
+      return
+    }
+
+    const nextLength = displayTitle.value.length + 1
+    displayTitle.value = targetTitle.slice(0, nextLength)
+  }, TITLE_TYPE_SPEED_MS)
+}
+
+watch(partialTitle, (nextTitle) => {
+  const normalized = nextTitle.trim()
+
+  if (!normalized) {
+    stopTitleTyping()
+    displayTitle.value = ''
+    return
+  }
+
+  if (!isStreaming.value || !import.meta.client) {
+    stopTitleTyping()
+    displayTitle.value = normalized
+    return
+  }
+
+  if (displayTitle.value === normalized)
+    return
+
+  startTitleTyping(normalized)
+}, { immediate: true })
+
+watch(isStreaming, (live) => {
+  if (live)
+    return
+
+  if (partialTitle.value.trim()) {
+    stopTitleTyping()
+    displayTitle.value = partialTitle.value.trim()
+  }
+})
+
+onBeforeUnmount(() => {
+  stopTitleTyping()
 })
 </script>
 
@@ -61,6 +136,25 @@ const hasSessionOutput = computed(() => {
             <p v-else class="leading-relaxed opacity-70">
               Awaiting pipeline status updates...
             </p>
+          </div>
+
+          <div class="pt-2 min-h-[104px] space-y-3 md:min-h-[116px]">
+            <p class="text-[10px] text-primary tracking-[0.14em] font-display uppercase">
+              Roast Title
+            </p>
+            <div class="pl-5 border-l-4 border-primary/70">
+              <p class="text-2xl text-on-surface leading-tight tracking-tight font-headline font-semibold min-h-[3.5rem] md:text-[2rem] md:min-h-[4rem]">
+                <template v-if="displayTitle">
+                  {{ displayTitle }}
+                </template>
+                <template v-else>
+                  <span class="text-on-surface-variant/55">
+                    Awaiting roast title...
+                  </span>
+                </template>
+                <span v-if="isStreaming && displayTitle" class="text-primary ml-1 animate-pulse">_</span>
+              </p>
+            </div>
           </div>
 
           <div class="min-h-[220px]">

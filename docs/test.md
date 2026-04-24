@@ -30,6 +30,13 @@ pnpm test:unit
 pnpm test:e2e
 ```
 
+Roast documentation references:
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/index.md`
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/api.md`
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/stream-contract.md`
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/payload-contract.md`
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/architecture.md`
+
 ## Manual Smoke Checks
 
 ### Sync
