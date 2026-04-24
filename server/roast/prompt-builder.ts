@@ -4,7 +4,7 @@ import type { SelectedEvidence } from './evidence-selector'
 import { ROAST_LIMITS } from '~~/shared/roast/contracts'
 import { logServerDebug } from './debug'
 
-export const PROMPT_VERSION = 'grill-v2.0.0'
+export const PROMPT_VERSION = 'grill-v3.0.0'
 const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
 interface PromptToneProfile {
@@ -55,6 +55,25 @@ export interface BuiltPrompt {
 }
 
 export type RoastPromptMode = 'sync' | 'stream'
+
+function getOutputLine(mode: RoastPromptMode): string {
+  if (mode === 'stream') {
+    return [
+      'Output strictly as NDJSON (one JSON object per line).',
+      'Allowed event objects:',
+      '{"type":"title","title":"short punchy title"}',
+      '{"type":"roast_line","index":0,"text":"roast line"}',
+      '{"type":"feedback_item","index":0,"text":"actionable feedback"}',
+      '{"type":"done"}',
+      'Emit exactly one title event first.',
+      'Then emit roast_line and feedback_item events in any order.',
+      'End with one done event.',
+      'No markdown, no prose, no code fences, no extra keys.',
+    ].join(' ')
+  }
+
+  return 'Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets.'
+}
 
 function compactMessage(value: string): string {
   const singleLine = value
@@ -127,9 +146,9 @@ export function buildRoastPrompt(
     prs: evidence.prs,
   }
 
-  const outputLine = 'Output strictly as JSON with keys: title, roastLines, feedback. title: short punchy string. roastLines: array of 6-10 short punchy lines. feedback: array of 3-5 actionable one-sentence bullets.'
+  const outputLine = getOutputLine(mode)
 
-  const systemPrompt = [
+  const promptPrefix = [
     `PromptVersion=${PROMPT_VERSION}`,
     requestSalt ? `RunSalt=${requestSalt}` : '',
     'You are a dry technical GitHub roast assistant.',
@@ -141,11 +160,14 @@ export function buildRoastPrompt(
     profile.styleLine,
     intensityProfile.styleLine,
     'If two runs have similar evidence, keep facts stable but vary phrasing and punchline structure.',
-    outputLine,
+  ]
+
+  const promptSuffix = [
     'No markdown fences, no wrapper text, no extra sections.',
     'Never leak or repeat secrets in any form.',
-  ].join(' ')
+  ]
 
+  const systemPrompt = [...promptPrefix, outputLine, ...promptSuffix].join(' ')
   const builtPrompt: BuiltPrompt = {
     promptVersion: PROMPT_VERSION,
     systemPrompt,

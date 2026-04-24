@@ -9,9 +9,11 @@ import { runAiStream, runAiSync } from './ai-client'
 import { logServerDebug, shapeDebugPayload } from './debug'
 import { selectEvidence } from './evidence-selector'
 import { createFallbackRoast } from './fallback'
+import { assertCanonicalRoastOutput, normalizeCanonicalRoastFromNdjson } from './final-normalizer'
 import { collectGithubContext } from './github-collector'
-import { extractModelText, normalizeRoastParts, parseRoastOutput } from './output-parser'
+import { extractModelText, parseRoastOutput } from './output-parser'
 import { buildRoastPrompt, PROMPT_VERSION } from './prompt-builder'
+import { createStreamNdjsonParser } from './stream-ndjson-parser'
 
 const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
@@ -99,57 +101,6 @@ function resolveEffectiveAiMaxTokens(intensityProfile: RoastIntensityProfile): n
     ROAST_AI_TOKEN_BOUNDS.min,
     Math.min(ROAST_AI_TOKEN_BOUNDS.max, intensityProfile.aiMaxTokens),
   )
-}
-
-const FEEDBACK_BULLET_REGEX = /^[-*•\d.)]\s+/
-
-function normalizeFeedbackLine(value: string): string {
-  return value.replace(/^[-*•\d.)\s]+/, '').trim()
-}
-
-function normalizeFeedbackForStream(feedback: string[]): string[] {
-  return feedback
-    .map((item) => {
-      const trimmed = item.trim()
-      if (!trimmed || /^FEEDBACK:\s*$/i.test(trimmed))
-        return ''
-      return FEEDBACK_BULLET_REGEX.test(trimmed)
-        ? normalizeFeedbackLine(trimmed)
-        : trimmed
-    })
-    .filter(Boolean)
-}
-
-async function emitStructuredContent(
-  response: RoastResponse,
-  emit: (event: RoastStreamEvent) => Promise<void>,
-): Promise<void> {
-  await emit({
-    type: 'roast_title',
-    title: response.title,
-  })
-
-  const feedback = normalizeFeedbackForStream(response.feedback)
-  const maxItems = Math.max(response.roastLines.length, feedback.length)
-  for (let index = 0; index < maxItems; index += 1) {
-    const roastLine = response.roastLines[index]
-    if (roastLine) {
-      await emit({
-        type: 'roast_line',
-        index,
-        text: roastLine,
-      })
-    }
-
-    const feedbackItem = feedback[index]
-    if (feedbackItem) {
-      await emit({
-        type: 'feedback_item',
-        index,
-        text: feedbackItem,
-      })
-    }
-  }
 }
 
 /**
@@ -307,8 +258,18 @@ async function finalizeFromRawText(input: RoastOrchestratorInput, context: Prepa
   const parsed = parseRoastOutput(rawText)
   input.debug.parserPath = `${parserPath}->${parsed.parserPath}`
 
-  const normalized = normalizeRoastParts(parsed)
-  if (normalized.roastLines.length === 0 || normalized.feedback.length === 0) {
+  if (parsed.parserPath === 'unparseable') {
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Cloudflare AI returned unparseable structured output',
+      data: {
+        code: 'cloudflare_ai_unparseable_output',
+        parserPath: input.debug.parserPath,
+      },
+    })
+  }
+
+  if (!parsed.title || parsed.roastLines.length === 0 || parsed.feedback.length === 0) {
     throw createError({
       statusCode: 502,
       statusMessage: 'Cloudflare AI returned incomplete structured output',
@@ -324,9 +285,9 @@ async function finalizeFromRawText(input: RoastOrchestratorInput, context: Prepa
 
   return createResponse(
     input.username,
-    normalized.title,
-    normalized.roastLines,
-    normalized.feedback,
+    parsed.title,
+    parsed.roastLines,
+    parsed.feedback,
     context.meta,
     input.debug,
     input.runtime,
@@ -451,7 +412,32 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
 
   const prepared = await prepareContext(input, 'stream', statusHooks)
   if ('roast' in prepared) {
-    await emitStructuredContent(prepared, emitWithCounter)
+    await emitWithCounter({
+      type: 'roast_title',
+      title: prepared.title,
+    })
+
+    for (let index = 0; index < prepared.roastLines.length; index += 1) {
+      const text = prepared.roastLines[index]
+      if (!text)
+        continue
+      await emitWithCounter({
+        type: 'roast_line',
+        index,
+        text,
+      })
+    }
+
+    for (let index = 0; index < prepared.feedback.length; index += 1) {
+      const text = prepared.feedback[index]
+      if (!text)
+        continue
+      await emitWithCounter({
+        type: 'feedback_item',
+        index,
+        text,
+      })
+    }
 
     if (prepared.debug)
       await emitWithCounter({ type: 'debug', debug: prepared.debug })
@@ -474,8 +460,12 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
     })
   }
 
+  const parser = createStreamNdjsonParser()
+  const emittedRoastLineIndexes = new Set<number>()
+  const emittedFeedbackIndexes = new Set<number>()
+  let titleEmitted = false
   let rawText = ''
-  let parserPath = 'stream/chunks'
+  const parserPath = 'stream/ndjson'
   let streamFailed = false
 
   try {
@@ -494,6 +484,42 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
       },
       async (chunk) => {
         rawText += chunk
+        const modelEvents = parser.push(chunk)
+        for (const modelEvent of modelEvents) {
+          if (modelEvent.type === 'title') {
+            if (!titleEmitted) {
+              await emitWithCounter({
+                type: 'roast_title',
+                title: modelEvent.title,
+              })
+              titleEmitted = true
+            }
+            continue
+          }
+
+          if (modelEvent.type === 'roast_line') {
+            if (!emittedRoastLineIndexes.has(modelEvent.index)) {
+              await emitWithCounter({
+                type: 'roast_line',
+                index: modelEvent.index,
+                text: modelEvent.text,
+              })
+              emittedRoastLineIndexes.add(modelEvent.index)
+            }
+            continue
+          }
+
+          if (modelEvent.type === 'feedback_item') {
+            if (!emittedFeedbackIndexes.has(modelEvent.index)) {
+              await emitWithCounter({
+                type: 'feedback_item',
+                index: modelEvent.index,
+                text: modelEvent.text,
+              })
+              emittedFeedbackIndexes.add(modelEvent.index)
+            }
+          }
+        }
       },
     )
 
@@ -506,23 +532,51 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
   input.debug.timingsMs.aiGenerate = Date.now() - aiStartedAt
 
   if (streamFailed && rawText.trim().length === 0) {
-    // Stream fallback to sync generation when no usable content was emitted.
-    const fallbackPayload = await runAiSync({
-      accountId: input.env.cfAccountId,
-      apiToken: input.env.cfApiToken,
-      model: input.env.cfAiModel,
-      timeoutMs: input.runtime.cfAiTimeoutMs,
-      maxTokens: prepared.effectiveAiMaxTokens,
-      temperature: prepared.prompt.effectiveTemperature,
-      topP: input.runtime.cfAiTopP,
-      systemPrompt: prepared.prompt.systemPrompt,
-      userPrompt: JSON.stringify(prepared.prompt.payload),
-      debug: input.debug,
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Cloudflare AI stream failed before content',
+      data: {
+        code: 'cloudflare_ai_error',
+        parserPath: `${parserPath}/stream_failed`,
+      },
     })
+  }
 
-    const extracted = extractModelText(fallbackPayload)
-    parserPath = extracted.parserPath
-    rawText = extracted.rawText
+  const trailingEvents = parser.flush()
+  for (const modelEvent of trailingEvents) {
+    if (modelEvent.type === 'title') {
+      if (!titleEmitted) {
+        await emitWithCounter({
+          type: 'roast_title',
+          title: modelEvent.title,
+        })
+        titleEmitted = true
+      }
+      continue
+    }
+
+    if (modelEvent.type === 'roast_line') {
+      if (!emittedRoastLineIndexes.has(modelEvent.index)) {
+        await emitWithCounter({
+          type: 'roast_line',
+          index: modelEvent.index,
+          text: modelEvent.text,
+        })
+        emittedRoastLineIndexes.add(modelEvent.index)
+      }
+      continue
+    }
+
+    if (modelEvent.type === 'feedback_item') {
+      if (!emittedFeedbackIndexes.has(modelEvent.index)) {
+        await emitWithCounter({
+          type: 'feedback_item',
+          index: modelEvent.index,
+          text: modelEvent.text,
+        })
+        emittedFeedbackIndexes.add(modelEvent.index)
+      }
+    }
   }
 
   input.debug.ai = {
@@ -540,6 +594,7 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
     },
     responsePreview: rawText.slice(0, 1000),
     ...(input.runtime.debugLevel === 'full' ? { responseFullText: rawText } : {}),
+    ndjsonInvalidLineCount: parser.getState().invalidLineCount,
     streamCounters,
   }
 
@@ -560,8 +615,86 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
     })
   }
 
-  const finalPayload = await finalizeFromRawText(input, prepared, rawText, parserPath, statusHooks)
-  await emitStructuredContent(finalPayload, emitWithCounter)
+  await emitStatus(statusHooks, 'parsing_output', 'Parsing model output and extracting roast lines...')
+  let canonical = normalizeCanonicalRoastFromNdjson(parser.getState())
+  let resolvedParserPath = parserPath
+
+  try {
+    assertCanonicalRoastOutput(canonical)
+  }
+  catch {
+    const parsedFallback = parseRoastOutput(rawText)
+    resolvedParserPath = `${parserPath}->${parsedFallback.parserPath}`
+    canonical = {
+      title: parsedFallback.title,
+      roastLines: parsedFallback.roastLines,
+      feedback: parsedFallback.feedback,
+    }
+
+    try {
+      assertCanonicalRoastOutput(canonical)
+    }
+    catch {
+      throw createError({
+        statusCode: 502,
+        statusMessage: 'Cloudflare AI returned incomplete structured output',
+        data: {
+          code: 'cloudflare_ai_incomplete_output',
+          parserPath: resolvedParserPath,
+        },
+      })
+    }
+  }
+
+  input.debug.parserPath = resolvedParserPath
+  if (input.debug.ai) {
+    input.debug.ai.finalParserPath = resolvedParserPath
+  }
+  await emitStatus(statusHooks, 'finalizing', 'Finalizing roast output...')
+  input.debug.timingsMs.total = Date.now() - prepared.startedAt
+
+  const finalPayload = createResponse(
+    input.username,
+    canonical.title,
+    canonical.roastLines,
+    canonical.feedback,
+    prepared.meta,
+    input.debug,
+    input.runtime,
+    input.includeDebugInResponse,
+  )
+
+  if (!titleEmitted) {
+    await emitWithCounter({
+      type: 'roast_title',
+      title: finalPayload.title,
+    })
+    titleEmitted = true
+  }
+
+  for (let index = 0; index < finalPayload.roastLines.length; index += 1) {
+    const line = finalPayload.roastLines[index]
+    if (!line || emittedRoastLineIndexes.has(index))
+      continue
+    await emitWithCounter({
+      type: 'roast_line',
+      index,
+      text: line,
+    })
+    emittedRoastLineIndexes.add(index)
+  }
+
+  for (let index = 0; index < finalPayload.feedback.length; index += 1) {
+    const feedback = finalPayload.feedback[index]
+    if (!feedback || emittedFeedbackIndexes.has(index))
+      continue
+    await emitWithCounter({
+      type: 'feedback_item',
+      index,
+      text: feedback,
+    })
+    emittedFeedbackIndexes.add(index)
+  }
 
   if (finalPayload.debug)
     await emitWithCounter({ type: 'debug', debug: finalPayload.debug })
@@ -572,6 +705,8 @@ export async function runRoastStream(input: RoastOrchestratorInput, emit: (event
     logServerDebug('stream-counters', {
       requestId: input.requestId,
       username: input.username,
+      parserPath: input.debug.parserPath,
+      ndjsonInvalidLineCount: parser.getState().invalidLineCount,
       ...streamCounters,
     })
   }

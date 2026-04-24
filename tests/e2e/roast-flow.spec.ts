@@ -61,9 +61,17 @@ test('stream roast api emits SSE envelope', async ({ request }) => {
   const streamBody = await response.text()
 
   expect(streamBody).toContain('event: meta')
+  expect(streamBody).toContain('event: status')
   expect(streamBody).toContain('event: roast_title')
   expect(streamBody).toContain('event: roast_line')
+  expect(streamBody).toContain('event: feedback_item')
   expect(streamBody).toContain('event: done')
+  expect(streamBody).not.toContain('event: typing_roast')
+
+  const titlePos = streamBody.indexOf('event: roast_title')
+  const donePos = streamBody.indexOf('event: done')
+  expect(titlePos).toBeGreaterThan(-1)
+  expect(donePos).toBeGreaterThan(titlePos)
 })
 
 test('ui renders roast intensity slider and levels', async ({ page }) => {

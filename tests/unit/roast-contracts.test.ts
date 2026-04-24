@@ -100,6 +100,29 @@ describe('roast contracts', () => {
     expect(parsed.type).toBe('roast_line')
   })
 
+  it('rejects legacy content events', () => {
+    expect(() => roastStreamEventSchema.parse({
+      type: 'typing_roast',
+      chunk: 'legacy',
+    })).toThrow()
+  })
+
+  it('requires canonical done payload fields', () => {
+    expect(() => roastStreamEventSchema.parse({
+      type: 'done',
+      data: {
+        username: 'lafllamme',
+        roastLines: ['line 1'],
+        roast: 'line 1',
+        feedback: ['a', 'b', 'c'],
+        meta: {
+          commitCount: 4,
+          prCount: 1,
+        },
+      },
+    })).toThrow()
+  })
+
   it('splits roast text into lines', () => {
     expect(toRoastLines('a\n\nb')).toEqual(['a', 'b'])
   })

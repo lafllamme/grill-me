@@ -97,15 +97,9 @@ function parseJsonCandidate(raw: string): ParsedRoastContent | null {
         : []
       const title = typeof parsed?.title === 'string' ? parsed.title.trim() : ''
 
-      const joinedRoast = typeof parsed?.roast === 'string' ? parsed.roast.trim() : ''
-      const normalizedRoastLines = roastLines.length > 0 ? roastLines : toRoastLines(joinedRoast)
-
-      if (normalizedRoastLines.length === 0)
-        continue
-
       return {
         title,
-        roastLines: normalizedRoastLines,
+        roastLines,
         feedback,
         parserPath: 'json',
       }
@@ -118,44 +112,19 @@ function parseJsonCandidate(raw: string): ParsedRoastContent | null {
   return null
 }
 
-function parseLineCandidate(raw: string): ParsedRoastContent {
-  const normalizedRaw = raw.replace(/\r\n/g, '\n')
-  const feedbackSplit = normalizedRaw.split(/\n?FEEDBACK:\n?/i)
-  const roastSection = feedbackSplit[0] || ''
-  const feedbackSection = feedbackSplit.slice(1).join('\n')
-
-  const roastLines = roastSection
-    .split(/\n+/)
-    .map(line => line.trim())
-    .filter(Boolean)
-
-  const feedbackCandidates = [
-    ...feedbackSection.split(/\n+/),
-    ...normalizedRaw.split(/\n+/),
-  ]
-  const feedback = feedbackCandidates
-    .map(line => line.trim())
-    .filter(Boolean)
-    .filter(line => /^[-*•\d.)]\s+/.test(line))
-    .map(line => line.replace(/^[-*•\d.)\s]+/, '').trim())
-    .filter(Boolean)
-
-  const title = roastLines[0]?.trim() || ''
-
-  return {
-    title,
-    roastLines: toRoastLines(roastLines.join('\n')),
-    feedback,
-    parserPath: 'lines',
-  }
-}
-
 /**
- * Parses model text into roast lines and feedback bullets with normalization.
+ * Parses model text into strict structured roast output.
  */
 export function parseRoastOutput(raw: string): ParsedRoastContent {
-  const parsedJson = parseJsonCandidate(raw)
-  const parsed = parsedJson ?? parseLineCandidate(raw)
+  const parsed = parseJsonCandidate(raw)
+  if (!parsed) {
+    return {
+      title: '',
+      roastLines: [],
+      feedback: [],
+      parserPath: 'unparseable',
+    }
+  }
 
   let remainingWords = ROAST_LIMITS.maxRoastWords
   const roastLines: string[] = []
@@ -177,24 +146,11 @@ export function parseRoastOutput(raw: string): ParsedRoastContent {
   }
 
   const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
-  const title = parsed.title || roastLines[0] || ''
 
   return {
-    title: title.trim(),
+    title: parsed.title,
     roastLines: toRoastLines(roastLines.join('\n')),
     feedback,
     parserPath: parsed.parserPath,
-  }
-}
-
-/**
- * Ensures response shape remains normalized without synthetic fallback content.
- */
-export function normalizeRoastParts(parsed: ParsedRoastContent): { title: string, roastLines: string[], feedback: string[] } {
-  const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
-  return {
-    title: parsed.title.trim(),
-    roastLines: parsed.roastLines,
-    feedback,
   }
 }

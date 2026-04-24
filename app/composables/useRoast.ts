@@ -93,6 +93,8 @@ export function useRoast() {
       if (event.type === 'roast_title') {
         const titleEvent = event as RoastStreamRoastTitleEvent
         partialTitle.value = titleEvent.title
+        if (ENABLE_ROAST_DEBUG)
+          consola.info('[client/roast/stream-roast-title]', titleEvent)
         return
       }
 
@@ -102,6 +104,8 @@ export function useRoast() {
         nextLines[lineEvent.index] = lineEvent.text
         partialRoastLines.value = nextLines
         partialRoast.value = nextLines.filter(Boolean).join('\n')
+        if (ENABLE_ROAST_DEBUG)
+          consola.info('[client/roast/stream-roast-line]', lineEvent)
         return
       }
 
@@ -122,6 +126,8 @@ export function useRoast() {
         const nextFeedback = [...partialFeedback.value]
         nextFeedback[feedbackEvent.index] = feedbackEvent.text
         partialFeedback.value = nextFeedback.filter(Boolean)
+        if (ENABLE_ROAST_DEBUG)
+          consola.info('[client/roast/stream-feedback-item]', feedbackEvent)
         return
       }
 

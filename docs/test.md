@@ -77,16 +77,16 @@ curl -sN 'http://localhost:3000/api/roast/stream' \
 
 - `meta`
 - `status` (zero or more)
-- `roast_title` (exactly one)
-- `roast_line` (one or more)
-- `feedback_item` (one or more, may interleave with `roast_line`)
+- `roast_title` (exactly one, should arrive before `done`)
+- `roast_line` / `feedback_item` (one or more, may interleave)
 - optional `debug`
 - `done` or `error`
 
 Validation notes:
 
 - `done.data` must include `title`, `roastLines`, and `feedback`
-- parser failures should emit typed `error` (no silent text fallback)
+- parser failures should emit typed `error` (no silent marker/text fallback)
+- with `curl -N`, first content event should appear before the final `done` event
 
 ## Notes for agents
 

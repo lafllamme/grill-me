@@ -17,6 +17,28 @@ export interface AiRequestInput {
 }
 
 function extractStreamTextChunk(payload: any): string {
+  const toText = (value: unknown): string => {
+    if (typeof value === 'string')
+      return value
+
+    if (!Array.isArray(value))
+      return ''
+
+    const parts = value
+      .map((item) => {
+        if (typeof item === 'string')
+          return item
+        if (item && typeof item === 'object' && typeof (item as any).text === 'string')
+          return String((item as any).text)
+        if (item && typeof item === 'object' && typeof (item as any).content === 'string')
+          return String((item as any).content)
+        return ''
+      })
+      .filter(Boolean)
+
+    return parts.join('')
+  }
+
   const candidates: unknown[] = [
     payload?.response,
     payload?.output_text,
@@ -33,8 +55,9 @@ function extractStreamTextChunk(payload: any): string {
   ]
 
   for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.length > 0)
-      return candidate
+    const text = toText(candidate)
+    if (text.length > 0)
+      return text
   }
 
   return ''
