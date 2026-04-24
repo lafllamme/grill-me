@@ -22,3 +22,4 @@ Siehe:
 - [colors.md](./colors.md)
 - [font.md](./font.md)
 - [backgrounds.md](./backgrounds.md)
+- Edge case: usage rules on mobile safari needs a second look.
