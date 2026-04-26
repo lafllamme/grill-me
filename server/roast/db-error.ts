@@ -14,7 +14,12 @@ function extractPgCode(error: unknown): string {
 }
 
 /**
- * Resolves low-level Postgres errors to stable roast API envelopes.
+ * Resolves low-level Postgres driver errors into stable API error envelopes.
+ *
+ * @param error Unknown error from DB query execution.
+ * @returns Stable mapped error metadata or `null` when no known mapping exists.
+ * @remarks
+ * This keeps API responses deterministic even when Neon/Postgres message text differs.
  */
 export function resolveRoastDatabaseError(error: unknown): { statusCode: number, statusMessage: string, code: string } | null {
   const pgCode = extractPgCode(error)

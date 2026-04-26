@@ -4,6 +4,14 @@ import { resolveRoastDatabaseError } from '../../../roast/db-error'
 import { logServerInfo } from '../../../roast/debug'
 import { getRoastShareByToken } from '../../../roast/leaderboard-repository'
 
+/**
+ * Resolves one temporary share token to an unofficial roast snapshot payload.
+ *
+ * Returns:
+ * - `400` when token is missing
+ * - `404` when token does not exist or is expired
+ * - mapped setup errors (e.g. missing DB schema) via stable error codes
+ */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
   const token = getRouterParam(event, 'token')?.trim()

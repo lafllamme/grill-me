@@ -1,6 +1,12 @@
 import { consola } from 'consola'
 import { sendRedirect } from 'h3'
 
+/**
+ * GitHub OAuth callback route.
+ *
+ * On success, stores a normalized GitHub user session and redirects to `/`.
+ * On failure, redirects with an auth state query for explicit UI feedback.
+ */
 export default defineOAuthGitHubEventHandler({
   async onSuccess(event, { user }) {
     const login = user.login || user.name || ''

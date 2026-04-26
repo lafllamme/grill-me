@@ -61,6 +61,9 @@ function toStringArray(value: unknown): string[] {
   return []
 }
 
+/**
+ * Coerces database timestamp values to strict ISO strings expected by contracts.
+ */
 function toIsoDateTime(value: unknown, fallback = new Date(0).toISOString()): string {
   if (value instanceof Date)
     return value.toISOString()

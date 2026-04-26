@@ -1,5 +1,8 @@
 /**
  * Maps known roast setup error codes to actionable UI hints.
+ *
+ * @param code Stable API error code.
+ * @returns User-facing setup hint or `null` when no setup guidance exists.
  */
 export function getRoastSetupErrorMessage(code: string | null): string | null {
   if (code === 'leaderboard_schema_missing')
