@@ -1,5 +1,6 @@
 import { createError } from 'h3'
 import { roastShareResolveResponseSchema } from '~~/shared/roast/contracts'
+import { resolveRoastDatabaseError } from '../../../roast/db-error'
 import { logServerInfo } from '../../../roast/debug'
 import { getRoastShareByToken } from '../../../roast/leaderboard-repository'
 
@@ -15,7 +16,22 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const shared = await getRoastShareByToken(config.databaseUrl || undefined, token)
+  let shared = null
+  try {
+    shared = await getRoastShareByToken(config.databaseUrl || undefined, token)
+  }
+  catch (error) {
+    const mappedError = resolveRoastDatabaseError(error)
+    if (mappedError) {
+      throw createError({
+        statusCode: mappedError.statusCode,
+        statusMessage: mappedError.statusMessage,
+        data: { code: mappedError.code },
+      })
+    }
+    throw error
+  }
+
   if (!shared) {
     throw createError({
       statusCode: 404,

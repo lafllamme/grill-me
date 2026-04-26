@@ -22,6 +22,8 @@ Public endpoint contract for roast generation, share links, auth-gated leaderboa
   - client UX session helper (`loggedIn`, `user`)
 - `POST /api/auth/logout`
   - clears auth session
+- `GET /auth/github`
+  - GitHub OAuth redirect entrypoint
 
 Source of truth for schemas:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
@@ -141,6 +143,13 @@ Common codes:
 - `receipt_expired`
 - `official_submit_not_owner`
 - `database_not_configured`
+- `leaderboard_schema_missing`
+
+OAuth redirect states (query on `/` after `/auth/github`):
+- `auth=github_not_configured`
+- `auth=github_session_failed`
+- `auth=github_invalid_profile`
+- `auth=github_failed`
 
 Related docs:
 - `index.md`

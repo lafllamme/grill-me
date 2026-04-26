@@ -43,7 +43,3 @@ export async function requireGithubSession(event: Parameters<typeof requireUserS
 
   return { user }
 }
-
-export function isSelfRoast(sessionLogin: string, roastUsername: string): boolean {
-  return sessionLogin.trim().toLowerCase() === roastUsername.trim().toLowerCase()
-}

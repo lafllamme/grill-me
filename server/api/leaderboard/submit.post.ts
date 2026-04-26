@@ -4,7 +4,9 @@ import {
   leaderboardSubmitRequestSchema,
   leaderboardSubmitResponseSchema,
 } from '~~/shared/roast/contracts'
-import { isSelfRoast, requireGithubSession } from '../../auth/session'
+import { isSelfRoast } from '../../auth/ownership'
+import { requireGithubSession } from '../../auth/session'
+import { resolveRoastDatabaseError } from '../../roast/db-error'
 import { logServerInfo } from '../../roast/debug'
 import {
   persistReceiptAsRun,
@@ -58,29 +60,45 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const scoringProfile = await resolveActiveScoringProfile(config.databaseUrl || undefined)
-  const persisted = await persistReceiptAsRun(config.databaseUrl || undefined, {
-    payload: receiptPayload,
-    scoringProfile,
-  })
+  let persistedRunId = ''
+  let authUserId = 0
+  try {
+    const scoringProfile = await resolveActiveScoringProfile(config.databaseUrl || undefined)
+    const persisted = await persistReceiptAsRun(config.databaseUrl || undefined, {
+      payload: receiptPayload,
+      scoringProfile,
+    })
 
-  const authUserId = await upsertAuthGithubUser(config.databaseUrl || undefined, {
-    githubId: session.user.githubId,
-    username: session.user.login,
-    avatarUrl: session.user.avatarUrl,
-  })
+    authUserId = await upsertAuthGithubUser(config.databaseUrl || undefined, {
+      githubId: session.user.githubId,
+      username: session.user.login,
+      avatarUrl: session.user.avatarUrl,
+    })
 
-  await upsertOfficialLeaderboardEntry(config.databaseUrl || undefined, {
-    roastUserId: persisted.roastUserId,
-    runId: persisted.runId,
-    submittedByAuthUserId: authUserId,
-  })
+    await upsertOfficialLeaderboardEntry(config.databaseUrl || undefined, {
+      roastUserId: persisted.roastUserId,
+      runId: persisted.runId,
+      submittedByAuthUserId: authUserId,
+    })
+    persistedRunId = persisted.runId
+  }
+  catch (error) {
+    const mappedError = resolveRoastDatabaseError(error)
+    if (mappedError) {
+      throw createError({
+        statusCode: mappedError.statusCode,
+        statusMessage: mappedError.statusMessage,
+        data: { code: mappedError.code },
+      })
+    }
+    throw error
+  }
 
   const submittedAt = new Date().toISOString()
   logServerInfo('official-submit-accepted', {
     requestId: receiptPayload.requestId,
     username: receiptPayload.username,
-    runId: persisted.runId,
+    runId: persistedRunId,
     submittedByAuthUserId: authUserId,
     submittedAt,
   })

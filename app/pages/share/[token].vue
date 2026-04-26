@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import type { RoastShareResolveResponse } from '~~/shared/roast/contracts'
+import { extractApiErrorCode } from '~/utils/api-error'
+import { getRoastSetupErrorMessage } from '~/utils/roast-ui-errors'
 
 const route = useRoute()
 const token = computed(() => String(route.params.token || ''))
 
 const { data, pending, error } = await useFetch<RoastShareResolveResponse>(() => `/api/roast/share/${encodeURIComponent(token.value)}`, {
   watch: [token],
+})
+
+const shareErrorMessage = computed(() => {
+  const code = extractApiErrorCode(error.value)
+  const setupHint = getRoastSetupErrorMessage(code)
+  if (setupHint)
+    return setupHint
+
+  return 'Share not found or expired.'
 })
 </script>
 
@@ -30,7 +41,7 @@ const { data, pending, error } = await useFetch<RoastShareResolveResponse>(() =>
           Loading shared roast...
         </p>
         <p v-else-if="error || !data" class="text-primary">
-          Share not found or expired.
+          {{ shareErrorMessage }}
         </p>
         <template v-else>
           <p class="text-xs text-white/50 tracking-[0.12em] mb-2 uppercase">

@@ -1,5 +1,6 @@
 import type { RoastDebugLevel, RoastResponse, RoastStreamEvent } from '~~/shared/roast/contracts'
 import { consola } from 'consola'
+import { extractApiErrorMessage } from '../utils/api-error'
 import { requestLeaderboardSubmit, requestRoastShare, requestRoastStream, requestRoastSync } from '../utils/roast-api'
 
 export type RoastResult = RoastResponse
@@ -305,8 +306,8 @@ export function useRoast() {
 
       await roastUsernameStream(trimmed, options)
     }
-    catch (cause: any) {
-      const message = cause?.message || 'Streaming roast failed'
+    catch (cause: unknown) {
+      const message = extractApiErrorMessage(cause, 'Streaming roast failed')
       streamError.value = message
       if (ENABLE_ROAST_DEBUG)
         consola.info('[client/roast/stream-error]', { message, cause })
@@ -314,11 +315,8 @@ export function useRoast() {
       try {
         await roastUsernameSync(trimmed, options)
       }
-      catch (fallbackCause: any) {
-        const fallbackMessage = fallbackCause?.data?.error?.message
-          || fallbackCause?.data?.message
-          || fallbackCause?.message
-          || 'Roast request failed'
+      catch (fallbackCause: unknown) {
+        const fallbackMessage = extractApiErrorMessage(fallbackCause, 'Roast request failed')
         error.value = fallbackMessage
         if (ENABLE_ROAST_DEBUG)
           consola.info('[client/roast/sync-error]', { message: fallbackMessage, cause: fallbackCause })

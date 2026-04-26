@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion-v'
 
 const isMobileMenuOpen = ref(false)
 const { loggedIn, user, login, logout } = useAuthSession()
+const route = useRoute()
 
 const mobileMenuItems = [
   { label: 'Leaderboard', to: '/leaderboard' },
@@ -42,11 +43,30 @@ async function handleLogin() {
 async function handleLogout() {
   await logout()
 }
+
+const authFeedback = computed(() => {
+  const authState = typeof route.query.auth === 'string' ? route.query.auth : ''
+  if (authState === 'github_failed')
+    return 'GitHub login failed. Please try again.'
+  if (authState === 'github_not_configured')
+    return 'GitHub OAuth is not configured. Set NUXT_OAUTH_GITHUB_CLIENT_ID and NUXT_OAUTH_GITHUB_CLIENT_SECRET.'
+  if (authState === 'github_session_failed')
+    return 'GitHub login succeeded, but session setup failed. Check NUXT_SESSION_PASSWORD.'
+  if (authState === 'github_invalid_profile')
+    return 'GitHub account data was incomplete. Please retry.'
+  return ''
+})
 </script>
 
 <template>
   <header class="pt-4 bg-transparent h-fit w-full fixed z-[999999] md:top-0">
     <aside class="px-4 lg:px-0 md:px-12">
+      <p
+        v-if="authFeedback"
+        class="text-xs text-primary tracking-[0.08em] font-mono mb-2 px-4 py-2 border border-primary/30 rounded-md bg-black/40 md:px-6"
+      >
+        {{ authFeedback }}
+      </p>
       <nav class="supports-backdrop-filter:backdrop-blur-md mx-auto py-2 pl-2 pr-2 border border-[lab(100%_0_0_/_0.1)] rounded-[14px] border-solid bg-[rgba(38,38,38,0.07)] max-w-5xl w-full hidden items-center justify-between z-50 backdrop-blur-md lg:py-1.5 lg:pl-2.5 lg:pr-2.5 lg:flex">
         <NuxtLink to="/">
           <div class="h-9 w-28 relative">

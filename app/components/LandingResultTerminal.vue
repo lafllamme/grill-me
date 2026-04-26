@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoast } from '~/composables/useRoast'
+import { extractApiErrorCode, extractApiErrorMessage } from '~/utils/api-error'
+import { getRoastSetupErrorMessage } from '~/utils/roast-ui-errors'
 
 const {
   result,
@@ -11,7 +13,14 @@ const {
   partialRoastLines,
   partialFeedback,
   streamError,
+  sharePending,
+  submitPending,
+  lastShareUrl,
+  lastSubmitMessage,
+  createShareLink,
+  submitToLeaderboard,
 } = useRoast()
+const { loggedIn, user } = useAuthSession()
 
 const hasSessionOutput = computed(() => {
   return streamStatus.value.length > 0 || partialRoastLines.value.length > 0 || partialFeedback.value.length > 0
@@ -90,6 +99,62 @@ watch(isStreaming, (live) => {
 onBeforeUnmount(() => {
   stopTitleTyping()
 })
+
+const actionError = ref<string | null>(null)
+const hasResult = computed(() => Boolean(result.value))
+const isSelfRoast = computed(() => {
+  if (!result.value || !user.value?.login)
+    return false
+
+  return result.value.username.toLowerCase() === user.value.login.toLowerCase()
+})
+const canSubmitOfficial = computed(() => Boolean(hasResult.value && loggedIn.value && isSelfRoast.value))
+
+const statusLabel = computed(() => {
+  if (!result.value)
+    return ''
+
+  if (!loggedIn.value)
+    return 'Unofficial roast. No leaderboard damage done. Login with GitHub to submit your own score.'
+
+  if (isSelfRoast.value)
+    return `Official submit allowed (logged in as @${user.value?.login || result.value.username})`
+
+  return `Only the verified owner can submit (@${result.value.username}).`
+})
+
+/**
+ * Maps API action failures to explicit UI messages.
+ */
+function toActionErrorMessage(cause: unknown): string {
+  const apiCode = extractApiErrorCode(cause)
+  const setupHint = getRoastSetupErrorMessage(apiCode)
+  if (setupHint)
+    return setupHint
+  return extractApiErrorMessage(cause, 'Action failed')
+}
+
+async function shareRoastResult(): Promise<void> {
+  actionError.value = null
+  try {
+    const shareUrl = await createShareLink()
+    if (import.meta.client && navigator?.clipboard?.writeText)
+      await navigator.clipboard.writeText(shareUrl)
+  }
+  catch (cause: unknown) {
+    actionError.value = toActionErrorMessage(cause)
+  }
+}
+
+async function submitOfficialEntry(): Promise<void> {
+  actionError.value = null
+  try {
+    await submitToLeaderboard()
+  }
+  catch (cause: unknown) {
+    actionError.value = toActionErrorMessage(cause)
+  }
+}
 </script>
 
 <template>
@@ -214,6 +279,66 @@ onBeforeUnmount(() => {
             _
           </div>
         </div>
+      </div>
+    </div>
+
+    <div v-if="hasResult" class="mt-8 space-y-6">
+      <div class="gap-4 grid grid-cols-1 md:grid-cols-2">
+        <button
+          class="text-lg text-black font-extrabold font-headline px-8 py-6 border border-primary rounded-none bg-primary uppercase shadow-[0_0_26px_rgba(255,144,109,0.25)] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] hover:brightness-110"
+          :disabled="sharePending"
+          @click="shareRoastResult"
+        >
+          {{ sharePending ? "Creating Share..." : "Share Roast" }}
+        </button>
+        <button
+          class="text-lg text-white font-extrabold font-headline px-8 py-6 border border-divider rounded-none bg-surface-container-low uppercase transition-all duration-200 hover:bg-surface-container disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
+          :disabled="!canSubmitOfficial || submitPending"
+          @click="submitOfficialEntry"
+        >
+          {{ submitPending ? "Submitting..." : "Submit to Wall of Shame" }}
+        </button>
+      </div>
+
+      <div class="text-xs text-on-surface-variant tracking-[0.14em] font-mono px-4 py-3 border border-divider bg-surface-container-low uppercase md:text-center">
+        {{ statusLabel }}
+      </div>
+
+      <p v-if="lastShareUrl" class="text-sm text-primary break-all">
+        Share link copied. This roast expires in 24 hours: {{ lastShareUrl }}
+      </p>
+      <p v-if="lastSubmitMessage" class="text-sm text-primary">
+        {{ lastSubmitMessage }}
+      </p>
+      <p v-if="actionError" class="text-sm text-primary">
+        {{ actionError }}
+      </p>
+
+      <div class="gap-4 grid grid-cols-1 md:grid-cols-3">
+        <article class="p-5 border border-divider bg-surface-container-low">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Stink Score
+          </p>
+          <p class="text-5xl text-primary leading-none font-bold font-headline mt-3">
+            {{ result?.metrics.stinkScore.toFixed(1) }}%
+          </p>
+        </article>
+        <article class="p-5 border border-divider bg-surface-container-low">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Ego Damage
+          </p>
+          <p class="text-5xl text-primary leading-none font-bold font-headline mt-3">
+            {{ result?.metrics.egoDamage.toFixed(1) }}%
+          </p>
+        </article>
+        <article class="p-5 border border-divider bg-surface-container-low">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Verdict
+          </p>
+          <p class="text-5xl text-primary leading-none font-bold font-headline mt-3">
+            {{ result?.metrics.grade }}
+          </p>
+        </article>
       </div>
     </div>
   </section>

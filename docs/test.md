@@ -28,6 +28,12 @@ NUXT_ROAST_RECEIPT_SECRET=...
 
 Without these values, roast generation/persistence can run in degraded local mode.
 
+For GitHub OAuth login, configure your GitHub OAuth app callback URL to match your local app origin exactly, e.g.:
+
+```txt
+http://localhost:3000/auth/github
+```
+
 For share + official leaderboard flows, also ensure DB migration `002_roast_share_and_official_entries.sql` is applied.
 
 ## Commands

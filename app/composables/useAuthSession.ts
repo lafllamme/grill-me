@@ -2,13 +2,15 @@
  * Thin wrapper around nuxt-auth-utils user session composable.
  */
 export function useAuthSession() {
-  const { ready, loggedIn, user, fetch, clear, openInPopup } = useUserSession()
+  const { ready, loggedIn, user, fetch, clear } = useUserSession()
+  const hasFetchedSession = useState<boolean>('auth-session-fetched', () => false)
+
+  if (import.meta.client && !hasFetchedSession.value) {
+    hasFetchedSession.value = true
+    void fetch()
+  }
 
   const login = async () => {
-    if (import.meta.client) {
-      openInPopup('/auth/github')
-      return
-    }
     await navigateTo('/auth/github', { external: true })
   }
 

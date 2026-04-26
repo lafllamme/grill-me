@@ -3,23 +3,7 @@ import { useWindowScroll } from '@vueuse/core'
 import { useRoast } from '#imports'
 
 const roastStore = useRoastStore()
-const { loggedIn, user } = useAuthSession()
-
-const {
-  pending,
-  error,
-  isStreaming,
-  streamError,
-  result,
-  sharePending,
-  submitPending,
-  lastShareUrl,
-  lastSubmitMessage,
-  roastUsername,
-  cancelRoast,
-  createShareLink,
-  submitToLeaderboard,
-} = useRoast()
+const { pending, error, isStreaming, streamError, roastUsername, cancelRoast } = useRoast()
 const { y } = useWindowScroll({
   behavior: 'smooth',
 })
@@ -51,50 +35,6 @@ async function submitRoast() {
 }
 
 const errorMessage = computed(() => error.value || streamError.value)
-const actionError = ref<string | null>(null)
-const isSelfRoast = computed(() => {
-  if (!result.value || !user.value?.login)
-    return false
-
-  return result.value.username.toLowerCase() === user.value.login.toLowerCase()
-})
-
-const canSubmitOfficial = computed(() => Boolean(result.value && loggedIn.value && isSelfRoast.value))
-
-const leaderboardHint = computed(() => {
-  if (!result.value)
-    return ''
-
-  if (!loggedIn.value)
-    return 'Unofficial roast. No leaderboard damage done. Login with GitHub to submit your own score.'
-
-  if (isSelfRoast.value)
-    return 'This is your verified GitHub account. You can submit this score to the Wall of Shame.'
-
-  return 'You can roast this profile, but only the verified owner can submit it to the leaderboard.'
-})
-
-async function shareRoastResult() {
-  actionError.value = null
-  try {
-    const shareUrl = await createShareLink()
-    if (import.meta.client && navigator?.clipboard?.writeText)
-      await navigator.clipboard.writeText(shareUrl)
-  }
-  catch (cause: any) {
-    actionError.value = cause?.data?.message || cause?.message || 'Failed to create share link'
-  }
-}
-
-async function submitOfficialEntry() {
-  actionError.value = null
-  try {
-    await submitToLeaderboard()
-  }
-  catch (cause: any) {
-    actionError.value = cause?.data?.message || cause?.message || 'Failed to submit official score'
-  }
-}
 </script>
 
 <template>
@@ -120,40 +60,6 @@ async function submitOfficialEntry() {
         @update:roast-intensity="roastStore.setRoastIntensity"
         @submit="submitRoast"
       />
-
-      <div v-if="result" class="mt-4 p-4 text-left border border-white/10 rounded-2xl bg-black/30 md:p-5">
-        <p class="text-xs text-white/70 tracking-[0.1em] mb-3 uppercase">
-          {{ leaderboardHint }}
-        </p>
-
-        <div class="flex flex-wrap gap-3 items-center">
-          <button
-            class="text-sm text-black font-semibold px-4 py-2 rounded-xl bg-primary disabled:opacity-60 disabled:cursor-not-allowed"
-            :disabled="sharePending"
-            @click="shareRoastResult"
-          >
-            {{ sharePending ? "Creating share..." : "Share Roast" }}
-          </button>
-
-          <button
-            class="text-sm text-white font-semibold px-4 py-2 border border-primary/40 rounded-xl bg-black/40 disabled:opacity-55 disabled:cursor-not-allowed"
-            :disabled="!canSubmitOfficial || submitPending"
-            @click="submitOfficialEntry"
-          >
-            {{ submitPending ? "Submitting..." : "Submit to Wall of Shame" }}
-          </button>
-
-          <p v-if="lastShareUrl" class="text-xs text-primary break-all">
-            Share link copied. This roast expires in 24 hours: {{ lastShareUrl }}
-          </p>
-          <p v-if="lastSubmitMessage" class="text-xs text-primary">
-            {{ lastSubmitMessage }}
-          </p>
-          <p v-if="actionError" class="text-xs text-primary">
-            {{ actionError }}
-          </p>
-        </div>
-      </div>
     </div>
   </section>
 </template>

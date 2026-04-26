@@ -1,6 +1,6 @@
 import type { RoastMeta, RoastMetrics } from '~~/shared/roast/contracts'
 import { Buffer } from 'node:buffer'
-import { createHmac } from 'node:crypto'
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
 
 const RECEIPT_VERSION = 1
@@ -72,6 +72,19 @@ function sign(payloadEncoded: string, secret: string): string {
     .digest('base64url')
 }
 
+/**
+ * Verifies HMAC signatures using constant-time comparison.
+ */
+function isValidSignature(actual: string, expected: string): boolean {
+  const actualBuffer = Buffer.from(actual, 'utf8')
+  const expectedBuffer = Buffer.from(expected, 'utf8')
+
+  if (actualBuffer.length !== expectedBuffer.length)
+    return false
+
+  return timingSafeEqual(actualBuffer, expectedBuffer)
+}
+
 function parseReceiptToken(receipt: string): { payloadEncoded: string, signature: string } {
   const parts = receipt.split('.')
   if (parts.length !== 2 || !parts[0] || !parts[1]) {
@@ -112,7 +125,7 @@ export function verifyRoastReceipt(secret: string, receipt: string): RoastReceip
   const { payloadEncoded, signature } = parseReceiptToken(receipt)
   const expectedSignature = sign(payloadEncoded, secret)
 
-  if (signature !== expectedSignature) {
+  if (!isValidSignature(signature, expectedSignature)) {
     throw new RoastReceiptError(401, 'receipt_invalid_signature', 'Invalid roast receipt signature')
   }
 

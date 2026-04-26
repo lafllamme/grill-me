@@ -124,6 +124,17 @@ Submit request:
 }
 ```
 
+Setup error example (missing migration 002):
+
+```json
+{
+  "error": {
+    "code": "leaderboard_schema_missing",
+    "message": "Leaderboard schema missing. Run DB migration 002 (roast_share_and_official_entries)."
+  }
+}
+```
+
 ## 6) Candidate vs Selected Counts
 
 - `meta.commitCount`: enriched/candidate commits fetched from GitHub.

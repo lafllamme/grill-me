@@ -9,7 +9,7 @@ import type {
 import type { RoastReceiptPayload } from './receipt'
 import type { RoastScoringProfile } from './scoring'
 import { createError } from 'h3'
-import { requireSqlExecutor, safeQuery } from '../utils/db'
+import { requireSqlExecutor } from '../utils/db'
 
 export interface PersistRoastRunInput {
   requestId: string
@@ -61,6 +61,23 @@ function toStringArray(value: unknown): string[] {
   return []
 }
 
+function toIsoDateTime(value: unknown, fallback = new Date(0).toISOString()): string {
+  if (value instanceof Date)
+    return value.toISOString()
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed)
+      return fallback
+
+    const parsedMs = Date.parse(trimmed)
+    if (!Number.isNaN(parsedMs))
+      return new Date(parsedMs).toISOString()
+  }
+
+  return fallback
+}
+
 function mapLeaderboardItem(index: number, row: Record<string, unknown>): LeaderboardItem {
   const metrics: RoastMetrics = {
     spaghettiIndex: toNumber(row.spaghetti_index),
@@ -73,7 +90,7 @@ function mapLeaderboardItem(index: number, row: Record<string, unknown>): Leader
   return {
     rank: index + 1,
     username: String(row.username || ''),
-    lastRoastedAt: String(row.last_roasted_at || new Date(0).toISOString()),
+    lastRoastedAt: toIsoDateTime(row.last_roasted_at),
     runsCount: toNumber(row.runs_count),
     metrics,
   }
@@ -324,36 +341,34 @@ export async function getRoastShareByToken(
   databaseUrl: string | undefined,
   token: string,
 ): Promise<RoastShareResolveResponse | null> {
-  const result = await safeQuery(databaseUrl, async (sql) => {
-    const rows = await sql`
-      SELECT
-        rs.token,
-        rs.expires_at,
-        ru.username,
-        rc.title,
-        rc.roast_lines,
-        rc.feedback,
-        rc.roast_text,
-        rr.commit_count,
-        rr.pr_count,
-        rr.selected_commit_count,
-        rm.spaghetti_index,
-        rm.stink_score,
-        rm.ego_damage,
-        rm.grade,
-        rm.special_title
-      FROM roast_shares rs
-      JOIN roast_runs rr ON rr.id = rs.run_id
-      JOIN roast_users ru ON ru.id = rr.user_id
-      JOIN roast_run_content rc ON rc.run_id = rr.id
-      JOIN roast_run_metrics rm ON rm.run_id = rr.id
-      WHERE rs.token = ${token}
-        AND rs.expires_at > NOW()
-      LIMIT 1
-    ` as Record<string, unknown>[]
-
-    return rows[0] || null
-  })
+  const sql = requireSqlExecutor(databaseUrl)
+  const rows = await sql`
+    SELECT
+      rs.token,
+      rs.expires_at,
+      ru.username,
+      rc.title,
+      rc.roast_lines,
+      rc.feedback,
+      rc.roast_text,
+      rr.commit_count,
+      rr.pr_count,
+      rr.selected_commit_count,
+      rm.spaghetti_index,
+      rm.stink_score,
+      rm.ego_damage,
+      rm.grade,
+      rm.special_title
+    FROM roast_shares rs
+    JOIN roast_runs rr ON rr.id = rs.run_id
+    JOIN roast_users ru ON ru.id = rr.user_id
+    JOIN roast_run_content rc ON rc.run_id = rr.id
+    JOIN roast_run_metrics rm ON rm.run_id = rr.id
+    WHERE rs.token = ${token}
+      AND rs.expires_at > NOW()
+    LIMIT 1
+  ` as Record<string, unknown>[]
+  const result = rows[0] || null
 
   if (!result)
     return null
@@ -361,12 +376,9 @@ export async function getRoastShareByToken(
   const roastLines = toStringArray(result.roast_lines)
   const feedback = toStringArray(result.feedback)
 
-  if (!roastLines.length || !feedback.length)
-    return null
-
   return {
     token: String(result.token || token),
-    expiresAt: String(result.expires_at || new Date(0).toISOString()),
+    expiresAt: toIsoDateTime(result.expires_at),
     data: {
       username: String(result.username || ''),
       title: String(result.title || ''),
@@ -505,7 +517,7 @@ export async function getLeaderboardUserDetail(
     username,
     runs: result.map(row => ({
       runId: String(row.run_id || ''),
-      createdAt: String(row.created_at || ''),
+      createdAt: toIsoDateTime(row.created_at, new Date().toISOString()),
       title: String(row.title || ''),
       metrics: {
         spaghettiIndex: toNumber(row.spaghetti_index),
