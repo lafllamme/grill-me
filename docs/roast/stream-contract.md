@@ -48,6 +48,7 @@ Required fields:
 - `title`
 - `roastLines`
 - `feedback`
+- `metrics`
 
 Missing required structure triggers typed `error` (`cloudflare_ai_incomplete_output`).
 

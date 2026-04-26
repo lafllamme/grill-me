@@ -2,8 +2,10 @@ import type { RoastStreamEvent } from '~~/shared/roast/contracts'
 import { getRequestIP, setResponseStatus } from 'h3'
 import { parseRoastStreamRequest } from '../../roast/contracts-adapter'
 import { createDebugReport, logServerError, logServerInfo } from '../../roast/debug'
+import { persistRoastRun } from '../../roast/leaderboard-repository'
 import { runRoastStream, toErrorBody, toHandledError } from '../../roast/orchestrator'
 import { checkRateLimit } from '../../roast/rate-limit'
+import { resolveActiveScoringProfile } from '../../roast/scoring-profile'
 
 /**
  * Streams roast progress events over SSE.
@@ -22,6 +24,7 @@ export default defineEventHandler(async (event) => {
   }
   const config = useRuntimeConfig(event)
   const debug = createDebugReport(parsed.username)
+  const scoringProfile = await resolveActiveScoringProfile(config.databaseUrl || undefined)
 
   const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
   try {
@@ -69,6 +72,7 @@ export default defineEventHandler(async (event) => {
             },
             includeDebugInResponse: parsed.runtime.includeDebug,
             debug,
+            scoringProfile,
           },
           async (payload) => {
             writeEvent(payload.type, payload)
@@ -84,6 +88,19 @@ export default defineEventHandler(async (event) => {
           parserPath: finalPayload.debug?.parserPath,
           fallbackReason: finalPayload.debug?.fallbackReason,
           timingsMs: finalPayload.debug?.timingsMs,
+          metricVersion: finalPayload.debug?.scoring?.metricVersion,
+          stinkScore: finalPayload.metrics.stinkScore,
+          grade: finalPayload.metrics.grade,
+        })
+
+        await persistRoastRun(config.databaseUrl || undefined, {
+          requestId,
+          source: 'stream',
+          roastIntensity: parsed.runtime.roastIntensity,
+          model: config.cfAiModel || undefined,
+          promptVersion: finalPayload.debug?.promptVersion,
+          response: finalPayload,
+          scoringProfile,
         })
       }
       catch (error) {

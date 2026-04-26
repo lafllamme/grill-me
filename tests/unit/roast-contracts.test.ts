@@ -56,6 +56,13 @@ describe('roast contracts', () => {
       roastLines: ['line 1'],
       roast: 'line 1',
       feedback: ['a', 'b', 'c'],
+      metrics: {
+        spaghettiIndex: 72.4,
+        stinkScore: 74,
+        egoDamage: 70,
+        grade: 'C-',
+        specialTitle: 'Merge Conflict Magnet',
+      },
       meta: {
         commitCount: 4,
         prCount: 1,
@@ -115,6 +122,13 @@ describe('roast contracts', () => {
         roastLines: ['line 1'],
         roast: 'line 1',
         feedback: ['a', 'b', 'c'],
+        metrics: {
+          spaghettiIndex: 72.4,
+          stinkScore: 74,
+          egoDamage: 70,
+          grade: 'C-',
+          specialTitle: 'Merge Conflict Magnet',
+        },
         meta: {
           commitCount: 4,
           prCount: 1,

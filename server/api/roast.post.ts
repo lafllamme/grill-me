@@ -1,8 +1,10 @@
 import { getRequestIP, setResponseStatus } from 'h3'
 import { parseRoastRequest } from '../roast/contracts-adapter'
 import { createDebugReport, logServerError, logServerInfo } from '../roast/debug'
+import { persistRoastRun } from '../roast/leaderboard-repository'
 import { runRoastSync, toErrorBody, toHandledError } from '../roast/orchestrator'
 import { checkRateLimit } from '../roast/rate-limit'
+import { resolveActiveScoringProfile } from '../roast/scoring-profile'
 
 export default defineEventHandler(async (event) => {
   const requestId = crypto.randomUUID().slice(0, 8)
@@ -11,6 +13,7 @@ export default defineEventHandler(async (event) => {
     const parsed = await parseRoastRequest(event)
     const config = useRuntimeConfig(event)
     const debug = createDebugReport(parsed.username)
+    const scoringProfile = await resolveActiveScoringProfile(config.databaseUrl || undefined)
 
     const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
     checkRateLimit(clientIp)
@@ -40,6 +43,17 @@ export default defineEventHandler(async (event) => {
       },
       includeDebugInResponse: parsed.runtime.includeDebug,
       debug,
+      scoringProfile,
+    })
+
+    await persistRoastRun(config.databaseUrl || undefined, {
+      requestId,
+      source: 'sync',
+      roastIntensity: parsed.runtime.roastIntensity,
+      model: config.cfAiModel || undefined,
+      promptVersion: response.debug?.promptVersion,
+      response,
+      scoringProfile,
     })
 
     logServerInfo('success', {
@@ -53,6 +67,9 @@ export default defineEventHandler(async (event) => {
       fallbackReason: response.debug?.fallbackReason,
       selectionSummary: response.debug?.selectionSummary,
       timingsMs: response.debug?.timingsMs,
+      metricVersion: response.debug?.scoring?.metricVersion,
+      stinkScore: response.metrics.stinkScore,
+      grade: response.metrics.grade,
     })
 
     return response

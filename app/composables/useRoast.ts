@@ -184,6 +184,7 @@ export function useRoast() {
           title: event.data.title,
           roastLines: event.data.roastLines,
           feedback: event.data.feedback,
+          metrics: event.data.metrics,
           meta: event.data.meta,
         })
       }

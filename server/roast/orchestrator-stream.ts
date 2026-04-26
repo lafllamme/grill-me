@@ -357,6 +357,7 @@ export async function runRoastStreamPipeline(
     prepared.meta,
     input.debug,
     input.runtime,
+    input.scoringProfile,
     input.includeDebugInResponse,
   )
 

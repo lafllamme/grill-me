@@ -11,6 +11,19 @@ pnpm install
 pnpm exec playwright install
 ```
 
+## Environment for Production-Like Runs
+
+For a real persistence + leaderboard integration run, provide production credentials in your local `.env` first:
+
+```bash
+NUXT_CF_ACCOUNT_ID=...
+NUXT_CF_API_TOKEN=...
+NUXT_GITHUB_TOKEN=...
+NUXT_DATABASE_URL=...
+```
+
+Without these values, roast generation/persistence can run in degraded local mode.
+
 ## Commands
 
 ```bash
@@ -36,6 +49,7 @@ Roast documentation references:
 - `/Users/flame/Developer/Projects/grill-me/docs/roast/stream-contract.md`
 - `/Users/flame/Developer/Projects/grill-me/docs/roast/payload-contract.md`
 - `/Users/flame/Developer/Projects/grill-me/docs/roast/architecture.md`
+- `/Users/flame/Developer/Projects/grill-me/docs/roast/database.md`
 
 ## Manual Smoke Checks
 
@@ -69,6 +83,7 @@ Expected stream order:
 - `done.data` includes `title`, `roastLines`, and `feedback`.
 - `done.data` is consistent with previously streamed content events.
 - Parser/normalizer failures produce typed `error` envelopes.
+- If database is configured, roast runs are persisted and leaderboard endpoints return items.
 
 ## Reporting Rules
 

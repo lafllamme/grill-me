@@ -11,7 +11,9 @@ Flow:
 4. Prompt + payload build
 5. AI execution (sync or stream)
 6. Parser + canonical final normalizer
-7. Response shaping + stream emission
+7. Deterministic scoring
+8. Response shaping + stream emission
+9. Persistence write path (Neon)
 
 ## Ownership Boundaries
 
@@ -20,6 +22,7 @@ Flow:
 - Prompt builder: builds system prompt + compact payload and computes effective AI config.
 - NDJSON parser: incrementally parses model stream fragments.
 - Final normalizer: asserts canonical output shape (`title`, `roastLines`, `feedback`).
+- Scoring engine: deterministic metrics (`spaghettiIndex`, `stinkScore`, `egoDamage`, `grade`, `specialTitle`).
 - Orchestrators:
   - sync path returns canonical JSON response.
   - stream path emits typed events and final `done`.
@@ -31,6 +34,15 @@ Flow:
 - Content events may interleave; consumer must aggregate by type/index.
 - Parse/normalization failures fail-fast with typed `error`.
 - Title quality is guarded by server normalization before final response.
+- Metrics are server-owned and deterministic (not LLM-owned).
+
+## Persistence and Read Model
+
+- Persistence: canonical roast result is written to normalized run/content/metrics tables.
+- All-time leaderboard: served from `roast_user_stats` (+ latest run joins).
+- 24h leaderboard: served from windowed aggregation over recent `roast_runs` + metrics.
+
+See `database.md` for schema/constraints/indexes.
 
 ## Debug Observability
 

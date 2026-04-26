@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion-v'
 const isMobileMenuOpen = ref(false)
 
 const mobileMenuItems = [
+  { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Wall of Shame', to: '/#wall-of-shame' },
   { label: 'Metrics', to: '/#metrics' },
   { label: 'API', to: '/docs#api' },
@@ -45,6 +46,9 @@ const mobileMenuItemVariants = {
         </NuxtLink>
 
         <div class="inline-flex items-center">
+          <NuxtLink class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none rounded-full bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center hover:bg-[rgba(255,86,51,0.16)]" to="/leaderboard">
+            Leaderboard
+          </NuxtLink>
           <NuxtLink class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none rounded-full bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center hover:bg-[rgba(255,86,51,0.16)]" to="/#wall-of-shame">
             Wall of Shame
           </NuxtLink>

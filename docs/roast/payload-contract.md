@@ -70,7 +70,7 @@ Diff patches are included in `files[].patch` within prompt budgets.
 {"type":"roast_title","title":"Monorepo Meltdown"}
 {"type":"roast_line","index":0,"text":"..."}
 {"type":"feedback_item","index":0,"text":"..."}
-{"type":"done","data":{"username":"lafllamme","title":"Monorepo Meltdown","roastLines":["..."],"roast":"...","feedback":["..."],"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8}}}
+{"type":"done","data":{"username":"lafllamme","title":"Monorepo Meltdown","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8}}}
 ```
 
 Interleave allowed between `roast_line` and `feedback_item`.
@@ -93,6 +93,7 @@ Required fields:
 - `title`
 - `roastLines`
 - `feedback`
+- `metrics` (`spaghettiIndex`, `stinkScore`, `egoDamage`, `grade`, `specialTitle`)
 
 If missing after parser normalization, server emits typed `error` (`cloudflare_ai_incomplete_output`).
 
@@ -152,3 +153,15 @@ Expected high-signal server log scopes:
 - `roast_title` is consumed as progressive UI state (`partialTitle`) and rendered in a dedicated terminal title slot.
 - Title rendering uses a typewriter effect during stream and resolves to canonical `done.data.title` after completion.
 - The title slot reserves vertical space before title arrival to keep terminal layout stable.
+
+## 11) Persistence Write Path
+
+After canonical response is finalized:
+- upsert `roast_users`
+- insert/upsert `roast_runs`
+- insert/upsert `roast_run_content`
+- insert/upsert `roast_run_metrics`
+- update `roast_user_stats`
+
+Database schema details:
+- `database.md`

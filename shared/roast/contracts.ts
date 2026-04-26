@@ -118,6 +118,18 @@ export const intensityProfileSchema = z.object({
 
 export type IntensityProfile = z.infer<typeof intensityProfileSchema>
 
+export const roastGradeSchema = z.enum(['F-', 'F', 'D-', 'D', 'C-', 'C', 'B', 'A'])
+export type RoastGrade = z.infer<typeof roastGradeSchema>
+
+export const roastMetricsSchema = z.object({
+  spaghettiIndex: z.number().min(0).max(100),
+  stinkScore: z.number().min(0).max(100),
+  egoDamage: z.number().min(0).max(100),
+  grade: roastGradeSchema,
+  specialTitle: z.string().min(1),
+})
+export type RoastMetrics = z.infer<typeof roastMetricsSchema>
+
 export const roastDebugSchema = z.object({
   username: z.string(),
   promptVersion: z.string().optional(),
@@ -132,6 +144,7 @@ export const roastDebugSchema = z.object({
   }),
   github: z.record(z.string(), z.unknown()).optional(),
   ai: z.record(z.string(), z.unknown()).optional(),
+  scoring: z.record(z.string(), z.unknown()).optional(),
   requests: z.array(debugRequestInfoSchema),
 })
 
@@ -144,6 +157,7 @@ export const roastResponseSchema = z.object({
   roast: z.string(),
   feedback: z.array(z.string()).min(1),
   meta: roastMetaSchema,
+  metrics: roastMetricsSchema,
   debug: roastDebugSchema.optional(),
 })
 
@@ -229,6 +243,25 @@ export const roastStreamEventSchema = z.discriminatedUnion('type', [
 ])
 
 export type RoastStreamEvent = z.infer<typeof roastStreamEventSchema>
+
+export const leaderboardWindowSchema = z.enum(['all', '24h'])
+export type LeaderboardWindow = z.infer<typeof leaderboardWindowSchema>
+
+export const leaderboardItemSchema = z.object({
+  rank: z.number().int().positive(),
+  username: z.string(),
+  lastRoastedAt: z.string(),
+  runsCount: z.number().int().nonnegative(),
+  metrics: roastMetricsSchema,
+})
+export type LeaderboardItem = z.infer<typeof leaderboardItemSchema>
+
+export const leaderboardResponseSchema = z.object({
+  window: leaderboardWindowSchema,
+  limit: z.number().int().positive(),
+  items: z.array(leaderboardItemSchema),
+})
+export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>
 
 export interface RoastRuntimeOptions {
   includeDebug: boolean

@@ -14,6 +14,12 @@ Runtime-Input, AI-User-Payload, Debug-Blöcke, Candidate-vs-Selected-Zählweise.
 4. `architecture.md`
 Roast-Engine-Datenfluss und Ownership (Collector -> Selector -> Prompt -> NDJSON Parser -> Final Normalizer -> SSE).
 
+5. `database.md`
+Neon/Postgres Tabellen, Constraints, Indizes und Migrationspfad für Persistence + Leaderboard.
+
 Lesereihenfolge:
 - Für Integrationen: `api.md` -> `stream-contract.md`
 - Für Prompt/Payload-Arbeit: `payload-contract.md` -> `architecture.md`
+
+UI entrypoint:
+- `/leaderboard` renders the Wall-of-Shame page fed by `/api/leaderboard`.

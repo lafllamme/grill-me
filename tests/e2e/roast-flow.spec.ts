@@ -17,6 +17,10 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
   expect(Array.isArray(body.roastLines)).toBeTruthy()
   expect(Array.isArray(body.feedback)).toBeTruthy()
   expect(typeof body.roast).toBe('string')
+  expect(typeof body.metrics).toBe('object')
+  expect(typeof body.metrics.stinkScore).toBe('number')
+  expect(typeof body.metrics.egoDamage).toBe('number')
+  expect(typeof body.metrics.grade).toBe('string')
 })
 
 test('intensity changes configured commit-selection budgets in debug', async ({ request }) => {
@@ -68,6 +72,7 @@ test('stream roast api emits SSE envelope', async ({ request }) => {
   expect(streamBody).toContain('event: roast_line')
   expect(streamBody).toContain('event: feedback_item')
   expect(streamBody).toContain('event: done')
+  expect(streamBody).toContain('"metrics"')
   expect(streamBody).not.toContain('event: typing_roast')
 
   const titlePos = streamBody.indexOf('event: roast_title')
@@ -85,4 +90,14 @@ test('ui renders roast intensity slider and levels', async ({ page }) => {
   await expect(page.getByText('savage')).toBeVisible()
   await expect(page.getByText('unhinged')).toBeVisible()
   await expect(page.getByText('nuke')).toBeVisible()
+})
+
+test('leaderboard api responds with stable shape', async ({ request }) => {
+  const response = await request.get('/api/leaderboard?window=all&limit=10')
+  expect(response.ok()).toBeTruthy()
+  const body = await response.json()
+
+  expect(body.window).toBe('all')
+  expect(Array.isArray(body.items)).toBeTruthy()
+  expect(typeof body.limit).toBe('number')
 })

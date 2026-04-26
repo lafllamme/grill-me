@@ -48,7 +48,8 @@ export default defineNuxtConfig({
     // Nuxt auto-maps these from:
     // NUXT_CF_ACCOUNT_ID, NUXT_CF_API_TOKEN, NUXT_CF_AI_MODEL, NUXT_GITHUB_TOKEN,
     // NUXT_GITHUB_TIMEOUT_MS, NUXT_CF_AI_TIMEOUT_MS, NUXT_CF_AI_MAX_TOKENS,
-    // NUXT_CF_AI_TEMPERATURE, NUXT_CF_AI_TOP_P, NUXT_ROAST_DEBUG_LEVEL, NUXT_ROAST_VARIATION_MODE
+    // NUXT_CF_AI_TEMPERATURE, NUXT_CF_AI_TOP_P, NUXT_ROAST_DEBUG_LEVEL, NUXT_ROAST_VARIATION_MODE,
+    // NUXT_DATABASE_URL
     cfAccountId: '',
     cfApiToken: '',
     cfAiModel: '@cf/qwen/qwen3-30b-a3b-fp8',
@@ -61,6 +62,7 @@ export default defineNuxtConfig({
     roastDebugLevel: 'minimal',
     roastVariationMode: 'moderate',
     githubToken: '',
+    databaseUrl: '',
   },
   experimental: {
     serverAppConfig: false,

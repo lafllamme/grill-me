@@ -8,6 +8,10 @@ Public endpoint contract for roast generation.
   - synchronous JSON response (canonical roast payload)
 - `POST /api/roast/stream`
   - typed SSE stream (`text/event-stream`, see `stream-contract.md`)
+- `GET /api/leaderboard?window=all|24h&limit=50&search=...`
+  - leaderboard list response
+- `GET /api/leaderboard/:username`
+  - latest + recent runs for one user
 
 Source of truth for schemas:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
@@ -34,6 +38,13 @@ Used by sync endpoint and by `done.data` in stream:
   "roastLines": ["Line 1", "Line 2"],
   "roast": "Line 1 Line 2",
   "feedback": ["Action 1", "Action 2", "Action 3"],
+  "metrics": {
+    "spaghettiIndex": 87.4,
+    "stinkScore": 88,
+    "egoDamage": 84,
+    "grade": "D-",
+    "specialTitle": "Git Force Enthusiast"
+  },
   "meta": {
     "commitCount": 12,
     "prCount": 0,
@@ -52,6 +63,7 @@ Related docs:
 - `stream-contract.md`
 - `payload-contract.md`
 - `architecture.md`
+- `database.md`
 
 ## Error Envelope and Codes
 

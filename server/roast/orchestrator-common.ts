@@ -2,6 +2,7 @@ import type { RoastMeta, RoastResponse, RoastRuntimeOptions } from '~~/shared/ro
 import type { RoastIntensityProfile } from '~~/shared/roast/intensity'
 import type { RoastDebugReport } from './debug'
 import type { BuiltPrompt, RoastPromptMode } from './prompt-builder'
+import type { RoastScoringProfile } from './scoring'
 import { createError } from 'h3'
 import { ROAST_AI_TOKEN_BOUNDS } from '~~/shared/roast/contracts'
 import { resolveRoastIntensityProfile } from '~~/shared/roast/intensity'
@@ -11,6 +12,7 @@ import { createFallbackRoast } from './fallback'
 import { collectGithubContext } from './github-collector'
 import { parseRoastOutput } from './output-parser'
 import { buildRoastPrompt } from './prompt-builder'
+import { computeRoastMetrics, getDefaultRoastScoringInputs } from './scoring'
 import { normalizeRoastTitle } from './title-normalizer'
 
 export const ENABLE_ROAST_DEBUG = import.meta.dev && true
@@ -29,6 +31,7 @@ export interface RoastOrchestratorInput {
   env: RoastServiceEnv
   includeDebugInResponse?: boolean
   debug: RoastDebugReport
+  scoringProfile: RoastScoringProfile
 }
 
 export type RoastStatusPhase
@@ -61,6 +64,7 @@ export interface PreparedRoastContext {
  * @param meta Aggregated roast meta counters.
  * @param debug Request scoped debug report.
  * @param runtime Runtime options controlling debug visibility.
+ * @param scoringProfile Active deterministic scoring profile.
  * @param includeDebugInResponse Whether debug is exposed in response payload.
  * @returns RoastResponse
  */
@@ -72,19 +76,35 @@ export function createRoastResponse(
   meta: RoastMeta,
   debug: RoastOrchestratorInput['debug'],
   runtime: RoastRuntimeOptions,
+  scoringProfile: RoastScoringProfile,
   includeDebugInResponse = true,
 ): RoastResponse {
+  const resolvedIntensityProfile = resolveRoastIntensityProfile(runtime.roastIntensity)
   const normalizedTitle = normalizeRoastTitle(title, {
     username,
     roastLines,
     meta,
-    intensityProfile: resolveRoastIntensityProfile(runtime.roastIntensity),
+    intensityProfile: resolvedIntensityProfile,
   })
   const resolvedTitle = normalizedTitle.title.trim() || roastLines[0] || 'Code Roast'
+  const scoringInputs = getDefaultRoastScoringInputs({
+    title: resolvedTitle,
+    roastLines,
+    feedback,
+    meta,
+    evidenceSummary: debug.selectionSummary,
+    intensityProfile: resolvedIntensityProfile,
+  })
+  const metrics = computeRoastMetrics(scoringInputs, scoringProfile)
 
   if (debug.ai) {
     debug.ai.titleNormalized = normalizedTitle.normalized
     debug.ai.titleNormalizationReasons = normalizedTitle.reasons
+  }
+  debug.scoring = {
+    metricVersion: scoringProfile.version,
+    resolvedProfileVersion: scoringProfile.version,
+    inputs: scoringInputs,
   }
 
   const response: RoastResponse = {
@@ -94,6 +114,7 @@ export function createRoastResponse(
     roast: roastLines.join(' '),
     feedback,
     meta,
+    metrics,
   }
 
   const shapedDebug = shapeDebugPayload(debug, runtime.debugLevel)
@@ -219,6 +240,7 @@ export async function prepareRoastContext(
       fallback.meta,
       input.debug,
       input.runtime,
+      input.scoringProfile,
       input.includeDebugInResponse,
     )
   }
@@ -346,6 +368,7 @@ export async function finalizeFromRawText(
     context.meta,
     input.debug,
     input.runtime,
+    input.scoringProfile,
     input.includeDebugInResponse,
   )
 }

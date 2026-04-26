@@ -1,14 +1,29 @@
-import type { RoastMeta, RoastResponse } from '~~/shared/roast/contracts'
+import type { RoastMeta } from '~~/shared/roast/contracts'
 
 interface FallbackHints {
   topRepo?: string
   topFiles?: string[]
 }
 
+export interface FallbackRoast {
+  username: string
+  title: string
+  roastLines: string[]
+  roast: string
+  feedback: string[]
+  meta: RoastMeta
+  debug: {
+    username: string
+    fallbackReason: string
+    timingsMs: Record<string, never>
+    requests: []
+  }
+}
+
 /**
  * Creates a deterministic fallback response when model output is unavailable.
  */
-export function createFallbackRoast(username: string, meta: RoastMeta, reason: string, hints?: FallbackHints): RoastResponse {
+export function createFallbackRoast(username: string, meta: RoastMeta, reason: string, hints?: FallbackHints): FallbackRoast {
   const lowEvidence = meta.commitCount === 0 && meta.prCount === 0
   const topFilesLabel = hints?.topFiles?.slice(0, 2).join(', ')
 
