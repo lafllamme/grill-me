@@ -49,6 +49,7 @@ export interface PromptPayload {
 }
 
 export interface BuiltPrompt {
+  mode: RoastPromptMode
   promptVersion: string
   systemPrompt: string
   payload: PromptPayload
@@ -178,6 +179,7 @@ export function buildRoastPrompt(
 
   const systemPrompt = [...promptPrefix, outputLine, ...promptSuffix].join(' ')
   const builtPrompt: BuiltPrompt = {
+    mode,
     promptVersion: PROMPT_VERSION,
     systemPrompt,
     payload,

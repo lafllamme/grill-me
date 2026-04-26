@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { consola } from 'consola'
+import { createError } from 'h3'
 
 type SqlExecutor = (query: TemplateStringsArray, ...params: unknown[]) => Promise<unknown>
 
@@ -39,4 +40,17 @@ export async function safeQuery<T>(
     })
     return null
   }
+}
+
+export function requireSqlExecutor(databaseUrl?: string): SqlExecutor {
+  const sql = getSqlExecutor(databaseUrl)
+  if (!sql) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Database not configured',
+      data: { code: 'database_not_configured' },
+    })
+  }
+
+  return sql
 }

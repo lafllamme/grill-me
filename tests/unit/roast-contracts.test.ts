@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  leaderboardSubmitRequestSchema,
   resolveRoastRuntimeOptions,
   roastRequestBodySchema,
   roastResponseSchema,
+  roastShareCreateRequestSchema,
   roastStreamEventSchema,
   toRoastLines,
 } from '../../shared/roast/contracts'
@@ -63,6 +65,7 @@ describe('roast contracts', () => {
         grade: 'C-',
         specialTitle: 'Merge Conflict Magnet',
       },
+      receipt: 'share_receipt_abcdefghijklmnopqrstuvwxyz',
       meta: {
         commitCount: 4,
         prCount: 1,
@@ -129,6 +132,7 @@ describe('roast contracts', () => {
           grade: 'C-',
           specialTitle: 'Merge Conflict Magnet',
         },
+        receipt: 'share_receipt_abcdefghijklmnopqrstuvwxyz',
         meta: {
           commitCount: 4,
           prCount: 1,
@@ -139,5 +143,17 @@ describe('roast contracts', () => {
 
   it('splits roast text into lines', () => {
     expect(toRoastLines('a\n\nb')).toEqual(['a', 'b'])
+  })
+
+  it('validates share and submit request payloads', () => {
+    const shareParsed = roastShareCreateRequestSchema.parse({
+      receipt: 'share_receipt_abcdefghijklmnopqrstuvwxyz',
+    })
+    const submitParsed = leaderboardSubmitRequestSchema.parse({
+      receipt: 'share_receipt_abcdefghijklmnopqrstuvwxyz',
+    })
+
+    expect(shareParsed.receipt).toContain('share_receipt')
+    expect(submitParsed.receipt).toContain('share_receipt')
   })
 })

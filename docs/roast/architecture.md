@@ -1,6 +1,6 @@
-# Roast Architecture (v3.2)
+# Roast Architecture (v3.3)
 
-This document describes the server-owned roast pipeline and module ownership.
+Server-owned roast pipeline with receipt-gated share and verified leaderboard submit.
 
 ## Pipeline Overview
 
@@ -12,8 +12,8 @@ Flow:
 5. AI execution (sync or stream)
 6. Parser + canonical final normalizer
 7. Deterministic scoring
-8. Response shaping + stream emission
-9. Persistence write path (Neon)
+8. Response shaping + signed receipt issuance
+9. Optional persistence (share/official submit)
 
 ## Ownership Boundaries
 
@@ -23,6 +23,7 @@ Flow:
 - NDJSON parser: incrementally parses model stream fragments.
 - Final normalizer: asserts canonical output shape (`title`, `roastLines`, `feedback`).
 - Scoring engine: deterministic metrics (`spaghettiIndex`, `stinkScore`, `egoDamage`, `grade`, `specialTitle`).
+- Receipt module: HMAC-signs canonical output, verifies integrity/expiry for share+submit.
 - Orchestrators:
   - sync path returns canonical JSON response.
   - stream path emits typed events and final `done`.
@@ -31,29 +32,41 @@ Flow:
 
 - Server is contract owner for stream and final response.
 - `done.data` is canonical and must be structurally complete.
-- Content events may interleave; consumer must aggregate by type/index.
+- `done.data.receipt` is required for downstream actions.
+- Content events may interleave; consumer aggregates by type/index.
 - Parse/normalization failures fail-fast with typed `error`.
-- Title quality is guarded by server normalization before final response.
-- Metrics are server-owned and deterministic (not LLM-owned).
+- Metrics are deterministic and server-owned (not LLM-owned).
 
-## Persistence and Read Model
+## Persistence Model
 
-- Persistence: canonical roast result is written to normalized run/content/metrics tables.
-- All-time leaderboard: served from `roast_user_stats` (+ latest run joins).
-- 24h leaderboard: served from windowed aggregation over recent `roast_runs` + metrics.
+- Roast generation endpoints do not auto-persist by default.
+- Share flow:
+  - verify receipt
+  - persist run/content/metrics
+  - persist `roast_shares` token with expiry (24h)
+- Official submit flow:
+  - require GitHub session
+  - verify receipt
+  - enforce `session.login === roasted username`
+  - persist run (idempotent by `request_id`)
+  - upsert `leaderboard_entries` (latest wins)
 
-See `database.md` for schema/constraints/indexes.
+## Read Model
+
+- `/api/leaderboard`: reads only from official `leaderboard_entries` joins.
+- `/api/leaderboard/:username`: official run detail.
+- `/share/:token`: public read for one temporary shared roast.
 
 ## Debug Observability
 
-Dev logs include:
-- request/runtime/intensity resolution
-- collector summary and optional content snapshots
-- evidence selection summary
-- prompt/payload summaries
-- AI effective config
-- stream counters + raw output snapshot (full debug)
+High-signal scopes:
+- `receipt-issued`
+- `share-created`
+- `share-resolved`
+- `official-submit-accepted`
+- `official-submit-rejected`
 
 See:
-- `payload-contract.md` for debug field shapes
-- `stream-contract.md` for event-level behavior
+- `payload-contract.md` for payload shapes
+- `stream-contract.md` for event behavior
+- `database.md` for schema/index/TTL details

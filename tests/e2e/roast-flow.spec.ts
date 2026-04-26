@@ -18,6 +18,7 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
   expect(Array.isArray(body.feedback)).toBeTruthy()
   expect(typeof body.roast).toBe('string')
   expect(typeof body.metrics).toBe('object')
+  expect(typeof body.receipt).toBe('string')
   expect(typeof body.metrics.stinkScore).toBe('number')
   expect(typeof body.metrics.egoDamage).toBe('number')
   expect(typeof body.metrics.grade).toBe('string')
@@ -100,4 +101,66 @@ test('leaderboard api responds with stable shape', async ({ request }) => {
   expect(body.window).toBe('all')
   expect(Array.isArray(body.items)).toBeTruthy()
   expect(typeof body.limit).toBe('number')
+})
+
+test('share api creates and resolves temporary roast links', async ({ request }) => {
+  test.setTimeout(180_000)
+
+  const roastResponse = await request.post('/api/roast', {
+    data: {
+      githubUsername: 'lafllamme',
+      debugLevel: 'minimal',
+      roastIntensity: 2,
+    },
+  })
+  if (!roastResponse.ok()) {
+    expect([429, 500, 503]).toContain(roastResponse.status())
+    return
+  }
+  const roastBody = await roastResponse.json()
+
+  const shareResponse = await request.post('/api/roast/share', {
+    data: {
+      receipt: roastBody.receipt,
+    },
+  })
+
+  if (!shareResponse.ok()) {
+    expect([500, 503]).toContain(shareResponse.status())
+    return
+  }
+
+  const shareBody = await shareResponse.json()
+  expect(typeof shareBody.shareUrl).toBe('string')
+  expect(typeof shareBody.token).toBe('string')
+
+  const resolveResponse = await request.get(`/api/roast/share/${shareBody.token}`)
+  expect(resolveResponse.ok()).toBeTruthy()
+  const resolveBody = await resolveResponse.json()
+  expect(resolveBody.data.username).toBe('lafllamme')
+  expect(Array.isArray(resolveBody.data.roastLines)).toBeTruthy()
+})
+
+test('official submit requires authenticated github session', async ({ request }) => {
+  const roastResponse = await request.post('/api/roast', {
+    data: {
+      githubUsername: 'lafllamme',
+      debugLevel: 'minimal',
+      roastIntensity: 2,
+    },
+  })
+  if (!roastResponse.ok()) {
+    expect([429, 500, 503]).toContain(roastResponse.status())
+    return
+  }
+  const roastBody = await roastResponse.json()
+
+  const submitResponse = await request.post('/api/leaderboard/submit', {
+    data: {
+      receipt: roastBody.receipt,
+    },
+  })
+
+  expect(submitResponse.ok()).toBeFalsy()
+  expect([401, 403]).toContain(submitResponse.status())
 })

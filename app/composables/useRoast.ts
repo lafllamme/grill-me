@@ -1,6 +1,6 @@
 import type { RoastDebugLevel, RoastResponse, RoastStreamEvent } from '~~/shared/roast/contracts'
 import { consola } from 'consola'
-import { requestRoastStream, requestRoastSync } from '../utils/roast-api'
+import { requestLeaderboardSubmit, requestRoastShare, requestRoastStream, requestRoastSync } from '../utils/roast-api'
 
 export type RoastResult = RoastResponse
 
@@ -40,6 +40,10 @@ export function useRoast() {
   const streamDebug = useState<Record<string, unknown> | null>('roast-stream-debug', () => null)
 
   const activeController = useState<AbortController | null>('roast-abort-controller', () => null)
+  const sharePending = useState<boolean>('roast-share-pending', () => false)
+  const lastShareUrl = useState<string | null>('roast-last-share-url', () => null)
+  const submitPending = useState<boolean>('roast-submit-pending', () => false)
+  const lastSubmitMessage = useState<string | null>('roast-last-submit-message', () => null)
 
   const resetStreamState = (): void => {
     isStreaming.value = false
@@ -231,6 +235,51 @@ export function useRoast() {
     streamError.value = 'Request cancelled'
   }
 
+  const createShareLink = async (): Promise<string> => {
+    if (!result.value?.receipt)
+      throw new Error('No roast receipt available for sharing')
+
+    sharePending.value = true
+    lastShareUrl.value = null
+    try {
+      const payload = await requestRoastShare(result.value.receipt)
+      lastShareUrl.value = payload.shareUrl
+      if (ENABLE_ROAST_DEBUG) {
+        consola.info('[client/roast/share-created]', {
+          username: result.value.username,
+          token: payload.token,
+          shareUrl: payload.shareUrl,
+          expiresAt: payload.expiresAt,
+        })
+      }
+      return payload.shareUrl
+    }
+    finally {
+      sharePending.value = false
+    }
+  }
+
+  const submitToLeaderboard = async (): Promise<void> => {
+    if (!result.value?.receipt)
+      throw new Error('No roast receipt available for leaderboard submit')
+
+    submitPending.value = true
+    lastSubmitMessage.value = null
+    try {
+      const payload = await requestLeaderboardSubmit(result.value.receipt)
+      lastSubmitMessage.value = `Submitted @${payload.username} at ${new Date(payload.submittedAt).toLocaleString()}`
+      if (ENABLE_ROAST_DEBUG) {
+        consola.info('[client/roast/official-submit]', {
+          username: payload.username,
+          submittedAt: payload.submittedAt,
+        })
+      }
+    }
+    finally {
+      submitPending.value = false
+    }
+  }
+
   const roastUsername = async (githubUsername: string, options?: RoastRequestOptions): Promise<void> => {
     const trimmed = githubUsername.trim()
     if (!trimmed)
@@ -240,6 +289,8 @@ export function useRoast() {
     error.value = null
     resetStreamState()
     result.value = null
+    lastShareUrl.value = null
+    lastSubmitMessage.value = null
 
     try {
       isStreaming.value = true
@@ -292,7 +343,13 @@ export function useRoast() {
     streamError,
     streamMeta,
     streamDebug,
+    sharePending,
+    lastShareUrl,
+    submitPending,
+    lastSubmitMessage,
     roastUsername,
     cancelRoast,
+    createShareLink,
+    submitToLeaderboard,
   }
 }

@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from 'motion-v'
 
 const isMobileMenuOpen = ref(false)
+const { loggedIn, user, login, logout } = useAuthSession()
 
 const mobileMenuItems = [
   { label: 'Leaderboard', to: '/leaderboard' },
@@ -33,6 +34,14 @@ const mobileMenuItemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 }
+
+async function handleLogin() {
+  await login()
+}
+
+async function handleLogout() {
+  await logout()
+}
 </script>
 
 <template>
@@ -61,10 +70,23 @@ const mobileMenuItemVariants = {
         </div>
 
         <aside class="inline-flex gap-2 items-center">
-          <button class="group/button text-sm text-white leading-5 font-body font-medium px-4 outline-none border border-transparent rounded-full inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-[rgba(255,86,51,0.16)]">
-            Login
+          <button
+            class="group/button text-sm text-white leading-5 font-body font-medium px-4 outline-none border border-transparent rounded-full inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-[rgba(255,86,51,0.16)]"
+            @click="loggedIn ? handleLogout() : handleLogin()"
+          >
+            {{ loggedIn ? "Logout" : "Login" }}
           </button>
-          <button class="group/button text-sm text-white leading-5 font-body font-medium px-4 outline-none border border-transparent rounded-full bg-[#FF3300] inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-[#E82E00]">
+          <span
+            v-if="loggedIn && user?.login"
+            class="text-xs text-primary tracking-[0.1em] font-mono px-3 py-1.5 border border-primary/30 rounded-full uppercase"
+          >
+            @{{ user.login }}
+          </span>
+          <button
+            v-else
+            class="group/button text-sm text-white leading-5 font-body font-medium px-4 outline-none border border-transparent rounded-full bg-[#FF3300] inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-[#E82E00]"
+            @click="handleLogin"
+          >
             Connect GitHub
           </button>
         </aside>
@@ -83,8 +105,11 @@ const mobileMenuItemVariants = {
           </NuxtLink>
 
           <div class="inline-flex gap-2 items-center">
-            <button class="group/button text-sm text-white font-body font-normal px-4 outline-none border border-transparent rounded-full bg-[#FF3300] inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-[#E82E00]">
-              Connect GitHub
+            <button
+              class="group/button text-sm text-white font-body font-normal px-4 outline-none border border-transparent rounded-full bg-[#FF3300] inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-[#E82E00]"
+              @click="loggedIn ? handleLogout() : handleLogin()"
+            >
+              {{ loggedIn ? "Logout" : "Connect GitHub" }}
             </button>
             <motion.button
               type="button"

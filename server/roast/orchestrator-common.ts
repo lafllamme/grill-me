@@ -12,6 +12,7 @@ import { createFallbackRoast } from './fallback'
 import { collectGithubContext } from './github-collector'
 import { parseRoastOutput } from './output-parser'
 import { buildRoastPrompt } from './prompt-builder'
+import { createRoastReceipt } from './receipt'
 import { computeRoastMetrics, getDefaultRoastScoringInputs } from './scoring'
 import { normalizeRoastTitle } from './title-normalizer'
 
@@ -22,6 +23,7 @@ export interface RoastServiceEnv {
   cfApiToken?: string
   cfAiModel?: string
   githubToken?: string
+  roastReceiptSecret?: string
 }
 
 export interface RoastOrchestratorInput {
@@ -57,6 +59,10 @@ export interface PreparedRoastContext {
 /**
  * Shapes the final roast response and applies debug-level filtering.
  *
+ * @param requestId Request-scoped id used for receipt ownership.
+ * @param source Response origin (`sync` or `stream`) embedded in receipt.
+ * @param roastIntensity Effective roast intensity persisted in receipt.
+ * @param receiptSecret Server secret used for HMAC signing.
  * @param username Target GitHub username.
  * @param title Canonical roast title.
  * @param roastLines Final roast lines.
@@ -69,6 +75,10 @@ export interface PreparedRoastContext {
  * @returns RoastResponse
  */
 export function createRoastResponse(
+  requestId: string,
+  source: 'sync' | 'stream',
+  roastIntensity: number,
+  receiptSecret: string,
   username: string,
   title: string,
   roastLines: string[],
@@ -79,6 +89,15 @@ export function createRoastResponse(
   scoringProfile: RoastScoringProfile,
   includeDebugInResponse = true,
 ): RoastResponse {
+  const resolvedReceiptSecret = receiptSecret.trim()
+  if (!resolvedReceiptSecret) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Missing roast receipt secret',
+      data: { code: 'receipt_secret_missing' },
+    })
+  }
+
   const resolvedIntensityProfile = resolveRoastIntensityProfile(runtime.roastIntensity)
   const normalizedTitle = normalizeRoastTitle(title, {
     username,
@@ -107,6 +126,29 @@ export function createRoastResponse(
     inputs: scoringInputs,
   }
 
+  const receipt = createRoastReceipt(resolvedReceiptSecret, {
+    requestId,
+    username,
+    title: resolvedTitle,
+    roastLines,
+    feedback,
+    roast: roastLines.join(' '),
+    meta,
+    metrics,
+    source,
+    roastIntensity,
+  })
+
+  if (ENABLE_ROAST_DEBUG) {
+    logServerDebug('receipt-issued', {
+      requestId,
+      username,
+      source,
+      roastIntensity,
+      receiptLength: receipt.length,
+    })
+  }
+
   const response: RoastResponse = {
     username,
     title: resolvedTitle,
@@ -115,6 +157,7 @@ export function createRoastResponse(
     feedback,
     meta,
     metrics,
+    receipt,
   }
 
   const shapedDebug = shapeDebugPayload(debug, runtime.debugLevel)
@@ -233,6 +276,10 @@ export async function prepareRoastContext(
     input.debug.timingsMs.total = Date.now() - startedAt
 
     return createRoastResponse(
+      input.requestId,
+      mode,
+      intensityProfile.level,
+      input.env.roastReceiptSecret || '',
       fallback.username,
       fallback.roastLines[0] || 'No Public Activity',
       fallback.roastLines,
@@ -361,6 +408,10 @@ export async function finalizeFromRawText(
   input.debug.timingsMs.total = Date.now() - context.startedAt
 
   return createRoastResponse(
+    input.requestId,
+    context.prompt.mode,
+    context.intensityProfile.level,
+    input.env.roastReceiptSecret || '',
     input.username,
     parsed.title,
     parsed.roastLines,

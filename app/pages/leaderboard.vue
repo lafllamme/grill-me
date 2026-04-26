@@ -30,7 +30,7 @@ function formatDate(value: string): string {
           Wall of Shame
         </h1>
         <p class="text-lg text-white/65 max-w-3xl">
-          Deterministisches Ranking aus Spaghetti Index, Stink Score und Ego Damage.
+          Official Wall of Shame. Only verified self-submitted roasts are ranked here.
         </p>
       </header>
 

@@ -1,6 +1,6 @@
-# Roast Payload Contract (v3.2)
+# Roast Payload Contract (v3.3)
 
-Payload-first reference for request, AI payload, stream events, debug blocks, and final canonical output.
+Payload-first reference for request, AI payload, stream events, receipt flow, debug blocks, and canonical output.
 
 Schema source:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
@@ -16,21 +16,34 @@ Schema source:
 }
 ```
 
-## 2) Normalized Runtime
+## 2) Canonical Roast Output (sync + stream `done.data`)
 
 ```json
 {
-  "includeDebug": true,
-  "debugLevel": "full",
-  "githubTimeoutMs": 12000,
-  "cfAiTimeoutMs": 25000,
-  "cfAiMaxTokens": 2200,
-  "cfAiTemperature": 0.55,
-  "cfAiTopP": 0.92,
-  "variationMode": "moderate",
-  "roastIntensity": 4
+  "username": "lafllamme",
+  "title": "Do You Ship Bugs Before Coffee Too?",
+  "roastLines": ["..."],
+  "roast": "...",
+  "feedback": ["..."],
+  "metrics": {
+    "spaghettiIndex": 87.4,
+    "stinkScore": 88,
+    "egoDamage": 84,
+    "grade": "D-",
+    "specialTitle": "Git Force Enthusiast"
+  },
+  "meta": {
+    "commitCount": 12,
+    "prCount": 0,
+    "selectedCommitCount": 8
+  },
+  "receipt": "<signed-hmac-receipt>"
 }
 ```
+
+`receipt` is server-owned and required for:
+- `POST /api/roast/share`
+- `POST /api/leaderboard/submit`
 
 ## 3) AI Payload (`messages[].content`)
 
@@ -67,101 +80,73 @@ Diff patches are included in `files[].patch` within prompt budgets.
 ```json
 {"type":"meta","requestId":"a28ccb80","username":"lafllamme"}
 {"type":"status","phase":"calling_ai","message":"Calling Cloudflare Workers AI..."}
-{"type":"roast_title","title":"Monorepo Meltdown"}
+{"type":"roast_title","title":"..."}
 {"type":"roast_line","index":0,"text":"..."}
 {"type":"feedback_item","index":0,"text":"..."}
-{"type":"done","data":{"username":"lafllamme","title":"Monorepo Meltdown","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8}}}
+{"type":"done","data":{"username":"lafllamme","title":"...","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8},"receipt":"<signed-hmac-receipt>"}}
 ```
 
 Interleave allowed between `roast_line` and `feedback_item`.
-Event semantics and ordering are defined in `stream-contract.md`.
 
-## 5) Internal Model Stream Envelope
+## 5) Receipt / Share / Submit Payloads
+
+Share request:
 
 ```json
-{"type":"title","title":"Monorepo Meltdown"}
-{"type":"roast_line","index":0,"text":"..."}
-{"type":"feedback_item","index":0,"text":"..."}
-{"type":"done"}
+{
+  "receipt": "<signed-hmac-receipt>"
+}
 ```
 
-Server parses this incrementally, supports split/concatenated JSON chunks, then emits typed SSE.
+Share resolve response:
 
-## 6) Canonical `done.data`
+```json
+{
+  "token": "share_...",
+  "expiresAt": "2026-04-27T12:00:00.000Z",
+  "data": {
+    "username": "lafllamme",
+    "title": "...",
+    "roastLines": ["..."],
+    "roast": "...",
+    "feedback": ["..."],
+    "meta": { "commitCount": 12, "prCount": 0, "selectedCommitCount": 8 },
+    "metrics": { "spaghettiIndex": 87.4, "stinkScore": 88, "egoDamage": 84, "grade": "D-", "specialTitle": "Git Force Enthusiast" }
+  }
+}
+```
 
-Required fields:
-- `title`
-- `roastLines`
-- `feedback`
-- `metrics` (`spaghettiIndex`, `stinkScore`, `egoDamage`, `grade`, `specialTitle`)
+Submit request:
 
-If missing after parser normalization, server emits typed `error` (`cloudflare_ai_incomplete_output`).
+```json
+{
+  "receipt": "<signed-hmac-receipt>"
+}
+```
 
-Title contract is defined in `stream-contract.md` (primary source).
-
-## 7) Debug Contract Pointers
-
-Useful debug fields:
-- `debug.parserPath`: final parse path used for canonical response
-- `debug.ai.ndjsonInvalidLineCount`: skipped invalid stream fragments
-- `debug.ai.titleNormalized`: whether server adjusted the model title
-- `debug.ai.titleNormalizationReasons`: normalization reasons (if any)
-- `debug.selectionSummary`: candidate vs selected summary
-- `debug.intensityProfile`: resolved runtime profile
-
-## 8) Candidate vs Selected Counts
+## 6) Candidate vs Selected Counts
 
 - `meta.commitCount`: enriched/candidate commits fetched from GitHub.
 - `meta.selectedCommitCount`: commits selected into prompt evidence.
 - `debug.selectionSummary.configuredMaxCommitRefs`: candidate cap.
 - `debug.selectionSummary.configuredMaxSelectedCommits`: selected cap.
 
-## 9) Dev Logging View (Terminal + Browser)
+## 7) Dev Logging View (Terminal + Browser)
 
-Recommended full debug request:
+Expected high-signal server scopes:
+- `[server/roast/receipt-issued]`
+- `[server/roast/share-created]`
+- `[server/roast/share-resolved]`
+- `[server/roast/official-submit-accepted]`
+- `[server/roast/official-submit-rejected]`
 
-```json
-{
-  "githubUsername": "lafllamme",
-  "debugLevel": "full",
-  "roastIntensity": 2
-}
-```
+Expected client scopes:
+- `[client/roast/share-created]`
+- `[client/roast/official-submit]`
+- existing stream scopes (`stream-meta`, `stream-status`, `stream-roast-title`, `stream-roast-line`, `stream-feedback-item`, `stream-done`)
 
-Expected high-signal client log scopes:
-- `[client/roast/request-start]`
-- `[client/roast/stream-meta]`
-- `[client/roast/stream-status]`
-- `[client/roast/stream-roast-title]`
-- `[client/roast/stream-roast-line]`
-- `[client/roast/stream-feedback-item]`
-- `[client/roast/stream-debug]`
-- `[client/roast/stream-done]`
+## 8) Persistence Rules
 
-Expected high-signal server log scopes:
-- `[server/roast/stream-request]`
-- `[server/roast/intensity-resolved]`
-- `[server/roast/github-collector-summary]`
-- `[server/roast/evidence-selected]`
-- `[server/roast/prompt-payload-summary]`
-- `[server/roast/ai-effective-config]`
-- `[server/roast/stream-counters]`
-- `[server/roast/stream-success]`
-
-## 10) Client Rendering Notes
-
-- `roast_title` is consumed as progressive UI state (`partialTitle`) and rendered in a dedicated terminal title slot.
-- Title rendering uses a typewriter effect during stream and resolves to canonical `done.data.title` after completion.
-- The title slot reserves vertical space before title arrival to keep terminal layout stable.
-
-## 11) Persistence Write Path
-
-After canonical response is finalized:
-- upsert `roast_users`
-- insert/upsert `roast_runs`
-- insert/upsert `roast_run_content`
-- insert/upsert `roast_run_metrics`
-- update `roast_user_stats`
-
-Database schema details:
-- `database.md`
+- Roast without login: no automatic persistence.
+- Share: receipt-backed run is persisted + `roast_shares` token record with 24h TTL.
+- Official submit: only verified self-roast can upsert official leaderboard entry.

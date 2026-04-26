@@ -1,7 +1,6 @@
 import { getRequestIP, setResponseStatus } from 'h3'
 import { parseRoastRequest } from '../roast/contracts-adapter'
 import { createDebugReport, logServerError, logServerInfo } from '../roast/debug'
-import { persistRoastRun } from '../roast/leaderboard-repository'
 import { runRoastSync, toErrorBody, toHandledError } from '../roast/orchestrator'
 import { checkRateLimit } from '../roast/rate-limit'
 import { resolveActiveScoringProfile } from '../roast/scoring-profile'
@@ -40,19 +39,10 @@ export default defineEventHandler(async (event) => {
         cfApiToken: config.cfApiToken || undefined,
         cfAiModel: config.cfAiModel || undefined,
         githubToken: config.githubToken || undefined,
+        roastReceiptSecret: config.roastReceiptSecret || undefined,
       },
       includeDebugInResponse: parsed.runtime.includeDebug,
       debug,
-      scoringProfile,
-    })
-
-    await persistRoastRun(config.databaseUrl || undefined, {
-      requestId,
-      source: 'sync',
-      roastIntensity: parsed.runtime.roastIntensity,
-      model: config.cfAiModel || undefined,
-      promptVersion: response.debug?.promptVersion,
-      response,
       scoringProfile,
     })
 

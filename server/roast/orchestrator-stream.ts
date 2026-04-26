@@ -350,6 +350,10 @@ export async function runRoastStreamPipeline(
   input.debug.timingsMs.total = Date.now() - prepared.startedAt
 
   const finalPayload = createRoastResponse(
+    input.requestId,
+    'stream',
+    prepared.intensityProfile.level,
+    input.env.roastReceiptSecret || '',
     input.username,
     canonical.title,
     canonical.roastLines,

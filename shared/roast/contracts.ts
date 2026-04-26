@@ -130,6 +130,9 @@ export const roastMetricsSchema = z.object({
 })
 export type RoastMetrics = z.infer<typeof roastMetricsSchema>
 
+export const roastReceiptSchema = z.string().min(20)
+export type RoastReceipt = z.infer<typeof roastReceiptSchema>
+
 export const roastDebugSchema = z.object({
   username: z.string(),
   promptVersion: z.string().optional(),
@@ -158,10 +161,16 @@ export const roastResponseSchema = z.object({
   feedback: z.array(z.string()).min(1),
   meta: roastMetaSchema,
   metrics: roastMetricsSchema,
+  receipt: roastReceiptSchema,
   debug: roastDebugSchema.optional(),
 })
 
 export type RoastResponse = z.infer<typeof roastResponseSchema>
+export const roastPublicResultSchema = roastResponseSchema.omit({
+  receipt: true,
+  debug: true,
+})
+export type RoastPublicResult = z.infer<typeof roastPublicResultSchema>
 
 export const roastErrorSchema = z.object({
   error: z.object({
@@ -262,6 +271,37 @@ export const leaderboardResponseSchema = z.object({
   items: z.array(leaderboardItemSchema),
 })
 export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>
+
+export const roastShareCreateRequestSchema = z.object({
+  receipt: roastReceiptSchema,
+})
+export type RoastShareCreateRequest = z.infer<typeof roastShareCreateRequestSchema>
+
+export const roastShareCreateResponseSchema = z.object({
+  token: z.string().min(12),
+  shareUrl: z.string().min(1),
+  expiresAt: z.string().datetime(),
+})
+export type RoastShareCreateResponse = z.infer<typeof roastShareCreateResponseSchema>
+
+export const roastShareResolveResponseSchema = z.object({
+  token: z.string().min(12),
+  expiresAt: z.string().datetime(),
+  data: roastPublicResultSchema,
+})
+export type RoastShareResolveResponse = z.infer<typeof roastShareResolveResponseSchema>
+
+export const leaderboardSubmitRequestSchema = z.object({
+  receipt: roastReceiptSchema,
+})
+export type LeaderboardSubmitRequest = z.infer<typeof leaderboardSubmitRequestSchema>
+
+export const leaderboardSubmitResponseSchema = z.object({
+  ok: z.boolean(),
+  username: z.string(),
+  submittedAt: z.string().datetime(),
+})
+export type LeaderboardSubmitResponse = z.infer<typeof leaderboardSubmitResponseSchema>
 
 export interface RoastRuntimeOptions {
   includeDebug: boolean
