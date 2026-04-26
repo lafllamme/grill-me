@@ -1,11 +1,11 @@
-# Roast Payload Contract (v3.3)
+# Roast Payload Contract (v3.4)
 
-Payload-first reference for request, AI payload, stream events, receipt flow, debug blocks, and canonical output.
+Payload-first contract for request/response, stream events, receipt handoff, share/submit flow, and persistence semantics.
 
 Schema source:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
 
-## 1) Client -> API Request
+## 1) Client -> Roast Request
 
 ```json
 {
@@ -16,7 +16,7 @@ Schema source:
 }
 ```
 
-## 2) Canonical Roast Output (sync + stream `done.data`)
+## 2) Canonical Roast Output (`/api/roast` and `done.data`)
 
 ```json
 {
@@ -41,11 +41,26 @@ Schema source:
 }
 ```
 
-`receipt` is server-owned and required for:
-- `POST /api/roast/share`
-- `POST /api/leaderboard/submit`
+Notes:
+- `done.data` is the canonical stream final state.
+- `receipt` is server-owned and required for `share` and `official submit`.
 
-## 3) AI Payload (`messages[].content`)
+## 3) Public Stream Event Shapes
+
+```json
+{"type":"meta","requestId":"a28ccb80","username":"lafllamme"}
+{"type":"status","phase":"calling_ai","message":"Calling Cloudflare Workers AI..."}
+{"type":"roast_title","title":"..."}
+{"type":"roast_line","index":0,"text":"..."}
+{"type":"feedback_item","index":0,"text":"..."}
+{"type":"debug","debug":{"username":"lafllamme","requests":[],"timingsMs":{}}}
+{"type":"done","data":{"username":"lafllamme","title":"...","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8},"receipt":"<signed-hmac-receipt>"}}
+```
+
+Interleave rule:
+- `roast_line` and `feedback_item` may interleave.
+
+## 4) AI Prompt Payload (server -> model)
 
 ```json
 {
@@ -73,24 +88,11 @@ Schema source:
 }
 ```
 
-Diff patches are included in `files[].patch` within prompt budgets.
+## 5) Share and Submit Contracts
 
-## 4) Public SSE Events (Shape Snapshot)
+### `POST /api/roast/share`
 
-```json
-{"type":"meta","requestId":"a28ccb80","username":"lafllamme"}
-{"type":"status","phase":"calling_ai","message":"Calling Cloudflare Workers AI..."}
-{"type":"roast_title","title":"..."}
-{"type":"roast_line","index":0,"text":"..."}
-{"type":"feedback_item","index":0,"text":"..."}
-{"type":"done","data":{"username":"lafllamme","title":"...","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8},"receipt":"<signed-hmac-receipt>"}}
-```
-
-Interleave allowed between `roast_line` and `feedback_item`.
-
-## 5) Receipt / Share / Submit Payloads
-
-Share request:
+Request:
 
 ```json
 {
@@ -98,7 +100,19 @@ Share request:
 }
 ```
 
-Share resolve response:
+Response:
+
+```json
+{
+  "token": "share_...",
+  "shareUrl": "https://.../share/share_...",
+  "expiresAt": "2026-04-27T12:00:00.000Z"
+}
+```
+
+### `GET /api/roast/share/:token`
+
+Response:
 
 ```json
 {
@@ -110,13 +124,25 @@ Share resolve response:
     "roastLines": ["..."],
     "roast": "...",
     "feedback": ["..."],
-    "meta": { "commitCount": 12, "prCount": 0, "selectedCommitCount": 8 },
-    "metrics": { "spaghettiIndex": 87.4, "stinkScore": 88, "egoDamage": 84, "grade": "D-", "specialTitle": "Git Force Enthusiast" }
+    "meta": {
+      "commitCount": 12,
+      "prCount": 0,
+      "selectedCommitCount": 8
+    },
+    "metrics": {
+      "spaghettiIndex": 87.4,
+      "stinkScore": 88,
+      "egoDamage": 84,
+      "grade": "D-",
+      "specialTitle": "Git Force Enthusiast"
+    }
   }
 }
 ```
 
-Submit request:
+### `POST /api/leaderboard/submit`
+
+Request:
 
 ```json
 {
@@ -124,40 +150,35 @@ Submit request:
 }
 ```
 
-Setup error example (missing migration 002):
+Response:
 
 ```json
 {
-  "error": {
-    "code": "leaderboard_schema_missing",
-    "message": "Leaderboard schema missing. Run DB migration 002 (roast_share_and_official_entries)."
-  }
+  "ok": true,
+  "username": "lafllamme",
+  "submittedAt": "2026-04-26T12:00:00.000Z"
 }
 ```
 
-## 6) Candidate vs Selected Counts
+## 6) End-to-End Payload Sequence
 
-- `meta.commitCount`: enriched/candidate commits fetched from GitHub.
-- `meta.selectedCommitCount`: commits selected into prompt evidence.
+1. Roast completes -> canonical payload includes `receipt`.
+2. Client calls `/api/roast/share` with that `receipt`.
+3. Server verifies receipt, persists run data, issues `share` token + URL.
+4. Browser opens `/share/:token`, frontend calls `/api/roast/share/:token`.
+5. API returns unofficial snapshot payload from persisted run data.
+6. For official board, client calls `/api/leaderboard/submit` with same receipt.
+7. Server enforces self-ownership (`session.login === receipt.username`) and upserts official entry.
+
+## 7) Persistence Rules
+
+- Roast without login: no automatic persistence by default.
+- Share: receipt-backed persistence + `roast_shares` token with TTL.
+- Official submit: receipt-backed persistence + official projection upsert.
+
+## 8) Candidate vs Selected Commit Semantics
+
+- `meta.commitCount`: enriched/candidate commit pool size.
+- `meta.selectedCommitCount`: commits selected into final prompt evidence.
 - `debug.selectionSummary.configuredMaxCommitRefs`: candidate cap.
 - `debug.selectionSummary.configuredMaxSelectedCommits`: selected cap.
-
-## 7) Dev Logging View (Terminal + Browser)
-
-Expected high-signal server scopes:
-- `[server/roast/receipt-issued]`
-- `[server/roast/share-created]`
-- `[server/roast/share-resolved]`
-- `[server/roast/official-submit-accepted]`
-- `[server/roast/official-submit-rejected]`
-
-Expected client scopes:
-- `[client/roast/share-created]`
-- `[client/roast/official-submit]`
-- existing stream scopes (`stream-meta`, `stream-status`, `stream-roast-title`, `stream-roast-line`, `stream-feedback-item`, `stream-done`)
-
-## 8) Persistence Rules
-
-- Roast without login: no automatic persistence.
-- Share: receipt-backed run is persisted + `roast_shares` token record with 24h TTL.
-- Official submit: only verified self-roast can upsert official leaderboard entry.

@@ -1,97 +1,87 @@
-# Roast Database (v1.2)
+# Roast Database (v1.3)
 
-Neon/Postgres schema for receipt-backed share links and verified official leaderboard entries.
+Neon/Postgres schema for receipt-backed sharing and verified official leaderboard submissions.
+
+## ER Diagram
+
+```mermaid
+erDiagram
+  roast_users ||--o{ roast_runs : owns
+  roast_runs ||--|| roast_run_content : has
+  roast_runs ||--|| roast_run_metrics : has
+  roast_users ||--|| roast_user_stats : aggregates
+  roast_runs o|--o| roast_user_stats : latest_run_id
+
+  roast_runs ||--o{ roast_shares : shared_as
+  roast_users ||--|| leaderboard_entries : official_projection
+  roast_runs ||--o{ leaderboard_entries : points_to_run
+  auth_github_users ||--o{ leaderboard_entries : submitted_by
+```
 
 ## Tables
 
-1. `roast_users`
-- one row per roasted GitHub username
-- identity + timestamps
+- `roast_users`
+  - one row per roasted GitHub username
+- `roast_runs`
+  - one row per persisted run (`request_id` unique, idempotent)
+- `roast_run_content`
+  - 1:1 with `roast_runs`, text content fields
+- `roast_run_metrics`
+  - 1:1 with `roast_runs`, deterministic score fields
+- `roast_user_stats`
+  - aggregated per-user stats
+- `roast_scoring_profiles`
+  - versioned scoring configuration, one active profile
+- `auth_github_users`
+  - verified OAuth identities
+- `roast_shares`
+  - temporary share tokens + expiry
+- `leaderboard_entries`
+  - official projection, one entry per roasted user
 
-2. `roast_runs`
-- one row per persisted run (`request_id` unique, idempotent)
-- run-level metadata (source, intensity, counts, model, prompt version)
+## Constraints and Integrity
 
-3. `roast_run_content`
-- 1:1 with `roast_runs`
-- title, roast lines, feedback, full roast text
-
-4. `roast_run_metrics`
-- 1:1 with `roast_runs`
-- deterministic metrics + `metric_version`
-
-5. `roast_user_stats`
-- 1:1 with `roast_users`
-- aggregated counters for reads/debugging
-
-6. `roast_scoring_profiles`
-- versioned scoring config
-- active profile selected by `is_active = true`
-
-7. `auth_github_users`
-- verified OAuth users (`github_id` unique)
-- session identity for official submit ownership
-
-8. `roast_shares`
-- temporary share tokens (`token`, `run_id`, `expires_at`)
-- public read path for `/share/:token`
-
-9. `leaderboard_entries`
-- official board projection
-- one row per roasted user (`roast_user_id` PK) -> latest official run
-
-## Constraints
-
-- FK chains use `ON DELETE CASCADE` for run content/metrics/shares/entries.
 - `roast_intensity` constrained to `1..4`.
-- score fields constrained to `0..100`.
-- grade constrained to `F- | F | D- | D | C- | C | B | A`.
+- Score fields constrained to `0..100`.
+- `grade` constrained to `F- | F | D- | D | C- | C | B | A`.
+- FK chains use `ON DELETE CASCADE` on dependent run/share/official rows.
 
 ## Indexes
 
-- Existing:
-  - `roast_users(username)`
-  - `roast_runs(created_at DESC)`
-  - `roast_runs(user_id, created_at DESC)`
-  - `roast_run_metrics(stink_score DESC, ego_damage DESC)`
-  - `roast_user_stats(worst_grade, avg_stink_score DESC)`
-- New v1.2:
-  - `auth_github_users(username)`
-  - `roast_shares(expires_at)`
-  - `roast_shares(run_id)`
-  - `leaderboard_entries(submitted_at DESC)`
-  - `leaderboard_entries(run_id)`
+Core performance indexes include:
+- `roast_users(username)`
+- `roast_runs(created_at DESC)`
+- `roast_runs(user_id, created_at DESC)`
+- `roast_run_metrics(stink_score DESC, ego_damage DESC)`
+- `roast_user_stats(worst_grade, avg_stink_score DESC)`
+- `auth_github_users(username)`
+- `roast_shares(expires_at)`
+- `roast_shares(run_id)`
+- `leaderboard_entries(submitted_at DESC)`
+- `leaderboard_entries(run_id)`
+
+## Persistence Semantics
+
+- Unofficial roast generation: no automatic persistence by default.
+- Share creation:
+  - verifies receipt,
+  - persists run/content/metrics,
+  - stores token in `roast_shares` with `expires_at` (+24h).
+- Official submit:
+  - requires verified session,
+  - enforces self-ownership,
+  - upserts official projection in `leaderboard_entries`.
+
+## TTL Cleanup Strategy
+
+- Functional TTL enforcement: share resolve queries require `expires_at > NOW()`.
+- Physical cleanup: scheduled deletion of expired rows in `roast_shares`.
+- Recommended cadence: every 4 hours (`pg_cron`).
 
 ## Migrations
 
 - `/Users/flame/Developer/Projects/grill-me/server/db/migrations/001_roast_leaderboard.sql`
 - `/Users/flame/Developer/Projects/grill-me/server/db/migrations/002_roast_share_and_official_entries.sql`
 
-## Persistence Rules
-
-- Unofficial roast (no login): no automatic DB write.
-- Share: persists run + share token (24h).
-- Official leaderboard submit: persists/upserts run and updates official `leaderboard_entries`.
-
-## TTL Cleanup
-
-`roast_shares` should be cleaned by scheduled SQL job:
-
-```sql
-DELETE FROM roast_shares
-WHERE expires_at <= NOW();
-```
-
-Optional orphan cleanup (non-official, non-shared runs):
-
-```sql
-DELETE FROM roast_runs rr
-WHERE rr.created_at < NOW() - INTERVAL '7 days'
-  AND NOT EXISTS (SELECT 1 FROM roast_shares rs WHERE rs.run_id = rr.id)
-  AND NOT EXISTS (SELECT 1 FROM leaderboard_entries le WHERE le.run_id = rr.id);
-```
-
-## Data Hygiene
-
-- Debug payloads and raw AI dumps are not persisted in DB tables.
-- Receipt signature is not stored; server verifies it per action request.
+Operational setup and runbook:
+- `operations.md`

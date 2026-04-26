@@ -1,47 +1,99 @@
-# Roast API (v3.3)
+# Roast API (v3.4)
 
-Public endpoint contract for roast generation, share links, auth-gated leaderboard submit, and official board reads.
+Public HTTP contract for roast generation, temporary sharing, verified official submit, and leaderboard reads.
+
+Policy baseline: **Roast anyone. Share temporarily. Submit only yourself.**
 
 ## Endpoints
 
 - `POST /api/roast`
-  - synchronous JSON response (canonical roast payload + signed receipt)
+  - synchronous roast response (canonical payload + signed `receipt`)
 - `POST /api/roast/stream`
-  - typed SSE stream (`text/event-stream`, see `stream-contract.md`)
+  - SSE stream (`meta/status/roast_title/roast_line/feedback_item/debug/done/error`)
 - `POST /api/roast/share`
-  - creates a temporary public share link from a valid receipt
+  - creates temporary share token from valid `receipt`
 - `GET /api/roast/share/:token`
-  - resolves one shared roast snapshot (unofficial, read-only)
+  - resolves unofficial shared snapshot until expiry
 - `POST /api/leaderboard/submit`
-  - official submit, requires verified GitHub session and self-roast check
+  - official submit; requires verified GitHub session and self-ownership
 - `GET /api/leaderboard?window=all|24h&limit=50&search=...`
-  - official leaderboard list (only submitted entries)
+  - official leaderboard list only
 - `GET /api/leaderboard/:username`
-  - official entry detail/history for one username
+  - official run history/detail for one username
 - `GET /api/auth/session`
-  - client UX session helper (`loggedIn`, `user`)
+  - current auth/session summary
 - `POST /api/auth/logout`
-  - clears auth session
+  - clears session
 - `GET /auth/github`
-  - GitHub OAuth redirect entrypoint
+  - GitHub OAuth callback entrypoint
 
-Source of truth for schemas:
+Schema source of truth:
 - `/Users/flame/Developer/Projects/grill-me/shared/roast/contracts.ts`
 
-## Request Shape (`/api/roast`, `/api/roast/stream`)
+## Endpoint Behavior Notes
 
-```json
-{
-  "githubUsername": "lafllamme",
-  "debugLevel": "minimal",
-  "variationMode": "moderate",
-  "roastIntensity": 2
-}
-```
+### Roast generation
 
-## Final Response Shape
+`POST /api/roast`
+- Validates request + resolves runtime options.
+- Runs full pipeline and returns one canonical payload.
+- Returns signed `receipt` for downstream share/submit.
 
-Used by sync endpoint and by `done.data` in stream:
+`POST /api/roast/stream`
+- Emits typed SSE events during execution.
+- `done.data` is canonical final truth and includes `receipt`.
+- On failure emits typed `error` event envelope.
+
+### Share lifecycle
+
+`POST /api/roast/share`
+- Verifies `receipt` signature + expiry.
+- Persists run/content/metrics (if not already persisted by `request_id`).
+- Creates `roast_shares` token with 24h TTL.
+- Returns `token`, `shareUrl`, `expiresAt`.
+
+`GET /api/roast/share/:token`
+- Resolves share token to an unofficial public snapshot.
+- Fails with `404` when token is missing/expired/not found.
+- Setup/database errors are mapped to typed setup codes.
+
+### Official submit
+
+`POST /api/leaderboard/submit`
+- Requires valid GitHub session.
+- Verifies `receipt` signature + expiry.
+- Enforces `session.login === receipt.username`.
+- Upserts official row (`leaderboard_entries`) with latest run.
+
+### Leaderboard reads
+
+`GET /api/leaderboard`
+- Reads from official projection only (`leaderboard_entries` joins).
+- Supports `window=all|24h`, `limit`, and username search.
+
+`GET /api/leaderboard/:username`
+- Returns official detail/history for the username.
+- `404` if no official entry exists.
+
+### Auth endpoints
+
+`GET /auth/github`
+- OAuth callback stores normalized session on success and redirects `/`.
+- Redirect query failure states:
+  - `auth=github_not_configured`
+  - `auth=github_session_failed`
+  - `auth=github_invalid_profile`
+  - `auth=github_failed`
+
+`GET /api/auth/session`
+- Returns `{ loggedIn, user }` for UI state.
+
+`POST /api/auth/logout`
+- Clears session and returns `{ ok: true }`.
+
+## Canonical Roast Response Shape
+
+Used by `POST /api/roast` and by stream `done.data`:
 
 ```json
 {
@@ -66,94 +118,33 @@ Used by sync endpoint and by `done.data` in stream:
 }
 ```
 
-Canonical final requirements:
-- `title` non-empty
-- `roastLines` non-empty
-- `feedback` non-empty
-- `receipt` non-empty
-
-## Share + Submit APIs
-
-`POST /api/roast/share`:
-
-```json
-{
-  "receipt": "<signed-hmac-receipt>"
-}
-```
-
-Response:
-
-```json
-{
-  "token": "share_...",
-  "shareUrl": "https://.../share/share_...",
-  "expiresAt": "2026-04-27T12:00:00.000Z"
-}
-```
-
-`POST /api/leaderboard/submit`:
-
-```json
-{
-  "receipt": "<signed-hmac-receipt>"
-}
-```
-
-Response:
-
-```json
-{
-  "ok": true,
-  "username": "lafllamme",
-  "submittedAt": "2026-04-26T12:00:00.000Z"
-}
-```
-
-Self-submit rule:
-- session GitHub login must match roasted username (`submit only yourself`).
-
-## Error Envelope and Codes
+## Error Envelope
 
 ```json
 {
   "error": {
-    "code": "cloudflare_ai_incomplete_output",
-    "message": "Cloudflare AI returned incomplete structured output"
+    "code": "<stable_code>",
+    "message": "<human_readable_message>"
   }
 }
 ```
 
-Common codes:
-- `invalid_username`
-- `github_not_found`
-- `github_timeout`
-- `github_upstream_error`
-- `rate_limited`
-- `cloudflare_ai_not_configured`
-- `cloudflare_ai_timeout`
-- `cloudflare_ai_error`
-- `cloudflare_ai_empty_output`
-- `cloudflare_ai_unparseable_output`
-- `cloudflare_ai_incomplete_output`
-- `receipt_secret_missing`
-- `receipt_invalid`
-- `receipt_invalid_signature`
-- `receipt_invalid_payload`
-- `receipt_expired`
-- `official_submit_not_owner`
-- `database_not_configured`
-- `leaderboard_schema_missing`
+## Error Matrix by Endpoint
 
-OAuth redirect states (query on `/` after `/auth/github`):
-- `auth=github_not_configured`
-- `auth=github_session_failed`
-- `auth=github_invalid_profile`
-- `auth=github_failed`
+| Endpoint | Main error codes |
+|---|---|
+| `POST /api/roast` | `invalid_username`, `github_not_found`, `github_timeout`, `github_upstream_error`, `rate_limited`, `cloudflare_ai_not_configured`, `cloudflare_ai_timeout`, `cloudflare_ai_error`, `cloudflare_ai_empty_output`, `cloudflare_ai_unparseable_output`, `cloudflare_ai_incomplete_output`, `receipt_secret_missing` |
+| `POST /api/roast/stream` | same as roast path, returned as stream `error` event |
+| `POST /api/roast/share` | `receipt_secret_missing`, `receipt_invalid`, `receipt_invalid_signature`, `receipt_invalid_payload`, `receipt_expired`, `database_not_configured`, `leaderboard_schema_missing` |
+| `GET /api/roast/share/:token` | `share_token_missing`, `share_not_found`, `database_not_configured`, `leaderboard_schema_missing` |
+| `POST /api/leaderboard/submit` | `github_auth_required`, `receipt_secret_missing`, `receipt_invalid`, `receipt_invalid_signature`, `receipt_invalid_payload`, `receipt_expired`, `official_submit_not_owner`, `database_not_configured`, `leaderboard_schema_missing` |
+| `GET /api/leaderboard` | `database_not_configured` (degraded mode may return empty list) |
+| `GET /api/leaderboard/:username` | HTTP 400 `Username is required`, HTTP 404 `Leaderboard entry not found` |
+| `GET /auth/github` | redirect states via `auth=` query param |
 
 Related docs:
-- `index.md`
 - `stream-contract.md`
 - `payload-contract.md`
 - `architecture.md`
 - `database.md`
+- `operations.md`

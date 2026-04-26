@@ -1,63 +1,82 @@
-# Roast Architecture (v3.3)
+# Roast Architecture (v3.4)
 
-Server-owned roast pipeline with receipt-gated share and verified leaderboard submit.
+Server-owned roast pipeline with typed streaming, signed receipt handoff, temporary sharing, and verified official leaderboard projection.
 
 ## Pipeline Overview
 
-Flow:
-1. Request validation and runtime resolution
+1. Request validation + runtime option resolution
 2. GitHub context collection
 3. Evidence selection
-4. Prompt + payload build
+4. Prompt and AI config build
 5. AI execution (sync or stream)
-6. Parser + canonical final normalizer
+6. Output parse + canonical normalize
 7. Deterministic scoring
-8. Response shaping + signed receipt issuance
+8. Signed receipt issuance
 9. Optional persistence (share/official submit)
 
-## Ownership Boundaries
+## Sequence Diagram
 
-- Collector: fetches and enriches GitHub commits/PRs.
-- Selector: scores commits and picks prompt evidence.
-- Prompt builder: builds system prompt + compact payload and computes effective AI config.
-- NDJSON parser: incrementally parses model stream fragments.
-- Final normalizer: asserts canonical output shape (`title`, `roastLines`, `feedback`).
-- Scoring engine: deterministic metrics (`spaghettiIndex`, `stinkScore`, `egoDamage`, `grade`, `specialTitle`).
-- Receipt module: HMAC-signs canonical output, verifies integrity/expiry for share+submit.
-- Orchestrators:
-  - sync path returns canonical JSON response.
-  - stream path emits typed events and final `done`.
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as Client UI
+  participant API as Roast API
+  participant GH as GitHub API
+  participant AI as Cloudflare AI
+  participant DB as Neon Postgres
+  participant LB as Leaderboard Read API
 
-## Core Invariants
+  C->>API: POST /api/roast or /api/roast/stream
+  API->>GH: Collect profile/events/commits
+  GH-->>API: Context payload
+  API->>AI: Prompt + compact evidence
+  AI-->>API: Model output
+  API->>API: Parse + normalize + score + receipt sign
+  API-->>C: Canonical roast payload (or stream done.data)
 
-- Server is contract owner for stream and final response.
-- `done.data` is canonical and must be structurally complete.
-- `done.data.receipt` is required for downstream actions.
-- Content events may interleave; consumer aggregates by type/index.
-- Parse/normalization failures fail-fast with typed `error`.
-- Metrics are deterministic and server-owned (not LLM-owned).
+  alt Share flow
+    C->>API: POST /api/roast/share (receipt)
+    API->>API: Verify receipt (signature + expiry)
+    API->>DB: Persist run/content/metrics
+    API->>DB: Insert roast_shares token (expires_at)
+    API-->>C: shareUrl + expiresAt
+    C->>API: GET /api/roast/share/:token
+    API->>DB: Resolve token + run data
+    API-->>C: Unofficial shared snapshot
+  end
 
-## Persistence Model
+  alt Official submit flow
+    C->>API: POST /api/leaderboard/submit (receipt)
+    API->>API: Require GitHub session
+    API->>API: Verify receipt + self-check
+    API->>DB: Upsert official leaderboard entry
+    API-->>C: { ok: true, submittedAt }
+  end
 
-- Roast generation endpoints do not auto-persist by default.
-- Share flow:
-  - verify receipt
-  - persist run/content/metrics
-  - persist `roast_shares` token with expiry (24h)
-- Official submit flow:
-  - require GitHub session
-  - verify receipt
-  - enforce `session.login === roasted username`
-  - persist run (idempotent by `request_id`)
-  - upsert `leaderboard_entries` (latest wins)
+  C->>LB: GET /api/leaderboard
+  LB->>DB: Read official projection
+  LB-->>C: Ranked official entries
+```
 
-## Read Model
+## Ownership and Invariants
 
-- `/api/leaderboard`: reads only from official `leaderboard_entries` joins.
-- `/api/leaderboard/:username`: official run detail.
-- `/share/:token`: public read for one temporary shared roast.
+- Server owns all contracts and canonical final shapes.
+- `done.data` is canonical in stream mode.
+- `receipt` is mandatory for share/submit actions.
+- Parser/normalizer failures are fail-fast with typed errors.
+- Scores are deterministic and server-owned (not model-owned).
+- Official submit is allowed only for verified self-roasts.
 
-## Debug Observability
+## Read/Write Model Split
+
+- Write paths:
+  - share create
+  - official submit
+- Read paths:
+  - leaderboard list/detail (official only)
+  - share token resolve (unofficial temporary snapshot)
+
+## Observability Scopes
 
 High-signal scopes:
 - `receipt-issued`
@@ -66,7 +85,8 @@ High-signal scopes:
 - `official-submit-accepted`
 - `official-submit-rejected`
 
-See:
-- `payload-contract.md` for payload shapes
-- `stream-contract.md` for event behavior
-- `database.md` for schema/index/TTL details
+Related docs:
+- `stream-contract.md`
+- `payload-contract.md`
+- `database.md`
+- `operations.md`
