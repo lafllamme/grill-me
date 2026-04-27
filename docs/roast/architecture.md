@@ -97,3 +97,4 @@ Related docs:
 2. Prompt assembly — persona block + intensity level + user payload.
 3. Streamed generation — chunks forwarded as-is, no buffering.
 4. Post pass — final formatting and safety check before persist.
+- Reminder: sync safety gate docs with implementation changes.
