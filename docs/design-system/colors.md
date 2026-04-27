@@ -198,3 +198,4 @@ Avoid:
 - Ember orange is reserved for heat/intensity signals, never decoration.
 - Backgrounds stay in the charcoal ramp; ember appears only as glow accents.
 - Text on ember fills uses near-black, not white — better warmth retention.
+- Edge case: glow opacity on mobile safari needs a second look.
