@@ -45,6 +45,7 @@ Rules:
 ## Canonical `done.data`
 
 Required fields:
+- `intensity`
 - `title`
 - `roastLines`
 - `feedback`
@@ -56,10 +57,11 @@ Missing required structure triggers typed `error` (`cloudflare_ai_incomplete_out
 ## Title Contract (Primary Source)
 
 `done.data.title` (and streamed `roast_title`) follows:
-- question-first hook (`?`)
+- short hook line
 - target length 6-12 words
 - spicy-clean tone
 - evidence-grounded, non-generic wording
+- question optional, not mandatory
 - intensity-aware tone ramp (`rare` -> `medium_rare` -> `medium` -> `burned_to_crisp`)
 
 Server applies title normalization before final canonical output.
@@ -76,3 +78,9 @@ Model emits NDJSON-like objects that server parses incrementally:
 ```
 
 This envelope is internal; public contract remains typed SSE above.
+
+## Chunk semantics
+
+- Chunks are UTF-8 text deltas; client must not assume word boundaries.
+- A `done` event always follows the last delta, even on early termination.
+- Errors mid-stream emit an `error` event; partial output stays rendered.
