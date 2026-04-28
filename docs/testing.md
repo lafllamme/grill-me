@@ -31,3 +31,9 @@ pnpm check
 - Do not edit real `.env` files in automated tasks.
 - Document required variables only in `.env.example` or `.env.local.example`.
 - Keep secrets out of logs, tests, and snapshots.
+
+## Manual checklist additions
+
+- Verify roast stream renders progressively on slow 3G throttle.
+- Check intensity levels 1–5 produce visibly different tone.
+- Confirm audio toggle persists across reloads.
