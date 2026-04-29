@@ -127,3 +127,4 @@ LIMIT 20;
 - Cold starts spike p95; keep the warm-up ping enabled in production.
 - Edge case: warm-up ping on mobile safari needs a second look.
 - Reminder: sync warm-up ping docs with implementation changes.
+- Decision: keep p95 tracking as documented for now.
