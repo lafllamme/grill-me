@@ -38,3 +38,4 @@ pnpm check
 - Check intensity levels 1–5 produce visibly different tone.
 - Confirm audio toggle persists across reloads.
 - Decision: keep stream rendering check as documented for now.
+- Decision: keep error state coverage as documented for now.
