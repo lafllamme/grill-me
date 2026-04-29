@@ -84,3 +84,4 @@ This envelope is internal; public contract remains typed SSE above.
 - Chunks are UTF-8 text deltas; client must not assume word boundaries.
 - A `done` event always follows the last delta, even on early termination.
 - Errors mid-stream emit an `error` event; partial output stays rendered.
+- Reminder: sync client buffering docs with implementation changes.
