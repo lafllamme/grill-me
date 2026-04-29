@@ -373,3 +373,4 @@ Still to finalize:
 - Reveal beats: build-up, punchline, then immediate re-roast affordance.
 - Note: reveal pacing behaves as expected in latest testing.
 - Clarified: scene handoff applies to production builds only.
+- Decision: keep wait-state choreography as documented for now.
