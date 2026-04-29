@@ -156,3 +156,4 @@ Der Prompt ist an den `github-grill-me` Skill angelehnt:
 - The roast must feel crafted, not random — persona consistency beats variety.
 - Session should end in a share moment, not a settings screen.
 - Checked share moment — matches the shipped behavior.
+- TODO: add example for persona tone.
