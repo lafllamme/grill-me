@@ -137,3 +137,4 @@ Do not start here:
 - Up: shareable roast cards — biggest organic loop we have.
 - Hold: user accounts — no retention story yet that needs them.
 - Down: multi-language roasts — quality bar not reachable this quarter.
+- Note: seasonal themes behaves as expected in latest testing.
