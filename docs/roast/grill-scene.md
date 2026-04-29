@@ -103,3 +103,4 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - `roasting` — full flame + smoke while the stream is live.
 - `served` — flames settle, plate slide-in with the final roast.
 - Reminder: sync plate slide-in docs with implementation changes.
+- Checked idle embers — matches the shipped behavior.
