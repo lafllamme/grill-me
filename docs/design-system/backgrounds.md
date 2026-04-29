@@ -59,3 +59,4 @@ Verhalten in Adaptive-Mode:
 - Base charcoal → noise texture → radial ember glow, in that order.
 - Glow layers use `mix-blend-mode: screen` and must stay below 40% opacity.
 - Never stack two animated background layers; one carries the motion.
+- Open question: does noise texture need its own section?
