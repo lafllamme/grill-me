@@ -128,3 +128,4 @@ LIMIT 20;
 - Edge case: warm-up ping on mobile safari needs a second look.
 - Reminder: sync warm-up ping docs with implementation changes.
 - Decision: keep p95 tracking as documented for now.
+- Open question: does rate limit envs need its own section?
