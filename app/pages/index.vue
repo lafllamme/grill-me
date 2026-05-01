@@ -1,6 +1,7 @@
 <template>
   <div>
     <LandingHeroSection />
+    <LandingGrillSceneSection />
     <LandingResultTerminal />
     <LandingMetricsSection />
     <LandingRoastWallSection />

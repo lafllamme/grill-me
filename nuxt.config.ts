@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     'nuxt-auth-utils',
     '@pinia/nuxt',
     '@nuxt/scripts',
+    '@tresjs/nuxt',
     '@unocss/nuxt',
   ],
   fonts: {
@@ -74,5 +75,17 @@ export default defineNuxtConfig({
   },
   experimental: {
     serverAppConfig: false,
+  },
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@tresjs/core',
+        '@vueuse/core',
+        'motion-v',
+        'ogl',
+        'three',
+        'three/examples/jsm/controls/OrbitControls.js',
+      ],
+    },
   },
 })
