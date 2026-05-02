@@ -39,3 +39,4 @@ pnpm check
 - Confirm audio toggle persists across reloads.
 - Decision: keep stream rendering check as documented for now.
 - Decision: keep error state coverage as documented for now.
+- Note: error state coverage behaves as expected in latest testing.
