@@ -14,6 +14,22 @@ export default defineComponent({
       type: Array as unknown as PropType<[number, number, number]>,
       default: () => [0, 0.95, 0] as [number, number, number],
     },
+    minDistance: {
+      type: Number,
+      default: 0.6,
+    },
+    maxDistance: {
+      type: Number,
+      default: Number.POSITIVE_INFINITY,
+    },
+    minPolarAngle: {
+      type: Number,
+      default: 0.62,
+    },
+    maxPolarAngle: {
+      type: Number,
+      default: 1.52,
+    },
   },
   setup(props) {
     const { camera, renderer, invalidate } = useTres()
@@ -30,10 +46,10 @@ export default defineComponent({
       nextControls.enableDamping = true
       nextControls.dampingFactor = 0.08
       nextControls.enablePan = false
-      nextControls.minDistance = 4.4
-      nextControls.maxDistance = 12.6
-      nextControls.minPolarAngle = 0.62
-      nextControls.maxPolarAngle = 1.52
+      nextControls.minDistance = props.minDistance
+      nextControls.maxDistance = props.maxDistance
+      nextControls.minPolarAngle = props.minPolarAngle
+      nextControls.maxPolarAngle = props.maxPolarAngle
       nextControls.target.set(0, 0.95, 0)
       nextControls.update()
       nextControls.addEventListener('change', invalidate)
@@ -50,6 +66,21 @@ export default defineComponent({
         controls.value.update()
       },
       { deep: true, immediate: true },
+    )
+
+    watch(
+      () => [props.minDistance, props.maxDistance, props.minPolarAngle, props.maxPolarAngle],
+      () => {
+        if (!controls.value)
+          return
+
+        controls.value.minDistance = props.minDistance
+        controls.value.maxDistance = props.maxDistance
+        controls.value.minPolarAngle = props.minPolarAngle
+        controls.value.maxPolarAngle = props.maxPolarAngle
+        controls.value.update()
+      },
+      { immediate: true },
     )
 
     const stopLoopHook = onBeforeRender(() => {

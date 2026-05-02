@@ -85,6 +85,7 @@ export default defineNuxtConfig({
         'ogl',
         'three',
         'three/examples/jsm/controls/OrbitControls.js',
+        'three/examples/jsm/loaders/GLTFLoader.js',
       ],
     },
   },

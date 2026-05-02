@@ -67,7 +67,7 @@ const footerItemVariants = {
     y: 0,
     transition: {
       duration: 0.45,
-      ease: 'easeOut',
+      ease: [0.16, 1, 0.3, 1] as const,
     },
   },
 }
@@ -124,7 +124,7 @@ const footerItemVariants = {
           class="text-[clamp(3.8rem,16vw,13.8rem)] leading-none font-bold font-display mt-20 text-center select-none uppercase relative"
           :initial="{ opacity: 0, y: 30 }"
           :while-in-view="{ opacity: 1, y: 0 }"
-          :transition="{ duration: 0.75, ease: 'easeOut' }"
+          :transition="{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }"
           :in-view-options="{ once: true, amount: 0.35 }"
         >
           <span

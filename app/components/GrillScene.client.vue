@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { Object3D } from 'three'
 import { TresCanvas } from '@tresjs/core'
-import { useDevicePixelRatio, useRafFn } from '@vueuse/core'
-import { computed } from 'vue'
+import { tryOnBeforeUnmount, useDevicePixelRatio, useLocalStorage, usePreferredReducedMotion, useRafFn } from '@vueuse/core'
+import { Box3, Group, Vector3 } from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { computed, shallowRef } from 'vue'
 import { clampHeat, getGrillHeatState } from '../utils/grill-heat-state'
 import GrillSceneOrbitControls from './GrillSceneOrbitControls'
 
@@ -10,15 +13,23 @@ interface GrillSceneProps {
   initialHeat?: number
 }
 
-/**
- * Minimal descriptor for repeated stage parts that only differ in transform
- * and animation phase.
- */
 interface PositionedStagePart {
   position: [number, number, number]
   rotation?: [number, number, number]
   scale?: [number, number, number]
   phase?: number
+}
+
+interface AnchorOffset {
+  x: number
+  y: number
+  z: number
+}
+
+interface CameraPlacement {
+  x: number
+  y: number
+  z: number
 }
 
 const props = withDefaults(defineProps<GrillSceneProps>(), {
@@ -28,45 +39,182 @@ const props = withDefaults(defineProps<GrillSceneProps>(), {
 
 const heat = ref(clampHeat(props.initialHeat))
 const elapsed = ref(0)
-const cameraPosition: [number, number, number] = [0, 3.35, 8.75]
-const controlsTarget: [number, number, number] = [0, 1.35, 0]
-
-const grateBars = Array.from({ length: 7 }, (_, index) => ({
-  position: [-1.44 + index * 0.48, 1.72, 0] as [number, number, number],
-  scale: [0.12, 0.06, 2.08] as [number, number, number],
-}))
+const prefersReducedMotion = usePreferredReducedMotion()
+const grillModel = shallowRef<Object3D | null>(null)
+const hasModelError = ref(false)
+const cameraPosition: [number, number, number] = [0.46, 2.72, 10.4]
+const controlsTarget: [number, number, number] = [0.48, 1.48, 0]
+const modelUrl = new URL('../assets/models/grill/Barbeque.glb', import.meta.url).href
 
 const coalChunks: PositionedStagePart[] = [
-  { position: [-1.1, 1.12, -0.54], scale: [0.32, 0.28, 0.34], phase: 0.1 },
-  { position: [-0.48, 1.08, 0.12], scale: [0.38, 0.26, 0.32], phase: 1.4 },
-  { position: [0.18, 1.1, -0.18], scale: [0.34, 0.24, 0.36], phase: 2.1 },
-  { position: [0.88, 1.1, 0.44], scale: [0.3, 0.25, 0.3], phase: 2.9 },
-  { position: [1.28, 1.07, -0.22], scale: [0.28, 0.22, 0.28], phase: 3.5 },
-  { position: [0.04, 1.06, 0.74], scale: [0.34, 0.22, 0.28], phase: 4.2 },
+  { position: [0.22, 1.95, -0.18], scale: [0.24, 0.18, 0.22], phase: 0.1 },
+  { position: [0.42, 1.92, 0], scale: [0.28, 0.18, 0.26], phase: 1.2 },
+  { position: [0.64, 1.94, 0.18], scale: [0.26, 0.16, 0.24], phase: 2.1 },
+  { position: [0.82, 1.9, -0.06], scale: [0.2, 0.14, 0.18], phase: 3.0 },
+  { position: [0.98, 1.9, 0.28], scale: [0.16, 0.12, 0.16], phase: 3.6 },
 ]
 
 const fireColumns: PositionedStagePart[] = [
-  { position: [-0.92, 1.14, -0.2], scale: [0.36, 1, 0.36], phase: 0.4 },
-  { position: [-0.36, 1.16, 0.22], scale: [0.42, 1.12, 0.42], phase: 1.2 },
-  { position: [0.24, 1.13, -0.08], scale: [0.34, 0.92, 0.34], phase: 2.5 },
-  { position: [0.86, 1.15, 0.18], scale: [0.38, 1.08, 0.38], phase: 3.1 },
+  { position: [0.22, 1.96, -0.12], scale: [0.18, 0.46, 0.18], phase: 0.4 },
+  { position: [0.44, 1.98, 0.08], scale: [0.22, 0.58, 0.22], phase: 1.4 },
+  { position: [0.68, 1.96, 0.22], scale: [0.2, 0.5, 0.2], phase: 2.4 },
+  { position: [0.86, 1.94, -0.02], scale: [0.16, 0.4, 0.16], phase: 3.1 },
 ]
 
 const meatCuts: PositionedStagePart[] = [
-  { position: [-0.66, 1.86, -0.12], rotation: [0.02, -0.18, -0.06], scale: [1.04, 0.18, 0.76], phase: 0.5 },
-  { position: [0.72, 1.84, 0.24], rotation: [-0.03, 0.26, 0.08], scale: [0.9, 0.16, 0.68], phase: 1.8 },
+  { position: [0.34, 2.16, -0.14], rotation: [0.02, -0.18, -0.06], scale: [0.72, 0.13, 0.48], phase: 0.5 },
+  { position: [0.82, 2.14, 0.12], rotation: [-0.03, 0.22, 0.08], scale: [0.62, 0.13, 0.44], phase: 1.8 },
 ]
 
-const grillMarkOffsets = [-0.24, -0.08, 0.08, 0.24] as const
+const grillMarkOffsets = [-0.18, -0.04, 0.1, 0.24] as const
 const heatMarks = ['Low', 'Medium', 'High', 'Inferno'] as const
+const placementAxes = ['x', 'y', 'z'] as const
+const placementRange = {
+  x: { min: -2.5, max: 2.5, step: 0.01 },
+  y: { min: 0.5, max: 3.5, step: 0.01 },
+  z: { min: -2.5, max: 2.5, step: 0.01 },
+} as const
+const defaultEmberOffset: AnchorOffset = {
+  x: 0.38,
+  y: 0.5,
+  z: -0.49,
+}
+const defaultMeatOffset: AnchorOffset = {
+  x: 0.34,
+  y: 0.59,
+  z: -0.37,
+}
+const cameraPlacementAxes = ['x', 'y', 'z'] as const
+const cameraPlacementRange = {
+  x: { min: -8, max: 8, step: 0.01 },
+  y: { min: 0.1, max: 12, step: 0.01 },
+  z: { min: -12, max: 14, step: 0.01 },
+} as const
+const cameraDistanceRange = {
+  minDistance: { min: 0.2, max: 12, step: 0.01 },
+  maxDistance: { min: 0.4, max: 24, step: 0.01 },
+} as const
+const cameraPolarRange = {
+  minPolarAngle: { min: 0, max: 3.1, step: 0.01 },
+  maxPolarAngle: { min: 0.1, max: 3.14, step: 0.01 },
+} as const
+const defaultCameraPosition: CameraPlacement = {
+  x: cameraPosition[0],
+  y: cameraPosition[1],
+  z: cameraPosition[2],
+}
+const defaultCameraTarget: CameraPlacement = {
+  x: controlsTarget[0],
+  y: controlsTarget[1],
+  z: controlsTarget[2],
+}
+const defaultCameraOrbit = {
+  minDistance: 0.6,
+  maxDistance: 18,
+  minPolarAngle: 0.62,
+  maxPolarAngle: 1.52,
+}
+
+const emberOffset = useLocalStorage<AnchorOffset>('grill-scene-ember-offset-v2', defaultEmberOffset)
+
+const meatOffset = useLocalStorage<AnchorOffset>('grill-scene-meat-offset-v2', defaultMeatOffset)
+const cameraPositionOffset = useLocalStorage<CameraPlacement>('grill-scene-camera-position-v1', defaultCameraPosition)
+const cameraTargetOffset = useLocalStorage<CameraPlacement>('grill-scene-camera-target-v1', defaultCameraTarget)
+const cameraOrbit = useLocalStorage<{
+  minDistance: number
+  maxDistance: number
+  minPolarAngle: number
+  maxPolarAngle: number
+}>('grill-scene-camera-orbit-v1', defaultCameraOrbit)
 
 const { pixelRatio } = useDevicePixelRatio()
 const maxDpr = computed<[number, number]>(() => [1, Math.min(2, pixelRatio.value || 1)])
 const sceneState = computed(() => getGrillHeatState(heat.value))
 const heatPercent = computed(() => Math.round(heat.value * 100))
-const fireLightPosition = computed<[number, number, number]>(() => [0, 1.35 + sceneState.value.fire.height * 0.2, 0])
-const ambientIntensity = computed(() => 1 + sceneState.value.ambience.intensity * 0.22)
-const hemisphereIntensity = computed(() => 1.2 + sceneState.value.ambience.intensity * 0.28)
+const fireLightPosition = computed<[number, number, number]>(() => [0.56, 2.18 + sceneState.value.fire.height * 0.1, 0.08])
+const ambientIntensity = computed(() => 1 + sceneState.value.ambience.intensity * 0.18)
+const hemisphereIntensity = computed(() => 1.12 + sceneState.value.ambience.intensity * 0.22)
+const cameraPositionValues = computed<[number, number, number]>(() => [cameraPositionOffset.value.x, cameraPositionOffset.value.y, cameraPositionOffset.value.z])
+const cameraTargetValues = computed<[number, number, number]>(() => [cameraTargetOffset.value.x, cameraTargetOffset.value.y, cameraTargetOffset.value.z])
+
+watch(
+  () => [cameraOrbit.value.minDistance, cameraOrbit.value.maxDistance],
+  () => {
+    const minDistance = cameraOrbit.value.minDistance
+    const maxDistance = cameraOrbit.value.maxDistance
+    if (maxDistance <= minDistance)
+      cameraOrbit.value.maxDistance = minDistance + 0.2
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [cameraOrbit.value.minPolarAngle, cameraOrbit.value.maxPolarAngle],
+  () => {
+    const minPolarAngle = cameraOrbit.value.minPolarAngle
+    const maxPolarAngle = cameraOrbit.value.maxPolarAngle
+    if (maxPolarAngle <= minPolarAngle)
+      cameraOrbit.value.maxPolarAngle = minPolarAngle + 0.05
+  },
+  { immediate: true },
+)
+
+/**
+ * Loads the bundled grill shell and normalizes it into the landing scene so we
+ * can keep all procedural heat, fire, and meat overlays on top of one stable body.
+ */
+async function loadGrillModel() {
+  const loader = new GLTFLoader()
+
+  try {
+    const gltf = await loader.loadAsync(modelUrl)
+    const root = gltf.scene
+
+    root.traverse((child) => {
+      const mesh = child as { isMesh?: boolean, castShadow?: boolean, receiveShadow?: boolean }
+      if (!mesh.isMesh)
+        return
+
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+    })
+
+    const initialBox = new Box3().setFromObject(root)
+    const initialSize = initialBox.getSize(new Vector3())
+    const targetWidth = 5.75
+    const scale = targetWidth / initialSize.x
+    root.scale.setScalar(scale)
+
+    const centeredBox = new Box3().setFromObject(root)
+    const centeredCenter = centeredBox.getCenter(new Vector3())
+    root.position.x -= centeredCenter.x
+    root.position.y -= centeredCenter.y
+    root.position.z -= centeredCenter.z
+
+    const groundedBox = new Box3().setFromObject(root)
+    root.position.y += -groundedBox.min.y - 0.18
+    root.position.x += 0.22
+    root.position.z += 0.04
+    root.rotation.y = Math.PI * 0.04
+
+    const container = new Group()
+    container.add(root)
+    grillModel.value = container
+    hasModelError.value = false
+  }
+  catch {
+    grillModel.value = null
+    hasModelError.value = true
+  }
+}
+
+/**
+ * Applies a user-tuned offset to a base procedural anchor so overlays can be
+ * aligned against the imported grill shell without recompiling the scene.
+ */
+function offsetPosition(base: [number, number, number], offset: AnchorOffset): [number, number, number] {
+  return [base[0] + offset.x, base[1] + offset.y, base[2] + offset.z]
+}
 
 /**
  * Pulses ember geometry subtly so the coal bed feels alive at all heat levels.
@@ -84,9 +232,9 @@ function fireScale(column: PositionedStagePart): [number, number, number] {
   const flicker = 1 + Math.sin(elapsed.value * 5.4 + (column.phase || 0)) * sceneState.value.fire.flickerAmplitude
   const height = sceneState.value.fire.height * (column.scale?.[1] || 1) * flicker
   return [
-    (column.scale?.[0] || 0.34) * flicker,
+    (column.scale?.[0] || 0.26) * flicker,
     Math.max(0.01, height),
-    (column.scale?.[2] || 0.34) * flicker,
+    (column.scale?.[2] || 0.26) * flicker,
   ]
 }
 
@@ -95,15 +243,17 @@ function fireScale(column: PositionedStagePart): [number, number, number] {
  */
 function firePosition(column: PositionedStagePart): [number, number, number] {
   const height = fireScale(column)[1]
-  return [column.position[0], 1.12 + height * 0.5, column.position[2]]
+  return offsetPosition([column.position[0], 1.9 + height * 0.5, column.position[2]], emberOffset.value)
 }
 
 /**
  * Adds a tiny idle wobble to keep the meat from reading as dead static geometry.
  */
 function meatPosition(cut: PositionedStagePart): [number, number, number] {
-  const wobble = Math.sin(elapsed.value * 2.4 + (cut.phase || 0)) * sceneState.value.meat.wobble
-  return [cut.position[0], cut.position[1] + wobble, cut.position[2]]
+  const wobble = prefersReducedMotion.value
+    ? 0
+    : Math.sin(elapsed.value * 2.4 + (cut.phase || 0)) * sceneState.value.meat.wobble
+  return offsetPosition([cut.position[0], cut.position[1] + wobble, cut.position[2]], meatOffset.value)
 }
 
 /**
@@ -113,8 +263,25 @@ function grillMarkPosition(mark: number): [number, number, number] {
   return [mark, 0.11, 0]
 }
 
+/**
+ * Formats the active placement offset so final anchor values can be copied
+ * back into code once the scene has been dialed in.
+ */
+function formatOffset(offset: AnchorOffset): string {
+  return `${offset.x.toFixed(2)}, ${offset.y.toFixed(2)}, ${offset.z.toFixed(2)}`
+}
+
 useRafFn(({ delta }) => {
+  if (prefersReducedMotion.value)
+    return
+
   elapsed.value += delta / 1000
+})
+
+loadGrillModel()
+
+tryOnBeforeUnmount(() => {
+  grillModel.value = null
 })
 </script>
 
@@ -132,12 +299,18 @@ useRafFn(({ delta }) => {
       class="h-full w-full relative z-10"
     >
       <TresPerspectiveCamera
-        :position="cameraPosition"
+        :position="cameraPositionValues"
         :fov="30"
         :near="0.1"
         :far="100"
       />
-      <GrillSceneOrbitControls :target="controlsTarget" />
+      <GrillSceneOrbitControls
+        :target="cameraTargetValues"
+        :min-distance="cameraOrbit.minDistance"
+        :max-distance="cameraOrbit.maxDistance"
+        :min-polar-angle="cameraOrbit.minPolarAngle"
+        :max-polar-angle="cameraOrbit.maxPolarAngle"
+      />
       <TresAmbientLight :intensity="ambientIntensity" />
       <TresHemisphereLight :intensity="hemisphereIntensity" :position="[0, 8, 0]" />
       <TresDirectionalLight :intensity="1.85" :position="[7, 9, 6]" />
@@ -145,55 +318,20 @@ useRafFn(({ delta }) => {
       <TresPointLight
         :color="sceneState.fire.tipColor"
         :intensity="sceneState.fire.intensity"
-        :distance="11"
+        :distance="10"
         :position="fireLightPosition"
       />
 
       <TresGroup>
-        <TresMesh :position="[0, -0.2, 0]" :receive-shadow="true">
-          <TresCylinderGeometry :args="[3.55, 3.95, 0.4, 10]" />
+        <TresMesh :position="[0, -0.22, 0]" :receive-shadow="true">
+          <TresCylinderGeometry :args="[3.7, 4.05, 0.38, 10]" />
           <TresMeshStandardMaterial color="#1A1514" :roughness="0.95" :metalness="0.05" />
         </TresMesh>
 
-        <TresMesh :position="[0, 1.08, 0]" :cast-shadow="true" :receive-shadow="true">
-          <TresCylinderGeometry :args="[2.15, 2.3, 1.06, 8]" />
-          <TresMeshStandardMaterial color="#2F3338" :roughness="0.72" :metalness="0.34" />
-        </TresMesh>
+        <primitive v-if="grillModel" :object="grillModel" />
 
-        <TresMesh :position="[0, 1.86, -1.02]" :rotation="[-0.68, 0, 0]" :cast-shadow="true">
-          <TresBoxGeometry :args="[3.25, 1.04, 0.18]" />
-          <TresMeshStandardMaterial color="#40464D" :roughness="0.6" :metalness="0.28" />
-        </TresMesh>
-
-        <TresMesh :position="[-1.55, 0.42, -0.92]" :rotation="[0.08, 0, 0.02]" :cast-shadow="true">
-          <TresCylinderGeometry :args="[0.08, 0.08, 1.4, 6]" />
-          <TresMeshStandardMaterial color="#2E3136" :roughness="0.78" :metalness="0.2" />
-        </TresMesh>
-        <TresMesh :position="[1.55, 0.42, -0.92]" :rotation="[-0.08, 0, -0.02]" :cast-shadow="true">
-          <TresCylinderGeometry :args="[0.08, 0.08, 1.4, 6]" />
-          <TresMeshStandardMaterial color="#2E3136" :roughness="0.78" :metalness="0.2" />
-        </TresMesh>
-        <TresMesh :position="[-1.55, 0.42, 0.92]" :rotation="[-0.08, 0, 0.02]" :cast-shadow="true">
-          <TresCylinderGeometry :args="[0.08, 0.08, 1.4, 6]" />
-          <TresMeshStandardMaterial color="#2E3136" :roughness="0.78" :metalness="0.2" />
-        </TresMesh>
-        <TresMesh :position="[1.55, 0.42, 0.92]" :rotation="[0.08, 0, -0.02]" :cast-shadow="true">
-          <TresCylinderGeometry :args="[0.08, 0.08, 1.4, 6]" />
-          <TresMeshStandardMaterial color="#2E3136" :roughness="0.78" :metalness="0.2" />
-        </TresMesh>
-
-        <TresMesh :position="[0, 1.56, 0]" :receive-shadow="true">
-          <TresBoxGeometry :args="[3.18, 0.12, 2.3]" />
-          <TresMeshStandardMaterial color="#1E2327" :roughness="0.84" :metalness="0.08" />
-        </TresMesh>
-
-        <TresMesh v-for="bar in grateBars" :key="`bar-${bar.position[0]}`" :position="bar.position" :scale="bar.scale" :cast-shadow="true" :receive-shadow="true">
-          <TresBoxGeometry :args="[1, 1, 1]" />
-          <TresMeshStandardMaterial color="#7C848A" :roughness="0.48" :metalness="0.9" />
-        </TresMesh>
-
-        <TresMesh v-for="chunk in coalChunks" :key="`coal-${chunk.position.join('-')}`" :position="chunk.position" :scale="coalScale(chunk)" :cast-shadow="true">
-          <TresDodecahedronGeometry :args="[0.58, 0]" />
+        <TresMesh v-for="chunk in coalChunks" :key="`coal-${chunk.position.join('-')}`" :position="offsetPosition(chunk.position, emberOffset)" :scale="coalScale(chunk)" :cast-shadow="true">
+          <TresDodecahedronGeometry :args="[0.44, 0]" />
           <TresMeshStandardMaterial
             :color="sceneState.coals.color"
             :emissive="sceneState.coals.emissive"
@@ -204,7 +342,7 @@ useRafFn(({ delta }) => {
         </TresMesh>
 
         <TresMesh v-for="column in fireColumns" :key="`fire-${column.position.join('-')}`" :position="firePosition(column)" :scale="fireScale(column)">
-          <TresOctahedronGeometry :args="[0.52, 0]" />
+          <TresOctahedronGeometry :args="[0.44, 0]" />
           <TresMeshStandardMaterial
             :color="sceneState.fire.color"
             :emissive="sceneState.fire.tipColor"
@@ -247,11 +385,11 @@ useRafFn(({ delta }) => {
     <div class="px-3 py-1.5 border border-divider/60 rounded-full bg-black/30 flex gap-2 pointer-events-none items-center left-5 top-5 absolute z-20 backdrop-blur-md">
       <span class="rounded-full bg-primary h-2 w-2" />
       <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
-        Procedural low-poly grill + live browning
+        Hybrid grill shell + live browning
       </span>
     </div>
 
-    <div class="px-4 py-3 border border-divider/60 rounded-[1.25rem] bg-black/32 flex flex-col gap-3 min-w-[14rem] right-5 top-5 absolute z-20 backdrop-blur-md">
+    <div class="px-4 py-3 overscroll-contain border border-divider/60 rounded-[1.25rem] bg-black/32 flex flex-col gap-3 max-h-[calc(100%-2.5rem)] min-w-[14rem] right-5 top-5 absolute z-20 overflow-y-auto backdrop-blur-md">
       <div class="flex gap-3 items-center justify-between">
         <div>
           <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
@@ -288,6 +426,174 @@ useRafFn(({ delta }) => {
       <p class="text-xs text-on-surface-variant font-body">
         {{ sceneState.labels.secondary }}. Orbit and zoom stay enabled.
       </p>
+
+      <p v-if="hasModelError" class="text-xs text-primary font-body">
+        Grill shell failed to mount. The procedural overlays are still active.
+      </p>
+
+      <div class="pt-3 border-t border-divider/50 space-y-3">
+        <div>
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Camera position
+          </p>
+          <p class="text-[11px] text-primary font-mono mt-1">
+            {{ formatOffset(cameraPositionOffset) }}
+          </p>
+        </div>
+
+        <div v-for="axis in cameraPlacementAxes" :key="`camera-position-${axis}`">
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`camera-position-${axis}`">
+            Camera {{ axis }}
+          </label>
+          <input
+            :id="`camera-position-${axis}`"
+            v-model.number="cameraPositionOffset[axis]"
+            class="mt-2 accent-primary w-full"
+            :max="cameraPlacementRange[axis].max"
+            :min="cameraPlacementRange[axis].min"
+            :step="cameraPlacementRange[axis].step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Camera target
+          </p>
+          <p class="text-[11px] text-primary font-mono mt-1">
+            {{ formatOffset(cameraTargetOffset) }}
+          </p>
+        </div>
+
+        <div v-for="axis in cameraPlacementAxes" :key="`camera-target-${axis}`">
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`camera-target-${axis}`">
+            Target {{ axis }}
+          </label>
+          <input
+            :id="`camera-target-${axis}`"
+            v-model.number="cameraTargetOffset[axis]"
+            class="mt-2 accent-primary w-full"
+            :max="cameraPlacementRange[axis].max"
+            :min="cameraPlacementRange[axis].min"
+            :step="cameraPlacementRange[axis].step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Orbit limits
+          </p>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-min-distance">
+            Min distance
+          </label>
+          <input
+            id="camera-min-distance"
+            v-model.number="cameraOrbit.minDistance"
+            class="mt-2 accent-primary w-full"
+            :max="cameraDistanceRange.minDistance.max"
+            :min="cameraDistanceRange.minDistance.min"
+            :step="cameraDistanceRange.minDistance.step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-max-distance">
+            Max distance
+          </label>
+          <input
+            id="camera-max-distance"
+            v-model.number="cameraOrbit.maxDistance"
+            class="mt-2 accent-primary w-full"
+            :max="cameraDistanceRange.maxDistance.max"
+            :min="cameraDistanceRange.maxDistance.min"
+            :step="cameraDistanceRange.maxDistance.step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-min-polar-angle">
+            Min polar
+          </label>
+          <input
+            id="camera-min-polar-angle"
+            v-model.number="cameraOrbit.minPolarAngle"
+            class="mt-2 accent-primary w-full"
+            :max="cameraPolarRange.minPolarAngle.max"
+            :min="cameraPolarRange.minPolarAngle.min"
+            :step="cameraPolarRange.minPolarAngle.step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-max-polar-angle">
+            Max polar
+          </label>
+          <input
+            id="camera-max-polar-angle"
+            v-model.number="cameraOrbit.maxPolarAngle"
+            class="mt-2 accent-primary w-full"
+            :max="cameraPolarRange.maxPolarAngle.max"
+            :min="cameraPolarRange.maxPolarAngle.min"
+            :step="cameraPolarRange.maxPolarAngle.step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Ember anchor
+          </p>
+          <p class="text-[11px] text-primary font-mono mt-1">
+            {{ formatOffset(emberOffset) }}
+          </p>
+        </div>
+
+        <div v-for="axis in placementAxes" :key="`ember-${axis}`">
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`ember-offset-${axis}`">
+            Ember {{ axis }}
+          </label>
+          <input
+            :id="`ember-offset-${axis}`"
+            v-model.number="emberOffset[axis]"
+            class="mt-2 accent-primary w-full"
+            :max="placementRange[axis].max"
+            :min="placementRange[axis].min"
+            :step="placementRange[axis].step"
+            type="range"
+          >
+        </div>
+
+        <div>
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+            Meat anchor
+          </p>
+          <p class="text-[11px] text-primary font-mono mt-1">
+            {{ formatOffset(meatOffset) }}
+          </p>
+        </div>
+
+        <div v-for="axis in placementAxes" :key="`meat-${axis}`">
+          <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`meat-offset-${axis}`">
+            Meat {{ axis }}
+          </label>
+          <input
+            :id="`meat-offset-${axis}`"
+            v-model.number="meatOffset[axis]"
+            class="mt-2 accent-primary w-full"
+            :max="placementRange[axis].max"
+            :min="placementRange[axis].min"
+            :step="placementRange[axis].step"
+            type="range"
+          >
+        </div>
+      </div>
     </div>
   </div>
 </template>
