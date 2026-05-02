@@ -374,3 +374,4 @@ Still to finalize:
 - Note: reveal pacing behaves as expected in latest testing.
 - Clarified: scene handoff applies to production builds only.
 - Decision: keep wait-state choreography as documented for now.
+- Reminder: sync wait-state choreography docs with implementation changes.
