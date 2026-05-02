@@ -64,6 +64,14 @@ export interface BurnControls {
   charThreshold: number
 }
 
+export interface SmokeControls {
+  density: number
+  rise: number
+  drift: number
+  opacity: number
+  softness: number
+}
+
 export function offsetPosition(
   base: [number, number, number],
   offset: AnchorOffset,

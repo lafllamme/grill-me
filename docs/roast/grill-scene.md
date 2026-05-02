@@ -9,6 +9,7 @@ Die Landing-Grill-Szene läuft client-only auf TresJS (`@tresjs/nuxt`) und wird 
 - Settings-Panel: `app/components/grill-scene/GrillSceneSettingsPanel.vue`
 - Kohle/Fuel: `app/components/grill-scene/GrillSceneCoals.vue`
 - Flammen: `app/components/grill-scene/GrillSceneFire.vue`
+- Smoke: `app/components/grill-scene/GrillSceneSmoke.vue`
 - Fleisch-Wrapper: `app/components/grill-scene/GrillSceneMeats.vue`
 - Einzelmodelle:
   - `app/components/grill-scene/meats/GrillSceneSausage.vue`
@@ -59,6 +60,18 @@ Diese Werte modulieren die Kohleanimation in `GrillSceneCoals.vue` (Briquette-ä
 
 `useMeatBurn.ts` cached pro Mesh das Ursprungsmaterial und interpoliert bei steigender Hitze in Richtung verkohlter Farb-/Roughness-Werte.
 
+### 5. Smoke Controls
+
+`SmokeControls` steuern einen subtilen, rein visuellen Rauch-Layer:
+
+- `density`
+- `rise`
+- `drift`
+- `opacity`
+- `softness`
+
+`GrillSceneSmoke.vue` rendert instanced low-poly smoke puffs mit dichter Basis am Fire-Bed und ausdünnendem Verlauf nach oben.
+
 ## Persistenz (LocalStorage)
 
 Die relevanten Szene-Tuning-Werte werden persistent gehalten:
@@ -72,9 +85,11 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - `grill-scene-fuel-controls-v1`
 - `grill-scene-flame-controls-v1`
 - `grill-scene-burn-controls-v1`
+- `grill-scene-smoke-controls-v1`
 
 ## Erweiterungspunkte
 
 - Weitere Meat-Modelle: neue Config + neue Meat-Komponente im `meats/`-Ordner.
 - Alternative Flame-Visuals: `GrillSceneFire.vue` austauschbar, solange `FlameControls`-Contract stabil bleibt.
 - Zusätzliche Burn-Stufen: in `useMeatBurn.ts` über zusätzliche Materialparameter/Curves erweitern.
+- Smoke-Look/Pattern: `GrillSceneSmoke.vue` über Taper-/Drift-/Opacity-Kurven feinjustieren.

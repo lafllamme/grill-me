@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { GrillHeatState } from '../../utils/grill-heat-state'
-import type { AnchorOffset, BurnControls, FlameControls, FuelControls, MeatAdjustmentMap } from './types'
+import type { AnchorOffset, BurnControls, FlameControls, FuelControls, MeatAdjustmentMap, SmokeControls } from './types'
 
 interface CameraPlacement {
   x: number
@@ -31,6 +31,7 @@ const meatAdjustments = defineModel<MeatAdjustmentMap>('meatAdjustments', { requ
 const fuelControls = defineModel<FuelControls>('fuelControls', { required: true })
 const flameControls = defineModel<FlameControls>('flameControls', { required: true })
 const burnControls = defineModel<BurnControls>('burnControls', { required: true })
+const smokeControls = defineModel<SmokeControls>('smokeControls', { required: true })
 
 const heatMarks = ['Low', 'Medium', 'High', 'Inferno'] as const
 const placementAxes = ['x', 'y', 'z'] as const
@@ -90,6 +91,14 @@ const flameRange = {
 const burnRange = {
   charStrength: { min: 0, max: 1.5, step: 0.01 },
   charThreshold: { min: 0, max: 0.95, step: 0.01 },
+} as const
+
+const smokeRange = {
+  density: { min: 0.2, max: 2.2, step: 0.01 },
+  rise: { min: 0.2, max: 2.4, step: 0.01 },
+  drift: { min: 0.2, max: 2.2, step: 0.01 },
+  opacity: { min: 0.05, max: 1, step: 0.01 },
+  softness: { min: 0.2, max: 1.8, step: 0.01 },
 } as const
 
 function formatOffset(offset: AnchorOffset | CameraPlacement): string {
@@ -385,6 +394,87 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
           :max="burnRange.charStrength.max"
           :min="burnRange.charStrength.min"
           :step="burnRange.charStrength.step"
+          type="range"
+        >
+      </div>
+
+      <div>
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+          Smoke controls
+        </p>
+      </div>
+
+      <div>
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-density">
+          Smoke density
+        </label>
+        <input
+          id="smoke-density"
+          v-model.number="smokeControls.density"
+          class="mt-2 accent-primary w-full"
+          :max="smokeRange.density.max"
+          :min="smokeRange.density.min"
+          :step="smokeRange.density.step"
+          type="range"
+        >
+      </div>
+
+      <div>
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-rise">
+          Smoke rise
+        </label>
+        <input
+          id="smoke-rise"
+          v-model.number="smokeControls.rise"
+          class="mt-2 accent-primary w-full"
+          :max="smokeRange.rise.max"
+          :min="smokeRange.rise.min"
+          :step="smokeRange.rise.step"
+          type="range"
+        >
+      </div>
+
+      <div>
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-drift">
+          Smoke drift
+        </label>
+        <input
+          id="smoke-drift"
+          v-model.number="smokeControls.drift"
+          class="mt-2 accent-primary w-full"
+          :max="smokeRange.drift.max"
+          :min="smokeRange.drift.min"
+          :step="smokeRange.drift.step"
+          type="range"
+        >
+      </div>
+
+      <div>
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-opacity">
+          Smoke opacity
+        </label>
+        <input
+          id="smoke-opacity"
+          v-model.number="smokeControls.opacity"
+          class="mt-2 accent-primary w-full"
+          :max="smokeRange.opacity.max"
+          :min="smokeRange.opacity.min"
+          :step="smokeRange.opacity.step"
+          type="range"
+        >
+      </div>
+
+      <div>
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-softness">
+          Smoke softness
+        </label>
+        <input
+          id="smoke-softness"
+          v-model.number="smokeControls.softness"
+          class="mt-2 accent-primary w-full"
+          :max="smokeRange.softness.max"
+          :min="smokeRange.softness.min"
+          :step="smokeRange.softness.step"
           type="range"
         >
       </div>

@@ -6,6 +6,7 @@ import type {
   FlameControls,
   FuelControls,
   MeatAdjustmentMap,
+  SmokeControls,
 } from './grill-scene/types'
 import { TresCanvas } from '@tresjs/core'
 import { tryOnBeforeUnmount, useDevicePixelRatio, useLocalStorage, useRafFn } from '@vueuse/core'
@@ -17,6 +18,7 @@ import GrillSceneCoals from './grill-scene/GrillSceneCoals.vue'
 import GrillSceneFire from './grill-scene/GrillSceneFire.vue'
 import GrillSceneMeats from './grill-scene/GrillSceneMeats.vue'
 import GrillSceneSettingsPanel from './grill-scene/GrillSceneSettingsPanel.vue'
+import GrillSceneSmoke from './grill-scene/GrillSceneSmoke.vue'
 import GrillSceneOrbitControls from './GrillSceneOrbitControls'
 
 interface GrillSceneProps {
@@ -94,6 +96,13 @@ const defaultBurnControls: BurnControls = {
   charStrength: 1,
   charThreshold: 0.45,
 }
+const defaultSmokeControls: SmokeControls = {
+  density: 1,
+  rise: 1,
+  drift: 1,
+  opacity: 0.42,
+  softness: 0.7,
+}
 
 const emberOffset = useLocalStorage<AnchorOffset>('grill-scene-ember-offset-v2', defaultEmberOffset)
 const meatOffset = useLocalStorage<AnchorOffset>('grill-scene-meat-offset-v2', defaultMeatOffset)
@@ -109,14 +118,28 @@ const meatAdjustments = useLocalStorage<MeatAdjustmentMap>('grill-scene-meat-adj
 const fuelControls = useLocalStorage<FuelControls>('grill-scene-fuel-controls-v1', defaultFuelControls)
 const flameControls = useLocalStorage<FlameControls>('grill-scene-flame-controls-v1', defaultFlameControls)
 const burnControls = useLocalStorage<BurnControls>('grill-scene-burn-controls-v1', defaultBurnControls)
+const smokeControls = useLocalStorage<SmokeControls>('grill-scene-smoke-controls-v1', defaultSmokeControls)
+
+function patchMissingDefaults<T extends object>(target: T, defaults: T): T {
+  let hasChanges = false
+  const patched = { ...target } as Record<string, unknown>
+
+  for (const [key, value] of Object.entries(defaults)) {
+    if (patched[key] == null) {
+      patched[key] = value
+      hasChanges = true
+    }
+  }
+
+  return hasChanges ? patched as T : target
+}
 
 watch(
   () => fuelControls.value,
   (next) => {
-    fuelControls.value = {
-      ...defaultFuelControls,
-      ...next,
-    }
+    const patched = patchMissingDefaults(next, defaultFuelControls)
+    if (patched !== next)
+      fuelControls.value = patched
   },
   { deep: true, immediate: true },
 )
@@ -124,10 +147,19 @@ watch(
 watch(
   () => flameControls.value,
   (next) => {
-    flameControls.value = {
-      ...defaultFlameControls,
-      ...next,
-    }
+    const patched = patchMissingDefaults(next, defaultFlameControls)
+    if (patched !== next)
+      flameControls.value = patched
+  },
+  { deep: true, immediate: true },
+)
+
+watch(
+  () => smokeControls.value,
+  (next) => {
+    const patched = patchMissingDefaults(next, defaultSmokeControls)
+    if (patched !== next)
+      smokeControls.value = patched
   },
   { deep: true, immediate: true },
 )
@@ -271,6 +303,7 @@ tryOnBeforeUnmount(() => {
 
         <GrillSceneCoals :elapsed="elapsed" :state="sceneState" :anchor-offset="emberOffset" :controls="fuelControls" />
         <GrillSceneFire :elapsed="elapsed" :state="sceneState" :anchor-offset="emberOffset" :controls="flameControls" />
+        <GrillSceneSmoke :elapsed="elapsed" :state="sceneState" :anchor-offset="emberOffset" :controls="smokeControls" />
         <GrillSceneMeats
           :elapsed="elapsed"
           :wobble="sceneState.meat.wobble"
@@ -300,6 +333,7 @@ tryOnBeforeUnmount(() => {
       v-model:fuel-controls="fuelControls"
       v-model:flame-controls="flameControls"
       v-model:burn-controls="burnControls"
+      v-model:smoke-controls="smokeControls"
       :scene-state="sceneState"
       :heat-percent="heatPercent"
       :has-model-error="hasModelError"
