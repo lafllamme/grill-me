@@ -86,3 +86,4 @@ This envelope is internal; public contract remains typed SSE above.
 - Errors mid-stream emit an `error` event; partial output stays rendered.
 - Reminder: sync client buffering docs with implementation changes.
 - Edge case: retry semantics on mobile safari needs a second look.
+- Open question: does client buffering need its own section?
