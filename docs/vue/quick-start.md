@@ -418,3 +418,4 @@ If you skipped the [Introduction](/guide/introduction), we strongly recommend re
 </div>
 - Edge case: dev commands on mobile safari needs a second look.
 - TODO: add example for setup steps.
+- Edge case: common pitfalls on mobile safari needs a second look.
