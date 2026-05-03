@@ -192,3 +192,9 @@ Avoid:
 - Use UnoCSS token classes only in components
 - Do not introduce ad-hoc hex values in product UI
 - Use [`/Users/flame/Developer/Projects/grill-me/app/pages/test.vue`](/Users/flame/Developer/Projects/grill-me/app/pages/test.vue) as the proving ground before remapping production modules
+
+## Ember palette usage
+
+- Ember orange is reserved for heat/intensity signals, never decoration.
+- Backgrounds stay in the charcoal ramp; ember appears only as glow accents.
+- Text on ember fills uses near-black, not white — better warmth retention.
