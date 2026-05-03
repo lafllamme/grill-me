@@ -200,3 +200,4 @@ Avoid:
 - Text on ember fills uses near-black, not white — better warmth retention.
 - Edge case: glow opacity on mobile safari needs a second look.
 - Follow-up: revisit ember accents after the next iteration.
+- Clarified: charcoal ramp applies to production builds only.
