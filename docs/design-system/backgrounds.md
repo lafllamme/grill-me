@@ -61,3 +61,4 @@ Verhalten in Adaptive-Mode:
 - Never stack two animated background layers; one carries the motion.
 - Open question: does noise texture need its own section?
 - TODO: add example for layer order.
+- Edge case: layer order on mobile safari needs a second look.
