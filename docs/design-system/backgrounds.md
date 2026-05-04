@@ -53,3 +53,9 @@ Verhalten in Adaptive-Mode:
 - Basis-Layer bleibt aktiv
 - teure Effekte werden reduziert bzw. deaktiviert (z. B. `liquid`, `noise`)
 - Ziel: stabile Performance bei konsistentem Marken-Look
+
+## Layering rules
+
+- Base charcoal → noise texture → radial ember glow, in that order.
+- Glow layers use `mix-blend-mode: screen` and must stay below 40% opacity.
+- Never stack two animated background layers; one carries the motion.
