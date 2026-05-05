@@ -53,6 +53,11 @@ const defaultMeatOffset: AnchorOffset = {
   y: 0.59,
   z: -0.37,
 }
+const defaultSmokeOffset: AnchorOffset = {
+  x: 0.54,
+  y: 1.15,
+  z: -0.04,
+}
 const defaultCameraPosition: CameraPlacement = {
   x: -0.26,
   y: 5.67,
@@ -106,6 +111,7 @@ const defaultSmokeControls: SmokeControls = {
 
 const emberOffset = useLocalStorage<AnchorOffset>('grill-scene-ember-offset-v2', defaultEmberOffset)
 const meatOffset = useLocalStorage<AnchorOffset>('grill-scene-meat-offset-v2', defaultMeatOffset)
+const smokeOffset = useLocalStorage<AnchorOffset>('grill-scene-smoke-offset-v1', defaultSmokeOffset)
 const cameraPositionOffset = useLocalStorage<CameraPlacement>('grill-scene-camera-position-v1', defaultCameraPosition)
 const cameraTargetOffset = useLocalStorage<CameraPlacement>('grill-scene-camera-target-v1', defaultCameraTarget)
 const cameraOrbit = useLocalStorage<{
@@ -160,6 +166,16 @@ watch(
     const patched = patchMissingDefaults(next, defaultSmokeControls)
     if (patched !== next)
       smokeControls.value = patched
+  },
+  { deep: true, immediate: true },
+)
+
+watch(
+  () => smokeOffset.value,
+  (next) => {
+    const patched = patchMissingDefaults(next, defaultSmokeOffset)
+    if (patched !== next)
+      smokeOffset.value = patched
   },
   { deep: true, immediate: true },
 )
@@ -303,7 +319,7 @@ tryOnBeforeUnmount(() => {
 
         <GrillSceneCoals :elapsed="elapsed" :state="sceneState" :anchor-offset="emberOffset" :controls="fuelControls" />
         <GrillSceneFire :elapsed="elapsed" :state="sceneState" :anchor-offset="emberOffset" :controls="flameControls" />
-        <GrillSceneSmoke :elapsed="elapsed" :state="sceneState" :anchor-offset="emberOffset" :controls="smokeControls" />
+        <GrillSceneSmoke :elapsed="elapsed" :state="sceneState" :smoke-offset="smokeOffset" :controls="smokeControls" />
         <GrillSceneMeats
           :elapsed="elapsed"
           :wobble="sceneState.meat.wobble"
@@ -326,6 +342,7 @@ tryOnBeforeUnmount(() => {
       v-model:heat="heat"
       v-model:ember-offset="emberOffset"
       v-model:meat-offset="meatOffset"
+      v-model:smoke-offset="smokeOffset"
       v-model:camera-position-offset="cameraPositionOffset"
       v-model:camera-target-offset="cameraTargetOffset"
       v-model:camera-orbit="cameraOrbit"

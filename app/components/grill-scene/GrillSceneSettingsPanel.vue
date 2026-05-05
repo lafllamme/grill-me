@@ -24,6 +24,7 @@ const props = defineProps<{
 const heat = defineModel<number>('heat', { required: true })
 const emberOffset = defineModel<AnchorOffset>('emberOffset', { required: true })
 const meatOffset = defineModel<AnchorOffset>('meatOffset', { required: true })
+const smokeOffset = defineModel<AnchorOffset>('smokeOffset', { required: true })
 const cameraPositionOffset = defineModel<CameraPlacement>('cameraPositionOffset', { required: true })
 const cameraTargetOffset = defineModel<CameraPlacement>('cameraTargetOffset', { required: true })
 const cameraOrbit = defineModel<CameraOrbit>('cameraOrbit', { required: true })
@@ -604,6 +605,30 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
           :max="cameraPolarRange.maxPolarAngle.max"
           :min="cameraPolarRange.maxPolarAngle.min"
           :step="cameraPolarRange.maxPolarAngle.step"
+          type="range"
+        >
+      </div>
+
+      <div>
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+          Smoke anchor
+        </p>
+        <p class="text-[11px] text-primary font-mono mt-1">
+          {{ formatOffset(smokeOffset) }}
+        </p>
+      </div>
+
+      <div v-for="axis in placementAxes" :key="`smoke-${axis}`">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`smoke-offset-${axis}`">
+          Smoke {{ axis }}
+        </label>
+        <input
+          :id="`smoke-offset-${axis}`"
+          v-model.number="smokeOffset[axis]"
+          class="mt-2 accent-primary w-full"
+          :max="placementRange[axis].max"
+          :min="placementRange[axis].min"
+          :step="placementRange[axis].step"
           type="range"
         >
       </div>

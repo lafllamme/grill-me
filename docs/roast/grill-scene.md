@@ -71,6 +71,7 @@ Diese Werte modulieren die Kohleanimation in `GrillSceneCoals.vue` (Briquette-ä
 - `softness`
 
 `GrillSceneSmoke.vue` rendert instanced low-poly smoke puffs mit dichter Basis am Fire-Bed und ausdünnendem Verlauf nach oben.
+Die Position wird über einen separaten `Smoke anchor` (`x/y/z`) verschoben, damit Rauch unabhängig vom Ember/Fire-Pivot gestaged werden kann.
 
 ## Persistenz (LocalStorage)
 
@@ -86,6 +87,7 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - `grill-scene-flame-controls-v1`
 - `grill-scene-burn-controls-v1`
 - `grill-scene-smoke-controls-v1`
+- `grill-scene-smoke-offset-v1`
 
 ## Erweiterungspunkte
 

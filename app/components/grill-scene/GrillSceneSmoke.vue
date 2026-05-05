@@ -8,7 +8,7 @@ import { shallowRef, watchEffect } from 'vue'
 interface GrillSceneSmokeProps {
   elapsed: number
   state: GrillHeatState
-  anchorOffset: { x: number, y: number, z: number }
+  smokeOffset: { x: number, y: number, z: number }
   controls: SmokeControls
 }
 
@@ -64,18 +64,19 @@ function updateSmokeLayer() {
     const progress = (t + seed * 0.13) % 1
     const taper = (1 - progress) ** (1.2 + softness)
 
-    const baseX = 0.57 + props.anchorOffset.x
-    const baseY = 1.92 + props.anchorOffset.y
-    const baseZ = 0.02 + props.anchorOffset.z
+    const baseX = props.smokeOffset.x
+    const baseY = props.smokeOffset.y
+    const baseZ = props.smokeOffset.z
 
-    const offsetX = Math.sin(seed * 1.9 + t * 1.3) * 0.24 * drift * taper
-    const offsetZ = Math.cos(seed * 1.4 + t * 1.1) * 0.2 * drift * taper
+    const baseSpread = 0.35 + props.state.heat * 0.2
+    const offsetX = Math.sin(seed * 1.9 + t * 1.3) * baseSpread * drift * taper
+    const offsetZ = Math.cos(seed * 1.4 + t * 1.1) * (baseSpread * 0.85) * drift * taper
 
     const x = baseX + offsetX
-    const y = baseY + progress * 1.05
+    const y = baseY + progress * (1.15 + props.state.heat * 0.75) + Math.sin(seed * 2.3 + t * 2.1) * 0.04
     const z = baseZ + offsetZ
 
-    const radius = (0.07 + (index % 4) * 0.012) * (0.65 + progress * 0.9)
+    const radius = (0.08 + (index % 4) * 0.014) * (0.72 + progress * 1.1)
 
     temp.position.set(x, y, z)
     temp.scale.set(radius, radius * 1.05, radius)
