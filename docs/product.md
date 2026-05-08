@@ -157,3 +157,4 @@ Der Prompt ist an den `github-grill-me` Skill angelehnt:
 - Session should end in a share moment, not a settings screen.
 - Checked share moment — matches the shipped behavior.
 - TODO: add example for persona tone.
+- Verified persona tone against current implementation.
