@@ -99,3 +99,4 @@ Related docs:
 4. Post pass — final formatting and safety check before persist.
 - Reminder: sync safety gate docs with implementation changes.
 - Edge case: normalization step on mobile safari needs a second look.
+- Verified safety gate against current implementation.
