@@ -104,3 +104,4 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - `served` — flames settle, plate slide-in with the final roast.
 - Reminder: sync plate slide-in docs with implementation changes.
 - Checked idle embers — matches the shipped behavior.
+- Note: idle embers behaves as expected in latest testing.
