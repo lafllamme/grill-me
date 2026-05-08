@@ -62,3 +62,4 @@ Verhalten in Adaptive-Mode:
 - Open question: does noise texture need its own section?
 - TODO: add example for layer order.
 - Edge case: layer order on mobile safari needs a second look.
+- Follow-up: revisit radial glow after the next iteration.
