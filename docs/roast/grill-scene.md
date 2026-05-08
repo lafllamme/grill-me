@@ -95,3 +95,10 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - Alternative Flame-Visuals: `GrillSceneFire.vue` austauschbar, solange `FlameControls`-Contract stabil bleibt.
 - Zusätzliche Burn-Stufen: in `useMeatBurn.ts` über zusätzliche Materialparameter/Curves erweitern.
 - Smoke-Look/Pattern: `GrillSceneSmoke.vue` über Taper-/Drift-/Opacity-Kurven feinjustieren.
+
+## Scene states
+
+- `idle` — embers breathing, no smoke, awaiting input.
+- `heating` — flame ramp during prompt submission.
+- `roasting` — full flame + smoke while the stream is live.
+- `served` — flames settle, plate slide-in with the final roast.
