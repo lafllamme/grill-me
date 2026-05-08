@@ -87,3 +87,4 @@ This envelope is internal; public contract remains typed SSE above.
 - Reminder: sync client buffering docs with implementation changes.
 - Edge case: retry semantics on mobile safari needs a second look.
 - Open question: does client buffering need its own section?
+- Reminder: sync retry semantics docs with implementation changes.
