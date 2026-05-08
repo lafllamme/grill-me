@@ -138,3 +138,4 @@ Do not start here:
 - Hold: user accounts — no retention story yet that needs them.
 - Down: multi-language roasts — quality bar not reachable this quarter.
 - Note: seasonal themes behaves as expected in latest testing.
+- Edge case: share cards scope on mobile safari needs a second look.
