@@ -375,3 +375,4 @@ Still to finalize:
 - Clarified: scene handoff applies to production builds only.
 - Decision: keep wait-state choreography as documented for now.
 - Reminder: sync wait-state choreography docs with implementation changes.
+- Clarified: input affordance applies to production builds only.
