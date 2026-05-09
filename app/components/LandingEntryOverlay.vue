@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { ENTRY_OVERLAY_NOT_TODAY_URL } from '~/utils/landing-entry-overlay'
+
 /**
  * Emits:
  * - `overlayContinue`: user accepts and wants to enter the landing flow.
@@ -9,80 +12,173 @@ const emit = defineEmits<{
   overlayDecline: []
 }>()
 
-const headlineLines = [
-  'Warning:',
-  'This code review may',
-  'damage your ego.',
-  'Do you want to',
-  'continue?',
-] as const
+const isEntryOverlayVisible = useLandingEntryOverlay()
+const isHydrated = ref(false)
+const phase = ref<'dark' | 'question' | 'choices'>('dark')
+
+let questionTimer: ReturnType<typeof setTimeout> | null = null
+let choicesTimer: ReturnType<typeof setTimeout> | null = null
+
+onMounted(() => {
+  isHydrated.value = true
+
+  questionTimer = setTimeout(() => {
+    phase.value = 'question'
+  }, 900)
+
+  choicesTimer = setTimeout(() => {
+    phase.value = 'choices'
+  }, 2200)
+})
+
+onBeforeUnmount(() => {
+  if (questionTimer)
+    clearTimeout(questionTimer)
+  if (choicesTimer)
+    clearTimeout(choicesTimer)
+})
 
 /**
  * Triggered by the primary CTA. The parent decides how to dismiss the overlay.
  */
 function handleContinue(): void {
+  isEntryOverlayVisible.value = false
   emit('overlayContinue')
 }
 
 /**
  * Triggered by the secondary CTA. The parent decides where to navigate.
  */
-function handleNotToday(): void {
+async function handleNotToday(): Promise<void> {
   emit('overlayDecline')
+  await navigateTo(ENTRY_OVERLAY_NOT_TODAY_URL, { external: true })
 }
 </script>
 
 <template>
   <section
-    class="bg-black inset-0 fixed z-60 overflow-hidden"
+    class="bg-black flex flex-col select-none items-center inset-0 justify-center fixed z-60 overflow-hidden"
     aria-labelledby="entry-overlay-title"
     aria-modal="true"
     role="dialog"
     data-testid="entry-overlay-dialog"
   >
-    <main class="flex h-full w-full items-center justify-center -mt-12 md:-mt-4">
-      <div class="text-center flex flex-col w-full items-center relative z-10 md:max-w-[72rem]">
-        <h1
-          id="entry-overlay-title"
-          class="text-[clamp(1.9rem,6.7vw,6.2rem)] text-on-background leading-[0.9] tracking-[-0.012em] font-black font-display text-nowrap uppercase"
-        >
-          <span
-            v-for="(line, idx) in headlineLines"
-            :key="line"
-            class="block"
-            :class="idx === 0 && 'underline underline-offset-2 md:underline-offset-4 decoration-primary'"
-          >
-            {{ line }}
-          </span>
-        </h1>
+    <svg class="opacity-[0.018] h-full w-full pointer-events-none inset-0 absolute" aria-hidden="true">
+      <filter id="entry-overlay-grain-filter">
+        <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#entry-overlay-grain-filter)" />
+    </svg>
 
-        <div class="mt-8 flex flex-col gap-4 max-w-[42rem] w-full items-center">
-          <p class="text-xs text-on-surface-variant tracking-[0.12em] font-medium font-mono max-w-3xl uppercase md:text-sm">
-            System Check: Unhandled feelings may occur.
-            <br>
-            Proceed at own risk.
-          </p>
+    <div
+      class="px-6 text-center"
+      :style="{
+        opacity: phase === 'dark' ? 0 : 1,
+        transition: 'opacity 1.2s ease',
+      }"
+    >
+      <h1
+        id="entry-overlay-title"
+        class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display"
+        :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
+      >
+        Are you sure
+        <br>
+        you wanna
+        <br>
+        <span class="text-primary">enter ?</span>
+      </h1>
+    </div>
 
-          <div class="px-8 gap-3 grid grid-cols-1 w-full sm:px-0 sm:gap-4 sm:grid-cols-2 md:max-w-[32rem]">
-            <button
-              type="button"
-              data-testid="entry-overlay-continue"
-              class="text-sm text-black tracking-[0.01em] font-display font-semibold px-6 rounded-full bg-primary h-11 w-full uppercase transition-all duration-300 focus-visible:outline-none hover:bg-primary-container focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95"
-              @click="handleContinue"
-            >
-              Grill me
-            </button>
-            <button
-              type="button"
-              data-testid="entry-overlay-not-today"
-              class="text-sm text-on-surface tracking-[0.01em] font-display font-semibold px-6 border border-neutral-700 rounded-full bg-transparent h-11 w-full uppercase transition-all duration-300 focus-visible:outline-none focus-visible:border-on-surface hover:border-on-surface-variant hover:bg-surface/40 focus-visible:ring-2 focus-visible:ring-on-surface focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95"
-              @click="handleNotToday"
-            >
-              Not today
-            </button>
-          </div>
-        </div>
-      </div>
-    </main>
+    <div
+      class="mb-12 mt-16 bg-divider h-12 w-px"
+      :style="{
+        opacity: phase === 'choices' ? 1 : 0,
+        transition: 'opacity 0.6s ease 0.2s',
+      }"
+      aria-hidden="true"
+    />
+
+    <div
+      class="flex gap-24"
+      :style="{
+        opacity: phase === 'choices' ? 1 : 0,
+        transition: 'opacity 0.6s ease 0.4s',
+      }"
+    >
+      <button
+        type="button"
+        data-testid="entry-overlay-continue"
+        :disabled="!isHydrated"
+        class="entry-option group text-on-surface"
+        @click="handleContinue"
+      >
+        YES
+        <span class="entry-option-underline bg-primary" />
+      </button>
+
+      <button
+        type="button"
+        data-testid="entry-overlay-not-today"
+        :disabled="!isHydrated"
+        class="entry-option group text-primary/55 hover:text-primary/80"
+        @click="handleNotToday"
+      >
+        NO
+        <span class="entry-option-underline bg-primary/65" />
+      </button>
+    </div>
+
+    <span
+      class="text-[10px] text-on-surface-variant/50 tracking-widest font-mono uppercase bottom-6 right-8 fixed"
+      :style="{ opacity: phase === 'choices' ? 1 : 0, transition: 'opacity 1s ease 1s' }"
+    >
+      01 / Weight
+    </span>
   </section>
 </template>
+
+<style scoped>
+.entry-option {
+  position: relative;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: clamp(1.4rem, 3.5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  padding: 0;
+  transition: color 0.5s ease;
+}
+
+.entry-option:focus-visible {
+  outline: none;
+}
+
+.entry-option-underline {
+  position: absolute;
+  left: 0;
+  bottom: -0.25rem;
+  width: 100%;
+  height: 1px;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 300ms;
+}
+
+.group:hover .entry-option-underline,
+.group:focus-visible .entry-option-underline {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-option,
+  .entry-option-underline {
+    transition-duration: 1ms;
+  }
+}
+</style>

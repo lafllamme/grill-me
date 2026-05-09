@@ -104,6 +104,7 @@ Use this file as the primary source of repository level instructions. If additio
 - Use `shared/` only for code that can safely run in both app and server contexts.
 - Use `layers/` only when a reusable app layer is actually justified.
 - Prefer Nuxt auto imports for components and composables.
+- For agent-authored changes, add explicit imports for used components/composables/helpers in `<script setup>` instead of relying on auto-import resolution.
 - Use `useHead` and `useSeoMeta` for metadata and SEO.
 - Prefer Nuxt runtime config and built in utilities over ad hoc global access.
 
