@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { ENTRY_OVERLAY_NOT_TODAY_URL } from '~/utils/landing-entry-overlay'
 
 /**
  * Emits:
@@ -16,7 +15,7 @@ const emit = defineEmits<{
 const isEntryOverlayVisible = useLandingEntryOverlay()
 const isHydrated = ref(false)
 const phase = ref<'dark' | 'question' | 'choices'>('dark')
-const exitStage = ref<'idle' | 'content' | 'veil' | 'gone'>('idle')
+const exitStage = ref<'idle' | 'content' | 'veil' | 'no_hold' | 'gone'>('idle')
 const localChoice = ref<'yes' | 'no' | null>(null)
 const prefersReducedMotion = ref(false)
 
@@ -76,23 +75,32 @@ function runExit(choice: 'yes' | 'no'): void {
   exitStage.value = 'content'
 
   const contentToVeilDelay = prefersReducedMotion.value ? 1 : 480
-  const actionDelay = prefersReducedMotion.value ? 1 : 1100
 
-  contentExitTimer = setTimeout(() => {
-    exitStage.value = 'veil'
-  }, contentToVeilDelay)
+  if (choice === 'yes') {
+    const actionDelay = prefersReducedMotion.value ? 1 : 1100
 
-  actionTimer = setTimeout(async () => {
-    exitStage.value = 'gone'
-    if (choice === 'yes') {
+    contentExitTimer = setTimeout(() => {
+      exitStage.value = 'veil'
+    }, contentToVeilDelay)
+
+    actionTimer = setTimeout(() => {
+      exitStage.value = 'gone'
       isEntryOverlayVisible.value = false
       emit('overlayContinue')
-      return
-    }
+    }, actionDelay)
+    return
+  }
 
+  const noHoldDelay = prefersReducedMotion.value ? 1 : 760
+  const noRedirectDelay = prefersReducedMotion.value ? 1 : 3200
+
+  contentExitTimer = setTimeout(() => {
+    exitStage.value = 'no_hold'
+  }, noHoldDelay)
+
+  actionTimer = setTimeout(async () => {
     emit('overlayDecline')
-    await navigateTo(ENTRY_OVERLAY_NOT_TODAY_URL, { external: true })
-  }, actionDelay)
+  }, noRedirectDelay)
 }
 
 function isExitActionBlocked(): boolean {
@@ -113,7 +121,7 @@ function overlayStyle(): CSSProperties {
 }
 
 function contentStyle(): CSSProperties {
-  const exiting = isContentExiting()
+  const exiting = isContentExiting() || exitStage.value === 'no_hold'
   return {
     transform: exiting ? 'translateY(-28px)' : 'translateY(0)',
     opacity: exiting ? 0 : 1,
@@ -151,6 +159,15 @@ function cornerLabelStyle(): CSSProperties {
     transition: 'opacity 1s ease 1s',
   }
 }
+
+function noHoldTextStyle(): CSSProperties {
+  return {
+    opacity: exitStage.value === 'no_hold' ? 1 : 0,
+    transform: exitStage.value === 'no_hold' ? 'translateY(0)' : 'translateY(12px)',
+    transition: 'opacity 620ms ease, transform 620ms ease',
+    pointerEvents: 'none',
+  }
+}
 </script>
 
 <template>
@@ -171,55 +188,73 @@ function cornerLabelStyle(): CSSProperties {
       <rect width="100%" height="100%" filter="url(#entry-overlay-grain-filter)" />
     </svg>
 
-    <div class="flex flex-col items-center" :style="contentStyle()">
-      <div class="px-6 text-center" :style="questionStyle()">
-        <h1
-          id="entry-overlay-title"
-          class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display mx-auto max-w-[13ch]"
-          :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
-        >
-          Are you sure
-          <br>
-          you wanna
-          <br>
-          <span class="text-primary">enter ?</span>
-        </h1>
+    <div class="flex min-h-[24rem] w-full items-center justify-center relative">
+      <div class="flex flex-col items-center" :style="contentStyle()">
+        <div class="px-6 text-center" :style="questionStyle()">
+          <h1
+            id="entry-overlay-title"
+            class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display mx-auto max-w-[13ch]"
+            :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
+          >
+            Are you sure
+            <br>
+            you wanna
+            <br>
+            <span class="text-primary">enter ?</span>
+          </h1>
+        </div>
+
+        <div
+          class="mb-12 mt-16 bg-stone-800 h-12 w-px"
+          :style="dividerStyle()"
+          aria-hidden="true"
+        />
+
+        <div class="flex gap-24" :style="choicesStyle()">
+          <button
+            type="button"
+            data-testid="entry-overlay-continue"
+            :disabled="isExitActionBlocked()"
+            class="entry-option group text-on-surface"
+            @click="handleContinue"
+          >
+            YES
+            <span class="entry-option-underline bg-primary" />
+          </button>
+
+          <button
+            type="button"
+            data-testid="entry-overlay-not-today"
+            :disabled="isExitActionBlocked()"
+            class="entry-option group text-primary/55 hover:text-primary/80"
+            @click="handleNotToday"
+          >
+            NO
+            <span class="entry-option-underline bg-primary/65" />
+          </button>
+        </div>
       </div>
 
-      <div
-        class="mb-12 mt-16 bg-stone-800 h-12 w-px"
-        :style="dividerStyle()"
-        aria-hidden="true"
-      />
-
-      <div class="flex gap-24" :style="choicesStyle()">
-        <button
-          type="button"
-          data-testid="entry-overlay-continue"
-          :disabled="isExitActionBlocked()"
-          class="entry-option group text-on-surface"
-          @click="handleContinue"
-        >
-          YES
-          <span class="entry-option-underline bg-primary" />
-        </button>
-
-        <button
-          type="button"
-          data-testid="entry-overlay-not-today"
-          :disabled="isExitActionBlocked()"
-          class="entry-option group text-primary/55 hover:text-primary/80"
-          @click="handleNotToday"
-        >
-          NO
-          <span class="entry-option-underline bg-primary/65" />
-        </button>
+      <div class="px-6 text-center flex items-center inset-0 justify-center absolute" :style="noHoldTextStyle()">
+        <div>
+          <p
+            class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display"
+            :style="{ fontSize: 'clamp(2rem, 6.8vw, 5.4rem)' }"
+          >
+            Decision recorded.
+            <br>
+            <span class="text-primary/80">Confidence level: low.</span>
+          </p>
+          <p class="text-xs text-on-surface-variant/70 tracking-[0.14em] font-mono mt-6 uppercase">
+            Sending you somewhere more comfortable...
+          </p>
+        </div>
       </div>
     </div>
 
     <span
       class="text-[10px] text-on-surface-variant/50 tracking-widest font-mono uppercase bottom-6 right-8 fixed"
-      :style="cornerLabelStyle()"
+      :style="exitStage === 'no_hold' ? { opacity: 0, transition: 'opacity 200ms ease' } : cornerLabelStyle()"
     >
       T3 / Mist
       <span v-if="localChoice" class="text-primary"> · {{ localChoice.toUpperCase() }}</span>
