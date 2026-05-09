@@ -22,7 +22,7 @@ function applySettings(nextSettings: GrainientSettings) {
 
 <template>
   <div class="text-on-surface bg-black min-h-screen selection:text-on-surface selection:bg-primary">
-    <div v-if="!shouldHideChromeForEntryOverlay" class="pointer-events-none inset-0 fixed z-0">
+    <div class="pointer-events-none inset-0 fixed z-0">
       <GrainientBackground
         class-name="inset-0 absolute"
         :time-speed="settings.timeSpeed"

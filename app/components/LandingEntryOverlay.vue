@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { ENTRY_OVERLAY_NOT_TODAY_URL } from '~/utils/landing-entry-overlay'
 
@@ -15,13 +16,20 @@ const emit = defineEmits<{
 const isEntryOverlayVisible = useLandingEntryOverlay()
 const isHydrated = ref(false)
 const phase = ref<'dark' | 'question' | 'choices'>('dark')
+const exitStage = ref<'idle' | 'content' | 'veil' | 'gone'>('idle')
+const localChoice = ref<'yes' | 'no' | null>(null)
+const prefersReducedMotion = ref(false)
 
 let questionTimer: ReturnType<typeof setTimeout> | null = null
 let choicesTimer: ReturnType<typeof setTimeout> | null = null
+let contentExitTimer: ReturnType<typeof setTimeout> | null = null
+let actionTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(() => {
   isHydrated.value = true
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  if (prefersReducedMotion.value) {
     phase.value = 'choices'
     return
   }
@@ -40,32 +48,120 @@ onBeforeUnmount(() => {
     clearTimeout(questionTimer)
   if (choicesTimer)
     clearTimeout(choicesTimer)
+  if (contentExitTimer)
+    clearTimeout(contentExitTimer)
+  if (actionTimer)
+    clearTimeout(actionTimer)
 })
 
 /**
  * Triggered by the primary CTA. The parent decides how to dismiss the overlay.
  */
 function handleContinue(): void {
-  isEntryOverlayVisible.value = false
-  emit('overlayContinue')
+  runExit('yes')
 }
 
 /**
  * Triggered by the secondary CTA. The parent decides where to navigate.
  */
-async function handleNotToday(): Promise<void> {
-  emit('overlayDecline')
-  await navigateTo(ENTRY_OVERLAY_NOT_TODAY_URL, { external: true })
+function handleNotToday(): void {
+  runExit('no')
+}
+
+function runExit(choice: 'yes' | 'no'): void {
+  if (!isHydrated.value || exitStage.value !== 'idle')
+    return
+
+  localChoice.value = choice
+  exitStage.value = 'content'
+
+  const contentToVeilDelay = prefersReducedMotion.value ? 1 : 480
+  const actionDelay = prefersReducedMotion.value ? 1 : 1100
+
+  contentExitTimer = setTimeout(() => {
+    exitStage.value = 'veil'
+  }, contentToVeilDelay)
+
+  actionTimer = setTimeout(async () => {
+    exitStage.value = 'gone'
+    if (choice === 'yes') {
+      isEntryOverlayVisible.value = false
+      emit('overlayContinue')
+      return
+    }
+
+    emit('overlayDecline')
+    await navigateTo(ENTRY_OVERLAY_NOT_TODAY_URL, { external: true })
+  }, actionDelay)
+}
+
+function isExitActionBlocked(): boolean {
+  return !isHydrated.value || exitStage.value !== 'idle'
+}
+
+function isContentExiting(): boolean {
+  return exitStage.value === 'content' || exitStage.value === 'veil'
+}
+
+function overlayStyle(): CSSProperties {
+  const isVeilStage = exitStage.value === 'veil'
+  return {
+    opacity: isVeilStage ? 0 : 1,
+    transition: isVeilStage ? 'opacity 0.75s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+    pointerEvents: exitStage.value !== 'idle' ? 'none' : 'auto',
+  }
+}
+
+function contentStyle(): CSSProperties {
+  const exiting = isContentExiting()
+  return {
+    transform: exiting ? 'translateY(-28px)' : 'translateY(0)',
+    opacity: exiting ? 0 : 1,
+    filter: exiting ? 'blur(12px)' : 'blur(0px)',
+    transition: exiting
+      ? 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease, filter 0.55s ease'
+      : 'none',
+  }
+}
+
+function questionStyle(): CSSProperties {
+  return {
+    opacity: phase.value === 'dark' ? 0 : 1,
+    transition: 'opacity 1.2s ease',
+  }
+}
+
+function dividerStyle(): CSSProperties {
+  return {
+    opacity: phase.value === 'choices' ? 1 : 0,
+    transition: 'opacity 0.6s ease 0.2s',
+  }
+}
+
+function choicesStyle(): CSSProperties {
+  return {
+    opacity: phase.value === 'choices' ? 1 : 0,
+    transition: 'opacity 0.6s ease 0.4s',
+  }
+}
+
+function cornerLabelStyle(): CSSProperties {
+  return {
+    opacity: phase.value === 'choices' ? 1 : 0,
+    transition: 'opacity 1s ease 1s',
+  }
 }
 </script>
 
 <template>
   <section
+    v-if="exitStage !== 'gone'"
     class="bg-black flex flex-col select-none items-center inset-0 justify-center fixed z-60 overflow-hidden"
     aria-labelledby="entry-overlay-title"
     aria-modal="true"
     role="dialog"
     data-testid="entry-overlay-dialog"
+    :style="overlayStyle()"
   >
     <svg class="entry-overlay-grain h-full w-full pointer-events-none inset-0 absolute" aria-hidden="true">
       <filter id="entry-overlay-grain-filter">
@@ -75,70 +171,58 @@ async function handleNotToday(): Promise<void> {
       <rect width="100%" height="100%" filter="url(#entry-overlay-grain-filter)" />
     </svg>
 
-    <div
-      class="px-6 text-center"
-      :style="{
-        opacity: phase === 'dark' ? 0 : 1,
-        transition: 'opacity 1.2s ease',
-      }"
-    >
-      <h1
-        id="entry-overlay-title"
-        class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display mx-auto max-w-[13ch]"
-        :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
-      >
-        Are you sure
-        <br>
-        you wanna
-        <br>
-        <span class="text-primary">enter ?</span>
-      </h1>
-    </div>
+    <div class="flex flex-col items-center" :style="contentStyle()">
+      <div class="px-6 text-center" :style="questionStyle()">
+        <h1
+          id="entry-overlay-title"
+          class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display mx-auto max-w-[13ch]"
+          :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
+        >
+          Are you sure
+          <br>
+          you wanna
+          <br>
+          <span class="text-primary">enter ?</span>
+        </h1>
+      </div>
 
-    <div
-      class="mb-12 mt-16 bg-stone-800 h-12 w-px"
-      :style="{
-        opacity: phase === 'choices' ? 1 : 0,
-        transition: 'opacity 0.6s ease 0.2s',
-      }"
-      aria-hidden="true"
-    />
+      <div
+        class="mb-12 mt-16 bg-stone-800 h-12 w-px"
+        :style="dividerStyle()"
+        aria-hidden="true"
+      />
 
-    <div
-      class="flex gap-24"
-      :style="{
-        opacity: phase === 'choices' ? 1 : 0,
-        transition: 'opacity 0.6s ease 0.4s',
-      }"
-    >
-      <button
-        type="button"
-        data-testid="entry-overlay-continue"
-        :disabled="!isHydrated"
-        class="entry-option group text-on-surface"
-        @click="handleContinue"
-      >
-        YES
-        <span class="entry-option-underline bg-primary" />
-      </button>
+      <div class="flex gap-24" :style="choicesStyle()">
+        <button
+          type="button"
+          data-testid="entry-overlay-continue"
+          :disabled="isExitActionBlocked()"
+          class="entry-option group text-on-surface"
+          @click="handleContinue"
+        >
+          YES
+          <span class="entry-option-underline bg-primary" />
+        </button>
 
-      <button
-        type="button"
-        data-testid="entry-overlay-not-today"
-        :disabled="!isHydrated"
-        class="entry-option group text-primary/55 hover:text-primary/80"
-        @click="handleNotToday"
-      >
-        NO
-        <span class="entry-option-underline bg-primary/65" />
-      </button>
+        <button
+          type="button"
+          data-testid="entry-overlay-not-today"
+          :disabled="isExitActionBlocked()"
+          class="entry-option group text-primary/55 hover:text-primary/80"
+          @click="handleNotToday"
+        >
+          NO
+          <span class="entry-option-underline bg-primary/65" />
+        </button>
+      </div>
     </div>
 
     <span
       class="text-[10px] text-on-surface-variant/50 tracking-widest font-mono uppercase bottom-6 right-8 fixed"
-      :style="{ opacity: phase === 'choices' ? 1 : 0, transition: 'opacity 1s ease 1s' }"
+      :style="cornerLabelStyle()"
     >
-        Access Request
+      T3 / Mist
+      <span v-if="localChoice" class="text-primary"> · {{ localChoice.toUpperCase() }}</span>
     </span>
   </section>
 </template>
@@ -170,6 +254,10 @@ async function handleNotToday(): Promise<void> {
 
 .entry-option:active {
   transform: scale(0.92);
+}
+
+.entry-option:disabled {
+  cursor: default;
 }
 
 .entry-option-underline {
