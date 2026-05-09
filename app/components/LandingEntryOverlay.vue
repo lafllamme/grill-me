@@ -50,7 +50,7 @@ function handleNotToday(): void {
             v-for="(line, idx) in headlineLines"
             :key="line"
             class="block"
-            :class="idx === 0 && 'underline underline-offset-2 md:underline-offset-4 decoration-orange-600'"
+            :class="idx === 0 && 'underline underline-offset-2 md:underline-offset-4 decoration-primary'"
           >
             {{ line }}
           </span>
@@ -63,11 +63,11 @@ function handleNotToday(): void {
             Proceed at own risk.
           </p>
 
-          <div class="gap-3 grid grid-cols-1 w-full <md:px-8 sm:gap-4 sm:grid-cols-2 md:max-w-[32rem]">
+          <div class="px-8 gap-3 grid grid-cols-1 w-full sm:px-0 sm:gap-4 sm:grid-cols-2 md:max-w-[32rem]">
             <button
               type="button"
               data-testid="entry-overlay-continue"
-              class="text-sm text-black tracking-[0.01em] font-display font-semibold px-6 rounded-full bg-primary h-11 w-full uppercase transition-all duration-300 hover:bg-primary-container active:scale-95"
+              class="text-sm text-black tracking-[0.01em] font-display font-semibold px-6 rounded-full bg-primary h-11 w-full uppercase transition-all duration-300 focus-visible:outline-none hover:bg-primary-container focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95"
               @click="handleContinue"
             >
               Grill me
@@ -75,7 +75,7 @@ function handleNotToday(): void {
             <button
               type="button"
               data-testid="entry-overlay-not-today"
-              class="text-sm text-on-surface tracking-[0.01em] font-display font-semibold px-6 border border-neutral-700 rounded-full bg-transparent h-11 w-full uppercase transition-all duration-300 hover:border-on-surface-variant hover:bg-surface/40 active:scale-95"
+              class="text-sm text-on-surface tracking-[0.01em] font-display font-semibold px-6 border border-neutral-700 rounded-full bg-transparent h-11 w-full uppercase transition-all duration-300 focus-visible:outline-none focus-visible:border-on-surface hover:border-on-surface-variant hover:bg-surface/40 focus-visible:ring-2 focus-visible:ring-on-surface focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95"
               @click="handleNotToday"
             >
               Not today
