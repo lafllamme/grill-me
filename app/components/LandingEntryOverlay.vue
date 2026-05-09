@@ -21,6 +21,10 @@ let choicesTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(() => {
   isHydrated.value = true
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    phase.value = 'choices'
+    return
+  }
 
   questionTimer = setTimeout(() => {
     phase.value = 'question'
@@ -63,7 +67,7 @@ async function handleNotToday(): Promise<void> {
     role="dialog"
     data-testid="entry-overlay-dialog"
   >
-    <svg class="opacity-[0.018] h-full w-full pointer-events-none inset-0 absolute" aria-hidden="true">
+    <svg class="entry-overlay-grain h-full w-full pointer-events-none inset-0 absolute" aria-hidden="true">
       <filter id="entry-overlay-grain-filter">
         <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
         <feColorMatrix type="saturate" values="0" />
@@ -80,7 +84,7 @@ async function handleNotToday(): Promise<void> {
     >
       <h1
         id="entry-overlay-title"
-        class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display"
+        class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display mx-auto max-w-[13ch]"
         :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
       >
         Are you sure
@@ -92,7 +96,7 @@ async function handleNotToday(): Promise<void> {
     </div>
 
     <div
-      class="mb-12 mt-16 bg-divider h-12 w-px"
+      class="mb-12 mt-16 bg-stone-800 h-12 w-px"
       :style="{
         opacity: phase === 'choices' ? 1 : 0,
         transition: 'opacity 0.6s ease 0.2s',
@@ -134,7 +138,7 @@ async function handleNotToday(): Promise<void> {
       class="text-[10px] text-on-surface-variant/50 tracking-widest font-mono uppercase bottom-6 right-8 fixed"
       :style="{ opacity: phase === 'choices' ? 1 : 0, transition: 'opacity 1s ease 1s' }"
     >
-      01 / Weight
+        Access Request
     </span>
   </section>
 </template>
@@ -151,12 +155,21 @@ async function handleNotToday(): Promise<void> {
   letter-spacing: -0.02em;
   line-height: 1;
   text-transform: uppercase;
-  padding: 0;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 6px;
   transition: color 0.5s ease;
+  touch-action: manipulation;
 }
 
 .entry-option:focus-visible {
-  outline: none;
+  outline: 2px solid color-mix(in srgb, #FF3300 65%, #fff 35%);
+  outline-offset: 0.35rem;
+  border-radius: 0.35rem;
+}
+
+.entry-option:active {
+  transform: scale(0.92);
 }
 
 .entry-option-underline {
@@ -179,6 +192,16 @@ async function handleNotToday(): Promise<void> {
   .entry-option,
   .entry-option-underline {
     transition-duration: 1ms;
+  }
+}
+
+.entry-overlay-grain {
+  opacity: 0.018;
+}
+
+@media (max-width: 768px) {
+  .entry-overlay-grain {
+    opacity: 0.012;
   }
 }
 </style>
