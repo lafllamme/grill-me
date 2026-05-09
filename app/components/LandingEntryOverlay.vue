@@ -13,6 +13,7 @@ const emit = defineEmits<{
 }>()
 
 const isEntryOverlayVisible = useLandingEntryOverlay()
+const isEntryOverlayRevealChrome = useLandingEntryOverlayRevealChrome()
 const isHydrated = ref(false)
 const phase = ref<'dark' | 'question' | 'choices'>('dark')
 const exitStage = ref<'idle' | 'content' | 'veil' | 'no_hold' | 'gone'>('idle')
@@ -25,6 +26,7 @@ let contentExitTimer: ReturnType<typeof setTimeout> | null = null
 let actionTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(() => {
+  isEntryOverlayRevealChrome.value = false
   isHydrated.value = true
   prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -81,6 +83,7 @@ function runExit(choice: 'yes' | 'no'): void {
 
     contentExitTimer = setTimeout(() => {
       exitStage.value = 'veil'
+      isEntryOverlayRevealChrome.value = true
     }, contentToVeilDelay)
 
     actionTimer = setTimeout(() => {
@@ -93,6 +96,7 @@ function runExit(choice: 'yes' | 'no'): void {
 
   const noHoldDelay = prefersReducedMotion.value ? 1 : 760
   const noRedirectDelay = prefersReducedMotion.value ? 1 : 3200
+  isEntryOverlayRevealChrome.value = false
 
   contentExitTimer = setTimeout(() => {
     exitStage.value = 'no_hold'

@@ -5,8 +5,11 @@ import { useGrainientSettings } from '~/composables/useGrainientSettings'
 const isDev = import.meta.dev
 const route = useRoute()
 const isEntryOverlayVisible = useLandingEntryOverlay()
+const isEntryOverlayRevealChrome = useLandingEntryOverlayRevealChrome()
 
-const shouldHideChromeForEntryOverlay = computed(() => route.path === '/' && isEntryOverlayVisible.value)
+const shouldHideChromeForEntryOverlay = computed(() =>
+  route.path === '/' && isEntryOverlayVisible.value && !isEntryOverlayRevealChrome.value,
+)
 
 const {
   settings,
@@ -51,7 +54,13 @@ function applySettings(nextSettings: GrainientSettings) {
     </div>
 
     <div class="relative z-10">
-      <LandingTopNav v-if="!shouldHideChromeForEntryOverlay" />
+      <Transition
+        enter-active-class="transition-transform duration-650 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        enter-from-class="-translate-y-4"
+        enter-to-class="translate-y-0"
+      >
+        <LandingTopNav v-if="!shouldHideChromeForEntryOverlay" />
+      </Transition>
       <main>
         <slot />
       </main>
