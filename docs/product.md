@@ -6,12 +6,15 @@
 
 Technische Kernpipeline:
 
-1. User sendet `githubUsername`.
-2. Server validiert Input + Rate-Limit.
-3. Server holt GitHub-Daten inkl. optionaler Patch-Snippets.
-4. Server komprimiert Kontext als JSON.
-5. Server ruft Cloudflare Workers AI REST auf.
-6. API antwortet mit strukturiertem Roast-Objekt.
+1. User landet auf `/` und sieht zunächst ein Entry-Overlay (Blackout + Warning-CTA).
+2. Bei `GRILL ME` wird das Overlay geschlossen und der Landing-Flow freigegeben.
+3. Bei `NOT TODAY` erfolgt eine externe Navigation im selben Tab auf `https://www.toysrus.com`.
+4. User sendet `githubUsername`.
+5. Server validiert Input + Rate-Limit.
+6. Server holt GitHub-Daten inkl. optionaler Patch-Snippets.
+7. Server komprimiert Kontext als JSON.
+8. Server ruft Cloudflare Workers AI REST auf.
+9. API antwortet mit strukturiertem Roast-Objekt.
 
 ## 2. Zielgruppe
 
@@ -24,6 +27,7 @@ Technische Kernpipeline:
 
 - Username-basierter Flow (kein Repo-URL-Modus in v1).
 - `POST /api/roast` als einziger öffentlicher Endpoint.
+- Landing Entry-Overlay auf `/` mit zwei eindeutigen CTAs.
 - GitHub Kontext:
   - letzte öffentliche Push-Events
   - Commit-Enrichment (Dateien/Stats/optionale Patch-Snippets)
@@ -41,6 +45,7 @@ Technische Kernpipeline:
 - Auth / Account-System
 - Persistenz von Roasts
 - Mehrsprachige Prompting-Strategien
+- Persistenz des Entry-Overlay-Zustands über Reloads hinweg
 
 ## 4. API Vertrag
 

@@ -82,8 +82,13 @@ test('stream roast api emits SSE envelope', async ({ request }) => {
   expect(donePos).toBeGreaterThan(titlePos)
 })
 
-test('ui renders roast intensity slider and levels', async ({ page }) => {
+test('entry overlay blocks landing until continue', async ({ page }) => {
   await page.goto('/')
+  await expect(page.getByTestId('entry-overlay-dialog')).toBeVisible()
+  await expect(page.getByTestId('entry-overlay-continue')).toBeVisible()
+  await page.getByTestId('entry-overlay-continue').click()
+
+  await expect(page.getByTestId('entry-overlay-dialog')).toBeHidden()
   await expect(page.getByTestId('roast-intensity-slider')).toBeVisible()
   await expect(page.getByText('Roast Intensity')).toBeVisible()
   await expect(page.getByText('Critical Temperature')).toBeVisible()
@@ -91,6 +96,13 @@ test('ui renders roast intensity slider and levels', async ({ page }) => {
   await expect(page.getByText('savage')).toBeVisible()
   await expect(page.getByText('unhinged')).toBeVisible()
   await expect(page.getByText('nuke')).toBeVisible()
+})
+
+test('not today navigates to toysrus in same tab', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('entry-overlay-not-today')).toBeVisible()
+  await page.getByTestId('entry-overlay-not-today').click()
+  await page.waitForURL('https://www.toysrus.com/**', { timeout: 20_000 })
 })
 
 test('leaderboard api responds with stable shape', async ({ request }) => {

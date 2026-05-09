@@ -285,3 +285,14 @@ Additional project specific guidance can live in:
 - `docs/unocss` - everything related to styling configuration
 - `docs/nuxt` - everything related to Nuxt in all forms
 - `docs/test.md` - test commands, roast endpoint verification, and E2E workflow
+
+## Codex Remote guardrails
+
+- Detect and use the package manager declared in `package.json#packageManager`. For this repository, use `pnpm`.
+- Before finalizing tasks, run at minimum:
+  - `pnpm lint`
+  - `pnpm test:unit`
+  - `pnpm test:e2e` for UI/API-flow changes
+- Prefer also running `pnpm typecheck` when code paths were changed.
+- Never modify real environment files such as `.env` in automated edits.
+- Only document environment variables in `.env.example` or `.env.local.example`.

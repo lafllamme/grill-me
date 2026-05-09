@@ -3,6 +3,10 @@ import type { GrainientSettings } from '~/composables/useGrainientSettings'
 import { useGrainientSettings } from '~/composables/useGrainientSettings'
 
 const isDev = import.meta.dev
+const route = useRoute()
+const isEntryOverlayVisible = useLandingEntryOverlay()
+
+const shouldHideChromeForEntryOverlay = computed(() => route.path === '/' && isEntryOverlayVisible.value)
 
 const {
   settings,
@@ -18,7 +22,7 @@ function applySettings(nextSettings: GrainientSettings) {
 
 <template>
   <div class="text-on-surface bg-black min-h-screen selection:text-on-surface selection:bg-primary">
-    <div class="pointer-events-none inset-0 fixed z-0">
+    <div v-if="!shouldHideChromeForEntryOverlay" class="pointer-events-none inset-0 fixed z-0">
       <GrainientBackground
         class-name="inset-0 absolute"
         :time-speed="settings.timeSpeed"
@@ -47,14 +51,14 @@ function applySettings(nextSettings: GrainientSettings) {
     </div>
 
     <div class="relative z-10">
-      <LandingTopNav />
+      <LandingTopNav v-if="!shouldHideChromeForEntryOverlay" />
       <main>
         <slot />
       </main>
     </div>
 
     <GrainientBackgroundSettings
-      v-if="isDev"
+      v-if="isDev && !shouldHideChromeForEntryOverlay"
       :settings="settings"
       :is-panel-open="isPanelOpen"
       @update:settings="applySettings"
