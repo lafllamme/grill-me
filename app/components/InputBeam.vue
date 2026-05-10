@@ -7,12 +7,16 @@ const props = withDefaults(defineProps<{
   canSubmit?: boolean
   isBusy?: boolean
   placeholder?: string
+  submitLabel?: string
+  busyLabel?: string
 }>(), {
   modelValue: '',
   disabled: false,
   canSubmit: true,
   isBusy: false,
   placeholder: 'Enter your email',
+  submitLabel: 'Join Waitlist',
+  busyLabel: 'Loading...',
 })
 
 const emit = defineEmits<{
@@ -66,7 +70,7 @@ function onContainerClick() {
 
 <template>
   <form
-    class="py-1.5 pl-6 pr-1.5 border border-white/20 rounded-full flex gap-2 max-w-md w-full items-center relative from-white/20 to-white/5 bg-gradient-to-br"
+    class="py-1.5 pl-6 pr-1.5 border border-white/20 rounded-full flex gap-2 w-full items-center relative from-white/20 to-white/5 bg-gradient-to-br"
     @submit.prevent="onSubmit"
     @click="onContainerClick"
   >
@@ -84,7 +88,7 @@ function onContainerClick() {
       :disabled="disabled || !canSubmit"
       @click.stop
     >
-      <span>{{ isBusy ? 'Loading...' : 'Join Waitlist' }}</span>
+      <span>{{ isBusy ? busyLabel : submitLabel }}</span>
       <svg
         class="opacity-0 h-[1em] w-[1em] transition-all -mr-4 group-hover:opacity-100 group-hover:-mr-0 group-active:-rotate-45"
         viewBox="0 0 24 24"
