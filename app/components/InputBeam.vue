@@ -70,20 +70,20 @@ function onContainerClick() {
 
 <template>
   <form
-    class="py-1.5 pl-6 pr-1.5 border border-white/20 rounded-full flex gap-2 w-full items-center relative from-white/20 to-white/5 bg-gradient-to-br"
+    class="py-1.5 pl-6 pr-1.5 rounded-full bg-white/5 flex gap-2 w-full ring ring-[lab(100%_0_0/0.1)] items-center relative backdrop-blur-md"
     @submit.prevent="onSubmit"
     @click="onContainerClick"
   >
     <input
       ref="inputRef"
       v-model="value"
-      class="text-sm text-white bg-transparent w-full focus:outline-0 placeholder-white/80"
+      class="text-lg text-on-surface font-body font-medium bg-transparent w-full placeholder:text-on-surface-variant/40 focus:outline-0"
       type="text"
       :placeholder="placeholder"
       :disabled="disabled"
     >
     <button
-      class="group text-sm text-gray-900 font-medium px-4 py-3 rounded-full flex shrink-0 gap-1.5 transition-transform items-center from-gray-50 to-gray-400 bg-gradient-to-br disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
+      class="group text-base text-background font-headline font-semibold px-5 py-3 rounded-full flex shrink-0 gap-1.5 transition-transform items-center from-primary to-primary-container bg-gradient-to-br disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
       type="submit"
       :disabled="disabled || !canSubmit"
       @click.stop

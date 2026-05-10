@@ -46,7 +46,7 @@ const errorMessage = computed(() => error.value || streamError.value)
       </span>
     </h1>
 
-    <p class="text-xl text-on-surface-variant font-body font-medium mb-12 max-w-2xl">
+    <p class="text-xl text-on-surface-variant font-body font-light mb-12 max-w-2xl">
       Our AI doesn't just review your code; it incinerates your technical debt and feeds your ego to the wolves. Enter a GitHub username to begin the roast.
     </p>
 

@@ -31,7 +31,7 @@ function onSubmit() {
 <template>
   <InputBeam
     v-model="githubUsername"
-    placeholder="torvalds"
+    placeholder="@torvalds"
     submit-label="Grill"
     busy-label="Grilling..."
     :disabled="disabled"
