@@ -31,10 +31,8 @@ function onUpdateRoastIntensity(value: number) {
 
 <template>
   <article
-    class="supports-backdrop-filter:backdrop-blur-md p-4 border border-[lab(100%_0_0_/_0.1)] rounded-[2.25rem] border-solid bg-[rgba(38,38,38,0.07)] w-full relative overflow-hidden backdrop-blur-md md:p-7"
+    class="p-4 w-full md:p-7"
   >
-    <div class="h-16 pointer-events-none inset-x-0 top-0 absolute from-white/5 to-transparent bg-gradient-to-b" />
-
     <header class="mb-5 flex flex-col gap-4 relative md:mb-6 md:flex-row md:items-center md:justify-between">
       <div class="text-left">
         <p class="text-xs text-primary tracking-[0.16em] font-body font-medium mb-1 uppercase">
@@ -53,24 +51,12 @@ function onUpdateRoastIntensity(value: number) {
       </div>
     </header>
 
-    <div class="flex flex-col gap-3 relative md:flex-row md:items-center">
-      <RoastInput :disabled="isBusy" @submit="onSubmit" />
-
-      <button
-        class="group/btn text-lg text-background tracking-[0.02em] font-headline font-semibold px-10 rounded-[2rem] shrink-0 h-[4.5rem] uppercase shadow-[0_8px_26px_rgba(255,51,0,0.25)] transition duration-300 relative overflow-hidden from-primary to-primary-container bg-gradient-to-br disabled:opacity-60 md:min-w-[11rem] disabled:cursor-not-allowed hover:shadow-[0_10px_30px_rgba(255,51,0,0.32)] active:scale-95 hover:brightness-110"
-        :disabled="!isBusy && !canSubmit"
-        @click="onSubmit"
-      >
-        <span class="inline-flex gap-2 items-center relative z-10">
-          {{ isBusy ? "Grilling..." : "Grill" }}
-          <Icon class="text-xl" name="ph:fire" />
-        </span>
-        <span
-          v-if="!isBusy"
-          class="bg-white/16 opacity-0 pointer-events-none transition-opacity duration-300 inset-0 absolute group-hover/btn:opacity-100"
-        />
-      </button>
-    </div>
+    <RoastInput
+      :can-submit="canSubmit"
+      :disabled="isBusy"
+      :is-busy="isBusy"
+      @submit="onSubmit"
+    />
 
     <RoastLevel
       :disabled="isBusy"
