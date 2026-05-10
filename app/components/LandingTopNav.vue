@@ -113,7 +113,7 @@ const authFeedback = computed(() => {
       </nav>
 
       <nav
-        class="border border-[lab(100%_0_0_/_0.1)] rounded-md border-solid bg-[rgba(38,38,38,0.07)] max-h-[calc(100lvh-2rem)] w-full relative overflow-auto backdrop-blur-md md:max-h-[calc(60lvh-2rem)] lg:hidden"
+        class="border border-[lab(100%_0_0_/_0.1)] rounded-[14px] border-solid bg-[rgba(38,38,38,0.07)] max-h-[calc(100lvh-2rem)] w-full relative overflow-auto backdrop-blur-md md:max-h-[calc(60lvh-2rem)] lg:hidden"
         @wheel.stop
         @touchmove.stop
       >

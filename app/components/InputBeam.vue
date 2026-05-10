@@ -9,6 +9,8 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   submitLabel?: string
   busyLabel?: string
+  beamGradient?: string
+  beamBorderWidth?: string
 }>(), {
   modelValue: '',
   disabled: false,
@@ -17,6 +19,8 @@ const props = withDefaults(defineProps<{
   placeholder: 'Enter your email',
   submitLabel: 'Join Waitlist',
   busyLabel: 'Loading...',
+  beamGradient: '#ffffff00 72%, #ffffffcc 88%, #ffffff 100%',
+  beamBorderWidth: '2px',
 })
 
 const emit = defineEmits<{
@@ -42,7 +46,7 @@ function runBeamAnimation(timestamp: number) {
     beamAnimationStart = timestamp
 
   const turn = ((timestamp - beamAnimationStart) / 5000) % 1
-  beamBorderRef.value.style.backgroundImage = `conic-gradient(from ${turn}turn, #a78bfa00 75%, #a78bfa 100%)`
+  beamBorderRef.value.style.backgroundImage = `conic-gradient(from ${turn}turn, ${props.beamGradient})`
 
   beamAnimationFrameId = requestAnimationFrame(runBeamAnimation)
 }
@@ -108,7 +112,10 @@ function onContainerClick() {
       <div
         ref="beamBorderRef"
         class="mask-with-browser-support border-[1px] border-transparent rounded-full border-solid absolute bg-origin-border -inset-[1px]"
-        style="background-image: conic-gradient(from 0turn, #a78bfa00 75%, #a78bfa 100%)"
+        :style="{
+          backgroundImage: `conic-gradient(from 0turn, ${props.beamGradient})`,
+          borderWidth: props.beamBorderWidth,
+        }"
       />
     </div>
   </form>
