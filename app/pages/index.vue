@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { navigateTo } from '#app'
+import { useLandingEntryOverlay } from '~/composables/useLandingEntryOverlay'
 import { createEntryOverlayActions } from '~/utils/landing-entry-overlay'
 
 const isEntryOverlayVisible = useLandingEntryOverlay()
