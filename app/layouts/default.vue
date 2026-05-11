@@ -14,8 +14,11 @@ const shouldHideChromeForEntryOverlay = computed(() =>
 const {
   settings,
   isPanelOpen,
+  isPanelHidden,
   togglePanel,
   resetSettings,
+  closePanel,
+  showPanel,
 } = useGrainientSettings()
 
 function applySettings(nextSettings: GrainientSettings) {
@@ -70,9 +73,12 @@ function applySettings(nextSettings: GrainientSettings) {
       v-if="isDev && !shouldHideChromeForEntryOverlay"
       :settings="settings"
       :is-panel-open="isPanelOpen"
+      :is-panel-hidden="isPanelHidden"
       @update:settings="applySettings"
       @toggle="togglePanel"
       @reset="resetSettings"
+      @close="closePanel"
+      @show="showPanel"
     />
   </div>
 </template>

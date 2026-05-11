@@ -34,12 +34,15 @@ interface NumericControl {
 const props = defineProps<{
   settings: GrainientSettings
   isPanelOpen: boolean
+  isPanelHidden: boolean
 }>()
 
 const emit = defineEmits<{
   'update:settings': [value: GrainientSettings]
   'toggle': []
   'reset': []
+  'close': []
+  'show': []
 }>()
 
 const numericControls: NumericControl[] = [
@@ -92,7 +95,17 @@ function copySettingsJson() {
 </script>
 
 <template>
+  <button
+    v-if="isPanelHidden"
+    type="button"
+    class="text-xs text-white/80 tracking-[0.12em] px-3 py-2 border border-white/20 rounded-lg bg-black/70 pointer-events-auto uppercase right-4 top-20 fixed z-30 hover:bg-black/80"
+    @click="emit('show')"
+  >
+    Grainient
+  </button>
+
   <div
+    v-else
     class="w-[340px] pointer-events-auto right-4 top-20 fixed z-30"
     :class="isPanelOpen ? 'h-[calc(100vh-6rem)]' : 'h-auto'"
   >
@@ -124,6 +137,13 @@ function copySettingsJson() {
             @click="emit('toggle')"
           >
             {{ isPanelOpen ? 'Collapse' : 'Expand' }}
+          </button>
+          <button
+            type="button"
+            class="text-[10px] text-white/80 px-2 py-1 border border-white/20 rounded-md hover:bg-white/10"
+            @click="emit('close')"
+          >
+            Close
           </button>
         </div>
       </div>

@@ -27,6 +27,7 @@ export interface GrainientSettings {
 
 export const GRAINIENT_STORAGE_KEY = 'grillme:grainient:settings:v1'
 export const GRAINIENT_PANEL_OPEN_STORAGE_KEY = 'grillme:grainient:panel-open:v1'
+export const GRAINIENT_PANEL_HIDDEN_COOKIE_KEY = 'grillme:grainient:panel-hidden:v1'
 
 export const GRAINIENT_DEFAULT_SETTINGS: GrainientSettings = {
   color1: '#000000',
@@ -95,6 +96,11 @@ function normalizeSettings(value: unknown): GrainientSettings {
 export function useGrainientSettings() {
   const settings = reactive<GrainientSettings>({ ...GRAINIENT_DEFAULT_SETTINGS })
   const isPanelOpen = ref(false)
+  const isPanelHiddenCookie = useCookie<string | null>(GRAINIENT_PANEL_HIDDEN_COOKIE_KEY, {
+    default: () => null,
+    sameSite: 'lax',
+  })
+  const isPanelHidden = ref(false)
 
   const loadSettings = () => {
     if (!import.meta.client)
@@ -130,14 +136,22 @@ export function useGrainientSettings() {
     isPanelOpen.value = !isPanelOpen.value
   }
 
+  const closePanel = () => {
+    isPanelHidden.value = true
+  }
+
+  const showPanel = () => {
+    isPanelHidden.value = false
+  }
+
   onMounted(() => {
     loadSettings()
     if (!import.meta.client)
       return
     const rawPanelOpen = localStorage.getItem(GRAINIENT_PANEL_OPEN_STORAGE_KEY)
-    if (rawPanelOpen === null)
-      return
-    isPanelOpen.value = rawPanelOpen === '1'
+    if (rawPanelOpen !== null)
+      isPanelOpen.value = rawPanelOpen === '1'
+    isPanelHidden.value = isPanelHiddenCookie.value === '1'
   })
 
   watch(
@@ -158,10 +172,21 @@ export function useGrainientSettings() {
     { immediate: false },
   )
 
+  watch(
+    isPanelHidden,
+    (value) => {
+      isPanelHiddenCookie.value = value ? '1' : null
+    },
+    { immediate: false },
+  )
+
   return {
     settings,
     resetSettings,
     isPanelOpen,
+    isPanelHidden,
     togglePanel,
+    closePanel,
+    showPanel,
   }
 }
