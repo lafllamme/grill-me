@@ -1,4 +1,4 @@
-const FORCE_SKIP_ENTRY_OVERLAY_IN_DEV = true
+const FORCE_SKIP_ENTRY_OVERLAY_IN_DEV = false
 const IS_DEV = import.meta.dev
 
 export function useLandingEntryOverlay() {
