@@ -74,14 +74,14 @@ function onContainerClick() {
 
 <template>
   <form
-    class="py-1.5 pl-6 pr-1.5 rounded-full bg-white/5 flex gap-2 w-full ring ring-[lab(100%_0_0/0.1)] items-center relative backdrop-blur-md"
+    class="py-1.5 pl-6 pr-1.5 rounded-full bg-white/5 flex gap-2 w-full ring-3 ring-[lab(100%_0_0/0.1)] items-center relative backdrop-blur-md"
     @submit.prevent="onSubmit"
     @click="onContainerClick"
   >
     <input
       ref="inputRef"
       v-model="value"
-      class="text-lg text-on-surface font-body font-medium bg-transparent w-full placeholder:text-on-surface-variant/40 focus:outline-0"
+      class="text-lg text-on-surface font-body font-medium bg-transparent w-full placeholder:color-zinc-400 focus:outline-0"
       type="text"
       :placeholder="placeholder"
       :disabled="disabled"
