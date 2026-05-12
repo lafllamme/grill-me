@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { createCampfireAudioPlayer } from '~/utils/campfire-audio'
 
 /**
  * Emits:
@@ -24,6 +25,7 @@ let questionTimer: ReturnType<typeof setTimeout> | null = null
 let choicesTimer: ReturnType<typeof setTimeout> | null = null
 let contentExitTimer: ReturnType<typeof setTimeout> | null = null
 let actionTimer: ReturnType<typeof setTimeout> | null = null
+const campfireAudioPlayer = createCampfireAudioPlayer()
 
 onMounted(() => {
   isEntryOverlayRevealChrome.value = false
@@ -53,6 +55,8 @@ onBeforeUnmount(() => {
     clearTimeout(contentExitTimer)
   if (actionTimer)
     clearTimeout(actionTimer)
+
+  campfireAudioPlayer.releaseHandle()
 })
 
 /**
@@ -69,6 +73,10 @@ function handleNotToday(): void {
   runExit('no')
 }
 
+async function playCampfireAudio(): Promise<void> {
+  await campfireAudioPlayer.play()
+}
+
 function runExit(choice: 'yes' | 'no'): void {
   if (!isHydrated.value || exitStage.value !== 'idle')
     return
@@ -79,6 +87,7 @@ function runExit(choice: 'yes' | 'no'): void {
   const contentToVeilDelay = prefersReducedMotion.value ? 1 : 480
 
   if (choice === 'yes') {
+    void playCampfireAudio()
     const actionDelay = prefersReducedMotion.value ? 1 : 1100
 
     contentExitTimer = setTimeout(() => {
