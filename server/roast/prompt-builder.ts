@@ -2,11 +2,10 @@ import type { RoastVariationMode } from '~~/shared/roast/contracts'
 import type { RoastIntensityProfile } from '~~/shared/roast/intensity'
 import type { SelectedEvidence } from './evidence-selector'
 import { ROAST_LIMITS } from '~~/shared/roast/contracts'
-import { logServerDebug } from './debug'
+import { ENABLE_ROAST_DEBUG, logServerDebug } from './debug'
 import { getRoastTitleToneLine, ROAST_TITLE_POLICY } from './title-policy'
 
 export const PROMPT_VERSION = 'grill-v3.0.0'
-const ENABLE_ROAST_DEBUG = import.meta.dev && true
 
 interface PromptToneProfile {
   temperatureBias: number

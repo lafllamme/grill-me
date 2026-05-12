@@ -30,10 +30,10 @@ export const ROAST_TITLE_POLICY: RoastTitlePolicy = {
     'dumb',
   ],
   toneByIntensity: {
-    salty: 'Title tone: mild deadpan hook-question, restrained burn.',
-    savage: 'Title tone: sharp hook-question, direct and witty.',
-    unhinged: 'Title tone: bolder hook-question with heavier punchlines.',
-    nuke: 'Title tone: maximal punch hook-question, still policy-safe and technical.',
+    rare: 'Title tone: light deadpan hook-question, restrained burn.',
+    medium_rare: 'Title tone: sharper hook-question, direct and witty.',
+    medium: 'Title tone: bolder hook-question with heavier punchlines.',
+    burned_to_crisp: 'Title tone: maximal punch hook-question, still policy-safe and technical.',
   },
 }
 

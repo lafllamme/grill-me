@@ -90,12 +90,12 @@ test('entry overlay blocks landing until continue', async ({ page }) => {
 
   await expect(page.getByTestId('entry-overlay-dialog')).toBeHidden()
   await expect(page.getByTestId('roast-intensity-slider')).toBeVisible()
-  await expect(page.getByText('Roast Intensity')).toBeVisible()
+  await expect(page.getByText('Roast Level')).toBeVisible()
   await expect(page.getByText('Critical Temperature')).toBeVisible()
-  await expect(page.getByText('salty')).toBeVisible()
-  await expect(page.getByText('savage')).toBeVisible()
-  await expect(page.getByText('unhinged')).toBeVisible()
-  await expect(page.getByText('nuke')).toBeVisible()
+  await expect(page.getByTestId('roast-level-rare')).toBeVisible()
+  await expect(page.getByTestId('roast-level-medium_rare')).toBeVisible()
+  await expect(page.getByTestId('roast-level-medium')).toBeVisible()
+  await expect(page.getByTestId('roast-level-burned_to_crisp')).toBeVisible()
 })
 
 test('not today navigates to toysrus in same tab', async ({ page }) => {

@@ -1,7 +1,15 @@
 import type { DebugRequestInfo, RoastDebug, RoastDebugLevel } from '~~/shared/roast/contracts'
+import process from 'node:process'
 import { consola } from 'consola'
 
-const ENABLE_ROAST_DEBUG = import.meta.dev && true
+function toBooleanFlag(value: string | undefined): boolean {
+  if (!value)
+    return false
+
+  return value === '1' || value.toLowerCase() === 'true'
+}
+
+export const ENABLE_ROAST_DEBUG = toBooleanFlag(process.env.NUXT_ROAST_DEBUG)
 
 export type RoastDebugReport = RoastDebug
 

@@ -1,9 +1,7 @@
 import type { RoastDebug, RoastDebugLevel } from '~~/shared/roast/contracts'
 import { createError } from 'h3'
 import { ROAST_DEFAULTS, ROAST_LIMITS } from '~~/shared/roast/contracts'
-import { logServerDebug, pushDebugRequest } from './debug'
-
-const ENABLE_ROAST_DEBUG = import.meta.dev && true
+import { ENABLE_ROAST_DEBUG, logServerDebug, pushDebugRequest } from './debug'
 
 export interface GithubCommitFile {
   filename: string

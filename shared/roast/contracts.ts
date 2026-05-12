@@ -106,7 +106,7 @@ export type SelectionSummary = z.infer<typeof selectionSummarySchema>
 
 export const intensityProfileSchema = z.object({
   level: z.number().int().min(1).max(4),
-  label: z.enum(['salty', 'savage', 'unhinged', 'nuke']),
+  label: z.enum(['rare', 'medium_rare', 'medium', 'burned_to_crisp']),
   maxCommitRefs: z.number().int().nonnegative(),
   maxSelectedCommits: z.number().int().nonnegative(),
   maxPromptTotalFiles: z.number().int().nonnegative(),

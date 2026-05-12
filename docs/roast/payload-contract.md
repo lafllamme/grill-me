@@ -44,6 +44,7 @@ Schema source:
 Notes:
 - `done.data` is the canonical stream final state.
 - `receipt` is server-owned and required for `share` and `official submit`.
+- `roastIntensity` stays numeric (`1..4`); debug profile labels map to `rare`, `medium_rare`, `medium`, `burned_to_crisp`.
 
 ## 3) Public Stream Event Shapes
 

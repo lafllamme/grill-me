@@ -27,7 +27,7 @@ const trackPercent = computed(() => ((currentValue.value - 1) / 3) * 100)
   <div class="px-1 pt-5 space-y-5">
     <div class="flex items-center justify-between">
       <span class="text-[10px] text-on-surface-variant tracking-[0.2em] font-body font-bold uppercase">
-        Roast Intensity
+        Roast Level
       </span>
       <span class="text-[10px] text-primary tracking-[0.2em] font-body font-bold uppercase">
         Critical Temperature
@@ -62,6 +62,7 @@ const trackPercent = computed(() => ((currentValue.value - 1) / 3) * 100)
           v-for="level in ROAST_INTENSITY_LEVELS"
           :key="level.value"
           :class="level.value === currentValue ? 'text-primary' : 'text-on-surface-variant/70'"
+          :data-testid="`roast-level-${level.key}`"
           class="text-[10px] tracking-[0.18em] font-body font-bold uppercase transition-colors"
         >
           {{ level.label }}

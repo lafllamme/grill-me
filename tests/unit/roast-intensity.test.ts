@@ -3,10 +3,10 @@ import { resolveRoastIntensityProfile } from '../../shared/roast/intensity'
 
 describe('roast intensity profiles', () => {
   it('resolves all 4 intensity levels', () => {
-    expect(resolveRoastIntensityProfile(1).label).toBe('salty')
-    expect(resolveRoastIntensityProfile(2).label).toBe('savage')
-    expect(resolveRoastIntensityProfile(3).label).toBe('unhinged')
-    expect(resolveRoastIntensityProfile(4).label).toBe('nuke')
+    expect(resolveRoastIntensityProfile(1).label).toBe('rare')
+    expect(resolveRoastIntensityProfile(2).label).toBe('medium_rare')
+    expect(resolveRoastIntensityProfile(3).label).toBe('medium')
+    expect(resolveRoastIntensityProfile(4).label).toBe('burned_to_crisp')
   })
 
   it('normalizes out-of-range values to valid profile', () => {

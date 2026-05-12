@@ -60,7 +60,7 @@ Missing required structure triggers typed `error` (`cloudflare_ai_incomplete_out
 - target length 6-12 words
 - spicy-clean tone
 - evidence-grounded, non-generic wording
-- intensity-aware tone ramp (`salty` -> `savage` -> `unhinged` -> `nuke`)
+- intensity-aware tone ramp (`rare` -> `medium_rare` -> `medium` -> `burned_to_crisp`)
 
 Server applies title normalization before final canonical output.
 

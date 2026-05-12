@@ -6,7 +6,7 @@ import type { RoastScoringProfile } from './scoring'
 import { createError } from 'h3'
 import { ROAST_AI_TOKEN_BOUNDS } from '~~/shared/roast/contracts'
 import { resolveRoastIntensityProfile } from '~~/shared/roast/intensity'
-import { logServerDebug, shapeDebugPayload } from './debug'
+import { ENABLE_ROAST_DEBUG, logServerDebug, shapeDebugPayload } from './debug'
 import { selectEvidence } from './evidence-selector'
 import { createFallbackRoast } from './fallback'
 import { collectGithubContext } from './github-collector'
@@ -16,7 +16,7 @@ import { createRoastReceipt } from './receipt'
 import { computeRoastMetrics, getDefaultRoastScoringInputs } from './scoring'
 import { normalizeRoastTitle } from './title-normalizer'
 
-export const ENABLE_ROAST_DEBUG = import.meta.dev && true
+export { ENABLE_ROAST_DEBUG } from './debug'
 
 export interface RoastServiceEnv {
   cfAccountId?: string

@@ -5,7 +5,6 @@ import { requestLeaderboardSubmit, requestRoastShare, requestRoastStream, reques
 
 export type RoastResult = RoastResponse
 
-const ENABLE_ROAST_DEBUG = import.meta.dev && true
 const DEFAULT_CLIENT_DEBUG_LEVEL: RoastDebugLevel = import.meta.dev ? 'full' : 'minimal'
 
 interface RoastRequestOptions {
@@ -27,6 +26,9 @@ interface StreamMeta {
  * await roastUsername('lafllamme', { roastIntensity: 4 })
  */
 export function useRoast() {
+  const runtimeConfig = useRuntimeConfig()
+  const isRoastDebugEnabled = runtimeConfig.public.roastDebug === '1'
+    || runtimeConfig.public.roastDebug === 'true'
   const result = useState<RoastResult | null>('roast-result', () => null)
   const pending = useState<boolean>('roast-pending', () => false)
   const error = useState<string | null>('roast-error', () => null)
@@ -78,7 +80,7 @@ export function useRoast() {
   }
 
   const logDebugPayload = (payload: Record<string, unknown>): void => {
-    if (!ENABLE_ROAST_DEBUG)
+    if (!isRoastDebugEnabled)
       return
 
     const githubDebug = (payload.github || null) as Record<string, unknown> | null
@@ -120,35 +122,35 @@ export function useRoast() {
         requestId: event.requestId,
         username: event.username,
       }
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-meta]', event)
       return
     }
 
     if (event.type === 'status') {
       streamStatus.value = [...streamStatus.value, `[${event.phase}] ${event.message}`]
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-status]', { phase: event.phase, message: event.message })
       return
     }
 
     if (event.type === 'roast_title') {
       partialTitle.value = event.title
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-roast-title]', event)
       return
     }
 
     if (event.type === 'roast_line') {
       setRoastLine(event.index, event.text)
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-roast-line]', event)
       return
     }
 
     if (event.type === 'feedback_item') {
       setFeedbackItem(event.index, event.text)
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-feedback-item]', event)
       return
     }
@@ -156,7 +158,7 @@ export function useRoast() {
     if (event.type === 'debug') {
       const payload = event.debug as Record<string, unknown>
       streamDebug.value = payload
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-debug]', event.debug)
       logDebugPayload(payload)
       return
@@ -165,7 +167,7 @@ export function useRoast() {
     if (event.type === 'done') {
       setFinalResult(event.data)
 
-      if (ENABLE_ROAST_DEBUG) {
+      if (isRoastDebugEnabled) {
         const aiDebug = (event.data.debug?.ai || {}) as Record<string, unknown>
         const responseFullText = typeof aiDebug.responseFullText === 'string' ? aiDebug.responseFullText : ''
 
@@ -204,7 +206,7 @@ export function useRoast() {
     const response = await requestRoastSync(githubUsername, options)
     setFinalResult(response)
 
-    if (ENABLE_ROAST_DEBUG) {
+    if (isRoastDebugEnabled) {
       consola.info('[client/roast/sync]', {
         username: response.username,
         roastLength: response.roast.length,
@@ -245,7 +247,7 @@ export function useRoast() {
     try {
       const payload = await requestRoastShare(result.value.receipt)
       lastShareUrl.value = payload.shareUrl
-      if (ENABLE_ROAST_DEBUG) {
+      if (isRoastDebugEnabled) {
         consola.info('[client/roast/share-created]', {
           username: result.value.username,
           token: payload.token,
@@ -269,7 +271,7 @@ export function useRoast() {
     try {
       const payload = await requestLeaderboardSubmit(result.value.receipt)
       lastSubmitMessage.value = `Submitted @${payload.username} at ${new Date(payload.submittedAt).toLocaleString()}`
-      if (ENABLE_ROAST_DEBUG) {
+      if (isRoastDebugEnabled) {
         consola.info('[client/roast/official-submit]', {
           username: payload.username,
           submittedAt: payload.submittedAt,
@@ -295,7 +297,7 @@ export function useRoast() {
 
     try {
       isStreaming.value = true
-      if (ENABLE_ROAST_DEBUG) {
+      if (isRoastDebugEnabled) {
         consola.info('[client/roast/request-start]', {
           username: trimmed,
           mode: 'stream',
@@ -309,7 +311,7 @@ export function useRoast() {
     catch (cause: unknown) {
       const message = extractApiErrorMessage(cause, 'Streaming roast failed')
       streamError.value = message
-      if (ENABLE_ROAST_DEBUG)
+      if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-error]', { message, cause })
 
       try {
@@ -318,7 +320,7 @@ export function useRoast() {
       catch (fallbackCause: unknown) {
         const fallbackMessage = extractApiErrorMessage(fallbackCause, 'Roast request failed')
         error.value = fallbackMessage
-        if (ENABLE_ROAST_DEBUG)
+        if (isRoastDebugEnabled)
           consola.info('[client/roast/sync-error]', { message: fallbackMessage, cause: fallbackCause })
       }
     }

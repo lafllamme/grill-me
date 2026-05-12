@@ -42,6 +42,7 @@ erDiagram
 ## Constraints and Integrity
 
 - `roast_intensity` constrained to `1..4`.
+- Semantic intensity labels are now steak-level based (`rare`, `medium_rare`, `medium`, `burned_to_crisp`) while persisted values remain numeric.
 - Score fields constrained to `0..100`.
 - `grade` constrained to `F- | F | D- | D | C- | C | B | A`.
 - FK chains use `ON DELETE CASCADE` on dependent run/share/official rows.

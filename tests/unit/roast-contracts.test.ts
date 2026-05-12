@@ -82,7 +82,7 @@ describe('roast contracts', () => {
         },
         intensityProfile: {
           level: 2,
-          label: 'savage',
+          label: 'medium_rare',
           maxCommitRefs: 10,
           maxSelectedCommits: 6,
           maxPromptTotalFiles: 14,
@@ -97,7 +97,7 @@ describe('roast contracts', () => {
     })
 
     expect(parsed.roastLines).toHaveLength(1)
-    expect(parsed.debug?.intensityProfile?.label).toBe('savage')
+    expect(parsed.debug?.intensityProfile?.label).toBe('medium_rare')
   })
 
   it('validates stream event union', () => {

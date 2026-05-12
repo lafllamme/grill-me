@@ -50,7 +50,7 @@ export default defineNuxtConfig({
     // Nuxt auto-maps these from:
     // NUXT_CF_ACCOUNT_ID, NUXT_CF_API_TOKEN, NUXT_CF_AI_MODEL, NUXT_GITHUB_TOKEN,
     // NUXT_GITHUB_TIMEOUT_MS, NUXT_CF_AI_TIMEOUT_MS, NUXT_CF_AI_MAX_TOKENS,
-    // NUXT_CF_AI_TEMPERATURE, NUXT_CF_AI_TOP_P, NUXT_ROAST_DEBUG_LEVEL, NUXT_ROAST_VARIATION_MODE,
+    // NUXT_CF_AI_TEMPERATURE, NUXT_CF_AI_TOP_P, NUXT_ROAST_DEBUG, NUXT_ROAST_DEBUG_LEVEL, NUXT_ROAST_VARIATION_MODE,
     // NUXT_DATABASE_URL, NUXT_ROAST_RECEIPT_SECRET
     cfAccountId: '',
     cfApiToken: '',
@@ -66,6 +66,10 @@ export default defineNuxtConfig({
     githubToken: '',
     databaseUrl: '',
     roastReceiptSecret: 'dev-roast-receipt-secret-change-me-in-prod',
+    public: {
+      // NUXT_PUBLIC_ROAST_DEBUG=true enables roast debug logs in browser.
+      roastDebug: 'false',
+    },
     oauth: {
       github: {
         clientId: '',

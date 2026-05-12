@@ -4,6 +4,10 @@ Public HTTP contract for roast generation, temporary sharing, verified official 
 
 Policy baseline: **Roast anyone. Share temporarily. Submit only yourself.**
 
+Intensity semantics:
+- `roastIntensity` remains numeric (`1..4`) at the API boundary.
+- Internal profile labels use steak levels: `rare`, `medium_rare`, `medium`, `burned_to_crisp`.
+
 ## Endpoints
 
 - `POST /api/roast`
