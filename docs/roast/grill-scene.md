@@ -105,3 +105,4 @@ Die relevanten Szene-Tuning-Werte werden persistent gehalten:
 - Reminder: sync plate slide-in docs with implementation changes.
 - Checked idle embers — matches the shipped behavior.
 - Note: idle embers behaves as expected in latest testing.
+- Edge case: flame timing on mobile safari needs a second look.
