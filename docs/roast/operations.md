@@ -119,3 +119,9 @@ LIMIT 20;
 
 - All cron schedules are interpreted in UTC.
 - Cleanup only removes expired rows from `roast_shares`; it does not delete official leaderboard entries.
+
+## Runbook notes
+
+- Stream error rate > 2% over 10 min: check upstream model status first.
+- Rate limit tuning lives in env, not code — adjust without redeploys.
+- Cold starts spike p95; keep the warm-up ping enabled in production.
