@@ -26,3 +26,4 @@ Siehe:
 - TODO: add example for review notes.
 - Edge case: token naming on mobile safari needs a second look.
 - TODO: add example for token naming.
+- Checked doc structure — matches the shipped behavior.
