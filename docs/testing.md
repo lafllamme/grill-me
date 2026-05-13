@@ -40,3 +40,4 @@ pnpm check
 - Decision: keep stream rendering check as documented for now.
 - Decision: keep error state coverage as documented for now.
 - Note: error state coverage behaves as expected in latest testing.
+- TODO: add example for stream rendering check.
