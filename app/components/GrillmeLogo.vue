@@ -10,7 +10,7 @@
       x="46"
       y="35.5"
       fill="#F5F5F5"
-      font-family="Geist, Outfit, Bricolage Grotesque, sans-serif"
+      font-family="Bricolage Grotesque, General Sans, sans-serif"
       font-size="25"
       font-weight="700"
       letter-spacing="0"

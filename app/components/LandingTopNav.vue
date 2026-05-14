@@ -63,7 +63,7 @@ const authFeedback = computed(() => {
     <aside class="px-4 lg:px-0 md:px-12">
       <p
         v-if="authFeedback"
-        class="text-xs text-primary tracking-[0.08em] font-mono mb-2 px-4 py-2 border border-primary/30 rounded-md bg-black/40 md:px-6"
+        class="text-xs text-primary tracking-[0.08em] font-meta mb-2 px-4 py-2 border border-primary/30 rounded-md bg-black/40 md:px-6"
       >
         {{ authFeedback }}
       </p>
@@ -98,7 +98,7 @@ const authFeedback = computed(() => {
           </button>
           <span
             v-if="loggedIn && user?.login"
-            class="text-xs text-primary tracking-[0.1em] font-mono px-3 py-1.5 border border-primary/30 rounded-full uppercase"
+            class="text-xs text-primary tracking-[0.1em] font-meta px-3 py-1.5 border border-primary/30 rounded-full uppercase"
           >
             @{{ user.login }}
           </span>

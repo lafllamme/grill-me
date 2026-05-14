@@ -166,7 +166,7 @@ async function submitOfficialEntry(): Promise<void> {
           <span class="border border-amber-500/40 rounded-full bg-amber-500/20 h-3 w-3" />
           <span class="border border-green-500/40 rounded-full bg-green-500/20 h-3 w-3" />
         </div>
-        <span class="text-xs text-on-surface-variant tracking-[0.14em] font-mono uppercase">
+        <span class="text-xs text-on-surface-variant tracking-[0.14em] font-meta uppercase">
           roast-engine-v3.1.0 --stream
         </span>
       </div>
@@ -300,7 +300,7 @@ async function submitOfficialEntry(): Promise<void> {
         </button>
       </div>
 
-      <div class="text-xs text-on-surface-variant tracking-[0.14em] font-mono px-4 py-3 border border-divider bg-surface-container-low uppercase md:text-center">
+      <div class="text-xs text-on-surface-variant tracking-[0.14em] font-meta px-4 py-3 border border-divider bg-surface-container-low uppercase md:text-center">
         {{ statusLabel }}
       </div>
 
@@ -316,7 +316,7 @@ async function submitOfficialEntry(): Promise<void> {
 
       <div class="gap-4 grid grid-cols-1 md:grid-cols-3">
         <article class="p-5 border border-divider bg-surface-container-low">
-          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
             Stink Score
           </p>
           <p class="text-5xl text-primary leading-none font-bold font-headline mt-3">
@@ -324,7 +324,7 @@ async function submitOfficialEntry(): Promise<void> {
           </p>
         </article>
         <article class="p-5 border border-divider bg-surface-container-low">
-          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
             Ego Damage
           </p>
           <p class="text-5xl text-primary leading-none font-bold font-headline mt-3">
@@ -332,7 +332,7 @@ async function submitOfficialEntry(): Promise<void> {
           </p>
         </article>
         <article class="p-5 border border-divider bg-surface-container-low">
-          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
             Verdict
           </p>
           <p class="text-5xl text-primary leading-none font-bold font-headline mt-3">

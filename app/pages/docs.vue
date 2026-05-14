@@ -81,7 +81,7 @@
       <p class="text-sm text-orange-100/85 mb-2">
         Full API flow and SSE contract documentation:
       </p>
-      <p class="text-sm text-orange-100 font-mono">
+      <p class="text-sm text-orange-100 font-meta">
         docs/roast/api.md
       </p>
     </article>

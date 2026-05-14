@@ -258,7 +258,7 @@ function noHoldTextStyle(): CSSProperties {
             <br>
             <span class="text-primary/80">Confidence level: low.</span>
           </p>
-          <p class="text-xs text-on-surface-variant/70 tracking-[0.14em] font-mono mt-6 uppercase">
+          <p class="text-xs text-on-surface-variant/70 tracking-[0.14em] font-meta mt-6 uppercase">
             Sending you somewhere more comfortable...
           </p>
         </div>
@@ -266,7 +266,7 @@ function noHoldTextStyle(): CSSProperties {
     </div>
 
     <span
-      class="text-[10px] text-on-surface-variant/50 tracking-widest font-mono uppercase bottom-6 right-8 fixed"
+      class="text-[10px] text-on-surface-variant/50 tracking-widest font-meta uppercase bottom-6 right-8 fixed"
       :style="exitStage === 'no_hold' ? { opacity: 0, transition: 'opacity 200ms ease' } : cornerLabelStyle()"
     >
       T3 / Mist
@@ -281,7 +281,6 @@ function noHoldTextStyle(): CSSProperties {
   border: 0;
   background: transparent;
   cursor: pointer;
-  font-family: inherit;
   font-size: clamp(1.4rem, 3.5vw, 3rem);
   font-weight: 900;
   letter-spacing: -0.02em;

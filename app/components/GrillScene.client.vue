@@ -333,7 +333,7 @@ tryOnBeforeUnmount(() => {
 
     <div class="px-3 py-1.5 border border-divider/60 rounded-full bg-black/30 flex gap-2 pointer-events-none items-center left-5 top-5 absolute z-20 backdrop-blur-md">
       <span class="rounded-full bg-primary h-2 w-2" />
-      <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+      <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
         Hybrid grill shell + live browning
       </span>
     </div>

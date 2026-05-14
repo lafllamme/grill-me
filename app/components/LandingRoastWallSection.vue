@@ -16,13 +16,13 @@
                 <p class="text-lg font-body font-bold">
                   Senior Dev @ Big Tech
                 </p>
-                <p class="text-sm text-on-surface-variant font-mono">
+                <p class="text-sm text-on-surface-variant font-meta">
                   repo: microservice-hell
                 </p>
               </div>
             </div>
 
-            <blockquote class="text-2xl text-on-surface leading-relaxed font-serif mb-8 italic">
+            <blockquote class="text-2xl text-on-surface leading-relaxed font-accent mb-8 italic">
               "Grillme told me that my clean architecture was just a series of over-engineered nested folders containing empty interfaces and sadness. I haven't opened VS Code in three days."
             </blockquote>
 
@@ -46,7 +46,7 @@
                 <p class="tracking-tight font-bold font-headline">
                   facebook-killer-final
                 </p>
-                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-bold font-display uppercase">
+                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-meta uppercase">
                   Destroyed 2m ago
                 </p>
               </div>
@@ -61,7 +61,7 @@
                 <p class="tracking-tight font-bold font-headline">
                   ai-powered-todo-app
                 </p>
-                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-bold font-display uppercase">
+                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-meta uppercase">
                   Destroyed 14m ago
                 </p>
               </div>
@@ -76,7 +76,7 @@
                 <p class="tracking-tight font-bold font-headline">
                   legacy-cobol-wrapper
                 </p>
-                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-bold font-display uppercase">
+                <p class="text-xs text-on-surface-variant tracking-[0.12em] font-meta uppercase">
                   Destroyed 1h ago
                 </p>
               </div>

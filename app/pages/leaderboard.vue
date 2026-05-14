@@ -23,7 +23,7 @@ function formatDate(value: string): string {
 
     <main class="mx-auto px-4 pb-24 pt-32 max-w-6xl md:px-10">
       <header class="mb-8 space-y-4">
-        <p class="text-xs text-primary tracking-[0.24em] font-mono uppercase">
+        <p class="text-xs text-primary tracking-[0.24em] font-meta uppercase">
           Leaderboard
         </p>
         <h1 class="text-5xl text-white leading-[0.9] tracking-tight font-display md:text-7xl">
@@ -61,7 +61,7 @@ function formatDate(value: string): string {
       </section>
 
       <section class="border border-white/10 rounded-2xl bg-black/40 overflow-hidden">
-        <div class="text-xs text-white/45 tracking-[0.22em] px-5 py-3 border-b border-white/10 gap-2 grid grid-cols-[80px_1fr_180px_180px_190px] uppercase">
+        <div class="text-xs text-white/45 tracking-[0.22em] font-meta px-5 py-3 border-b border-white/10 gap-2 grid grid-cols-[80px_1fr_180px_180px_190px] uppercase">
           <span>Rank</span>
           <span>Victim</span>
           <span>Spaghetti</span>
@@ -92,7 +92,7 @@ function formatDate(value: string): string {
               <p class="text-2xl leading-none font-display truncate">
                 @{{ entry.username }}
               </p>
-              <p class="text-xs text-white/50 mt-1 truncate">
+              <p class="text-xs text-white/50 font-meta mt-1 truncate">
                 last roasted: {{ formatDate(entry.lastRoastedAt) }}
               </p>
             </div>
@@ -101,7 +101,7 @@ function formatDate(value: string): string {
               <p class="text-3xl leading-none font-display" :class="entry.metrics.stinkScore >= 90 ? 'text-primary' : 'text-white'">
                 {{ formatPercent(entry.metrics.stinkScore) }}
               </p>
-              <p class="text-xs text-white/50 mt-1">
+              <p class="text-xs text-white/50 font-meta mt-1">
                 SI {{ formatPercent(entry.metrics.spaghettiIndex) }}
               </p>
             </div>
@@ -110,7 +110,7 @@ function formatDate(value: string): string {
               <div class="rounded-full bg-white/15 h-2 w-full">
                 <div class="rounded-full bg-primary h-2" :style="{ width: `${entry.metrics.egoDamage}%` }" />
               </div>
-              <p class="text-xs text-primary mt-1">
+              <p class="text-xs text-primary font-meta mt-1">
                 {{ formatPercent(entry.metrics.egoDamage) }}
               </p>
             </div>
@@ -119,7 +119,7 @@ function formatDate(value: string): string {
               <p class="text-4xl text-primary leading-none font-display">
                 {{ entry.metrics.grade }}
               </p>
-              <p class="text-xs text-white/70 tracking-[0.12em] uppercase">
+              <p class="text-xs text-white/70 tracking-[0.12em] font-meta uppercase">
                 {{ entry.metrics.specialTitle }}
               </p>
             </div>

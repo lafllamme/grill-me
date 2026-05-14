@@ -116,20 +116,20 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
   <div class="px-4 py-3 overscroll-contain border border-divider/60 rounded-[1.25rem] bg-black/32 flex flex-col gap-3 max-h-[calc(100%-2.5rem)] min-w-[14rem] right-5 top-5 absolute z-20 overflow-y-auto backdrop-blur-md">
     <div class="flex gap-3 items-center justify-between">
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Heat state
         </p>
         <p class="text-sm text-on-surface font-display uppercase">
           {{ props.sceneState.labels.primary }}
         </p>
       </div>
-      <p class="text-xs text-primary tracking-[0.16em] font-mono uppercase">
+      <p class="text-xs text-primary tracking-[0.16em] font-meta uppercase">
         {{ props.heatPercent }}%
       </p>
     </div>
 
     <div>
-      <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="grill-heat-slider">
+      <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="grill-heat-slider">
         Fire control
       </label>
       <input
@@ -143,7 +143,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       >
     </div>
 
-    <div class="text-[10px] text-on-surface-variant/80 tracking-[0.14em] font-mono gap-2 grid grid-cols-4 uppercase">
+    <div class="text-[10px] text-on-surface-variant/80 tracking-[0.14em] font-meta gap-2 grid grid-cols-4 uppercase">
       <span v-for="label in heatMarks" :key="label">{{ label }}</span>
     </div>
 
@@ -157,13 +157,13 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
 
     <div class="pt-3 border-t border-divider/50 space-y-3">
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Fuel controls
         </p>
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="fuel-glow-intensity">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="fuel-glow-intensity">
           Glow intensity
         </label>
         <input
@@ -178,7 +178,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="fuel-pulse-speed">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="fuel-pulse-speed">
           Pulse speed
         </label>
         <input
@@ -193,7 +193,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="fuel-coal-density">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="fuel-coal-density">
           Coal density
         </label>
         <input
@@ -208,7 +208,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="fuel-coal-blackness">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="fuel-coal-blackness">
           Coal blackness
         </label>
         <input
@@ -223,7 +223,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="fuel-hotspot-variance">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="fuel-hotspot-variance">
           Hotspot variance
         </label>
         <input
@@ -238,7 +238,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="fuel-coal-count">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="fuel-coal-count">
           Coal count
         </label>
         <input
@@ -253,13 +253,13 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Flame controls
         </p>
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-height">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-height">
           Flame height
         </label>
         <input
@@ -274,7 +274,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-spread">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-spread">
           Flame spread
         </label>
         <input
@@ -289,7 +289,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-opacity">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-opacity">
           Flame opacity
         </label>
         <input
@@ -304,7 +304,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-flicker">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-flicker">
           Flame flicker
         </label>
         <input
@@ -319,7 +319,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-base-density">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-base-density">
           Base density
         </label>
         <input
@@ -334,7 +334,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-vertical-taper">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-vertical-taper">
           Vertical taper
         </label>
         <input
@@ -349,7 +349,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-ember-rate">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-ember-rate">
           Ember rate
         </label>
         <input
@@ -364,7 +364,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="flame-bed-turbulence">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="flame-bed-turbulence">
           Bed turbulence
         </label>
         <input
@@ -379,13 +379,13 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Burn controls
         </p>
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="burn-char-strength">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="burn-char-strength">
           Char strength
         </label>
         <input
@@ -400,13 +400,13 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Smoke controls
         </p>
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-density">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="smoke-density">
           Smoke density
         </label>
         <input
@@ -421,7 +421,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-rise">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="smoke-rise">
           Smoke rise
         </label>
         <input
@@ -436,7 +436,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-drift">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="smoke-drift">
           Smoke drift
         </label>
         <input
@@ -451,7 +451,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-opacity">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="smoke-opacity">
           Smoke opacity
         </label>
         <input
@@ -466,7 +466,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="smoke-softness">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="smoke-softness">
           Smoke softness
         </label>
         <input
@@ -481,7 +481,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="burn-char-threshold">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="burn-char-threshold">
           Char threshold
         </label>
         <input
@@ -496,16 +496,16 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Camera position
         </p>
-        <p class="text-[11px] text-primary font-mono mt-1">
+        <p class="text-[11px] text-primary font-meta mt-1">
           {{ formatOffset(cameraPositionOffset) }}
         </p>
       </div>
 
       <div v-for="axis in cameraPlacementAxes" :key="`camera-position-${axis}`">
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`camera-position-${axis}`">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`camera-position-${axis}`">
           Camera {{ axis }}
         </label>
         <input
@@ -520,16 +520,16 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Camera target
         </p>
-        <p class="text-[11px] text-primary font-mono mt-1">
+        <p class="text-[11px] text-primary font-meta mt-1">
           {{ formatOffset(cameraTargetOffset) }}
         </p>
       </div>
 
       <div v-for="axis in cameraPlacementAxes" :key="`camera-target-${axis}`">
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`camera-target-${axis}`">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`camera-target-${axis}`">
           Target {{ axis }}
         </label>
         <input
@@ -544,13 +544,13 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Orbit limits
         </p>
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-min-distance">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="camera-min-distance">
           Min distance
         </label>
         <input
@@ -565,7 +565,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-max-distance">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="camera-max-distance">
           Max distance
         </label>
         <input
@@ -580,7 +580,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-min-polar-angle">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="camera-min-polar-angle">
           Min polar
         </label>
         <input
@@ -595,7 +595,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" for="camera-max-polar-angle">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" for="camera-max-polar-angle">
           Max polar
         </label>
         <input
@@ -610,16 +610,16 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Smoke anchor
         </p>
-        <p class="text-[11px] text-primary font-mono mt-1">
+        <p class="text-[11px] text-primary font-meta mt-1">
           {{ formatOffset(smokeOffset) }}
         </p>
       </div>
 
       <div v-for="axis in placementAxes" :key="`smoke-${axis}`">
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`smoke-offset-${axis}`">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`smoke-offset-${axis}`">
           Smoke {{ axis }}
         </label>
         <input
@@ -634,16 +634,16 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Ember anchor
         </p>
-        <p class="text-[11px] text-primary font-mono mt-1">
+        <p class="text-[11px] text-primary font-meta mt-1">
           {{ formatOffset(emberOffset) }}
         </p>
       </div>
 
       <div v-for="axis in placementAxes" :key="`ember-${axis}`">
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`ember-offset-${axis}`">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`ember-offset-${axis}`">
           Ember {{ axis }}
         </label>
         <input
@@ -658,16 +658,16 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div>
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Meat anchor
         </p>
-        <p class="text-[11px] text-primary font-mono mt-1">
+        <p class="text-[11px] text-primary font-meta mt-1">
           {{ formatOffset(meatOffset) }}
         </p>
       </div>
 
       <div v-for="axis in placementAxes" :key="`meat-${axis}`">
-        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`meat-offset-${axis}`">
+        <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`meat-offset-${axis}`">
           Meat {{ axis }}
         </label>
         <input
@@ -682,20 +682,20 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
       </div>
 
       <div class="pt-3 border-t border-divider/50 space-y-3">
-        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           Meat model tuning
         </p>
 
         <div v-for="id in meatIds" :key="id" class="pt-2 border-t border-divider/30 space-y-2">
-          <p class="text-[10px] text-primary tracking-[0.16em] font-mono uppercase">
+          <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">
             {{ id }}
           </p>
-          <p class="text-[11px] text-primary font-mono">
+          <p class="text-[11px] text-primary font-meta">
             {{ formatMeatTuning(id) }}
           </p>
 
           <div v-for="axis in placementAxes" :key="`${id}-pos-${axis}`">
-            <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`${id}-pos-${axis}`">
+            <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`${id}-pos-${axis}`">
               {{ id }} {{ axis }}
             </label>
             <input
@@ -710,7 +710,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
           </div>
 
           <div>
-            <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`${id}-scale`">
+            <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`${id}-scale`">
               {{ id }} scale
             </label>
             <input
@@ -725,7 +725,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
           </div>
 
           <div>
-            <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-mono uppercase" :for="`${id}-rotation-y`">
+            <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase" :for="`${id}-rotation-y`">
               {{ id }} rot y
             </label>
             <input
