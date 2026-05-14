@@ -10,7 +10,7 @@
         <span class="text-primary-container italic">ASHES?</span>
       </h2>
 
-      <button class="text-xl text-on-surface tracking-[0.2em] font-black font-display px-16 py-6 rounded-sm uppercase shadow-[0_0_40px_rgba(255,51,0,0.15)] transition-transform duration-150 from-primary to-primary-container bg-gradient-to-r active:scale-95 hover:scale-110">
+      <button class="text-xl text-background tracking-[0.2em] font-black font-display px-16 py-6 rounded-sm bg-primary uppercase shadow-[0_0_40px_rgba(255,51,0,0.15)] transition-transform duration-150 hover:bg-primary-strong active:scale-95 hover:scale-110">
         Connect GitHub Repo
       </button>
 

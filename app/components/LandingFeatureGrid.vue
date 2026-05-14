@@ -34,7 +34,7 @@
         </div>
       </article>
 
-      <article class="text-on-primary-fixed p-8 border border-primary-container/30 bg-primary">
+      <article class="text-background p-8 border border-primary-container/30 bg-primary">
         <Icon class="text-[26px] mb-6" name="ph:chart-bar" />
         <h3 class="text-3xl leading-tight tracking-tight font-black font-display uppercase">
           Wall of Shame

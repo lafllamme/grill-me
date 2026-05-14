@@ -27,7 +27,9 @@ Verhalten:
 
 Visuelle Regeln:
 
-- Nur Magma-&-Basalt-Token (`primary`, `primary-container`, `divider`, `on-*`, `surface`).
+- Nur Ember/Basalt/Bone-Design-System-Tokens verwenden.
+- Struktur über `background`, `surface*`, `divider`, `border`, `on-*`.
+- Orange nur als Signal über `primary`, `primary-strong`, `primary-soft` oder `primary-container`.
 - Keine zusätzlichen externen Font- oder CSS-Quellen.
 - Primäre und sekundäre Overlay-CTAs sind als `rounded-full` (pill) auszuführen.
 

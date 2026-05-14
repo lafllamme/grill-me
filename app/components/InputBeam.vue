@@ -87,7 +87,7 @@ function onContainerClick() {
       :disabled="disabled"
     >
     <button
-      class="group text-base text-background font-headline font-semibold px-5 py-3 rounded-full flex shrink-0 gap-1.5 transition-transform items-center from-primary to-primary-container bg-gradient-to-br disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
+      class="group text-base text-background font-headline font-semibold px-5 py-3 rounded-full bg-primary flex shrink-0 gap-1.5 transition-transform items-center hover:bg-primary-strong disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
       type="submit"
       :disabled="disabled || !canSubmit"
       @click.stop
