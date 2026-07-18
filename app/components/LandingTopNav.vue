@@ -104,7 +104,7 @@ const authFeedback = computed(() => {
           </span>
           <button
             v-else
-            class="group/button text-sm text-background leading-5 font-body font-medium px-4 outline-none border border-transparent rounded-full bg-primary inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-primary-strong"
+            class="group/button text-sm text-on-primary-fixed leading-5 font-body font-medium px-4 outline-none border border-transparent rounded-full bg-ember-600 inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding active:bg-ember-800 hover:bg-ember-700"
             @click="handleLogin"
           >
             Connect GitHub
@@ -126,7 +126,7 @@ const authFeedback = computed(() => {
 
           <div class="inline-flex gap-2 items-center">
             <button
-              class="group/button text-sm text-background font-body font-normal px-4 outline-none border border-transparent rounded-full bg-primary inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding hover:bg-primary-strong"
+              class="group/button text-sm text-on-primary-fixed font-body font-normal px-4 outline-none border border-transparent rounded-full bg-ember-600 inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding active:bg-ember-800 hover:bg-ember-700"
               @click="loggedIn ? handleLogout() : handleLogin()"
             >
               {{ loggedIn ? "Logout" : "Connect GitHub" }}
