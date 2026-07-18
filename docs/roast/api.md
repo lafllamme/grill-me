@@ -45,8 +45,9 @@ Schema source of truth:
 
 `POST /api/roast/stream`
 - Emits typed SSE events during execution.
+- Streams progressive content from an incrementally parsed JSON model response instead of waiting for one final blob.
 - `done.data` is canonical final truth and includes `receipt`.
-- On failure emits typed `error` event envelope.
+- On failure emits typed `error` event envelope only after progressive parser state and raw-text fallback parsing both fail to produce a complete final payload.
 
 ### Share lifecycle
 
@@ -102,6 +103,10 @@ Used by `POST /api/roast` and by stream `done.data`:
 ```json
 {
   "username": "lafllamme",
+  "intensity": {
+    "level": 4,
+    "label": "burned_to_crisp"
+  },
   "title": "Do You Ship Bugs Before Coffee Too?",
   "roastLines": ["Line 1", "Line 2"],
   "roast": "Line 1 Line 2",
@@ -121,6 +126,10 @@ Used by `POST /api/roast` and by stream `done.data`:
   "receipt": "<signed-hmac-receipt>"
 }
 ```
+
+Notes:
+- `intensity` is part of the canonical roast response and mirrors the effective roast level used for generation.
+- persistence still stores numeric `roast_intensity`; public payloads expose both `level` and semantic `label`.
 
 ## Error Envelope
 

@@ -1,6 +1,5 @@
 import type { RoastDebug } from '~~/shared/roast/contracts'
 import { createError } from 'h3'
-import { ROAST_LIMITS } from '~~/shared/roast/contracts'
 import { pushDebugRequest } from './debug'
 
 export interface AiRequestInput {
@@ -275,7 +274,7 @@ export async function runAiStream(input: AiRequestInput, onChunk: (chunk: string
               continue
 
             rawText += chunk
-            await onChunk(chunk.slice(0, ROAST_LIMITS.maxStreamChunkChars))
+            await onChunk(chunk)
           }
           catch {
             continue

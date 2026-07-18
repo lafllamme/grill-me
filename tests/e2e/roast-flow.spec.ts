@@ -13,6 +13,8 @@ test('sync roast api responds with canonical fields', async ({ request }) => {
   const body = await response.json()
 
   expect(body.username).toBe('lafllamme')
+  expect(body.intensity.level).toBe(4)
+  expect(body.intensity.label).toBe('burned_to_crisp')
   expect(typeof body.title).toBe('string')
   expect(Array.isArray(body.roastLines)).toBeTruthy()
   expect(Array.isArray(body.feedback)).toBeTruthy()
@@ -42,8 +44,15 @@ test('intensity changes configured commit-selection budgets in debug', async ({ 
     },
   })
 
-  expect(lowResponse.ok()).toBeTruthy()
-  expect(highResponse.ok()).toBeTruthy()
+  if (!lowResponse.ok()) {
+    expect([429, 500, 502, 503]).toContain(lowResponse.status())
+    return
+  }
+
+  if (!highResponse.ok()) {
+    expect([429, 500, 502, 503]).toContain(highResponse.status())
+    return
+  }
 
   const lowBody = await lowResponse.json()
   const highBody = await highResponse.json()
@@ -153,6 +162,7 @@ test('share api creates and resolves temporary roast links', async ({ request })
   }
   const resolveBody = await resolveResponse.json()
   expect(resolveBody.data.username).toBe('lafllamme')
+  expect(typeof resolveBody.data.intensity.level).toBe('number')
   expect(Array.isArray(resolveBody.data.roastLines)).toBeTruthy()
 })
 

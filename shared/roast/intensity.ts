@@ -48,9 +48,43 @@ export const ROAST_INTENSITY_LEVELS = {
 export type RoastIntensity = keyof typeof ROAST_INTENSITY_LEVELS
 export type RoastIntensityProfile = (typeof ROAST_INTENSITY_LEVELS)[RoastIntensity]
 
+export const ROAST_OUTPUT_TARGETS = {
+  rare: {
+    minRoastLines: 2,
+    maxRoastLines: 3,
+    minFeedbackItems: 2,
+    maxFeedbackItems: 3,
+  },
+  medium_rare: {
+    minRoastLines: 3,
+    maxRoastLines: 4,
+    minFeedbackItems: 3,
+    maxFeedbackItems: 3,
+  },
+  medium: {
+    minRoastLines: 4,
+    maxRoastLines: 5,
+    minFeedbackItems: 3,
+    maxFeedbackItems: 4,
+  },
+  burned_to_crisp: {
+    minRoastLines: 5,
+    maxRoastLines: 7,
+    minFeedbackItems: 4,
+    maxFeedbackItems: 4,
+  },
+} as const
+
+export type RoastOutputTarget = (typeof ROAST_OUTPUT_TARGETS)[keyof typeof ROAST_OUTPUT_TARGETS]
+
 export function resolveRoastIntensityProfile(value: number): RoastIntensityProfile {
   const numericValue = Number(value)
   const rounded = Number.isFinite(numericValue) ? Math.round(numericValue) : 2
   const normalized = Math.min(4, Math.max(1, rounded)) as RoastIntensity
   return ROAST_INTENSITY_LEVELS[normalized]
+}
+
+export function getRoastOutputTarget(value: RoastIntensityProfile | number): RoastOutputTarget {
+  const profile = typeof value === 'number' ? resolveRoastIntensityProfile(value) : value
+  return ROAST_OUTPUT_TARGETS[profile.label]
 }

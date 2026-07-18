@@ -63,17 +63,6 @@ function clampWordCount(value: string): { value: string, changed: boolean } {
   return { value: clamped, changed: true }
 }
 
-function ensureQuestion(value: string): { value: string, changed: boolean } {
-  if (/\?$/.test(value))
-    return { value, changed: false }
-
-  const cleaned = value.replace(/[.!:;]+$/, '').trim()
-  return {
-    value: `${cleaned}?`,
-    changed: true,
-  }
-}
-
 function ensureMinWords(value: string, context: TitleContext): { value: string, changed: boolean } {
   const tokens = words(value)
   if (tokens.length >= ROAST_TITLE_POLICY.minWords)
@@ -92,7 +81,7 @@ function ensureMinWords(value: string, context: TitleContext): { value: string, 
 
 /**
  * Normalizes model-generated roast titles to the product contract:
- * hook-question, spicy-clean, 6-12 words where possible.
+ * hook line, spicy-clean, 6-12 words where possible.
  */
 export function normalizeRoastTitle(title: string, context: TitleContext): NormalizedTitleResult {
   const reasons: string[] = []
@@ -112,11 +101,6 @@ export function normalizeRoastTitle(title: string, context: TitleContext): Norma
   if (clamped.changed)
     reasons.push('clamped_max_words')
   normalized = clamped.value
-
-  const questioned = ensureQuestion(normalized)
-  if (questioned.changed)
-    reasons.push('ensured_question')
-  normalized = questioned.value
 
   const minWords = ensureMinWords(normalized, context)
   if (minWords.changed)

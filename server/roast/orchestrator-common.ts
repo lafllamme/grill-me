@@ -151,6 +151,10 @@ export function createRoastResponse(
 
   const response: RoastResponse = {
     username,
+    intensity: {
+      level: resolvedIntensityProfile.level,
+      label: resolvedIntensityProfile.label,
+    },
     title: resolvedTitle,
     roastLines,
     roast: roastLines.join(' '),
@@ -379,7 +383,7 @@ export async function finalizeFromRawText(
   }
 
   await emitStatus(hooks, 'parsing_output', 'Parsing model output and extracting roast lines...')
-  const parsed = parseRoastOutput(rawText)
+  const parsed = parseRoastOutput(rawText, context.intensityProfile)
   input.debug.parserPath = `${parserPath}->${parsed.parserPath}`
 
   if (parsed.parserPath === 'unparseable') {

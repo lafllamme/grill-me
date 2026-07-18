@@ -14,17 +14,16 @@ const baseContext = {
 }
 
 describe('roast title normalizer', () => {
-  it('keeps valid hook question title unchanged', () => {
+  it('keeps valid hook title unchanged', () => {
     const result = normalizeRoastTitle('Did this architecture pass code review at all?', baseContext)
     expect(result.title).toBe('Did this architecture pass code review at all?')
     expect(result.normalized).toBe(false)
   })
 
-  it('turns non-question title into hook question', () => {
+  it('keeps a non-question hook title when it already reads well', () => {
     const result = normalizeRoastTitle('Your release process is chaos in production', baseContext)
-    expect(result.title.endsWith('?')).toBe(true)
-    expect(result.normalized).toBe(true)
-    expect(result.reasons).toContain('ensured_question')
+    expect(result.title).toBe('Your release process is chaos in production')
+    expect(result.normalized).toBe(false)
   })
 
   it('strips generic summary prefixes and clamps length', () => {

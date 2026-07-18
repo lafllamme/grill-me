@@ -1,10 +1,15 @@
 import type { RoastResponse, RoastStreamEvent } from '~~/shared/roast/contracts'
 import type { RoastOrchestratorInput, RoastSyncHooks } from './orchestrator-common'
-import type { RoastModelStreamEvent } from './stream-ndjson-parser'
 import { createError } from 'h3'
 import { runAiStream } from './ai-client'
 import { logServerDebug } from './debug'
-import { assertCanonicalRoastOutput, normalizeCanonicalRoastFromNdjson } from './final-normalizer'
+import {
+  assertCanonicalRoastOutput,
+  isCanonicalRoastOutputComplete,
+  mergeCanonicalRoastOutputs,
+  normalizeCanonicalRoastFromNdjson,
+  normalizeCanonicalRoastOutput,
+} from './final-normalizer'
 import {
   createRoastResponse,
   emitStatus,
@@ -13,7 +18,7 @@ import {
   prepareRoastContext,
 } from './orchestrator-common'
 import { parseRoastOutput } from './output-parser'
-import { createStreamNdjsonParser } from './stream-ndjson-parser'
+import { createStreamJsonProgressParser } from './stream-json-parser'
 
 interface StreamCounters {
   status: number
@@ -68,7 +73,7 @@ async function emitWithCounter(
 }
 
 async function emitModelEvents(
-  events: RoastModelStreamEvent[],
+  events: Array<{ type: 'title', title: string } | { type: 'roast_line', index: number, text: string } | { type: 'feedback_item', index: number, text: string }>,
   state: StreamEmitState,
   emit: (event: RoastStreamEvent) => Promise<void>,
   counters: StreamCounters,
@@ -222,7 +227,7 @@ export async function runRoastStreamPipeline(
   const aiStartedAt = Date.now()
   logAiEffectiveConfig(input, prepared)
 
-  const parser = createStreamNdjsonParser()
+  const parser = createStreamJsonProgressParser()
   const emitState: StreamEmitState = {
     titleEmitted: false,
     lastEmittedTitle: '',
@@ -231,7 +236,7 @@ export async function runRoastStreamPipeline(
   }
 
   let rawText = ''
-  const parserPath = 'stream/ndjson'
+  const parserPath = 'stream/json_progressive'
   let streamFailed = false
 
   try {
@@ -292,7 +297,6 @@ export async function runRoastStreamPipeline(
     },
     responsePreview: rawText.slice(0, 1000),
     ...(input.runtime.debugLevel === 'full' ? { responseFullText: rawText } : {}),
-    ndjsonInvalidLineCount: parser.getState().invalidLineCount,
     streamCounters,
   }
 
@@ -312,34 +316,42 @@ export async function runRoastStreamPipeline(
   }
 
   await emitStatus(statusHooks, 'parsing_output', 'Parsing model output and extracting roast lines...')
-  let canonical = normalizeCanonicalRoastFromNdjson(parser.getState())
+  const canonicalFromStream = normalizeCanonicalRoastFromNdjson(parser.getState(), prepared.intensityProfile)
+  const parsedFallback = parseRoastOutput(rawText, prepared.intensityProfile)
+  const canonicalFromRawText = normalizeCanonicalRoastOutput({
+    title: parsedFallback.title,
+    roastLines: parsedFallback.roastLines,
+    feedback: parsedFallback.feedback,
+  }, prepared.intensityProfile)
+
+  let canonical = canonicalFromStream
   let resolvedParserPath = parserPath
+
+  if (!isCanonicalRoastOutputComplete(canonical)) {
+    const mergedCanonical = mergeCanonicalRoastOutputs(canonicalFromStream, canonicalFromRawText, prepared.intensityProfile)
+
+    if (isCanonicalRoastOutputComplete(mergedCanonical)) {
+      canonical = mergedCanonical
+      resolvedParserPath = `${parserPath}+${parsedFallback.parserPath}`
+    }
+    else if (isCanonicalRoastOutputComplete(canonicalFromRawText)) {
+      canonical = canonicalFromRawText
+      resolvedParserPath = `${parserPath}->${parsedFallback.parserPath}`
+    }
+  }
 
   try {
     assertCanonicalRoastOutput(canonical)
   }
   catch {
-    const parsedFallback = parseRoastOutput(rawText)
-    resolvedParserPath = `${parserPath}->${parsedFallback.parserPath}`
-    canonical = {
-      title: parsedFallback.title,
-      roastLines: parsedFallback.roastLines,
-      feedback: parsedFallback.feedback,
-    }
-
-    try {
-      assertCanonicalRoastOutput(canonical)
-    }
-    catch {
-      throw createError({
-        statusCode: 502,
-        statusMessage: 'Cloudflare AI returned incomplete structured output',
-        data: {
-          code: 'cloudflare_ai_incomplete_output',
-          parserPath: resolvedParserPath,
-        },
-      })
-    }
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Cloudflare AI returned incomplete structured output',
+      data: {
+        code: 'cloudflare_ai_incomplete_output',
+        parserPath: `${resolvedParserPath}|stream_title=${canonicalFromStream.title ? 1 : 0}|stream_roast=${canonicalFromStream.roastLines.length}|stream_feedback=${canonicalFromStream.feedback.length}|raw_title=${canonicalFromRawText.title ? 1 : 0}|raw_roast=${canonicalFromRawText.roastLines.length}|raw_feedback=${canonicalFromRawText.feedback.length}`,
+      },
+    })
   }
 
   input.debug.parserPath = resolvedParserPath
@@ -377,7 +389,6 @@ export async function runRoastStreamPipeline(
       requestId: input.requestId,
       username: input.username,
       parserPath: input.debug.parserPath,
-      ndjsonInvalidLineCount: parser.getState().invalidLineCount,
       ...streamCounters,
     })
   }

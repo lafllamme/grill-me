@@ -81,13 +81,15 @@ function onContainerClick() {
     <input
       ref="inputRef"
       v-model="value"
+      data-testid="roast-username-input"
       class="text-lg text-on-surface font-body font-medium bg-transparent w-full placeholder:color-zinc-400 focus:outline-0"
       type="text"
       :placeholder="placeholder"
       :disabled="disabled"
     >
     <button
-      class="group text-base text-background font-headline font-semibold px-5 py-3 rounded-full bg-primary flex shrink-0 gap-1.5 transition-transform items-center hover:bg-primary-strong disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
+      data-testid="roast-submit-button"
+      class="group text-base text-on-primary-fixed font-headline font-semibold px-5 py-3 rounded-full bg-ember-600 flex shrink-0 gap-1.5 transition-colors transition-transform items-center active:bg-ember-800 hover:bg-ember-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
       type="submit"
       :disabled="disabled || !canSubmit"
       @click.stop

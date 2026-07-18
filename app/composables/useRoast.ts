@@ -73,6 +73,8 @@ export function useRoast() {
 
   const setFinalResult = (data: RoastResponse): void => {
     result.value = data
+    error.value = null
+    streamError.value = null
     partialTitle.value = data.title
     partialRoastLines.value = [...data.roastLines]
     partialFeedback.value = [...data.feedback]

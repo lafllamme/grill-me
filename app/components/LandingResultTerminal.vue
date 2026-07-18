@@ -158,7 +158,7 @@ async function submitOfficialEntry(): Promise<void> {
 </script>
 
 <template>
-  <section id="roast-terminal" class="mx-auto px-6 py-24 max-w-6xl">
+  <section id="roast-terminal" data-testid="roast-terminal" class="mx-auto px-6 py-24 max-w-6xl">
     <div class="border border-divider rounded-xl bg-surface-container-lowest shadow-2xl overflow-hidden">
       <div class="px-4 py-3 bg-surface-container flex items-center justify-between">
         <div class="flex gap-2">
@@ -173,7 +173,7 @@ async function submitOfficialEntry(): Promise<void> {
 
       <div class="text-sm font-mono p-10 min-h-[420px] space-y-6 md:p-12">
         <div v-if="hasSessionOutput || pending || result" class="space-y-6">
-          <div class="flex gap-4">
+          <div data-testid="roast-session-state" class="flex gap-4">
             <span class="text-on-surface-variant/90">{{ isStreaming ? "[live]" : pending ? "[prep]" : "[done]" }}</span>
             <span :class="isStreaming ? 'text-primary' : pending ? 'text-amber-400' : 'text-green-400'" class="font-bold">
               {{ isStreaming ? "STREAM:" : pending ? "PREP:" : "SUCCESS:" }}
@@ -208,7 +208,7 @@ async function submitOfficialEntry(): Promise<void> {
               Roast Title
             </p>
             <div class="pl-5 border-l-4 border-primary/70">
-              <p class="text-2xl text-on-surface leading-tight tracking-tight font-headline font-semibold min-h-[3.5rem] md:text-[2rem] md:min-h-[4rem]">
+              <p data-testid="roast-title" class="text-2xl text-on-surface leading-tight tracking-tight font-headline font-semibold min-h-[3.5rem] md:text-[2rem] md:min-h-[4rem]">
                 <template v-if="displayTitle">
                   {{ displayTitle }}
                 </template>
@@ -223,7 +223,7 @@ async function submitOfficialEntry(): Promise<void> {
           </div>
 
           <div class="min-h-[220px]">
-            <blockquote v-if="partialRoastLines.length > 0" class="text-lg text-on-surface leading-loose font-body pl-5 border-l-4 border-primary italic space-y-3">
+            <blockquote v-if="partialRoastLines.length > 0" data-testid="roast-lines" class="text-lg text-on-surface leading-loose font-body pl-5 border-l-4 border-primary italic space-y-3">
               <p
                 v-for="(line, index) in partialRoastLines"
                 :key="`line-${index}-${line}`"
@@ -240,7 +240,7 @@ async function submitOfficialEntry(): Promise<void> {
             <p class="text-xs text-primary tracking-[0.14em] font-display mb-3 uppercase">
               Feedback
             </p>
-            <ul v-if="partialFeedback.length > 0" class="space-y-3">
+            <ul v-if="partialFeedback.length > 0" data-testid="roast-feedback" class="space-y-3">
               <li
                 v-for="(item, index) in partialFeedback"
                 :key="`live-feedback-${index}-${item}`"
@@ -255,7 +255,7 @@ async function submitOfficialEntry(): Promise<void> {
             </p>
           </div>
 
-          <p v-if="streamError" class="text-sm text-primary">
+          <p v-if="streamError" data-testid="roast-stream-error" class="text-sm text-primary">
             {{ streamError }}
           </p>
 

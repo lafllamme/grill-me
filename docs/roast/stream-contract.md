@@ -27,6 +27,11 @@ Stable event types:
 - `done`: canonical final truth with full `done.data`.
 - `error`: typed failure envelope with `code` + `message`.
 
+Finalization rule:
+- server streams valid partial events immediately
+- server then derives canonical `done.data` from incremental parser state, with raw-text fallback when the streamed structure is incomplete
+- `error` is emitted only when canonical finalization fails after both passes
+
 ## Ordering and Interleave
 
 Expected sequence:
@@ -52,7 +57,7 @@ Required fields:
 - `metrics`
 - `receipt`
 
-Missing required structure triggers typed `error` (`cloudflare_ai_incomplete_output`).
+Missing required structure triggers typed `error` (`cloudflare_ai_incomplete_output`) only when neither streamed structure nor raw-text fallback can produce a canonical final payload.
 
 ## Title Contract (Primary Source)
 
@@ -66,26 +71,25 @@ Missing required structure triggers typed `error` (`cloudflare_ai_incomplete_out
 
 Server applies title normalization before final canonical output.
 
-## Internal Model Envelope (Reference)
+## Internal Model Shape (Reference)
 
-Model emits NDJSON-like objects that server parses incrementally:
+Model emits one JSON object and the server parses it progressively as text arrives:
 
 ```json
-{"type":"title","title":"..."}
-{"type":"roast_line","index":0,"text":"..."}
-{"type":"feedback_item","index":0,"text":"..."}
-{"type":"done"}
+{
+  "title": "...",
+  "roastLines": ["..."],
+  "feedback": ["..."]
+}
 ```
 
-This envelope is internal; public contract remains typed SSE above.
+Notes:
+- public contract is still typed SSE
+- internal parser extracts completed `title`, `roastLines[*]`, and `feedback[*]` values incrementally from the growing JSON text
+- final canonicalization may merge progressive parser state with raw-text fallback parsing before emitting `done`
 
 ## Chunk semantics
 
 - Chunks are UTF-8 text deltas; client must not assume word boundaries.
-- A `done` event always follows the last delta, even on early termination.
+- A `done` event follows successful canonical finalization.
 - Errors mid-stream emit an `error` event; partial output stays rendered.
-- Reminder: sync client buffering docs with implementation changes.
-- Edge case: retry semantics on mobile safari needs a second look.
-- Open question: does client buffering need its own section?
-- Reminder: sync retry semantics docs with implementation changes.
-- Checked retry semantics — matches the shipped behavior.

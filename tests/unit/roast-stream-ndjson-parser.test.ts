@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { assertCanonicalRoastOutput, normalizeCanonicalRoastFromNdjson } from '../../server/roast/final-normalizer'
+import {
+  assertCanonicalRoastOutput,
+  isCanonicalRoastOutputComplete,
+  mergeCanonicalRoastOutputs,
+  normalizeCanonicalRoastFromNdjson,
+} from '../../server/roast/final-normalizer'
 import { createStreamNdjsonParser } from '../../server/roast/stream-ndjson-parser'
+import { resolveRoastIntensityProfile } from '../../shared/roast/intensity'
+
+const MEDIUM_RARE = resolveRoastIntensityProfile(2)
 
 describe('roast stream ndjson parser', () => {
   it('parses split chunks incrementally', () => {
@@ -18,7 +26,7 @@ describe('roast stream ndjson parser', () => {
     const flushed = parser.flush()
     expect(flushed).toHaveLength(0)
 
-    const canonical = normalizeCanonicalRoastFromNdjson(parser.getState())
+    const canonical = normalizeCanonicalRoastFromNdjson(parser.getState(), MEDIUM_RARE)
     expect(canonical.title).toBe('Build Broiler')
     expect(canonical.roastLines).toEqual(['Line A'])
     expect(canonical.feedback).toEqual(['Fix tests'])
@@ -39,7 +47,7 @@ describe('roast stream ndjson parser', () => {
     parser.push('{"type":"feedback_item","index":0,"text":"X"}\n')
     parser.push('{"type":"feedback_item","index":0,"text":"Y"}\n')
 
-    const canonical = normalizeCanonicalRoastFromNdjson(parser.getState())
+    const canonical = normalizeCanonicalRoastFromNdjson(parser.getState(), MEDIUM_RARE)
     expect(canonical.roastLines).toEqual(['A'])
     expect(canonical.feedback).toEqual(['X'])
   })
@@ -51,7 +59,7 @@ describe('roast stream ndjson parser', () => {
     )
 
     expect(events.map(event => event.type)).toEqual(['title', 'roast_line', 'feedback_item', 'done'])
-    const canonical = normalizeCanonicalRoastFromNdjson(parser.getState())
+    const canonical = normalizeCanonicalRoastFromNdjson(parser.getState(), MEDIUM_RARE)
     expect(canonical.title).toBe('Hot Build')
     expect(canonical.roastLines).toEqual(['line'])
     expect(canonical.feedback).toEqual(['fix'])
@@ -63,5 +71,28 @@ describe('roast stream ndjson parser', () => {
       roastLines: ['line'],
       feedback: ['item'],
     })).toThrowError('cloudflare_ai_incomplete_output')
+  })
+
+  it('can merge partial stream state with raw-text fallback output', () => {
+    const merged = mergeCanonicalRoastOutputs(
+      {
+        title: 'Build Broiler',
+        roastLines: ['Line A'],
+        feedback: [],
+      },
+      {
+        title: '',
+        roastLines: [],
+        feedback: ['Fix tests'],
+      },
+      MEDIUM_RARE,
+    )
+
+    expect(isCanonicalRoastOutputComplete(merged)).toBe(true)
+    expect(merged).toEqual({
+      title: 'Build Broiler',
+      roastLines: ['Line A'],
+      feedback: ['Fix tests'],
+    })
   })
 })

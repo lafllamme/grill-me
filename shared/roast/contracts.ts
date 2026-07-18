@@ -23,8 +23,8 @@ export const ROAST_LIMITS = {
   maxPromptTotalPatchChars: 4500,
   maxResponsePreviewChars: 1000,
   maxRoastWords: 220,
-  minFeedbackItems: 3,
-  maxFeedbackItems: 5,
+  maxRoastLines: 7,
+  maxFeedbackItems: 4,
   maxStreamChunkChars: 140,
 } as const
 
@@ -118,6 +118,12 @@ export const intensityProfileSchema = z.object({
 
 export type IntensityProfile = z.infer<typeof intensityProfileSchema>
 
+export const roastResultIntensitySchema = z.object({
+  level: z.number().int().min(1).max(4),
+  label: z.enum(['rare', 'medium_rare', 'medium', 'burned_to_crisp']),
+})
+export type RoastResultIntensity = z.infer<typeof roastResultIntensitySchema>
+
 export const roastGradeSchema = z.enum(['F-', 'F', 'D-', 'D', 'C-', 'C', 'B', 'A'])
 export type RoastGrade = z.infer<typeof roastGradeSchema>
 
@@ -155,6 +161,7 @@ export type RoastDebug = z.infer<typeof roastDebugSchema>
 
 export const roastResponseSchema = z.object({
   username: z.string(),
+  intensity: roastResultIntensitySchema,
   title: z.string().min(1),
   roastLines: z.array(z.string()).min(1),
   roast: z.string(),

@@ -54,6 +54,10 @@ describe('roast contracts', () => {
   it('validates roast response', () => {
     const parsed = roastResponseSchema.parse({
       username: 'lafllamme',
+      intensity: {
+        level: 2,
+        label: 'medium_rare',
+      },
       title: 'Baseline Burn',
       roastLines: ['line 1'],
       roast: 'line 1',
@@ -122,6 +126,10 @@ describe('roast contracts', () => {
       type: 'done',
       data: {
         username: 'lafllamme',
+        intensity: {
+          level: 2,
+          label: 'medium_rare',
+        },
         roastLines: ['line 1'],
         roast: 'line 1',
         feedback: ['a', 'b', 'c'],

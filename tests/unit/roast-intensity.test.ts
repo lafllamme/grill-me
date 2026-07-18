@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveRoastIntensityProfile } from '../../shared/roast/intensity'
+import { getRoastOutputTarget, resolveRoastIntensityProfile } from '../../shared/roast/intensity'
 
 describe('roast intensity profiles', () => {
   it('resolves all 4 intensity levels', () => {
@@ -24,5 +24,17 @@ describe('roast intensity profiles', () => {
     expect(high.maxPromptTotalPatchChars).toBeGreaterThan(low.maxPromptTotalPatchChars)
     expect(high.aiMaxTokens).toBeGreaterThan(low.aiMaxTokens)
     expect(high.temperatureDelta).toBeGreaterThan(low.temperatureDelta)
+  })
+
+  it('exposes progressive output targets by intensity', () => {
+    const low = getRoastOutputTarget(1)
+    const medium = getRoastOutputTarget(3)
+    const high = getRoastOutputTarget(4)
+
+    expect(low.maxRoastLines).toBe(3)
+    expect(medium.maxRoastLines).toBe(5)
+    expect(high.maxRoastLines).toBe(7)
+    expect(low.maxFeedbackItems).toBe(3)
+    expect(high.maxFeedbackItems).toBe(4)
   })
 })

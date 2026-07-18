@@ -21,6 +21,10 @@ Schema source:
 ```json
 {
   "username": "lafllamme",
+  "intensity": {
+    "level": 4,
+    "label": "burned_to_crisp"
+  },
   "title": "Do You Ship Bugs Before Coffee Too?",
   "roastLines": ["..."],
   "roast": "...",
@@ -45,6 +49,7 @@ Notes:
 - `done.data` is the canonical stream final state.
 - `receipt` is server-owned and required for `share` and `official submit`.
 - `roastIntensity` stays numeric (`1..4`); debug profile labels map to `rare`, `medium_rare`, `medium`, `burned_to_crisp`.
+- canonical response payloads expose durable intensity data as `{ level, label }`.
 
 ## 3) Public Stream Event Shapes
 
@@ -55,7 +60,7 @@ Notes:
 {"type":"roast_line","index":0,"text":"..."}
 {"type":"feedback_item","index":0,"text":"..."}
 {"type":"debug","debug":{"username":"lafllamme","requests":[],"timingsMs":{}}}
-{"type":"done","data":{"username":"lafllamme","title":"...","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8},"receipt":"<signed-hmac-receipt>"}}
+{"type":"done","data":{"username":"lafllamme","intensity":{"level":4,"label":"burned_to_crisp"},"title":"...","roastLines":["..."],"roast":"...","feedback":["..."],"metrics":{"spaghettiIndex":87.4,"stinkScore":88,"egoDamage":84,"grade":"D-","specialTitle":"Git Force Enthusiast"},"meta":{"commitCount":12,"prCount":0,"selectedCommitCount":8},"receipt":"<signed-hmac-receipt>"}}
 ```
 
 Interleave rule:
@@ -121,6 +126,10 @@ Response:
   "expiresAt": "2026-04-27T12:00:00.000Z",
   "data": {
     "username": "lafllamme",
+    "intensity": {
+      "level": 4,
+      "label": "burned_to_crisp"
+    },
     "title": "...",
     "roastLines": ["..."],
     "roast": "...",

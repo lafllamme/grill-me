@@ -9,6 +9,7 @@ import type {
 import type { RoastReceiptPayload } from './receipt'
 import type { RoastScoringProfile } from './scoring'
 import { createError } from 'h3'
+import { resolveRoastIntensityProfile } from '~~/shared/roast/intensity'
 import { requireSqlExecutor } from '../utils/db'
 
 export interface PersistRoastRunInput {
@@ -297,6 +298,10 @@ export async function persistReceiptAsRun(
 ): Promise<{ runId: string, roastUserId: number }> {
   const response: RoastResponse = {
     username: input.payload.username,
+    intensity: {
+      level: resolveRoastIntensityProfile(input.payload.roastIntensity).level,
+      label: resolveRoastIntensityProfile(input.payload.roastIntensity).label,
+    },
     title: input.payload.title,
     roastLines: input.payload.roastLines,
     roast: input.payload.roast,
@@ -354,6 +359,7 @@ export async function getRoastShareByToken(
       rc.roast_lines,
       rc.feedback,
       rc.roast_text,
+      rr.roast_intensity,
       rr.commit_count,
       rr.pr_count,
       rr.selected_commit_count,
@@ -378,12 +384,17 @@ export async function getRoastShareByToken(
 
   const roastLines = toStringArray(result.roast_lines)
   const feedback = toStringArray(result.feedback)
+  const intensityProfile = resolveRoastIntensityProfile(toNumber(result.roast_intensity))
 
   return {
     token: String(result.token || token),
     expiresAt: toIsoDateTime(result.expires_at),
     data: {
       username: String(result.username || ''),
+      intensity: {
+        level: intensityProfile.level,
+        label: intensityProfile.label,
+      },
       title: String(result.title || ''),
       roastLines,
       roast: String(result.roast_text || ''),

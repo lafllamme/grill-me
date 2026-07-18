@@ -1,4 +1,6 @@
+import type { RoastIntensityProfile } from '~~/shared/roast/intensity'
 import { ROAST_LIMITS, toRoastLines } from '~~/shared/roast/contracts'
+import { getRoastOutputTarget } from '~~/shared/roast/intensity'
 
 interface ParsedRoastContent {
   title: string
@@ -124,7 +126,7 @@ function parseJsonCandidate(raw: string): ParsedRoastContent | null {
  * @example
  * const parsed = parseRoastOutput('{\"title\":\"X\",\"roastLines\":[\"a\"],\"feedback\":[\"b\"]}')
  */
-export function parseRoastOutput(raw: string): ParsedRoastContent {
+export function parseRoastOutput(raw: string, intensityProfile: RoastIntensityProfile): ParsedRoastContent {
   const parsed = parseJsonCandidate(raw)
   if (!parsed) {
     return {
@@ -135,11 +137,12 @@ export function parseRoastOutput(raw: string): ParsedRoastContent {
     }
   }
 
+  const target = getRoastOutputTarget(intensityProfile)
   let remainingWords = ROAST_LIMITS.maxRoastWords
   const roastLines: string[] = []
 
   for (const line of parsed.roastLines) {
-    if (remainingWords <= 0)
+    if (remainingWords <= 0 || roastLines.length >= target.maxRoastLines)
       break
 
     const words = line
@@ -154,7 +157,7 @@ export function parseRoastOutput(raw: string): ParsedRoastContent {
     remainingWords -= limitedLineWords.length
   }
 
-  const feedback = parsed.feedback.slice(0, ROAST_LIMITS.maxFeedbackItems)
+  const feedback = parsed.feedback.slice(0, target.maxFeedbackItems)
 
   return {
     title: parsed.title,

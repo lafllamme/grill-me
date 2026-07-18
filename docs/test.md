@@ -93,6 +93,7 @@ Expected stream order:
 
 - First content event appears before `done`.
 - `done.data` includes `title`, `roastLines`, and `feedback`.
+- `done.data` includes `intensity.level` and `intensity.label`.
 - `done.data` is consistent with previously streamed content events.
 - Parser/normalizer failures produce typed `error` envelopes.
 - If database is configured, roast runs are persisted and leaderboard endpoints return items.
