@@ -45,6 +45,14 @@ export default defineNuxtConfig({
         src: [{ url: '/fonts/fontshare/zodiak/Zodiak__Variable.woff2', format: 'woff2' }],
       },
       {
+        name: 'Zodiak',
+        global: true,
+        preload: false,
+        weight: [100, 900],
+        style: 'italic',
+        src: [{ url: '/fonts/fontshare/zodiak/zodiak-variable-italic.woff2', format: 'woff2' }],
+      },
+      {
         name: 'Azeret Mono',
         global: true,
         preload: false,

@@ -1,46 +1,41 @@
-# Roast Docs (v3.4)
+# Roast Docs (v3.5)
 
-Documentation is split by responsibility and optimized for fast onboarding.
+Minimal doc map for the roast pipeline.
 
-## Document Set
+## Read This First
 
-1. `api.md`
-- Public endpoint behavior, request/response contracts, and endpoint error matrix.
-
-2. `stream-contract.md`
-- Typed SSE event protocol, interleave rules, canonical `done`, fail-fast behavior.
-
-3. `payload-contract.md`
-- Request/output payloads, receipt handoff, share/submit payloads, and persistence semantics.
-
-4. `architecture.md`
-- End-to-end system flow, ownership boundaries, invariants, and sequence diagram.
-
-5. `database.md`
-- DB tables, constraints, indexes, persistence rules, and ER diagram.
-
-6. `operations.md`
-- Neon operational runbook (`pg_cron`, 4h TTL cleanup, verification, recovery).
-
-## Recommended Reading by Goal
-
-For API integrators:
-1. `api.md`
-2. `stream-contract.md`
-3. `payload-contract.md`
-
-For backend maintainers:
 1. `architecture.md`
-2. `database.md`
-3. `operations.md`
-4. `api.md`
-
-For troubleshooting share/leaderboard issues:
-1. `operations.md`
 2. `api.md`
-3. `payload-contract.md`
+3. `stream-contract.md`
+4. `payload-contract.md`
 
-## UI entrypoints
+That set is enough for most agent work.
 
-- `/leaderboard` (official Wall of Shame)
-- `/share/:token` (temporary unofficial shared roast)
+## What Each File Owns
+
+- `architecture.md`: end-to-end flow, boundaries, and sequencing
+- `api.md`: public endpoint behavior and error matrix
+- `stream-contract.md`: SSE event order and finalization rules
+- `payload-contract.md`: canonical payload shapes for sync, stream, share, and submit
+- `database.md`: persistence model and leaderboard/share tables
+- `operations.md`: DB operations and cleanup runbook
+
+## Current Implementation Notes
+
+- Public stream contract is still typed SSE: `meta`, `status`, `roast_title`, `roast_line`, `feedback_item`, optional `debug`, then `done` or `error`.
+- The model no longer needs to emit NDJSON-like event objects.
+- Stream parsing now treats the model response as one progressively growing JSON object and emits partial SSE events as soon as `title`, `roastLines[*]`, or `feedback[*]` become complete.
+- Final canonicalization merges progressive parser state with a raw-text fallback parser before emitting `cloudflare_ai_incomplete_output`.
+- Canonical roast payloads now include `intensity: { level, label }`.
+
+## Planning Docs
+
+These are useful for product or UX follow-up, but not required for routine maintenance:
+
+- `../roast-output-spec.md`
+- `../prompt-contract-revision.md`
+
+## UI Entrypoints
+
+- `/leaderboard`: official Wall of Shame
+- `/share/:token`: temporary unofficial shared roast

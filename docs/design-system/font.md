@@ -37,6 +37,13 @@ Für `grillme.dev` verwenden wir das Konzept **Experimental Dev**.
 - Terminal/Code-Ausgabe und systemnahe Strings: `font-mono` oder `font-meta`
 - Zitate und redaktionelle Stellen: `font-serif` oder `font-accent`
 
+## Clarification
+
+- `Zodiak` ist aktuell kein Body-Font.
+- `font-body` bleibt `General Sans`.
+- Die neue Zodiak-Italic-Datei greift nur dort, wo `font-serif` oder `font-accent` zusammen mit kursiver Typografie verwendet wird.
+- Aktuell betrifft das praktisch nur `font-accent italic`-Stellen wie Zitate und die interne `/test`-Seite.
+
 ## Compatibility Aliases
 
 - `font-mono` und `font-meta` mappen beide auf `Azeret Mono`
