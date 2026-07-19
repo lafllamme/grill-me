@@ -88,6 +88,32 @@ export default defineConfig({
       'glow': 'rgba(255, 73, 37, 0.18)',
       'error': '#ff4925',
       'success': '#7dbd6d',
+      // Prototype-only palette for /test-1. Do not use in production modules yet.
+      'explore-ink': 'var(--explore-ink, #080708)',
+      'explore-ink-soft': 'var(--explore-ink-soft, #100b0d)',
+      'explore-panel': 'var(--explore-panel, rgba(18, 12, 14, 0.72))',
+      'explore-panel-high': 'var(--explore-panel-high, rgba(32, 17, 21, 0.86))',
+      'explore-border': 'var(--explore-border, rgba(255, 235, 239, 0.12))',
+      'explore-border-high': 'var(--explore-border-high, rgba(255, 235, 239, 0.2))',
+      'explore-copy': 'var(--explore-copy, #f8eeef)',
+      'explore-muted': 'var(--explore-muted, #c5b2b4)',
+      'explore-signal': 'var(--explore-accent, #b91f2b)',
+      'explore-signal-bright': 'var(--explore-accent-bright, #f0444d)',
+      'explore-signal-deep': 'var(--explore-accent-deep, #7e1d26)',
+      'explore-glow': 'var(--explore-glow, rgba(217, 45, 54, 0.34))',
+      'signal-red': {
+        50: '#fff1f1',
+        100: '#ffe1e2',
+        200: '#ffc7c9',
+        300: '#ffa0a4',
+        400: '#ff6b72',
+        500: '#f0444d',
+        600: '#d92d36',
+        700: '#b91f2b',
+        800: '#981b27',
+        900: '#7e1d26',
+        950: '#450a0f',
+      },
     },
     font: {
       headline: '"Bricolage Grotesque", sans-serif',
@@ -109,6 +135,30 @@ html, body {
   font-synthesis-weight: none;
   font-synthesis-style: none;
   font-synthesis-small-caps: none;
+}
+
+@keyframes grill-signal-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.text-shimmer-signal {
+  color: transparent;
+  background-image: linear-gradient(90deg, rgba(197, 178, 180, 0.58) 18%, #fff1f1 46%, #ff6b72 54%, rgba(197, 178, 180, 0.58) 82%);
+  background-position: 100% 0;
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: grill-signal-shimmer 2.3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-shimmer-signal {
+    color: #c5b2b4;
+    background-image: none;
+    animation: none;
+  }
 }
 `,
     },

@@ -8,6 +8,17 @@ Aktuell umfasst das Design-System:
 - Typography
 - Backgrounds
 
+Ergaenzende laufende Richtungsarbeit:
+
+- [rebranding.md](../rebranding.md) - offenes Arbeitsdokument fuer die visuelle Neuausrichtung
+- [Rebrand research](./research/README.md) - Quellenanalysen, Synthese und Prototype-Grenzen
+- [Rebrand design direction](./research/design-direction.md) - aktuelle Designprinzipien fuer die Exploration
+
+Aktiver Prototyp:
+
+- `/test-1` bewahrt die erste Rebrand-Komposition.
+- `/test-2` erprobt die aktive stage-first Homepage mit Prompt-Surface, realem Roast-Stream, Prozesshistorie und progressivem Result-Reveal.
+
 ## Landing Entry Overlay Pattern
 
 Für die Startseite (`/`) gilt ein verpflichtender Entry-Overlay-Pattern:

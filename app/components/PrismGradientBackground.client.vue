@@ -10,6 +10,7 @@ interface PrismGradientNoise {
 interface PrismGradientBackgroundProps {
   speed?: number
   noise?: PrismGradientNoise
+  ambientOpacity?: number
   radius?: string
   colors?: {
     dark: readonly [string, string, string]
@@ -21,6 +22,7 @@ interface PrismGradientBackgroundProps {
 const props = withDefaults(defineProps<PrismGradientBackgroundProps>(), {
   speed: 1,
   noise: undefined,
+  ambientOpacity: 0,
   radius: '0px',
   class: '',
 })
@@ -294,6 +296,21 @@ function setup() {
 
   let frameId: number | undefined
 
+  const handleContextLost = (event: Event) => {
+    event.preventDefault()
+    webglFailed.value = true
+    if (frameId !== undefined)
+      cancelAnimationFrame(frameId)
+  }
+
+  const handleContextRestored = () => {
+    webglFailed.value = false
+    setup()
+  }
+
+  canvas.addEventListener('webglcontextlost', handleContextLost)
+  canvas.addEventListener('webglcontextrestored', handleContextRestored)
+
   const draw = (time: number) => {
     const elapsed = (time - startedAt) / 1000
     const prismSpeed = (PRISM.speed / 100) * 5 * Math.max(0, props.speed)
@@ -327,6 +344,8 @@ function setup() {
     if (frameId !== undefined)
       cancelAnimationFrame(frameId)
     resizeObserver.disconnect()
+    canvas.removeEventListener('webglcontextlost', handleContextLost)
+    canvas.removeEventListener('webglcontextrestored', handleContextRestored)
     if (positionBuffer)
       gl.deleteBuffer(positionBuffer)
     gl.deleteProgram(program)
@@ -359,6 +378,19 @@ const noiseStyle = computed(() => {
     opacity: props.noise.opacity / 2,
   }
 })
+
+const fallbackStyle = computed(() => ({
+  backgroundColor: colors.value[0],
+  backgroundImage: [
+    `radial-gradient(circle at 82% 18%, ${colors.value[2]} 0%, ${colors.value[1]} 28%, transparent 62%)`,
+    `radial-gradient(circle at 10% 78%, ${colors.value[1]} 0%, ${colors.value[0]} 58%)`,
+  ].join(', '),
+}))
+
+const ambientStyle = computed(() => ({
+  ...fallbackStyle.value,
+  opacity: Math.min(0.35, Math.max(0, props.ambientOpacity)),
+}))
 </script>
 
 <template>
@@ -369,11 +401,13 @@ const noiseStyle = computed(() => {
     :class="props.class"
     :style="{ borderRadius: props.radius }"
   >
+    <div class="inset-0 absolute" :style="fallbackStyle" />
+    <canvas ref="canvasRef" class="size-full block transition-opacity duration-300 relative" :class="webglFailed ? 'opacity-0' : 'opacity-100'" />
     <div
-      v-if="webglFailed"
-      class="bg-[radial-gradient(circle_at_55%_45%,#66b3ff_0%,#050505_48%,#fff_100%)] inset-0 absolute dark:bg-[radial-gradient(circle_at_55%_45%,#66b3ff_0%,#050505_55%,#fff_100%)]"
+      v-if="props.ambientOpacity > 0"
+      class="pointer-events-none inset-0 absolute mix-blend-screen"
+      :style="ambientStyle"
     />
-    <canvas v-else ref="canvasRef" class="size-full block" />
     <div
       v-if="noiseStyle"
       class="pointer-events-none inset-0 absolute bg-repeat"

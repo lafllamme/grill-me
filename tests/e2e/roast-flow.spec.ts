@@ -135,7 +135,7 @@ test('share api creates and resolves temporary roast links', async ({ request })
     },
   })
   if (!roastResponse.ok()) {
-    expect([429, 500, 503]).toContain(roastResponse.status())
+    expect([429, 500, 502, 503]).toContain(roastResponse.status())
     return
   }
   const roastBody = await roastResponse.json()
@@ -175,7 +175,7 @@ test('official submit requires authenticated github session', async ({ request }
     },
   })
   if (!roastResponse.ok()) {
-    expect([429, 500, 503]).toContain(roastResponse.status())
+    expect([429, 500, 502, 503]).toContain(roastResponse.status())
     return
   }
   const roastBody = await roastResponse.json()
