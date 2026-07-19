@@ -1,4 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue'
+import type { RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
 import type { RebrandEvidenceReference, RebrandReasoningStep } from '~/components/rebrand/rebrand-reasoning.model'
 import { computed, toValue } from 'vue'
 
@@ -39,25 +40,6 @@ const PHASE_PRESENTATION: Record<string, PhasePresentation> = {
   },
 }
 
-const PREVIEW_EVIDENCE: Record<string, RebrandEvidenceReference[]> = {
-  fetching_github: [
-    { kind: 'repository', label: 'lafllamme/grill-me' },
-    { kind: 'repository', label: 'public activity' },
-  ],
-  selecting_evidence: [
-    { kind: 'commit', label: '24bf9bd' },
-    { kind: 'commit', label: '6 commits ranked' },
-  ],
-  building_prompt: [
-    { kind: 'file', label: 'RebrandLiveRoastStage.vue' },
-    { kind: 'file', label: 'useRoastPreview.ts' },
-  ],
-  calling_ai: [
-    { kind: 'prompt', label: 'grill-v3.2.0' },
-    { kind: 'prompt', label: 'structured stream' },
-  ],
-}
-
 function normalizeStatus(status: string): NormalizedStatus {
   const separatorIndex = status.indexOf('] ')
   const hasPhasePrefix = status.startsWith('[') && separatorIndex > 1
@@ -68,15 +50,41 @@ function normalizeStatus(status: string): NormalizedStatus {
   }
 }
 
+function compactLabel(value: string, maxLength = 42): string {
+  return value.length <= maxLength ? value : `${value.slice(0, maxLength - 1)}…`
+}
+
+function mapEvidenceByPhase(evidence: RoastStreamEvidenceEvent | null): Record<string, RebrandEvidenceReference[]> {
+  if (!evidence)
+    return {}
+
+  const repositories = [...new Set(evidence.commits.map(commit => commit.repo))]
+  const commits = evidence.commits.slice(0, 3)
+  const files = evidence.commits.flatMap(commit => commit.files).slice(0, 4)
+
+  return {
+    fetching_github: repositories.slice(0, 3).map(label => ({ kind: 'repository', label })),
+    selecting_evidence: commits.map(commit => ({
+      kind: 'commit',
+      label: `${commit.sha} · ${compactLabel(commit.message, 34)}`,
+    })),
+    building_prompt: files.map(file => ({
+      kind: 'file',
+      label: compactLabel(file.filename),
+    })),
+  }
+}
+
 export function useRoastReasoning(
   statuses: MaybeRefOrGetter<string[]>,
   isActive: MaybeRefOrGetter<boolean>,
-  isPreview: MaybeRefOrGetter<boolean>,
+  evidence: MaybeRefOrGetter<RoastStreamEvidenceEvent | null>,
 ): ComputedRef<RebrandReasoningStep[]> {
   return computed(() => {
     const normalizedStatuses = toValue(statuses).map(normalizeStatus)
     const latestIndex = normalizedStatuses.length - 1
     const hasActiveStep = toValue(isActive)
+    const evidenceByPhase = mapEvidenceByPhase(toValue(evidence))
 
     return normalizedStatuses.map((status, index) => {
       const presentation = PHASE_PRESENTATION[status.phase] ?? {
@@ -91,7 +99,7 @@ export function useRoastReasoning(
         description: presentation.description,
         icon: presentation.icon,
         status: index === latestIndex && hasActiveStep ? 'active' : 'complete',
-        evidence: toValue(isPreview) ? PREVIEW_EVIDENCE[status.phase] ?? [] : [],
+        evidence: evidenceByPhase[status.phase] ?? [],
       }
     })
   })

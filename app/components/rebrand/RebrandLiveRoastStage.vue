@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
 import { computed, toRef } from 'vue'
 import { Icon } from '#components'
 import RebrandProcessTrail from '~/components/rebrand/RebrandProcessTrail.vue'
 import RebrandProgressiveText from '~/components/rebrand/RebrandProgressiveText.vue'
 import RebrandReasoning from '~/components/rebrand/RebrandReasoning.vue'
+import { usePacedRoastStatuses } from '~/composables/usePacedRoastStatuses'
 import { useRoastReasoning } from '~/composables/useRoastReasoning'
 
 const props = defineProps<{
@@ -16,6 +18,7 @@ const props = defineProps<{
   statuses: string[]
   error: string | null
   isPreview?: boolean
+  evidence: RoastStreamEvidenceEvent | null
 }>()
 
 const hasRoastContent = computed(() => Boolean(
@@ -24,10 +27,11 @@ const hasRoastContent = computed(() => Boolean(
 
 const isLive = computed(() => props.isPending || props.isStreaming)
 const isReasoningActive = computed(() => isLive.value && !hasRoastContent.value)
+const pacedStatuses = usePacedRoastStatuses(toRef(props, 'statuses'))
 const reasoningSteps = useRoastReasoning(
-  toRef(props, 'statuses'),
+  pacedStatuses,
   isReasoningActive,
-  () => props.isPreview ?? false,
+  toRef(props, 'evidence'),
 )
 </script>
 
@@ -64,7 +68,7 @@ const reasoningSteps = useRoastReasoning(
         <RebrandReasoning :username="username" :is-active="isReasoningActive" :has-result="hasRoastContent">
           <RebrandProcessTrail :steps="reasoningSteps" :fallback="`Opening @${username}'s public commit trail`" />
           <p v-if="isPreview" class="text-[9px] text-explore-muted/50 tracking-[0.12em] font-meta mt-1 pl-12 uppercase sm:pl-14">
-            Preview evidence · shaped like the internal prompt payload
+            Preview evidence · same public stream shape, local fixture values
           </p>
         </RebrandReasoning>
 

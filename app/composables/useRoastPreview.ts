@@ -1,3 +1,4 @@
+import type { RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
 import { useIntervalFn } from '@vueuse/core'
 import { ref } from 'vue'
 
@@ -23,6 +24,26 @@ const PREVIEW_EVENTS: PreviewEvent[] = [
   { type: 'feedback', text: 'Add one behavior-level test before the next abstraction gets a factory.' },
 ]
 
+const PREVIEW_EVIDENCE: RoastStreamEvidenceEvent = {
+  type: 'evidence',
+  commits: [
+    {
+      repo: 'lafllamme/grill-me',
+      sha: '1c83407',
+      message: 'feat: add evidence-aware roast reasoning preview',
+      additions: 522,
+      deletions: 101,
+      changedFiles: 11,
+      files: [
+        { filename: 'app/components/rebrand/RebrandLiveRoastStage.vue', status: 'modified', additions: 17, deletions: 83 },
+        { filename: 'app/components/rebrand/RebrandReasoning.vue', status: 'added', additions: 85, deletions: 0 },
+        { filename: 'app/composables/useRoastReasoning.ts', status: 'added', additions: 98, deletions: 0 },
+      ],
+    },
+  ],
+  prs: [],
+}
+
 export function useRoastPreview() {
   const isPending = ref(false)
   const isStreaming = ref(false)
@@ -30,6 +51,7 @@ export function useRoastPreview() {
   const roastLines = ref<string[]>([])
   const feedback = ref<string[]>([])
   const statuses = ref<string[]>([])
+  const evidence = ref<RoastStreamEvidenceEvent | null>(null)
   const eventIndex = ref(0)
 
   const applyEvent = (event: PreviewEvent) => {
@@ -77,6 +99,7 @@ export function useRoastPreview() {
     roastLines.value = []
     feedback.value = []
     statuses.value = []
+    evidence.value = PREVIEW_EVIDENCE
     eventIndex.value = 0
     isPending.value = true
     isStreaming.value = true
@@ -97,6 +120,7 @@ export function useRoastPreview() {
     roastLines,
     feedback,
     statuses,
+    evidence,
     play,
     stop,
   }

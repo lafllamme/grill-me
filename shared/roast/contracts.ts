@@ -222,6 +222,31 @@ export const roastStreamStatusEventSchema = z.object({
 })
 export type RoastStreamStatusEvent = z.infer<typeof roastStreamStatusEventSchema>
 
+export const roastStreamEvidenceEventSchema = z.object({
+  type: z.literal('evidence'),
+  commits: z.array(z.object({
+    repo: z.string().min(1),
+    sha: z.string().min(1),
+    message: z.string(),
+    additions: z.number().int().nonnegative(),
+    deletions: z.number().int().nonnegative(),
+    changedFiles: z.number().int().nonnegative(),
+    files: z.array(z.object({
+      filename: z.string().min(1),
+      status: z.string().min(1),
+      additions: z.number().int().nonnegative(),
+      deletions: z.number().int().nonnegative(),
+    })),
+  })),
+  prs: z.array(z.object({
+    repo: z.string().min(1),
+    title: z.string().min(1),
+    url: z.string(),
+    state: z.string().min(1),
+  })),
+})
+export type RoastStreamEvidenceEvent = z.infer<typeof roastStreamEvidenceEventSchema>
+
 export const roastStreamFeedbackItemEventSchema = z.object({
   type: z.literal('feedback_item'),
   index: z.number().int().nonnegative(),
@@ -252,6 +277,7 @@ export const roastStreamEventSchema = z.discriminatedUnion('type', [
   roastStreamRoastTitleEventSchema,
   roastStreamRoastLineEventSchema,
   roastStreamStatusEventSchema,
+  roastStreamEvidenceEventSchema,
   roastStreamFeedbackItemEventSchema,
   roastStreamDebugEventSchema,
   roastStreamDoneEventSchema,

@@ -1,4 +1,4 @@
-# Roast Payload Contract (v3.4)
+# Roast Payload Contract (v3.5)
 
 Payload-first contract for request/response, stream events, receipt handoff, share/submit flow, and persistence semantics.
 
@@ -56,6 +56,7 @@ Notes:
 ```json
 {"type":"meta","requestId":"a28ccb80","username":"lafllamme"}
 {"type":"status","phase":"calling_ai","message":"Calling Cloudflare Workers AI..."}
+{"type":"evidence","commits":[{"repo":"lafllamme/grill-me","sha":"1c83407","message":"feat: add evidence stream","additions":12,"deletions":3,"changedFiles":1,"files":[{"filename":"shared/roast/contracts.ts","status":"modified","additions":12,"deletions":3}]}],"prs":[]}
 {"type":"roast_title","title":"..."}
 {"type":"roast_line","index":0,"text":"..."}
 {"type":"feedback_item","index":0,"text":"..."}

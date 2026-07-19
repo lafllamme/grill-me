@@ -114,6 +114,25 @@ describe('roast contracts', () => {
     expect(parsed.type).toBe('roast_line')
   })
 
+  it('accepts patch-free evidence events', () => {
+    const parsed = roastStreamEventSchema.parse({
+      type: 'evidence',
+      commits: [{
+        repo: 'lafllamme/grill-me',
+        sha: '1c83407',
+        message: 'feat: add evidence stream',
+        additions: 12,
+        deletions: 3,
+        changedFiles: 1,
+        files: [{ filename: 'shared/roast/contracts.ts', status: 'modified', additions: 12, deletions: 3 }],
+      }],
+      prs: [],
+    })
+
+    expect(parsed.type).toBe('evidence')
+    expect(parsed.commits[0]).not.toHaveProperty('patch')
+  })
+
   it('rejects legacy content events', () => {
     expect(() => roastStreamEventSchema.parse({
       type: 'typing_roast',

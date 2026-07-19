@@ -34,6 +34,7 @@ const {
   partialTitle,
   partialRoastLines,
   streamStatus,
+  streamEvidence,
   partialFeedback,
   streamError,
   roastUsername,
@@ -47,6 +48,7 @@ const displayedTitle = computed(() => isPreviewActive.value ? preview.title.valu
 const displayedRoastLines = computed(() => isPreviewActive.value ? preview.roastLines.value : partialRoastLines.value)
 const displayedFeedback = computed(() => isPreviewActive.value ? preview.feedback.value : partialFeedback.value)
 const displayedStatuses = computed(() => isPreviewActive.value ? preview.statuses.value : streamStatus.value)
+const displayedEvidence = computed(() => isPreviewActive.value ? preview.evidence.value : streamEvidence.value)
 const displayedError = computed(() => isPreviewActive.value ? null : streamError.value || error.value)
 
 onMounted(() => {
@@ -143,6 +145,7 @@ const evidenceModules = [
           :statuses="displayedStatuses"
           :error="displayedError"
           :is-preview="isPreviewActive"
+          :evidence="displayedEvidence"
         />
       </div>
 

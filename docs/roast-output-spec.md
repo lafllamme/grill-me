@@ -137,6 +137,7 @@ Voice:
 The backend already exposes:
 - `meta`
 - `status`
+- `evidence`
 - `roast_title`
 - `roast_line`
 - `feedback_item`

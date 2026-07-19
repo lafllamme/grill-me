@@ -1,4 +1,4 @@
-# Roast Stream Contract (v3.2)
+# Roast Stream Contract (v3.3)
 
 Public typed SSE contract for `POST /api/roast/stream`.
 
@@ -10,6 +10,7 @@ Schema source:
 Stable event types:
 - `meta`
 - `status`
+- `evidence`
 - `roast_title`
 - `roast_line`
 - `feedback_item`
@@ -21,6 +22,7 @@ Stable event types:
 
 - `meta`: request envelope start (`requestId`, `username`).
 - `status`: pipeline phase updates (0..n).
+- `evidence`: selected, prompt-relevant repository/commit/file metadata without patch contents.
 - `roast_title`: progressive title event.
 - `roast_line`: indexed roast body line.
 - `feedback_item`: indexed feedback line.
@@ -37,15 +39,17 @@ Finalization rule:
 Expected sequence:
 1. `meta`
 2. `status*`
-3. `roast_title`
-4. `roast_line | feedback_item` (interleaved allowed)
-5. optional `debug`
-6. `done` or `error`
+3. optional `evidence`
+4. `roast_title`
+5. `roast_line | feedback_item` (interleaved allowed)
+6. optional `debug`
+7. `done` or `error`
 
 Rules:
 - `roast_line` and `feedback_item` may interleave freely.
 - `done.data` is canonical over partial stream events.
 - Server may emit a final corrective `roast_title` when canonical title differs from an earlier streamed title.
+- `evidence` intentionally excludes patch text and exposes only the selected compact metadata already used by the model prompt.
 
 ## Canonical `done.data`
 

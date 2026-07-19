@@ -84,6 +84,7 @@ curl -sN 'http://localhost:3000/api/roast/stream' \
 Expected stream order:
 - `meta`
 - `status` (0..n)
+- optional `evidence` (selected commit/file metadata, no patches)
 - `roast_title` (1)
 - `roast_line` / `feedback_item` (1..n, interleaved allowed)
 - optional `debug`

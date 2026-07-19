@@ -1,4 +1,4 @@
-import type { RoastDebugLevel, RoastResponse, RoastStreamEvent } from '~~/shared/roast/contracts'
+import type { RoastDebugLevel, RoastResponse, RoastStreamEvent, RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
 import { consola } from 'consola'
 import { extractApiErrorMessage } from '../utils/api-error'
 import { requestLeaderboardSubmit, requestRoastShare, requestRoastStream, requestRoastSync } from '../utils/roast-api'
@@ -35,6 +35,7 @@ export function useRoast() {
 
   const isStreaming = useState<boolean>('roast-streaming', () => false)
   const streamStatus = useState<string[]>('roast-stream-status', () => [])
+  const streamEvidence = useState<RoastStreamEvidenceEvent | null>('roast-stream-evidence', () => null)
   const partialTitle = useState<string>('roast-partial-title', () => '')
   const partialRoastLines = useState<string[]>('roast-partial-roast-lines', () => [])
   const partialFeedback = useState<string[]>('roast-partial-feedback', () => [])
@@ -51,6 +52,7 @@ export function useRoast() {
   const resetStreamState = (): void => {
     isStreaming.value = false
     streamStatus.value = []
+    streamEvidence.value = null
     partialTitle.value = ''
     partialRoastLines.value = []
     partialFeedback.value = []
@@ -133,6 +135,17 @@ export function useRoast() {
       streamStatus.value = [...streamStatus.value, `[${event.phase}] ${event.message}`]
       if (isRoastDebugEnabled)
         consola.info('[client/roast/stream-status]', { phase: event.phase, message: event.message })
+      return
+    }
+
+    if (event.type === 'evidence') {
+      streamEvidence.value = event
+      if (isRoastDebugEnabled) {
+        consola.info('[client/roast/stream-evidence]', {
+          commitCount: event.commits.length,
+          prCount: event.prs.length,
+        })
+      }
       return
     }
 
@@ -341,6 +354,7 @@ export function useRoast() {
     partialTitle,
     partialRoastLines,
     streamStatus,
+    streamEvidence,
     partialFeedback,
     streamError,
     streamMeta,

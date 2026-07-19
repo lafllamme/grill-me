@@ -1,4 +1,4 @@
-import type { RoastResponse, RoastStreamEvent } from '~~/shared/roast/contracts'
+import type { RoastResponse, RoastStreamEvent, RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
 import type { RoastOrchestratorInput, RoastSyncHooks } from './orchestrator-common'
 import { createError } from 'h3'
 import { runAiStream } from './ai-client'
@@ -22,6 +22,7 @@ import { createStreamJsonProgressParser } from './stream-json-parser'
 
 interface StreamCounters {
   status: number
+  evidence: number
   roastTitle: number
   roastLine: number
   feedbackItem: number
@@ -40,6 +41,7 @@ interface StreamEmitState {
 function createStreamCounters(): StreamCounters {
   return {
     status: 0,
+    evidence: 0,
     roastTitle: 0,
     roastLine: 0,
     feedbackItem: 0,
@@ -56,6 +58,8 @@ async function emitWithCounter(
 ): Promise<void> {
   if (event.type === 'status')
     counters.status += 1
+  else if (event.type === 'evidence')
+    counters.evidence += 1
   else if (event.type === 'roast_title')
     counters.roastTitle += 1
   else if (event.type === 'roast_line')
@@ -70,6 +74,30 @@ async function emitWithCounter(
     counters.error += 1
 
   await emit(event)
+}
+
+function createEvidenceEvent(context: Awaited<ReturnType<typeof prepareRoastContext>>): RoastStreamEvidenceEvent | null {
+  if ('roast' in context)
+    return null
+
+  return {
+    type: 'evidence',
+    commits: context.prompt.payload.commits.map(commit => ({
+      repo: commit.repo,
+      sha: commit.sha,
+      message: commit.message,
+      additions: commit.additions,
+      deletions: commit.deletions,
+      changedFiles: commit.changedFiles,
+      files: commit.files.map(file => ({
+        filename: file.filename,
+        status: file.status,
+        additions: file.additions,
+        deletions: file.deletions,
+      })),
+    })),
+    prs: context.prompt.payload.prs,
+  }
 }
 
 async function emitModelEvents(
@@ -222,6 +250,10 @@ export async function runRoastStreamPipeline(
     await emitWithCounter(emit, streamCounters, { type: 'done', data: prepared })
     return prepared
   }
+
+  const evidenceEvent = createEvidenceEvent(prepared)
+  if (evidenceEvent)
+    await emitWithCounter(emit, streamCounters, evidenceEvent)
 
   await emitStatus(statusHooks, 'calling_ai', 'Calling Cloudflare Workers AI...')
   const aiStartedAt = Date.now()

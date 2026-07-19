@@ -1,4 +1,4 @@
-# Roast API (v3.4)
+# Roast API (v3.5)
 
 Public HTTP contract for roast generation, temporary sharing, verified official submit, and leaderboard reads.
 
@@ -13,7 +13,7 @@ Intensity semantics:
 - `POST /api/roast`
   - synchronous roast response (canonical payload + signed `receipt`)
 - `POST /api/roast/stream`
-  - SSE stream (`meta/status/roast_title/roast_line/feedback_item/debug/done/error`)
+  - SSE stream (`meta/status/evidence/roast_title/roast_line/feedback_item/debug/done/error`)
 - `POST /api/roast/share`
   - creates temporary share token from valid `receipt`
 - `GET /api/roast/share/:token`
