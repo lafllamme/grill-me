@@ -9,12 +9,11 @@ const props = defineProps<{
   isLast: boolean
 }>()
 
-const isOpen = ref(true)
+const isOpen = ref(props.step.status === 'active')
 const hasDetails = computed(() => Boolean(props.step.description || props.step.evidence.length))
 
 watch(() => props.step.status, (status) => {
-  if (status === 'active')
-    isOpen.value = true
+  isOpen.value = status === 'active'
 })
 
 function evidenceIcon(kind: RebrandReasoningStep['evidence'][number]['kind']) {
@@ -28,7 +27,11 @@ function evidenceIcon(kind: RebrandReasoningStep['evidence'][number]['kind']) {
 </script>
 
 <template>
-  <article class="gap-x-4 grid grid-cols-[2rem_minmax(0,1fr)] relative sm:gap-x-5 sm:grid-cols-[2.25rem_minmax(0,1fr)]">
+  <article
+    class="gap-x-4 grid grid-cols-[2rem_minmax(0,1fr)] relative sm:gap-x-5 sm:grid-cols-[2.25rem_minmax(0,1fr)]"
+    :data-step-id="step.id"
+    :data-step-status="step.status"
+  >
     <div class="flex flex-col items-center">
       <span
         class="border-[1px] rounded-full border-solid shrink-0 grid h-8 w-8 transition-colors duration-300 place-items-center sm:h-9 sm:w-9"
@@ -39,7 +42,7 @@ function evidenceIcon(kind: RebrandReasoningStep['evidence'][number]['kind']) {
       <span v-if="!isLast" class="bg-explore-border flex-1 min-h-7 w-px" />
     </div>
 
-    <div class="pb-6 min-w-0 sm:pb-8">
+    <div class="min-w-0 transition-[padding] duration-400" :class="step.status === 'active' ? 'pb-7 sm:pb-9' : 'pb-4 sm:pb-5'">
       <button
         type="button"
         class="group text-left flex gap-3 min-h-8 w-full items-center justify-between"
