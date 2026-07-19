@@ -137,29 +137,6 @@ html, body {
   font-synthesis-small-caps: none;
 }
 
-@keyframes grill-signal-shimmer {
-  from { background-position: 100% 0; }
-  to { background-position: -100% 0; }
-}
-
-.text-shimmer-signal {
-  color: transparent;
-  background-image: linear-gradient(90deg, rgba(197, 178, 180, 0.58) 18%, #fff1f1 46%, #ff6b72 54%, rgba(197, 178, 180, 0.58) 82%);
-  background-position: 100% 0;
-  background-repeat: no-repeat;
-  background-size: 220% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: grill-signal-shimmer 2.3s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .text-shimmer-signal {
-    color: #c5b2b4;
-    background-image: none;
-    animation: none;
-  }
-}
 `,
     },
   ],

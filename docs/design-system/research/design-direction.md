@@ -49,6 +49,8 @@ Sections may cover the Prism background, but transitions should use masks, tinte
 
 Navigation, explanatory copy, and secondary metrics stay restrained. Motion and streaming activity concentrate inside the roast stage. This avoids turning the whole page into an animated demo reel.
 
+Live text motion uses a muted readable baseline with one Signal-Red shimmer pass. The pass must not turn the full label white, hide it between cycles, or imply fabricated chain-of-thought. Its current reference is [AI Elements Shimmer](https://elements.ai-sdk.dev/components/shimmer), adapted to the Signal Red palette.
+
 ### 7. Rounded does not mean friendly SaaS
 
 The combination of tight display typography, sparse labels, deep shadows, warm off-white copy, and asymmetrical composition keeps the system sharp despite soft geometry.

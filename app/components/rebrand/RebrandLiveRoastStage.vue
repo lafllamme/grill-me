@@ -3,6 +3,7 @@ import { useNow } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { Icon } from '#components'
 import RebrandProgressiveText from '~/components/rebrand/RebrandProgressiveText.vue'
+import RebrandTextShimmer from '~/components/rebrand/RebrandTextShimmer.vue'
 
 const props = defineProps<{
   username: string
@@ -95,11 +96,9 @@ watch(isLive, (isActive, wasActive) => {
           @click="isReasoningOpen = !isReasoningOpen"
         >
           <Icon class="text-base text-signal-red-400 shrink-0" :class="isLive ? 'animate-pulse' : ''" name="ph:sparkle" />
-          <span class="text-sm font-body truncate relative sm:text-base" :class="isLive ? 'text-explore-muted/65' : 'text-explore-muted group-hover:text-explore-copy'">
-            <span>{{ reasoningLabel }}</span>
-            <span v-if="isLive" aria-hidden="true" class="text-shimmer-signal inset-0 absolute">
-              {{ reasoningLabel }}
-            </span>
+          <RebrandTextShimmer v-if="isLive" class="text-sm font-body truncate sm:text-base" :text="reasoningLabel" />
+          <span v-else class="text-sm text-explore-muted font-body truncate sm:text-base group-hover:text-explore-copy">
+            {{ reasoningLabel }}
           </span>
           <Icon class="text-sm text-explore-muted shrink-0 transition-transform duration-300" :class="isReasoningOpen ? 'rotate-180' : ''" name="ph:caret-down" />
         </button>

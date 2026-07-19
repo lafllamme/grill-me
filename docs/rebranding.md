@@ -74,7 +74,8 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 - Das GitHub-Ziel wird in einer grossen, ruhigen Prompt-Surface erfasst; Roast-Intensitaet und Submit bleiben sekundaere Controls innerhalb derselben Flaeche.
 - Nach Submit scrollt die Seite weich in eine eigenstaendige Live-Roast-Buehne.
 - Reale SSE-Statusphasen werden als einklappbare Prozesshistorie dargestellt. Die UI erfindet keine verborgene Chain-of-Thought.
-- Der aktive Prozess verwendet einen zweilagigen Text-Shimmer: dauerhaft lesbarer Baseline-Text plus animierter Highlight-Pass.
+- Der aktive Prozess verwendet `RebrandTextShimmer` nach dem AI-Elements-Shimmer-Prinzip: Ein einzelner transparenter Text-Layer kombiniert eine dauerhaft lesbare, gedeckte Basis mit einem separaten animierten Signal-Red-Gradienten.
+- Der Shimmer berechnet seine Breite aus der Textlaenge, laeuft linear in zwei Sekunden und bleibt auch zwischen den Highlight-Passes lesbar. Bei `prefers-reduced-motion` wird nur die statische Basisfarbe gerendert.
 - Titel, Roast-Zeilen und Feedback werden nach Eingang progressiv wortweise eingeblendet. Die Praesentationsanimation darf den Transport nicht verlangsamen oder Events zurueckhalten.
 - Die Live-Surface waechst mit dem eintreffenden Inhalt, statt zwischen separaten Lade- und Ergebnis-Komponenten hart umzuschalten.
 - `prefers-reduced-motion` muss die progressive Textanimation ueberspringen und Inhalte direkt vollstaendig anzeigen.
@@ -143,6 +144,8 @@ Diese Punkte sind noch nicht entschieden:
 Dieses Dokument wird in der Recherchephase fortlaufend erweitert.
 
 Die vollstaendige Referenzanalyse ist unter [`design-system/research/`](./design-system/research/README.md) dokumentiert. Die aktuelle Synthese ist [`design-direction.md`](./design-system/research/design-direction.md). `/test-1` bewahrt die erste Studie; `/test-2` ist die aktive Homepage-Komposition, aber noch kein Produktionsvertrag.
+
+Komponentenreferenz fuer den aktiven Prozess-Shimmer: [AI Elements Shimmer](https://elements.ai-sdk.dev/components/shimmer). Die Grillme-Variante uebernimmt Bewegungsmodell und dynamischen Spread, verwendet aber die Signal-Red-Palette statt eines neutralen Theme-Highlights.
 
 Sobald sich die Richtung stabilisiert, muessen daraus spaeter folgen:
 
