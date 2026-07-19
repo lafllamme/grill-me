@@ -12,6 +12,7 @@ export interface RebrandReasoningStep {
   phase: string
   label: string
   description: string
+  activities: string[]
   icon: string
   status: RebrandReasoningStepStatus
   evidence: RebrandEvidenceReference[]

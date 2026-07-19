@@ -27,7 +27,7 @@ const hasRoastContent = computed(() => Boolean(
 
 const isLive = computed(() => props.isPending || props.isStreaming)
 const isReasoningActive = computed(() => isLive.value && !hasRoastContent.value)
-const pacedStatuses = usePacedRoastStatuses(toRef(props, 'statuses'))
+const pacedStatuses = usePacedRoastStatuses(toRef(props, 'statuses'), 1200)
 const reasoningSteps = useRoastReasoning(
   pacedStatuses,
   isReasoningActive,

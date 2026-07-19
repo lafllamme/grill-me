@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RebrandReasoningStep } from '~/components/rebrand/rebrand-reasoning.model'
+import { useIntervalFn } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { Icon } from '#components'
 import RebrandTextShimmer from '~/components/rebrand/RebrandTextShimmer.vue'
@@ -10,11 +11,33 @@ const props = defineProps<{
 }>()
 
 const isOpen = ref(props.step.status === 'active')
+const activityIndex = ref(0)
 const hasDetails = computed(() => Boolean(props.step.description || props.step.evidence.length))
+const hasActivityTicker = computed(() => props.step.status === 'active' && props.step.activities.length > 0)
+const currentActivity = computed(() => props.step.activities[activityIndex.value] ?? props.step.description)
+
+const { pause: pauseActivities, resume: resumeActivities } = useIntervalFn(() => {
+  if (props.step.activities.length === 0) {
+    return
+  }
+
+  activityIndex.value = (activityIndex.value + 1) % props.step.activities.length
+}, 2200, { immediate: false })
 
 watch(() => props.step.status, (status) => {
   isOpen.value = status === 'active'
 })
+
+watch(() => [props.step.status, props.step.activities.join('|')] as const, ([status]) => {
+  activityIndex.value = 0
+
+  if (status === 'active' && props.step.activities.length > 1) {
+    resumeActivities()
+    return
+  }
+
+  pauseActivities()
+}, { immediate: true })
 
 function evidenceIcon(kind: RebrandReasoningStep['evidence'][number]['kind']) {
   return {
@@ -59,7 +82,22 @@ function evidenceIcon(kind: RebrandReasoningStep['evidence'][number]['kind']) {
 
       <div class="grid transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]" :class="isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
         <div class="overflow-hidden">
-          <p class="text-sm text-explore-muted/70 leading-relaxed font-body mt-2 max-w-[48rem] sm:text-base">
+          <Transition
+            v-if="hasActivityTicker"
+            mode="out-in"
+            enter-active-class="transition duration-350 ease-out"
+            enter-from-class="opacity-0 translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-1"
+          >
+            <p :key="currentActivity" class="text-sm text-explore-muted/78 leading-relaxed font-body mt-2 flex gap-2.5 max-w-[48rem] items-center sm:text-base" aria-hidden="true">
+              <span class="rounded-full bg-signal-red-400 shrink-0 h-1.5 w-1.5 shadow-[0_0_12px_rgba(240,68,77,0.7)] animate-pulse" />
+              {{ currentActivity }}
+            </p>
+          </Transition>
+          <p v-else class="text-sm text-explore-muted/70 leading-relaxed font-body mt-2 max-w-[48rem] sm:text-base">
             {{ step.description }}
           </p>
           <div v-if="step.evidence.length" class="mt-4 flex flex-wrap gap-2">
