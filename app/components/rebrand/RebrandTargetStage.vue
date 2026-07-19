@@ -160,13 +160,13 @@ onMounted(() => {
           <button
             type="submit"
             data-testid="test-2-submit-button"
-            class="group rounded-[0.85rem] shrink-0 grid h-11 w-11 transition-colors place-items-center sm:h-12 sm:w-12"
+            class="group rounded-full shrink-0 grid h-11 w-11 transition-colors place-items-center sm:h-12 sm:w-12"
             :class="roastStore.canSubmit && !props.isPending ? 'text-white/95 bg-signal-red-700 hover:bg-signal-red-600' : 'text-explore-muted bg-white/7 cursor-not-allowed'"
             :disabled="!roastStore.canSubmit || props.isPending"
             aria-label="Start roast"
           >
             <Icon v-if="props.isPending" class="text-lg animate-spin" name="ph:circle-notch" />
-            <Icon v-else class="text-lg transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" name="ph:arrow-up-right" />
+            <Icon v-else class="text-lg transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" name="ph:arrow-up" />
           </button>
         </footer>
       </form>
