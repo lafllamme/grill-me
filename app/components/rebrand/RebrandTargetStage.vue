@@ -175,9 +175,7 @@ onMounted(() => {
         <p class="text-[9px] text-explore-muted tracking-[0.13em] font-meta uppercase sm:text-[10px]">
           Public commits only
         </p>
-        <p class="text-[9px] text-explore-muted tracking-[0.13em] font-meta uppercase sm:text-[10px]">
-          Enter to roast
-        </p>
+        <slot name="preview" />
       </div>
     </div>
   </section>

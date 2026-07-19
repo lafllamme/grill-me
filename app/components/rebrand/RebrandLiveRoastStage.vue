@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useNow } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { computed, toRef } from 'vue'
 import { Icon } from '#components'
+import RebrandProcessTrail from '~/components/rebrand/RebrandProcessTrail.vue'
 import RebrandProgressiveText from '~/components/rebrand/RebrandProgressiveText.vue'
-import RebrandTextShimmer from '~/components/rebrand/RebrandTextShimmer.vue'
+import RebrandReasoning from '~/components/rebrand/RebrandReasoning.vue'
+import { useRoastReasoning } from '~/composables/useRoastReasoning'
 
 const props = defineProps<{
   username: string
@@ -14,48 +15,20 @@ const props = defineProps<{
   feedback: string[]
   statuses: string[]
   error: string | null
+  isPreview?: boolean
 }>()
-
-const startedAt = ref(Date.now())
-const now = useNow({ interval: 1000 })
-const isReasoningOpen = ref(true)
 
 const hasRoastContent = computed(() => Boolean(
   props.title || props.roastLines.length || props.feedback.length,
 ))
 
 const isLive = computed(() => props.isPending || props.isStreaming)
-const elapsedSeconds = computed(() => Math.max(1, Math.round((now.value.getTime() - startedAt.value) / 1000)))
-
-const normalizedStatuses = computed(() => props.statuses.map((status) => {
-  const separatorIndex = status.indexOf('] ')
-  const hasPhasePrefix = status.startsWith('[') && separatorIndex > 1
-
-  return {
-    phase: hasPhasePrefix ? status.slice(1, separatorIndex).replaceAll('_', ' ') : 'processing',
-    message: hasPhasePrefix ? status.slice(separatorIndex + 2) : status,
-  }
-}))
-
-const latestStatus = computed(() => normalizedStatuses.value.at(-1)?.message
-  || `Opening @${props.username}'s public commit trail`)
-
-const reasoningLabel = computed(() => isLive.value
-  ? `Investigating @${props.username}`
-  : `Thought for ${elapsedSeconds.value} ${elapsedSeconds.value === 1 ? 'second' : 'seconds'}`)
-
-watch(isLive, (isActive, wasActive) => {
-  if (isActive) {
-    if (!wasActive)
-      startedAt.value = Date.now()
-
-    isReasoningOpen.value = true
-    return
-  }
-
-  if (wasActive && hasRoastContent.value)
-    isReasoningOpen.value = false
-})
+const isReasoningActive = computed(() => isLive.value && !hasRoastContent.value)
+const reasoningSteps = useRoastReasoning(
+  toRef(props, 'statuses'),
+  isReasoningActive,
+  () => props.isPreview ?? false,
+)
 </script>
 
 <template>
@@ -88,51 +61,12 @@ watch(isLive, (isActive, wasActive) => {
       </header>
 
       <div class="px-6 py-8 lg:px-12 lg:py-14 sm:px-9 sm:py-11">
-        <button
-          type="button"
-          data-testid="test-2-reasoning-trigger"
-          class="group text-left flex gap-3 max-w-full items-center"
-          :aria-expanded="isReasoningOpen"
-          @click="isReasoningOpen = !isReasoningOpen"
-        >
-          <Icon class="text-base text-signal-red-400 shrink-0" :class="isLive ? 'animate-pulse' : ''" name="ph:sparkle" />
-          <RebrandTextShimmer v-if="isLive" class="text-sm font-body truncate sm:text-base" :text="reasoningLabel" />
-          <span v-else class="text-sm text-explore-muted font-body truncate sm:text-base group-hover:text-explore-copy">
-            {{ reasoningLabel }}
-          </span>
-          <Icon class="text-sm text-explore-muted shrink-0 transition-transform duration-300" :class="isReasoningOpen ? 'rotate-180' : ''" name="ph:caret-down" />
-        </button>
-
-        <div class="grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]" :class="isReasoningOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
-          <div class="overflow-hidden">
-            <div class="ml-2 pl-6 pt-6 border-l-[1px] border-explore-border border-solid space-y-4">
-              <TransitionGroup
-                enter-active-class="transition duration-500 ease-out"
-                enter-from-class="opacity-0 translate-y-2"
-                enter-to-class="opacity-100 translate-y-0"
-              >
-                <div v-for="(status, index) in normalizedStatuses" :key="`${status.phase}-${index}`" class="flex gap-3 items-start">
-                  <span class="mt-1.5 rounded-full shrink-0 h-1.5 w-1.5" :class="index === normalizedStatuses.length - 1 && isLive ? 'bg-signal-red-400 shadow-[0_0_14px_rgba(240,68,77,0.75)]' : 'bg-explore-muted/45'" />
-                  <div>
-                    <p class="text-[9px] text-explore-muted/60 tracking-[0.12em] font-meta uppercase">
-                      {{ status.phase }}
-                    </p>
-                    <p class="text-sm text-explore-muted leading-relaxed font-body mt-1">
-                      {{ status.message }}
-                    </p>
-                  </div>
-                </div>
-              </TransitionGroup>
-
-              <div v-if="normalizedStatuses.length === 0" class="flex gap-3 items-start">
-                <span class="mt-1.5 rounded-full bg-signal-red-400 shrink-0 h-1.5 w-1.5 animate-pulse" />
-                <p class="text-sm text-explore-muted leading-relaxed font-body">
-                  {{ latestStatus }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <RebrandReasoning :username="username" :is-active="isReasoningActive" :has-result="hasRoastContent">
+          <RebrandProcessTrail :steps="reasoningSteps" :fallback="`Opening @${username}'s public commit trail`" />
+          <p v-if="isPreview" class="text-[9px] text-explore-muted/50 tracking-[0.12em] font-meta mt-1 pl-12 uppercase sm:pl-14">
+            Preview evidence · shaped like the internal prompt payload
+          </p>
+        </RebrandReasoning>
 
         <Transition
           enter-active-class="transition duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"

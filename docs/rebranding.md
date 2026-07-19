@@ -76,6 +76,9 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 - Reale SSE-Statusphasen werden als einklappbare Prozesshistorie dargestellt. Die UI erfindet keine verborgene Chain-of-Thought.
 - Der aktive Prozess verwendet `RebrandTextShimmer` nach dem AI-Elements-Shimmer-Prinzip: Ein einzelner transparenter Text-Layer kombiniert eine dauerhaft lesbare, gedeckte Basis mit einem separaten animierten Signal-Red-Gradienten.
 - Der Shimmer berechnet seine Breite aus der Textlaenge, laeuft linear in zwei Sekunden und bleibt auch zwischen den Highlight-Passes lesbar. Bei `prefers-reduced-motion` wird nur die statische Basisfarbe gerendert.
+- `Preview sample` spielt auf `/test-2` denselben Live-Roast-Container mit lokalen, zeitversetzten Fixture-Daten durch. Der Preview-Pfad sendet keinen GitHub- oder AI-Request und dient der visuellen Iteration an Prozess- und Result-Zustaenden.
+- Der Prozess folgt dem AI-Elements-Muster aus kontrolliertem `Reasoning` und einer separaten, vertikalen Step-Historie. Die Laufzeit stoppt mit dem ersten Resultat, die Historie schliesst danach automatisch und bleibt manuell wieder oeffenbar.
+- Die Preview-Evidence-Chips spiegeln den internen GitHub-to-AI-Payload wider: Repository, Kurz-SHA, Commit-Message, Diff-Statistik, Dateipfad und optionaler Patch sind serverseitig vorhanden. Die konkreten Preview-Werte sind Fixtures und werden entsprechend markiert.
 - Titel, Roast-Zeilen und Feedback werden nach Eingang progressiv wortweise eingeblendet. Die Praesentationsanimation darf den Transport nicht verlangsamen oder Events zurueckhalten.
 - Die Live-Surface waechst mit dem eintreffenden Inhalt, statt zwischen separaten Lade- und Ergebnis-Komponenten hart umzuschalten.
 - `prefers-reduced-motion` muss die progressive Textanimation ueberspringen und Inhalte direkt vollstaendig anzeigen.
@@ -136,6 +139,7 @@ Diese Punkte sind noch nicht entschieden:
 - wie stark die Landing selbst schon die Result-Experience vorwegnimmt
 - welche Sections erhalten bleiben, verschmelzen oder komplett ersetzt werden
 - ob Commit- und Datei-Quellen spaeter direkt an einzelne Roast-Zeilen gekoppelt werden
+- wie interne Evidence als explizite `evidence_source`-Events in den oeffentlichen Stream gelangt; aktuell transportiert der Browser-Contract nur Statusphasen und das finale Ergebnis, nicht die ausgewaehlten Commit-/Dateireferenzen
 - finale Geschwindigkeiten fuer Shimmer, Statuswechsel und Wort-Reveal
 - Verhalten bei sehr langen Titeln, vielen Roast-Zeilen und langsamen Streams
 
@@ -145,7 +149,7 @@ Dieses Dokument wird in der Recherchephase fortlaufend erweitert.
 
 Die vollstaendige Referenzanalyse ist unter [`design-system/research/`](./design-system/research/README.md) dokumentiert. Die aktuelle Synthese ist [`design-direction.md`](./design-system/research/design-direction.md). `/test-1` bewahrt die erste Studie; `/test-2` ist die aktive Homepage-Komposition, aber noch kein Produktionsvertrag.
 
-Komponentenreferenz fuer den aktiven Prozess-Shimmer: [AI Elements Shimmer](https://elements.ai-sdk.dev/components/shimmer). Die Grillme-Variante uebernimmt Bewegungsmodell und dynamischen Spread, verwendet aber die Signal-Red-Palette statt eines neutralen Theme-Highlights.
+Komponentenreferenzen fuer den aktiven Prozess: [AI Elements Reasoning](https://elements.ai-sdk.dev/components/reasoning), [AI Elements Chain of Thought](https://elements.ai-sdk.dev/components/chain-of-thought) und [AI Elements Shimmer](https://elements.ai-sdk.dev/components/shimmer). Die Grillme-Varianten sind native Vue-Komponenten, zeigen ausschliesslich beobachtbare Prozessphasen und verwenden Signal Red statt eines neutralen Theme-Highlights.
 
 Sobald sich die Richtung stabilisiert, muessen daraus spaeter folgen:
 

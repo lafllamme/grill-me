@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { NuxtLink } from '#components'
 import { useHead, useSeoMeta } from '#imports'
 import LandingTopNav from '~/components/LandingTopNav.vue'
@@ -9,6 +9,7 @@ import RebrandLiveRoastStage from '~/components/rebrand/RebrandLiveRoastStage.vu
 import RebrandResultReveal from '~/components/rebrand/RebrandResultReveal.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
 import { useRoast } from '~/composables/useRoast'
+import { useRoastPreview } from '~/composables/useRoastPreview'
 import { useRoastStore } from '~/stores/roastStore'
 
 definePageMeta({ layout: false })
@@ -24,6 +25,8 @@ const prismColors = {
 const roastStore = useRoastStore()
 const liveRoastStage = ref<HTMLElement | null>(null)
 const isLiveRoastActive = ref(false)
+const isPageInteractive = ref(false)
+const activeRoastSource = ref<'api' | 'preview'>('api')
 const {
   pending,
   error,
@@ -36,20 +39,50 @@ const {
   roastUsername,
 } = useRoast()
 
-async function startRoast() {
-  if (!roastStore.canSubmit || pending.value)
-    return
+const preview = useRoastPreview()
+const isPreviewActive = computed(() => activeRoastSource.value === 'preview')
+const isRoastPending = computed(() => isPreviewActive.value ? preview.isPending.value : pending.value)
+const displayedStreaming = computed(() => isPreviewActive.value ? preview.isStreaming.value : isStreaming.value)
+const displayedTitle = computed(() => isPreviewActive.value ? preview.title.value : partialTitle.value)
+const displayedRoastLines = computed(() => isPreviewActive.value ? preview.roastLines.value : partialRoastLines.value)
+const displayedFeedback = computed(() => isPreviewActive.value ? preview.feedback.value : partialFeedback.value)
+const displayedStatuses = computed(() => isPreviewActive.value ? preview.statuses.value : streamStatus.value)
+const displayedError = computed(() => isPreviewActive.value ? null : streamError.value || error.value)
 
-  isLiveRoastActive.value = true
-  void roastUsername(roastStore.trimmedUsername, {
-    roastIntensity: roastStore.roastIntensity,
-  })
+onMounted(() => {
+  isPageInteractive.value = true
+})
 
+async function scrollToLiveStage() {
   await nextTick()
   liveRoastStage.value?.scrollIntoView({
     behavior: 'smooth',
     block: 'start',
   })
+}
+
+async function startRoast() {
+  if (!roastStore.canSubmit || pending.value)
+    return
+
+  preview.stop()
+  activeRoastSource.value = 'api'
+  isLiveRoastActive.value = true
+  void roastUsername(roastStore.trimmedUsername, {
+    roastIntensity: roastStore.roastIntensity,
+  })
+
+  await scrollToLiveStage()
+}
+
+async function startPreview() {
+  if (pending.value)
+    return
+
+  activeRoastSource.value = 'preview'
+  isLiveRoastActive.value = true
+  preview.play()
+  await scrollToLiveStage()
 }
 
 const evidenceModules = [
@@ -84,18 +117,32 @@ const evidenceModules = [
         </div>
       </section>
 
-      <RebrandTargetStage :is-pending="pending" @submit="startRoast" />
+      <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
+        <template #preview>
+          <button
+            type="button"
+            data-testid="test-2-preview-button"
+            class="text-[10px] text-explore-copy tracking-[0.1em] font-meta px-4 py-2.5 border-[1px] border-signal-red-500/30 rounded-xl border-solid bg-signal-red-950/35 inline-flex gap-2 uppercase transition-colors items-center hover:border-signal-red-500/55 hover:bg-signal-red-950/60 disabled:opacity-45 disabled:cursor-wait"
+            :disabled="isRoastPending || !isPageInteractive"
+            @click="startPreview"
+          >
+            <span class="rounded-full bg-signal-red-500 h-1.5 w-1.5 shadow-[0_0_10px_var(--explore-glow)]" />
+            Run sample roast · no API
+          </button>
+        </template>
+      </RebrandTargetStage>
 
       <div v-if="isLiveRoastActive" ref="liveRoastStage">
         <RebrandLiveRoastStage
           :username="roastStore.trimmedUsername"
-          :is-pending="pending"
-          :is-streaming="isStreaming"
-          :title="partialTitle"
-          :roast-lines="partialRoastLines"
-          :feedback="partialFeedback"
-          :statuses="streamStatus"
-          :error="streamError || error"
+          :is-pending="isRoastPending"
+          :is-streaming="displayedStreaming"
+          :title="displayedTitle"
+          :roast-lines="displayedRoastLines"
+          :feedback="displayedFeedback"
+          :statuses="displayedStatuses"
+          :error="displayedError"
+          :is-preview="isPreviewActive"
         />
       </div>
 

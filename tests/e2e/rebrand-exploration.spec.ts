@@ -81,3 +81,24 @@ test('second rebrand direction scrolls into a streamed roast experience', async 
     timeout: 5_000,
   }).toBeLessThan(24)
 })
+
+test('second rebrand direction previews the complete roast without an API request', async ({ page }) => {
+  let roastRequestCount = 0
+  page.on('request', (request) => {
+    if (request.url().includes('/api/roast/stream'))
+      roastRequestCount += 1
+  })
+
+  await page.goto('/test-2')
+  const previewButton = page.getByTestId('test-2-preview-button')
+  await expect(previewButton).toBeEnabled()
+  await previewButton.click()
+
+  const liveStage = page.getByTestId('test-2-live-roast')
+  await expect(liveStage).toContainText('Investigating @lafllamme')
+  await expect(liveStage).toContainText('Opening the public commit trail')
+  await expect(page.getByTestId('test-2-roast-title')).toHaveText('Abstraction Witness Protection', { timeout: 10_000 })
+  await expect(liveStage).toContainText('You did not remove complexity.')
+  await expect(liveStage).toContainText('Delete pass-through wrappers', { timeout: 10_000 })
+  expect(roastRequestCount).toBe(0)
+})
