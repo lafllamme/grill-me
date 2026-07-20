@@ -1,15 +1,20 @@
 <script setup lang="ts">
+import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { NuxtLink } from '#components'
 import { useHead, useSeoMeta } from '#imports'
 import LandingTopNav from '~/components/LandingTopNav.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
+import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import RebrandAnalysisStage from '~/components/rebrand/RebrandAnalysisStage.vue'
 import RebrandLiveRoastStage from '~/components/rebrand/RebrandLiveRoastStage.vue'
+import RebrandResultDirections from '~/components/rebrand/RebrandResultDirections.vue'
 import RebrandResultReveal from '~/components/rebrand/RebrandResultReveal.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
+import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings'
 import { useRoast } from '~/composables/useRoast'
 import { useRoastPreview } from '~/composables/useRoastPreview'
+import { PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS } from '~/models/prism-gradient'
 import { useRoastStore } from '~/stores/roastStore'
 
 definePageMeta({ layout: false })
@@ -17,10 +22,46 @@ definePageMeta({ layout: false })
 useHead({ title: 'Grillme Rebrand Exploration 02' })
 useSeoMeta({ description: 'A stage-first Grillme homepage concept using Signal Red, dark glass, and progressive roast states.' })
 
-const prismColors = {
-  dark: ['#110205', '#7E1D26', '#F0444D'],
-  light: ['#110205', '#981B27', '#F0444D'],
-} as const
+const testPagePrismDefaults: PrismGradientSettings = {
+  ...PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS,
+  speed: 0.476,
+  noiseOpacity: 0.065,
+  noiseScale: 1.2,
+  ambientOpacity: 0.14,
+  radius: '0px',
+  darkColors: ['#110205', '#7E1D26', '#F0444D'],
+  lightColors: ['#110205', '#981B27', '#F0444D'],
+}
+
+const {
+  settings: prismSettings,
+  isPanelOpen: isPrismPanelOpen,
+  isPanelVisible: isPrismPanelVisible,
+  togglePanel: togglePrismPanel,
+  resetSettings: resetPrismSettings,
+  closePanel: closePrismPanel,
+  showPanel: showPrismPanel,
+} = usePrismGradientSettings({
+  defaults: testPagePrismDefaults,
+  storageKey: 'grillme:prism-gradient:test-2:settings:v1',
+  panelOpenStorageKey: 'grillme:prism-gradient:test-2:panel-open:v1',
+})
+
+const prismShaderSettings = computed<PrismGradientShaderSettings>(() => ({
+  rotation: prismSettings.rotation,
+  proportion: prismSettings.proportion,
+  scale: prismSettings.scale,
+  distortion: prismSettings.distortion,
+  swirl: prismSettings.swirl,
+  swirlIterations: prismSettings.swirlIterations,
+  softness: prismSettings.softness,
+  offset: prismSettings.offset,
+  shapeSize: prismSettings.shapeSize,
+}))
+
+function applyPrismSettings(nextSettings: PrismGradientSettings) {
+  Object.assign(prismSettings, nextSettings)
+}
 
 const roastStore = useRoastStore()
 const liveRoastStage = ref<HTMLElement | null>(null)
@@ -101,7 +142,15 @@ const evidenceModules = [
     <main class="relative overflow-clip">
       <div class="bg-black relative overflow-hidden isolate">
         <div class="pointer-events-none [mask-image:linear-gradient(to_bottom,#000_0%,#000_50%,rgba(0,0,0,0.96)_62%,rgba(0,0,0,0.46)_82%,transparent_100%)] inset-0 absolute z-0">
-          <PrismGradientBackground class="inset-0 absolute" :speed="0.68" :ambient-opacity="0.14" radius="0px" :noise="{ opacity: 0.065, scale: 1.2 }" :colors="prismColors" />
+          <PrismGradientBackground
+            class="inset-0 absolute"
+            :speed="prismSettings.speed"
+            :ambient-opacity="prismSettings.ambientOpacity"
+            :radius="prismSettings.radius"
+            :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
+            :colors="{ dark: prismSettings.darkColors, light: prismSettings.lightColors }"
+            :shader="prismShaderSettings"
+          />
           <div class="bg-black/20 inset-0 absolute" />
         </div>
         <div class="pointer-events-none inset-0 absolute z-[1] from-transparent to-black/75 via-transparent bg-gradient-to-br" />
@@ -234,6 +283,8 @@ const evidenceModules = [
 
         <RebrandResultReveal class="relative z-10" />
 
+        <RebrandResultDirections class="relative z-10" />
+
         <footer class="mx-auto px-4 py-10 flex gap-4 max-w-[88rem] items-center justify-between relative z-10 lg:px-10 sm:px-6">
           <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
             Grillme / homepage exploration 02
@@ -244,5 +295,17 @@ const evidenceModules = [
         </footer>
       </section>
     </main>
+
+    <PrismGradientDevPanel
+      :settings="prismSettings"
+      :defaults="testPagePrismDefaults"
+      :is-panel-open="isPrismPanelOpen"
+      :is-panel-visible="isPrismPanelVisible"
+      @update:settings="applyPrismSettings"
+      @toggle="togglePrismPanel"
+      @reset="resetPrismSettings"
+      @close="closePrismPanel"
+      @show="showPrismPanel"
+    />
   </div>
 </template>

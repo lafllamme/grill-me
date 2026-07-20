@@ -1,36 +1,16 @@
+import type { PrismGradientSettings } from '~/models/prism-gradient'
 import { useDebounceFn } from '@vueuse/core'
-
-export interface PrismGradientSettings {
-  speed: number
-  noiseOpacity: number
-  noiseScale: number
-  radius: string
-  darkColors: [string, string, string]
-  lightColors: [string, string, string]
-}
+import {
+  PRISM_GRADIENT_DEFAULT_SETTINGS,
+} from '~/models/prism-gradient'
 
 export const PRISM_GRADIENT_STORAGE_KEY = 'grillme:prism-gradient:settings:v1'
 export const PRISM_GRADIENT_PANEL_OPEN_STORAGE_KEY = 'grillme:prism-gradient:panel-open:v1'
 
-export const PRISM_GRADIENT_DEFAULT_DARK_COLORS = [
-  '#050505',
-  '#66B3FF',
-  '#FFFFFF',
-] as const satisfies [string, string, string]
-
-export const PRISM_GRADIENT_DEFAULT_LIGHT_COLORS = [
-  '#FAFAFA',
-  '#66B3FF',
-  '#050505',
-] as const satisfies [string, string, string]
-
-export const PRISM_GRADIENT_DEFAULT_SETTINGS: PrismGradientSettings = {
-  speed: 1,
-  noiseOpacity: 0.08,
-  noiseScale: 1,
-  radius: '0px',
-  darkColors: [...PRISM_GRADIENT_DEFAULT_DARK_COLORS],
-  lightColors: [...PRISM_GRADIENT_DEFAULT_LIGHT_COLORS],
+interface PrismGradientSettingsOptions {
+  defaults?: PrismGradientSettings
+  storageKey?: string
+  panelOpenStorageKey?: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -42,17 +22,35 @@ function toNumberOrDefault(value: unknown, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-function normalizeSettings(value: unknown): PrismGradientSettings {
+function createDefaultSettings(defaults: PrismGradientSettings): PrismGradientSettings {
+  return {
+    ...defaults,
+    darkColors: [...defaults.darkColors],
+    lightColors: [...defaults.lightColors],
+  }
+}
+
+function normalizeSettings(value: unknown, defaults: PrismGradientSettings): PrismGradientSettings {
   if (!isRecord(value))
-    return { ...PRISM_GRADIENT_DEFAULT_SETTINGS }
+    return createDefaultSettings(defaults)
 
   return {
-    speed: toNumberOrDefault(value.speed, PRISM_GRADIENT_DEFAULT_SETTINGS.speed),
-    noiseOpacity: toNumberOrDefault(value.noiseOpacity, PRISM_GRADIENT_DEFAULT_SETTINGS.noiseOpacity),
-    noiseScale: toNumberOrDefault(value.noiseScale, PRISM_GRADIENT_DEFAULT_SETTINGS.noiseScale),
-    radius: typeof value.radius === 'string' ? value.radius : PRISM_GRADIENT_DEFAULT_SETTINGS.radius,
-    darkColors: normalizeColorTriplet(value.darkColors, PRISM_GRADIENT_DEFAULT_DARK_COLORS),
-    lightColors: normalizeColorTriplet(value.lightColors, PRISM_GRADIENT_DEFAULT_LIGHT_COLORS),
+    speed: toNumberOrDefault(value.speed, defaults.speed),
+    noiseOpacity: toNumberOrDefault(value.noiseOpacity, defaults.noiseOpacity),
+    noiseScale: toNumberOrDefault(value.noiseScale, defaults.noiseScale),
+    ambientOpacity: toNumberOrDefault(value.ambientOpacity, defaults.ambientOpacity),
+    rotation: toNumberOrDefault(value.rotation, defaults.rotation),
+    proportion: toNumberOrDefault(value.proportion, defaults.proportion),
+    scale: toNumberOrDefault(value.scale, defaults.scale),
+    distortion: toNumberOrDefault(value.distortion, defaults.distortion),
+    swirl: toNumberOrDefault(value.swirl, defaults.swirl),
+    swirlIterations: Math.round(toNumberOrDefault(value.swirlIterations, defaults.swirlIterations)),
+    softness: toNumberOrDefault(value.softness, defaults.softness),
+    offset: toNumberOrDefault(value.offset, defaults.offset),
+    shapeSize: toNumberOrDefault(value.shapeSize, defaults.shapeSize),
+    radius: typeof value.radius === 'string' ? value.radius : defaults.radius,
+    darkColors: normalizeColorTriplet(value.darkColors, defaults.darkColors),
+    lightColors: normalizeColorTriplet(value.lightColors, defaults.lightColors),
   }
 }
 
@@ -84,8 +82,11 @@ function normalizeHexColor(value: string): string {
   return trimmed
 }
 
-export function usePrismGradientSettings() {
-  const settings = reactive<PrismGradientSettings>({ ...PRISM_GRADIENT_DEFAULT_SETTINGS })
+export function usePrismGradientSettings(options: PrismGradientSettingsOptions = {}) {
+  const defaults = createDefaultSettings(options.defaults ?? PRISM_GRADIENT_DEFAULT_SETTINGS)
+  const storageKey = options.storageKey ?? PRISM_GRADIENT_STORAGE_KEY
+  const panelOpenStorageKey = options.panelOpenStorageKey ?? PRISM_GRADIENT_PANEL_OPEN_STORAGE_KEY
+  const settings = reactive<PrismGradientSettings>(createDefaultSettings(defaults))
   const isPanelOpen = ref(false)
   const isPanelVisible = ref(true)
 
@@ -93,18 +94,18 @@ export function usePrismGradientSettings() {
     if (!import.meta.client)
       return
 
-    localStorage.setItem(PRISM_GRADIENT_STORAGE_KEY, JSON.stringify(settings))
+    localStorage.setItem(storageKey, JSON.stringify(settings))
   }
 
   const saveSettingsDebounced = useDebounceFn(saveSettings, 180)
 
   const resetSettings = () => {
-    Object.assign(settings, { ...PRISM_GRADIENT_DEFAULT_SETTINGS })
+    Object.assign(settings, createDefaultSettings(defaults))
 
     if (!import.meta.client)
       return
 
-    localStorage.removeItem(PRISM_GRADIENT_STORAGE_KEY)
+    localStorage.removeItem(storageKey)
   }
 
   const togglePanel = () => {
@@ -123,17 +124,17 @@ export function usePrismGradientSettings() {
     if (!import.meta.client)
       return
 
-    const rawSettings = localStorage.getItem(PRISM_GRADIENT_STORAGE_KEY)
+    const rawSettings = localStorage.getItem(storageKey)
     if (rawSettings) {
       try {
-        Object.assign(settings, normalizeSettings(JSON.parse(rawSettings)))
+        Object.assign(settings, normalizeSettings(JSON.parse(rawSettings), defaults))
       }
       catch {
-        Object.assign(settings, { ...PRISM_GRADIENT_DEFAULT_SETTINGS })
+        Object.assign(settings, createDefaultSettings(defaults))
       }
     }
 
-    const rawPanelOpen = localStorage.getItem(PRISM_GRADIENT_PANEL_OPEN_STORAGE_KEY)
+    const rawPanelOpen = localStorage.getItem(panelOpenStorageKey)
     if (rawPanelOpen !== null)
       isPanelOpen.value = rawPanelOpen === '1'
   })
@@ -150,7 +151,7 @@ export function usePrismGradientSettings() {
     if (!import.meta.client)
       return
 
-    localStorage.setItem(PRISM_GRADIENT_PANEL_OPEN_STORAGE_KEY, value ? '1' : '0')
+    localStorage.setItem(panelOpenStorageKey, value ? '1' : '0')
   })
 
   return {

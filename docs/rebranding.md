@@ -85,6 +85,22 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 - Titel, Roast-Zeilen und Feedback werden nach Eingang progressiv wortweise eingeblendet. Die Praesentationsanimation darf den Transport nicht verlangsamen oder Events zurueckhalten.
 - Die Live-Surface waechst mit dem eintreffenden Inhalt, statt zwischen separaten Lade- und Ergebnis-Komponenten hart umzuschalten.
 - `prefers-reduced-motion` muss die progressive Textanimation ueberspringen und Inhalte direkt vollstaendig anzeigen.
+- Der Prism-Shader behaelt Farben, Geschwindigkeit und Komposition, begrenzt seine interne Aufloesung aber auf `1.5` DPR und rendert mit maximal 45 FPS. Ausserhalb des Viewports sowie in inaktiven Tabs pausiert der Render-Loop vollstaendig.
+- Das bestehende Development-Panel bildet zusaetzlich die originalen internen Prism-Parameter ab. Alle Regler aktualisieren die Shader-Uniforms live, persistieren lokal und fallen bei alten gespeicherten Konfigurationen auf die bisherige Optik zurueck.
+
+### Result-System-Studie
+
+Unterhalb des bestehenden Final Reveal vergleicht `/test-2` drei Informationsarchitekturen mit demselben statischen Roast-Datensatz. Damit werden Layout und Hierarchie bewertet, ohne Content-Qualitaet oder API-Latenz mit der Designentscheidung zu vermischen:
+
+- `Compact scoreboard`: Grade, Verdict und Kernmetriken stehen im ersten View; Roast-Punkte bleiben flache Zeilen mit Datei- und Diff-Metadaten.
+- `Editorial flow`: Die Seite selbst ist die Surface. Typografie, Trennlinien und ein kompakter Evidence-Block ersetzen eine umschliessende Result-Card.
+- `Focused bento`: Verdict, Evidence sowie Roast-Punkte mit Feedback bilden genau drei Makro-Module. Einzelne Dateien erhalten keine eigenen Kacheln.
+
+Alle Richtungen folgen derselben Reveal-Reihenfolge: zuerst Verdict und Grade, danach die Roast-Punkte, zuletzt das konstruktive Feedback. Diese Reihenfolge soll spaeter direkt an den progressiven Stream gekoppelt werden, ohne bereits sichtbare Inhalte neu anzuordnen.
+
+Die drei Studien werden auf `/test-2` ueber eine Tab-Navigation einzeln angezeigt, damit ihre Kompositionen nicht visuell miteinander konkurrieren. Der Zustand einer Studie bleibt beim Tab-Wechsel erhalten. Jede Studie besitzt einen lokalen `Play result`-Trigger. Er simuliert Thinking, Verdict, einzeln eintreffende Roast-Punkte und Feedback zeitversetzt ohne GitHub- oder AI-Request. Die Demos laufen unabhaengig, sind wiederholbar und dienen dazu, Wachstum, Blickfuehrung und Scrollverhalten vor der Produktionsanbindung zu beurteilen.
+
+Die Varianten sind eine Exploration und noch kein Produktionsvertrag. Die spaetere Auswahl soll die beste Lesbarkeit fuer Verdict, Grade, Reasoning, Roast-Punkte, Evidence und Feedback als gemeinsames Result-System festlegen.
 
 Der Prototyp ist noch kein finaler Produktionsvertrag. Insbesondere Typografie-Rhythmus, Reveal-Geschwindigkeit, Quellenbezug und die Gewichtung der Feedback-Sektion bleiben Stellschrauben.
 

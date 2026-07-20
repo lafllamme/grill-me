@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { PrismGradientShaderSettings } from '~/models/prism-gradient'
 import { useColorMode } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS } from '~/models/prism-gradient'
 
 interface PrismGradientNoise {
   opacity: number
@@ -12,6 +14,7 @@ interface PrismGradientBackgroundProps {
   noise?: PrismGradientNoise
   ambientOpacity?: number
   radius?: string
+  shader?: Partial<PrismGradientShaderSettings>
   colors?: {
     dark: readonly [string, string, string]
     light: readonly [string, string, string]
@@ -30,19 +33,12 @@ const props = withDefaults(defineProps<PrismGradientBackgroundProps>(), {
 const PRISM = {
   dark: ['#050505', '#66B3FF', '#FFFFFF'],
   light: ['#FAFAFA', '#66B3FF', '#050505'],
-  rotation: -50,
-  proportion: 1,
-  scale: 0.01,
   speed: 30,
-  distortion: 0,
-  swirl: 50,
-  swirlIterations: 16,
-  softness: 47,
-  offset: -299,
-  shapeSize: 45,
 } as const
 
 const NOISE_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAElBMVEUAAAAAAAAAAAAAAAAAAAAAAADgKxmiAAAABnRSTlMCCgkGBAVJOAVJAAAASklEQVQ4y2NgGAWjYBSMglEwCgY/YGRgZBQUYmJiZGQEkYwMjIyMgoKCjIyMIJKBgRFIMjIyAklGRkYGRkFBYEcwMDIyMjAOUQAA1I4HwVwZAkYAAAAASUVORK5CYII='
+const MAX_PIXEL_RATIO = 1.5
+const TARGET_FRAME_RATE = 45
 
 const VERTEX_SHADER = `#version 300 es
 in vec4 a_position;
@@ -155,6 +151,10 @@ const colors = computed(() =>
     ? props.colors?.light ?? PRISM.light
     : props.colors?.dark ?? PRISM.dark,
 )
+const shaderSettings = computed<PrismGradientShaderSettings>(() => ({
+  ...PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS,
+  ...props.shader,
+}))
 
 function hexToRgba(hex: string): [number, number, number, number] {
   const value = hex.replace('#', '')
@@ -174,6 +174,8 @@ function hexToRgba(hex: string): [number, number, number, number] {
 }
 
 let cleanup: (() => void) | null = null
+let refreshUniforms: (() => void) | null = null
+let requestRender: (() => void) | null = null
 
 function setup() {
   cleanup?.()
@@ -187,7 +189,8 @@ function setup() {
   const gl = canvas.getContext('webgl2', {
     premultipliedAlpha: true,
     alpha: true,
-    antialias: true,
+    antialias: false,
+    powerPreference: 'high-performance',
   })
 
   if (!gl) {
@@ -276,31 +279,71 @@ function setup() {
   }
 
   const resize = () => {
-    const pixelRatio = window.devicePixelRatio || 1
-    canvas.width = Math.max(
+    const pixelRatio = Math.min(MAX_PIXEL_RATIO, window.devicePixelRatio || 1)
+    const nextWidth = Math.max(
       1,
       Math.round(container.clientWidth * pixelRatio),
     )
-    canvas.height = Math.max(
+    const nextHeight = Math.max(
       1,
       Math.round(container.clientHeight * pixelRatio),
     )
+
+    if (canvas.width === nextWidth && canvas.height === nextHeight)
+      return
+
+    canvas.width = nextWidth
+    canvas.height = nextHeight
     gl.viewport(0, 0, canvas.width, canvas.height)
+    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height)
+    gl.uniform1f(uniforms.pixelRatio, pixelRatio)
   }
 
   resize()
+
+  const applyUniformSettings = () => {
+    const [color1, color2, color3] = colors.value.map(hexToRgba)
+    const shader = shaderSettings.value
+
+    gl.uniform1f(uniforms.scale, shader.scale)
+    gl.uniform1f(uniforms.rotation, (shader.rotation * Math.PI) / 180)
+    gl.uniform4fv(uniforms.color1, color1!)
+    gl.uniform4fv(uniforms.color2, color2!)
+    gl.uniform4fv(uniforms.color3, color3!)
+    gl.uniform1f(uniforms.proportion, shader.proportion / 100)
+    gl.uniform1f(uniforms.softness, shader.softness / 100)
+    gl.uniform1f(uniforms.shapeScale, shader.shapeSize / 100)
+    gl.uniform1f(uniforms.distortion, shader.distortion / 50)
+    gl.uniform1f(uniforms.swirl, shader.swirl / 100)
+    gl.uniform1f(uniforms.swirlIterations, shader.swirlIterations)
+  }
+
+  refreshUniforms = applyUniformSettings
+  applyUniformSettings()
+
   const resizeObserver = new ResizeObserver(resize)
   resizeObserver.observe(container)
   const startedAt = performance.now()
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const frameDuration = 1000 / TARGET_FRAME_RATE
 
   let frameId: number | undefined
+  let lastFrameAt = 0
+  let isVisible = false
+  let isDocumentVisible = document.visibilityState === 'visible'
+
+  const cancelFrame = () => {
+    if (frameId === undefined)
+      return
+
+    cancelAnimationFrame(frameId)
+    frameId = undefined
+  }
 
   const handleContextLost = (event: Event) => {
     event.preventDefault()
     webglFailed.value = true
-    if (frameId !== undefined)
-      cancelAnimationFrame(frameId)
+    cancelFrame()
   }
 
   const handleContextRestored = () => {
@@ -312,38 +355,60 @@ function setup() {
   canvas.addEventListener('webglcontextrestored', handleContextRestored)
 
   const draw = (time: number) => {
+    frameId = undefined
+
+    if (!isVisible || !isDocumentVisible)
+      return
+
+    if (!reduceMotion && props.speed > 0 && time - lastFrameAt < frameDuration) {
+      frameId = requestAnimationFrame(draw)
+      return
+    }
+
+    lastFrameAt = time
     const elapsed = (time - startedAt) / 1000
     const prismSpeed = (PRISM.speed / 100) * 5 * Math.max(0, props.speed)
-    const color1 = hexToRgba(colors.value[0]!)
-    const color2 = hexToRgba(colors.value[1]!)
-    const color3 = hexToRgba(colors.value[2]!)
 
-    gl.uniform1f(uniforms.time, elapsed * prismSpeed + PRISM.offset * 0.01)
-    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height)
-    gl.uniform1f(uniforms.pixelRatio, window.devicePixelRatio || 1)
-    gl.uniform1f(uniforms.scale, PRISM.scale)
-    gl.uniform1f(uniforms.rotation, (PRISM.rotation * Math.PI) / 180)
-    gl.uniform4fv(uniforms.color1, color1)
-    gl.uniform4fv(uniforms.color2, color2)
-    gl.uniform4fv(uniforms.color3, color3)
-    gl.uniform1f(uniforms.proportion, PRISM.proportion / 100)
-    gl.uniform1f(uniforms.softness, PRISM.softness / 100)
-    gl.uniform1f(uniforms.shapeScale, PRISM.shapeSize / 100)
-    gl.uniform1f(uniforms.distortion, PRISM.distortion / 50)
-    gl.uniform1f(uniforms.swirl, PRISM.swirl / 100)
-    gl.uniform1f(uniforms.swirlIterations, PRISM.swirlIterations)
+    gl.uniform1f(uniforms.time, elapsed * prismSpeed + shaderSettings.value.offset * 0.01)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     if (!reduceMotion && props.speed > 0)
       frameId = requestAnimationFrame(draw)
   }
 
-  frameId = requestAnimationFrame(draw)
+  const requestFrame = () => {
+    if (frameId === undefined && isVisible && isDocumentVisible)
+      frameId = requestAnimationFrame(draw)
+  }
+
+  requestRender = requestFrame
+
+  const intersectionObserver = new IntersectionObserver(([entry]) => {
+    isVisible = entry?.isIntersecting ?? false
+
+    if (isVisible)
+      requestFrame()
+    else
+      cancelFrame()
+  })
+
+  const handleVisibilityChange = () => {
+    isDocumentVisible = document.visibilityState === 'visible'
+
+    if (isDocumentVisible)
+      requestFrame()
+    else
+      cancelFrame()
+  }
+
+  intersectionObserver.observe(container)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 
   cleanup = () => {
-    if (frameId !== undefined)
-      cancelAnimationFrame(frameId)
+    cancelFrame()
     resizeObserver.disconnect()
+    intersectionObserver.disconnect()
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
     canvas.removeEventListener('webglcontextlost', handleContextLost)
     canvas.removeEventListener('webglcontextrestored', handleContextRestored)
     if (positionBuffer)
@@ -351,6 +416,8 @@ function setup() {
     gl.deleteProgram(program)
     gl.deleteShader(vertexShader)
     gl.deleteShader(fragmentShader)
+    refreshUniforms = null
+    requestRender = null
   }
 }
 
@@ -359,9 +426,10 @@ onMounted(() => {
   setup()
 })
 
-watch([colors, () => props.speed], () => {
-  setup()
-})
+watch([colors, shaderSettings, () => props.speed], () => {
+  refreshUniforms?.()
+  requestRender?.()
+}, { deep: true })
 
 onBeforeUnmount(() => {
   cleanup?.()

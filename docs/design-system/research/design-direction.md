@@ -88,6 +88,8 @@ The earlier `#B5284E` direction was rejected because the blue component pushed t
 
 `/test-1` remains the first direction study. `/test-2` is the active homepage composition and the preferred source for component extraction.
 
+The result area on `/test-2` contains three second-round system studies using one shared fixture: a compact scoreboard, an open editorial flow, and a focused three-module bento. They prioritize first-glance comprehension and a stable `verdict -> roast points -> feedback` reveal order. Files and diff counts remain compact evidence metadata rather than becoming separate cards. A production direction remains undecided.
+
 ## Explicit non-goals
 
 - no generic chat transcript

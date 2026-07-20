@@ -22,6 +22,8 @@ The default layout keeps the Prism layer fixed behind route content. Production 
 - If WebGL2 setup fails, the component renders a palette-aware static radial-gradient fallback.
 - WebGL context loss temporarily reveals the fallback and attempts a clean renderer setup after context restoration.
 - `ambientOpacity` can add a restrained palette-aware layer above the canvas so near-black shader phases do not visually erase the background.
+
+In development, `PrismGradientDevPanel` exposes both the public surface controls and the original shader composition values. Motion, texture, color, rotation, proportion, scale, distortion, swirl, softness, offset, and shape size update live without rebuilding the WebGL context. Settings persist locally; older stored payloads are normalized with the original component defaults, and Reset restores that exact baseline.
 - The developer panel is available only in development and stores its settings locally.
 
 ## Layering rules
@@ -57,7 +59,7 @@ Avoid:
 
 ## Rebrand exploration
 
-`/test-1` and `/test-2` own an isolated Signal Red Prism palette and do not use the default layout. This is intentional: the routes test the proposed visual direction without changing production settings or persisted developer controls.
+`/test-1` and `/test-2` own an isolated Signal Red Prism palette and do not use the default layout. This is intentional: the routes test the proposed visual direction without changing production settings. `/test-2` mounts the shared developer panel directly with route-specific defaults and separate persistence keys, so experiments never overwrite the homepage configuration.
 
 The exploration uses:
 

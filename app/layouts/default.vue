@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PrismGradientSettings } from '~/composables/usePrismGradientSettings'
+import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings'
@@ -23,6 +23,18 @@ const {
   showPanel,
 } = usePrismGradientSettings()
 
+const shaderSettings = computed<PrismGradientShaderSettings>(() => ({
+  rotation: settings.rotation,
+  proportion: settings.proportion,
+  scale: settings.scale,
+  distortion: settings.distortion,
+  swirl: settings.swirl,
+  swirlIterations: settings.swirlIterations,
+  softness: settings.softness,
+  offset: settings.offset,
+  shapeSize: settings.shapeSize,
+}))
+
 function applySettings(nextSettings: PrismGradientSettings) {
   Object.assign(settings, nextSettings)
 }
@@ -34,9 +46,11 @@ function applySettings(nextSettings: PrismGradientSettings) {
       <PrismGradientBackground
         class="inset-0 absolute"
         :speed="settings.speed"
+        :ambient-opacity="settings.ambientOpacity"
         :radius="settings.radius"
         :noise="{ opacity: settings.noiseOpacity, scale: settings.noiseScale }"
         :colors="{ dark: settings.darkColors, light: settings.lightColors }"
+        :shader="shaderSettings"
       />
     </div>
 
