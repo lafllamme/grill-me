@@ -88,6 +88,8 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 
 Der Prototyp ist noch kein finaler Produktionsvertrag. Insbesondere Typografie-Rhythmus, Reveal-Geschwindigkeit, Quellenbezug und die Gewichtung der Feedback-Sektion bleiben Stellschrauben.
 
+Die aktuelle Background-Komposition folgt einer zusaetzlichen Regel: Der Prism-Shader ist auf die Opening Stage aus Hero und Target begrenzt. Eine lange CSS-Maske fuehrt in echtes Schwarz, damit Prozess-, Analyse- und Produktkapitel nicht permanent gegen einen bewegten Hintergrund arbeiten muessen. Der Hero nutzt auf Desktop eine asymmetrische Zweispalten-Komposition mit Markenstatement links und Produkterklaerung rechts. Die folgende Target Stage bleibt bewusst vertikal: zentrierte Headline ueber einer breiten Prompt-Surface. Auf Mobile bleibt die gesamte Reihenfolge linear. Spaetere Markenatmosphaere wird statisch mit Signal-Red-Tokens aufgebaut, sodass der Final Reveal wieder Farbe aufnehmen kann, ohne einen zweiten Shader einzufuehren.
+
 ## Gestalterische Hypothesen
 
 Folgende Annahmen sollen in der Recherche und in spaeteren Explorationsphasen geprueft werden:

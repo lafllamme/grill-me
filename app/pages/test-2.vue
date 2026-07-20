@@ -95,63 +95,70 @@ const evidenceModules = [
 </script>
 
 <template>
-  <div data-testid="rebrand-test-2-root" class="text-explore-copy bg-explore-ink min-h-screen selection:text-explore-copy selection:bg-signal-red-700">
-    <div class="pointer-events-none inset-0 fixed z-0">
-      <PrismGradientBackground class="inset-0 absolute" :speed="0.68" :ambient-opacity="0.14" radius="0px" :noise="{ opacity: 0.065, scale: 1.2 }" :colors="prismColors" />
-      <div class="bg-black/20 inset-0 absolute" />
-    </div>
-
+  <div data-testid="rebrand-test-2-root" class="text-explore-copy bg-black min-h-screen selection:text-explore-copy selection:bg-signal-red-700">
     <LandingTopNav variant="signal" />
 
-    <main class="relative z-10 overflow-clip">
-      <section class="mx-auto px-4 pb-20 pt-36 flex flex-col max-w-[88rem] min-h-[92dvh] justify-end lg:px-10 sm:px-6 lg:pb-28 sm:pt-44">
-        <p class="text-xs text-signal-red-400 tracking-[0.22em] font-meta uppercase">
-          Public commits. Private consequences.
-        </p>
-        <h1 class="text-[clamp(3.8rem,12.5vw,12rem)] text-explore-copy leading-[0.78] tracking-[-0.08em] font-display font-semibold mt-8 max-w-[8.5ch] sm:leading-[0.75] sm:max-w-[8ch]">
-          Your code remembers.
-        </h1>
-        <div class="ml-auto mt-12 max-w-[35rem]">
-          <p class="text-lg text-explore-copy leading-relaxed font-body sm:text-xl">
-            Give us a GitHub username. The agent finds the evidence, streams the investigation, and returns a roast that can cite its sources.
-          </p>
-          <a href="#target" class="text-xs text-explore-copy tracking-[0.12em] font-label mt-7 inline-flex uppercase">Choose a target ↓</a>
+    <main class="relative overflow-clip">
+      <div class="bg-black relative overflow-hidden isolate">
+        <div class="pointer-events-none [mask-image:linear-gradient(to_bottom,#000_0%,#000_50%,rgba(0,0,0,0.96)_62%,rgba(0,0,0,0.46)_82%,transparent_100%)] inset-0 absolute z-0">
+          <PrismGradientBackground class="inset-0 absolute" :speed="0.68" :ambient-opacity="0.14" radius="0px" :noise="{ opacity: 0.065, scale: 1.2 }" :colors="prismColors" />
+          <div class="bg-black/20 inset-0 absolute" />
         </div>
-      </section>
+        <div class="pointer-events-none inset-0 absolute z-[1] from-transparent to-black/75 via-transparent bg-gradient-to-br" />
 
-      <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
-        <template #preview>
-          <button
-            type="button"
-            data-testid="test-2-preview-button"
-            class="text-[10px] text-explore-copy tracking-[0.1em] font-meta px-4 py-2.5 border-[1px] border-signal-red-500/30 rounded-xl border-solid bg-signal-red-950/35 inline-flex gap-2 uppercase transition-colors items-center hover:border-signal-red-500/55 hover:bg-signal-red-950/60 disabled:opacity-45 disabled:cursor-wait"
-            :disabled="isRoastPending || !isPageInteractive"
-            @click="startPreview"
-          >
-            <span class="rounded-full bg-signal-red-500 h-1.5 w-1.5 shadow-[0_0_10px_var(--explore-glow)]" />
-            Run sample roast · no API
-          </button>
-        </template>
-      </RebrandTargetStage>
+        <div class="relative z-10">
+          <section class="mx-auto px-4 pb-16 pt-36 flex flex-col max-w-[88rem] min-h-[80dvh] justify-end lg:px-10 sm:px-6 lg:pb-20 sm:pt-44">
+            <p class="text-xs text-signal-red-400 tracking-[0.22em] font-meta uppercase">
+              Public commits. Private consequences.
+            </p>
+            <div class="mt-8 gap-10 grid lg:gap-16 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
+              <h1 class="text-[clamp(3.8rem,9vw,9rem)] text-explore-copy leading-[0.78] tracking-[-0.08em] font-display font-semibold max-w-[7.5ch] sm:leading-[0.75]">
+                Your code remembers.
+              </h1>
+              <div class="pb-3 max-w-[35rem] lg:ml-auto lg:pb-5">
+                <p class="text-lg text-explore-copy leading-relaxed font-body sm:text-xl">
+                  Give us a GitHub username. The agent finds the evidence, streams the investigation, and returns a roast that can cite its sources.
+                </p>
+                <a href="#target" class="text-xs text-explore-copy tracking-[0.12em] font-label mt-7 inline-flex uppercase">Choose a target ↓</a>
+              </div>
+            </div>
+          </section>
 
-      <div v-if="isLiveRoastActive" ref="liveRoastStage">
-        <RebrandLiveRoastStage
-          :username="roastStore.trimmedUsername"
-          :is-pending="isRoastPending"
-          :is-streaming="displayedStreaming"
-          :title="displayedTitle"
-          :roast-lines="displayedRoastLines"
-          :feedback="displayedFeedback"
-          :statuses="displayedStatuses"
-          :error="displayedError"
-          :is-preview="isPreviewActive"
-          :evidence="displayedEvidence"
-        />
+          <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
+            <template #preview>
+              <button
+                type="button"
+                data-testid="test-2-preview-button"
+                class="text-[10px] text-explore-copy tracking-[0.1em] font-meta px-4 py-2.5 border-[1px] border-signal-red-500/30 rounded-xl border-solid bg-signal-red-950/35 inline-flex gap-2 uppercase transition-colors items-center hover:border-signal-red-500/55 hover:bg-signal-red-950/60 disabled:opacity-45 disabled:cursor-wait"
+                :disabled="isRoastPending || !isPageInteractive"
+                @click="startPreview"
+              >
+                <span class="rounded-full bg-signal-red-500 h-1.5 w-1.5 shadow-[0_0_10px_var(--explore-glow)]" />
+                Run sample roast · no API
+              </button>
+            </template>
+          </RebrandTargetStage>
+        </div>
+
+        <div class="h-48 pointer-events-none inset-x-0 bottom-0 absolute z-20 from-transparent to-black via-black/80 bg-gradient-to-b" />
       </div>
 
-      <div class="h-72 pointer-events-none [clip-path:polygon(0_18%,100%_0,100%_100%,0_100%)] relative z-10 from-transparent to-black via-black/92 bg-gradient-to-b -mt-20" />
+      <section class="bg-black relative z-10">
+        <div v-if="isLiveRoastActive" ref="liveRoastStage">
+          <RebrandLiveRoastStage
+            :username="roastStore.trimmedUsername"
+            :is-pending="isRoastPending"
+            :is-streaming="displayedStreaming"
+            :title="displayedTitle"
+            :roast-lines="displayedRoastLines"
+            :feedback="displayedFeedback"
+            :statuses="displayedStatuses"
+            :error="displayedError"
+            :is-preview="isPreviewActive"
+            :evidence="displayedEvidence"
+          />
+        </div>
 
-      <section class="bg-black relative -mt-px">
         <RebrandAnalysisStage />
 
         <div class="mx-auto px-4 pb-32 max-w-[88rem] lg:px-10 sm:px-6 lg:pb-48">
@@ -220,18 +227,22 @@ const evidenceModules = [
         </div>
       </section>
 
-      <div class="h-80 pointer-events-none [clip-path:polygon(0_0,100%_0,100%_82%,0_100%)] relative z-10 from-black to-transparent via-black/88 bg-gradient-to-b" />
+      <section class="bg-black relative overflow-hidden isolate">
+        <div class="pointer-events-none inset-0 absolute from-black to-black via-signal-red-950/55 bg-gradient-to-br" />
+        <div class="rounded-full bg-signal-red-900/20 h-[28rem] w-[68vw] pointer-events-none right-[-18vw] top-[16rem] absolute blur-[100px]" />
+        <div class="h-80 pointer-events-none [clip-path:polygon(0_0,100%_0,100%_82%,0_100%)] relative z-10 from-black to-transparent via-black/88 bg-gradient-to-b" />
 
-      <RebrandResultReveal />
+        <RebrandResultReveal class="relative z-10" />
 
-      <footer class="mx-auto px-4 py-10 flex gap-4 max-w-[88rem] items-center justify-between lg:px-10 sm:px-6">
-        <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
-          Grillme / homepage exploration 02
-        </p>
-        <NuxtLink to="/test-1" class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase hover:text-explore-copy">
-          View direction 01
-        </NuxtLink>
-      </footer>
+        <footer class="mx-auto px-4 py-10 flex gap-4 max-w-[88rem] items-center justify-between relative z-10 lg:px-10 sm:px-6">
+          <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
+            Grillme / homepage exploration 02
+          </p>
+          <NuxtLink to="/test-1" class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase hover:text-explore-copy">
+            View direction 01
+          </NuxtLink>
+        </footer>
+      </section>
     </main>
   </div>
 </template>
