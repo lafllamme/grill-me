@@ -137,8 +137,45 @@ html, body {
   font-synthesis-small-caps: none;
 }
 
+@keyframes chapter-cover-rise-right {
+  from {
+    transform: translateY(0) skewY(0deg);
+  }
+  to {
+    transform: translateY(-27%) skewY(-7deg);
+  }
+}
+
+@keyframes chapter-cover-rise-left {
+  from {
+    transform: translateY(0) skewY(0deg);
+  }
+  to {
+    transform: translateY(-27%) skewY(7deg);
+  }
+}
+
+@keyframes hero-scroll-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-150px);
+  }
+}
+
 `,
     },
+  ],
+  rules: [
+    ['chapter-cover-scroll', {
+      'animation-range': 'entry -20% cover 68%',
+      'animation-timeline': 'view(block)',
+    }],
+    ['hero-scroll-parallax', {
+      'animation-range': '0px 1500px',
+      'animation-timeline': 'scroll(root block)',
+    }],
   ],
   transformers: [transformerDirectives(), transformerVariantGroup()],
 })

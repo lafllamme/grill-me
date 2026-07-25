@@ -1,4 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+const props = withDefaults(defineProps<{
+  tone?: 'dark' | 'light'
+}>(), {
+  tone: 'dark',
+})
+
+const isLight = computed(() => props.tone === 'light')
+
 const analysisSteps = [
   { state: 'complete', label: 'Reading the public trail', detail: 'Repositories and recent commits found' },
   { state: 'complete', label: 'Selecting the evidence', detail: 'The suspicious decisions have been isolated' },
@@ -7,44 +17,44 @@ const analysisSteps = [
 </script>
 
 <template>
-  <section id="how-it-works" class="mx-auto px-4 py-24 max-w-[88rem] lg:px-10 lg:py-40 sm:px-6">
-    <div class="gap-14 grid lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
+  <section id="how-it-works" class="mx-auto px-4 pb-36 pt-28 max-w-[88rem] lg:px-10 sm:px-6 lg:pb-52 lg:pt-44">
+    <div class="gap-16 grid lg:gap-24 lg:grid-cols-[0.7fr_1.3fr]">
       <div>
         <p class="text-xs text-signal-red-500 tracking-[0.2em] font-meta uppercase">
           Analysis in motion
         </p>
-        <h2 class="text-[clamp(3.5rem,7vw,7.5rem)] text-explore-copy leading-[0.86] tracking-[-0.065em] font-display mt-7 max-w-[8ch]">
+        <h2 class="text-[clamp(3.25rem,6vw,6.5rem)] leading-[0.86] tracking-[-0.065em] font-display mt-7 max-w-[8ch]" :class="isLight ? 'text-basalt-950' : 'text-explore-copy'">
           The wait should say something.
         </h2>
-        <p class="text-base text-explore-muted leading-relaxed font-body mt-7 max-w-[34rem] sm:text-lg">
+        <p class="text-base leading-relaxed font-body mt-7 max-w-[34rem] sm:text-lg" :class="isLight ? 'text-basalt-600' : 'text-explore-muted'">
           No fake percentage. Each streamed event explains what the agent has actually finished while the final roast is still forming.
         </p>
       </div>
 
-      <div class="p-6 border-[1px] border-explore-border rounded-[2rem] border-solid bg-black/55 min-h-[34rem] shadow-[0_32px_120px_rgba(0,0,0,0.7)] backdrop-blur-2xl lg:p-12 sm:p-10 sm:rounded-[2.75rem]">
-        <div class="flex items-center justify-between">
-          <p class="text-[10px] text-explore-muted tracking-[0.18em] font-meta uppercase">
+      <div class="border-t-[1px] border-solid" :class="isLight ? 'border-basalt-950/16' : 'border-white/12'">
+        <div class="py-5 border-b-[1px] border-solid flex items-center justify-between" :class="isLight ? 'border-basalt-950/16' : 'border-white/12'">
+          <p class="text-[10px] tracking-[0.18em] font-meta uppercase" :class="isLight ? 'text-basalt-500' : 'text-explore-muted'">
             @lafllamme / live
           </p>
           <span class="text-[10px] text-signal-red-400 tracking-[0.14em] font-meta uppercase">streaming</span>
         </div>
-        <div class="mt-16 space-y-8">
-          <div v-for="(step, index) in analysisSteps" :key="step.label" class="gap-5 grid grid-cols-[auto_1fr]">
-            <div class="flex flex-col items-center">
-              <span class="rounded-full h-3 w-3" :class="step.state === 'active' ? 'bg-signal-red-500 shadow-[0_0_24px_var(--explore-glow)] animate-pulse' : 'bg-explore-copy/50'" />
-              <span v-if="index < analysisSteps.length - 1" class="bg-white/10 h-16 w-px" />
+        <div>
+          <div v-for="(step, index) in analysisSteps" :key="step.label" class="py-8 border-b-[1px] border-solid gap-6 grid grid-cols-[auto_minmax(0,1fr)] sm:py-10 sm:grid-cols-[5rem_minmax(0,1fr)]" :class="isLight ? 'border-basalt-950/16' : 'border-white/12'">
+            <div class="flex gap-3 items-center sm:items-start">
+              <span class="text-[10px] tracking-[0.12em] font-meta pt-1" :class="isLight ? 'text-basalt-500' : 'text-explore-muted'">{{ String(index + 1).padStart(2, '0') }}</span>
+              <span class="rounded-full shrink-0 h-2 w-2" :class="step.state === 'active' ? 'bg-signal-red-500 shadow-[0_0_24px_var(--explore-glow)] animate-pulse' : isLight ? 'bg-basalt-950/35' : 'bg-explore-copy/40'" />
             </div>
-            <div class="pb-7">
-              <p class="text-xl text-explore-copy tracking-[-0.025em] font-display sm:text-2xl">
+            <div>
+              <p class="text-xl tracking-[-0.025em] font-display sm:text-3xl" :class="isLight ? 'text-basalt-950' : 'text-explore-copy'">
                 {{ step.label }}
               </p>
-              <p class="text-sm text-explore-muted font-body mt-2">
+              <p class="text-sm leading-relaxed font-body mt-2 sm:text-base" :class="isLight ? 'text-basalt-600' : 'text-explore-muted'">
                 {{ step.detail }}
               </p>
             </div>
           </div>
         </div>
-        <p class="text-lg text-explore-copy/80 leading-relaxed font-accent mt-8 max-w-[34rem] italic sm:text-xl">
+        <p class="text-lg leading-relaxed font-accent mt-10 max-w-[38rem] italic sm:text-2xl" :class="isLight ? 'text-basalt-800' : 'text-explore-copy/80'">
           “The filename `final-final-v2.ts` has entered the evidence locker.”
         </p>
       </div>

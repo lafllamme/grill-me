@@ -88,23 +88,19 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 - Der Prism-Shader behaelt Farben, Geschwindigkeit und Komposition, begrenzt seine interne Aufloesung aber auf `1.5` DPR und rendert mit maximal 45 FPS. Ausserhalb des Viewports sowie in inaktiven Tabs pausiert der Render-Loop vollstaendig.
 - Das bestehende Development-Panel bildet zusaetzlich die originalen internen Prism-Parameter ab. Alle Regler aktualisieren die Shader-Uniforms live, persistieren lokal und fallen bei alten gespeicherten Konfigurationen auf die bisherige Optik zurueck.
 
-### Result-System-Studie
+### Result-System
 
-Unterhalb des bestehenden Final Reveal vergleicht `/test-2` drei Informationsarchitekturen mit demselben statischen Roast-Datensatz. Damit werden Layout und Hierarchie bewertet, ohne Content-Qualitaet oder API-Latenz mit der Designentscheidung zu vermischen:
+`/test-2` verwendet den Focus Bento aus der zweiten Exploration als aktive Result-Richtung. Der echte Chain of Thought bleibt als voller Prozess-Rail sichtbar und kollabiert nach dem ersten Resultat. Darunter fuellt der Stream genau drei Makro-Module:
 
-- `Compact scoreboard`: Grade, Verdict und Kernmetriken stehen im ersten View; Roast-Punkte bleiben flache Zeilen mit Datei- und Diff-Metadaten.
-- `Editorial flow`: Die Seite selbst ist die Surface. Typografie, Trennlinien und ein kompakter Evidence-Block ersetzen eine umschliessende Result-Card.
-- `Focused bento`: Verdict, Evidence sowie Roast-Punkte mit Feedback bilden genau drei Makro-Module. Einzelne Dateien erhalten keine eigenen Kacheln.
+- `Verdict + Grade`: Titel und Abschlussnote bilden den primaeren Blickfang.
+- `Evidence`: Stink Score, Commit- und Dateianzahl sowie kompakte Commit-Referenzen bleiben auf einen Blick lesbar.
+- `Roast points + Useful damage`: Die Roast-Zeilen erscheinen progressiv links; konstruktives Feedback kommt rechts hinzu, ohne eine eigene Karte pro Punkt oder Datei zu erzeugen.
 
-Alle Richtungen folgen derselben Reveal-Reihenfolge: zuerst Verdict und Grade, danach die Roast-Punkte, zuletzt das konstruktive Feedback. Diese Reihenfolge soll spaeter direkt an den progressiven Stream gekoppelt werden, ohne bereits sichtbare Inhalte neu anzuordnen.
-
-Die drei Studien werden auf `/test-2` ueber eine Tab-Navigation einzeln angezeigt, damit ihre Kompositionen nicht visuell miteinander konkurrieren. Der Zustand einer Studie bleibt beim Tab-Wechsel erhalten. Jede Studie besitzt einen lokalen `Play result`-Trigger. Er simuliert Thinking, Verdict, einzeln eintreffende Roast-Punkte und Feedback zeitversetzt ohne GitHub- oder AI-Request. Die Demos laufen unabhaengig, sind wiederholbar und dienen dazu, Wachstum, Blickfuehrung und Scrollverhalten vor der Produktionsanbindung zu beurteilen.
-
-Die Varianten sind eine Exploration und noch kein Produktionsvertrag. Die spaetere Auswahl soll die beste Lesbarkeit fuer Verdict, Grade, Reasoning, Roast-Punkte, Evidence und Feedback als gemeinsames Result-System festlegen.
+Preview und API verwenden dieselbe Komponente. Preview-Metriken werden erst am Ende des lokalen Event-Streams gesetzt, genau wie die finalen API-Metriken. Die frueheren Scoreboard- und Editorial-Varianten sowie der separate statische Final Reveal wurden entfernt, damit auf der Seite nur noch ein Result-System existiert.
 
 Der Prototyp ist noch kein finaler Produktionsvertrag. Insbesondere Typografie-Rhythmus, Reveal-Geschwindigkeit, Quellenbezug und die Gewichtung der Feedback-Sektion bleiben Stellschrauben.
 
-Die aktuelle Background-Komposition folgt einer zusaetzlichen Regel: Der Prism-Shader ist auf die Opening Stage aus Hero und Target begrenzt. Eine lange CSS-Maske fuehrt in echtes Schwarz, damit Prozess-, Analyse- und Produktkapitel nicht permanent gegen einen bewegten Hintergrund arbeiten muessen. Der Hero nutzt auf Desktop eine asymmetrische Zweispalten-Komposition mit Markenstatement links und Produkterklaerung rechts. Die folgende Target Stage bleibt bewusst vertikal: zentrierte Headline ueber einer breiten Prompt-Surface. Auf Mobile bleibt die gesamte Reihenfolge linear. Spaetere Markenatmosphaere wird statisch mit Signal-Red-Tokens aufgebaut, sodass der Final Reveal wieder Farbe aufnehmen kann, ohne einen zweiten Shader einzufuehren.
+Die aktuelle Background-Komposition folgt einer zusaetzlichen Regel: Der Prism-Shader ist auf die Opening Stage aus Hero und Target begrenzt. Eine lange CSS-Maske fuehrt in echtes Schwarz, damit Prozess-, Analyse- und Produktkapitel nicht permanent gegen einen bewegten Hintergrund arbeiten muessen. Der Hero nutzt auf Desktop eine asymmetrische Zweispalten-Komposition mit Markenstatement links und Produkterklaerung rechts. Die folgende Target Stage bleibt bewusst vertikal: zentrierte Headline ueber einer breiten Prompt-Surface. Auf Mobile bleibt die gesamte Reihenfolge linear. Am Seitenabschluss kehrt die Markenatmosphaere nur als breite, ausserhalb des Viewports liegende Signal-Red-Unschärfe zurueck. So entsteht ein weicher Abschluss ohne rechteckige Farbplatte oder zweiten Shader.
 
 ## Gestalterische Hypothesen
 

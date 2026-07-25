@@ -1,4 +1,4 @@
-import type { RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
+import type { RoastMetrics, RoastStreamEvidenceEvent } from '~~/shared/roast/contracts'
 import { useIntervalFn } from '@vueuse/core'
 import { ref } from 'vue'
 
@@ -7,6 +7,7 @@ type PreviewEvent
     | { type: 'title', text: string }
     | { type: 'roast-line', text: string }
     | { type: 'feedback', text: string }
+    | { type: 'metrics', metrics: RoastMetrics }
 
 const PREVIEW_EVENTS: PreviewEvent[] = [
   { type: 'status', phase: 'fetching_github', message: 'Opening the public commit trail' },
@@ -22,6 +23,16 @@ const PREVIEW_EVENTS: PreviewEvent[] = [
   { type: 'feedback', text: 'Delete pass-through wrappers that do not own state, policy, or transformation.' },
   { type: 'feedback', text: 'Move repeated request-state handling into one typed composable with an explicit contract.' },
   { type: 'feedback', text: 'Add one behavior-level test before the next abstraction gets a factory.' },
+  {
+    type: 'metrics',
+    metrics: {
+      spaghettiIndex: 71,
+      stinkScore: 78,
+      egoDamage: 84,
+      grade: 'C-',
+      specialTitle: 'Abstraction Witness Protection',
+    },
+  },
 ]
 
 const PREVIEW_EVIDENCE: RoastStreamEvidenceEvent = {
@@ -50,6 +61,7 @@ export function useRoastPreview() {
   const title = ref('')
   const roastLines = ref<string[]>([])
   const feedback = ref<string[]>([])
+  const metrics = ref<RoastMetrics | null>(null)
   const statuses = ref<string[]>([])
   const evidence = ref<RoastStreamEvidenceEvent | null>(null)
   const eventIndex = ref(0)
@@ -70,7 +82,12 @@ export function useRoastPreview() {
       return
     }
 
-    feedback.value.push(event.text)
+    if (event.type === 'feedback') {
+      feedback.value.push(event.text)
+      return
+    }
+
+    metrics.value = event.metrics
   }
 
   const { pause, resume } = useIntervalFn(() => {
@@ -98,6 +115,7 @@ export function useRoastPreview() {
     title.value = ''
     roastLines.value = []
     feedback.value = []
+    metrics.value = null
     statuses.value = []
     evidence.value = PREVIEW_EVIDENCE
     eventIndex.value = 0
@@ -119,6 +137,7 @@ export function useRoastPreview() {
     title,
     roastLines,
     feedback,
+    metrics,
     statuses,
     evidence,
     play,

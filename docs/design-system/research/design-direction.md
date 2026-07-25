@@ -55,6 +55,14 @@ Live text motion uses a muted readable baseline with one Signal-Red shimmer pass
 
 The combination of tight display typography, sparse labels, deep shadows, warm off-white copy, and asymmetrical composition keeps the system sharp despite soft geometry.
 
+### 8. Chapters cover each other
+
+The page uses a Fuel-inspired chapter wipe rather than a rectangular section cut. The Prism scene stays sticky behind the hero and target flow, drifting upward at a reduced scroll rate. A warm off-white investigation chapter then rises over it while its cover animates from flat to an approximately seven-degree angle.
+
+The diagonal belongs to a dedicated background layer. Content, rules, and interaction surfaces remain straight. Investigation and product explanation continue on the light editorial surface before a dark footer closes the sequence.
+
+Native sticky positioning and document flow create the parallax relationship. Do not drive the background through per-frame Vue reactivity. The shader receives overscan so its edge cannot become visible while the viewport and browser chrome change size.
+
 ## Selected exploration palette
 
 Signal Red is the selected direction for component and layout exploration:
@@ -79,16 +87,16 @@ The earlier `#B5284E` direction was rejected because the blue component pushed t
 ## Layout concept for `/test-2`
 
 - a compact floating navigation island adapted from the current production header
-- an oversized editorial hero with Prism visible through the negative space
-- a dedicated target stage containing only username and intensity
+- an oversized editorial hero and dedicated target stage sharing one sticky Prism scene
+- a scroll-linked off-white chapter wipe that covers the Prism scene and introduces the investigation
 - a separate agent-analysis stage that explains real streamed events rather than fake percentage progress
-- asymmetric black veils above and below opaque chapters so the Prism disappears and returns without a hard cut
-- a three-job bento field tied directly to evidence, controlled heat, and result delivery
+- a flat continuation from investigation into product structure, followed by a dark closing chapter
+- three numbered editorial product rows tied directly to evidence, controlled heat, and result delivery
 - a full-height final reveal where the roast is the largest element on the page
 
 `/test-1` remains the first direction study. `/test-2` is the active homepage composition and the preferred source for component extraction.
 
-The result area on `/test-2` contains three second-round system studies using one shared fixture: a compact scoreboard, an open editorial flow, and a focused three-module bento. They prioritize first-glance comprehension and a stable `verdict -> roast points -> feedback` reveal order. Files and diff counts remain compact evidence metadata rather than becoming separate cards. A production direction remains undecided.
+The result area on `/test-2` now uses the focused three-module bento as its active direction. The real reasoning trail remains above the result, then the live stream fills `verdict + grade`, `evidence`, and `roast points + useful feedback` without creating a card per file. The earlier scoreboard and editorial studies were removed after the focused bento was selected.
 
 ## Explicit non-goals
 

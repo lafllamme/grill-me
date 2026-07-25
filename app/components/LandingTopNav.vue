@@ -8,8 +8,10 @@ import { useAuthSession } from '~/composables/useAuthSession'
 
 const props = withDefaults(defineProps<{
   variant?: 'default' | 'signal'
+  surface?: 'glass' | 'dark'
 }>(), {
   variant: 'default',
+  surface: 'glass',
 })
 
 const isMobileMenuOpen = ref(false)
@@ -23,6 +25,9 @@ const primaryButtonClass = computed(() => isSignalVariant.value
   : 'bg-ember-600 active:bg-ember-800 hover:bg-ember-700')
 const signalTextClass = computed(() => isSignalVariant.value ? 'text-signal-red-400' : 'text-primary')
 const signalBorderClass = computed(() => isSignalVariant.value ? 'border-signal-red-500/30' : 'border-primary/30')
+const navigationSurfaceClass = computed(() => props.surface === 'dark'
+  ? 'bg-black/82 border-white/12 shadow-[0_18px_60px_rgba(0,0,0,0.28)]'
+  : 'bg-[rgba(38,38,38,0.07)] border-[lab(100%_0_0_/_0.1)]')
 
 const mobileMenuItems = [
   { label: 'Leaderboard', to: '/leaderboard' },
@@ -87,7 +92,7 @@ const authFeedback = computed(() => {
       >
         {{ authFeedback }}
       </p>
-      <nav class="supports-backdrop-filter:backdrop-blur-md mx-auto py-2 pl-2 pr-2 border border-[lab(100%_0_0_/_0.1)] rounded-[14px] border-solid bg-[rgba(38,38,38,0.07)] max-w-5xl w-full hidden items-center justify-between z-50 backdrop-blur-md lg:py-1.5 lg:pl-2.5 lg:pr-2.5 lg:flex">
+      <nav class="supports-backdrop-filter:backdrop-blur-md mx-auto py-2 pl-2 pr-2 border-[1px] rounded-[14px] border-solid max-w-5xl w-full hidden items-center justify-between z-50 backdrop-blur-md lg:py-1.5 lg:pl-2.5 lg:pr-2.5 lg:flex" :class="navigationSurfaceClass">
         <NuxtLink to="/">
           <div class="h-9 w-28 relative">
             <GrillmeLogo class="h-full w-full" :accent="logoAccent" />
@@ -136,7 +141,8 @@ const authFeedback = computed(() => {
       </nav>
 
       <nav
-        class="border border-[lab(100%_0_0_/_0.1)] rounded-[14px] border-solid bg-[rgba(38,38,38,0.07)] max-h-[calc(100lvh-2rem)] w-full relative overflow-auto backdrop-blur-md md:max-h-[calc(60lvh-2rem)] lg:hidden"
+        class="border-[1px] rounded-[14px] border-solid max-h-[calc(100lvh-2rem)] w-full relative overflow-auto backdrop-blur-md md:max-h-[calc(60lvh-2rem)] lg:hidden"
+        :class="navigationSurfaceClass"
         @wheel.stop
         @touchmove.stop
       >

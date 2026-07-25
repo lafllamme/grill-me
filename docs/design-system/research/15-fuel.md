@@ -1,0 +1,119 @@
+# 15: Fuel
+
+Source: https://fuel.framer.website/
+
+Captured: 2026-07-25
+
+![Fuel hero](./images/15-fuel-hero.png)
+![Fuel chapter transition](./images/15-fuel-transition.png)
+![Fuel sticky portfolio](./images/15-fuel-portfolio.png)
+![Fuel service grid](./images/15-fuel-services.png)
+
+## Observed system
+
+Fuel combines three separate layout systems. The visual result feels continuous because each system hands the viewport to the next one instead of ending in a hard section cut.
+
+### 1. Sticky hero and moving chapter cover
+
+- The hero is approximately one viewport high and uses `position: sticky` with clipped overflow.
+- Its visual layer is oversized beyond the viewport. The inspected canvas measured about `1440 x 914` inside a `1200 x 762` viewport, providing overscan for movement without revealing an edge.
+- The hero receives a scroll-linked vertical translation of roughly ten percent of the root scroll distance. It therefore feels anchored, but not completely frozen.
+- The following white chapter has a dedicated background layer rather than skewing its content.
+- That cover starts flat and animates toward roughly `skewY(-7deg)` plus a `-220px` translation. At the middle of the handoff it measures about `skewY(-3.2deg)`.
+- The straight content layer moves above the skewed cover independently. Typography and grid lines therefore remain undistorted.
+
+This is the source of the changing-shape impression: the page does not morph one component. A new chapter masks the pinned scene with an angled surface.
+
+### 2. Persistent rails and a sticky focal stack
+
+- The portfolio uses three columns: persistent context on the left, the active project in the center, and a persistent archive action on the right.
+- The left rail, center projects, and right rail are sticky. The active center card settles around `90px` from the viewport top.
+- Center cards replace one another during vertical scrolling instead of moving through a horizontal carousel.
+- The active card receives a small scroll-linked scale and translation. An observed state was approximately `scale(0.958)` with a `-21px` vertical translation.
+- Each project visual combines a blurred, full-bleed duplicate with a sharp inset image. The blur supplies atmosphere while the inset preserves legibility.
+- Radii are restrained. The image itself uses a small radius instead of turning the complete composition into a large pill or glass card.
+
+The important pattern is persistent context plus a moving focal layer. The user always knows where they are while the main artifact changes.
+
+### 3. Editorial chapters after the motion
+
+- Later service sections abandon the stacked-card treatment.
+- Large sequence numbers, short labels, oversized titles, images, and thin rules define the hierarchy.
+- The archive becomes a table-like layout with year, project title, and image samples aligned on a strict grid.
+- Alternating black and white chapters provide stronger separation than decorative containers.
+- Most content is placed directly on the page. Cards are used only when they represent a real object, not as default wrappers.
+
+## Why it works
+
+- Motion communicates chapter ownership instead of decorating every element.
+- One focal object moves while surrounding context stays stable.
+- The angled cover hides the technical boundary between an atmospheric hero and a practical content surface.
+- Large type, thin rules, and grid alignment carry hierarchy without requiring nested Bento cards.
+- The system changes visual density between chapters, which prevents one long page from feeling mechanically repeated.
+
+## Grillme translation
+
+Fuel's orange palette, portfolio imagery, and agency content should not be copied. The transferable structure can work with Grillme's black and Signal Red direction.
+
+### Homepage transition
+
+- Keep the shader inside the opening scene rather than behind the complete page.
+- Pin the opening scene for a bounded scroll interval.
+- Let a warm off-white editorial chapter rise over it with a shallow asymmetric angle.
+- Implement the angle as a separate cover layer so all result content remains straight.
+- Continue through the investigation and product explanation on the light surface before returning to true black. The shader should no longer compete with evidence and feedback.
+
+### Roast investigation
+
+- Treat the Chain of Thought as a sticky context rail, not an endlessly growing block above the answer.
+- Keep compact identity, elapsed time, and current investigation state in the persistent rail.
+- Replace the central focal content as evidence arrives: repositories, selected commits, prepared context, and final verdict.
+- Keep a small secondary rail for grade, stink score, commit count, and files inspected.
+- On narrow screens, collapse all three areas into normal document flow rather than attempting a sticky stack.
+
+### Result presentation
+
+- Use the verdict as the first focal artifact, but reduce its scale enough to keep grade and evidence visible in the same viewport.
+- Present selected commits as substantial evidence rows, not tiny metadata chips.
+- Put roast points and useful feedback into an editorial grid with rules and alignment instead of another nested card collection.
+- Reserve containers for objects with an actual boundary, such as one commit diff, one score summary, or one expandable reasoning step.
+- Prefer low-radius or sharp chapter surfaces if the structural rebrand moves toward a more angular visual language.
+
+## Suggested Grillme sequence
+
+1. **Target scene:** shader, navigation, positioning statement, and GitHub input.
+2. **Investigation handoff:** an angled black cover rises over the shader while the Chain of Thought becomes the persistent context.
+3. **Evidence stack:** repositories and commits replace one another in the center while summary metrics remain visible.
+4. **Verdict chapter:** the final title and grade become the focal object without hiding the supporting evidence.
+5. **Editorial damage report:** roast points and actionable feedback continue on a flat grid with thin separators.
+
+## Motion and performance constraints
+
+- Animate compositor-friendly `transform` and `opacity` properties.
+- Use one atmospheric background layer. Do not reproduce Fuel's canvas, multiple blurred media layers, and Grillme's shader simultaneously.
+- Bound blur to the active focal object and avoid full-viewport blur filters.
+- Apply `will-change` only while an element participates in a scroll transition.
+- Stop shader rendering after the atmospheric scene is fully covered or outside the viewport.
+- Provide a `prefers-reduced-motion` version with the same chapter order and a static angled handoff.
+- Avoid scroll listeners that update Vue reactive state every frame. Prefer native sticky positioning, CSS scroll-driven behavior where support allows it, or one throttled animation controller.
+
+## Core principle
+
+The reusable idea is not "add parallax." It is:
+
+> Keep context stable, move one focal layer, and let each chapter cover the previous visual world.
+
+That principle directly addresses Grillme's current problem of placing every state and result inside one large, rounded, continuously growing card.
+
+## Prototype implementation
+
+The first structural prototype is implemented on `/test-2`.
+
+- `RebrandChapterShell` owns the scroll-linked diagonal cover edges and light/dark chapter surfaces.
+- Hero and target content scroll through one sticky Prism scene.
+- The first paper chapter is pulled back by one viewport so the shader remains pinned until the cover has fully passed it.
+- The hero drifts at ten percent of the root scroll distance while the paper cover animates from flat to approximately seven degrees.
+- Investigation and product structure share the off-white editorial world; the footer returns to black.
+- Native CSS scroll timelines drive the effect. No scroll listener or per-frame Vue state is used.
+
+This is a structural baseline. The content and result composition inside the chapters can now be redesigned independently without rebuilding the page transition system.

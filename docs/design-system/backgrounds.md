@@ -70,7 +70,7 @@ The exploration uses:
 - gradient masks where the animated field fades into quiet black sections
 - a low-opacity Signal Red ambient layer on `/test-2` to keep the visual field present during dark shader phases
 
-`/test-2` now treats Prism as a local opening-stage effect rather than a page-long substrate. The canvas covers the hero and target interaction, then a CSS mask fades it into a true black content chapter. Long-form process, analysis, and product content no longer render over an active WebGL layer. Signal Red may return near the final reveal as a static token-based gradient, but the route still mounts only one animated background.
+`/test-2` now treats Prism as a local opening-stage effect rather than a page-long substrate. The canvas covers the hero and target interaction, then a CSS mask fades it into a true black content chapter. Long-form process, analysis, and product content no longer render over an active WebGL layer. Near the page close, broad off-canvas Signal Red blurs may restore a little brand atmosphere without creating a rectangular color field; the route still mounts only one animated background.
 
 On larger viewports, the opening hero uses a split composition: the primary statement establishes the left rail while the product explanation occupies the right rail. The following target chapter deliberately returns to a centered headline above a wide username surface. On smaller viewports, both compositions use a linear reading order.
 

@@ -1,6 +1,6 @@
 # Rebrand research index
 
-Stand: 2026-07-18
+Stand: 2026-07-25
 
 This directory records the visual research for the Grillme rebrand. The files are ordered by the priority of the supplied references, not by implementation priority.
 
@@ -31,7 +31,10 @@ The research separates three things:
 12. [eBay combobox](./12-ebay-combobox.md)
 13. [Knotch](./13-knotch.md)
 14. [Visuvate](./14-visuvate.md)
+15. [Fuel](./15-fuel.md)
 
 ## Prototype boundary
 
 The `/test-1` route preserves the initial direction study. `/test-2` is the active homepage composition built around the selected Signal Red direction. Both may use explicitly named exploration tokens, but neither may silently remap the production token contract. A production migration starts only after the component and layout direction is approved.
+
+Use [INPUT.md](./INPUT.md) as the self-contained prompt for external or parallel design-agent exploration of the live roast result system.

@@ -7,9 +7,8 @@ import LandingTopNav from '~/components/LandingTopNav.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import RebrandAnalysisStage from '~/components/rebrand/RebrandAnalysisStage.vue'
+import RebrandChapterShell from '~/components/rebrand/RebrandChapterShell.vue'
 import RebrandLiveRoastStage from '~/components/rebrand/RebrandLiveRoastStage.vue'
-import RebrandResultDirections from '~/components/rebrand/RebrandResultDirections.vue'
-import RebrandResultReveal from '~/components/rebrand/RebrandResultReveal.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
 import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings'
 import { useRoast } from '~/composables/useRoast'
@@ -69,6 +68,7 @@ const isLiveRoastActive = ref(false)
 const isPageInteractive = ref(false)
 const activeRoastSource = ref<'api' | 'preview'>('api')
 const {
+  result,
   pending,
   error,
   isStreaming,
@@ -88,6 +88,7 @@ const displayedStreaming = computed(() => isPreviewActive.value ? preview.isStre
 const displayedTitle = computed(() => isPreviewActive.value ? preview.title.value : partialTitle.value)
 const displayedRoastLines = computed(() => isPreviewActive.value ? preview.roastLines.value : partialRoastLines.value)
 const displayedFeedback = computed(() => isPreviewActive.value ? preview.feedback.value : partialFeedback.value)
+const displayedMetrics = computed(() => isPreviewActive.value ? preview.metrics.value : result.value?.metrics ?? null)
 const displayedStatuses = computed(() => isPreviewActive.value ? preview.statuses.value : streamStatus.value)
 const displayedEvidence = computed(() => isPreviewActive.value ? preview.evidence.value : streamEvidence.value)
 const displayedError = computed(() => isPreviewActive.value ? null : streamError.value || error.value)
@@ -129,34 +130,37 @@ async function startPreview() {
 }
 
 const evidenceModules = [
-  { id: 'receipt', label: 'Receipts, not vibes', title: 'Every punchline keeps the commit that earned it.', className: 'lg:col-span-7 lg:min-h-[34rem]' },
-  { id: 'heat', label: 'Controlled heat', title: 'Choose how useful the emotional damage should be.', className: 'lg:col-span-5 lg:min-h-[34rem]' },
-  { id: 'artifact', label: 'Built to land', title: 'The result becomes the page, not another terminal row.', className: 'lg:col-span-12 lg:min-h-[28rem]' },
+  { id: 'receipt', label: 'Receipts, not vibes', title: 'Every punchline keeps the commit that earned it.' },
+  { id: 'heat', label: 'Controlled heat', title: 'Choose how useful the emotional damage should be.' },
+  { id: 'artifact', label: 'Built to land', title: 'The result becomes the page, not another terminal row.' },
 ] as const
 </script>
 
 <template>
   <div data-testid="rebrand-test-2-root" class="text-explore-copy bg-black min-h-screen selection:text-explore-copy selection:bg-signal-red-700">
-    <LandingTopNav variant="signal" />
+    <LandingTopNav variant="signal" surface="dark" />
 
     <main class="relative overflow-clip">
-      <div class="bg-black relative overflow-hidden isolate">
-        <div class="pointer-events-none [mask-image:linear-gradient(to_bottom,#000_0%,#000_50%,rgba(0,0,0,0.96)_62%,rgba(0,0,0,0.46)_82%,transparent_100%)] inset-0 absolute z-0">
-          <PrismGradientBackground
-            class="inset-0 absolute"
-            :speed="prismSettings.speed"
-            :ambient-opacity="prismSettings.ambientOpacity"
-            :radius="prismSettings.radius"
-            :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
-            :colors="{ dark: prismSettings.darkColors, light: prismSettings.lightColors }"
-            :shader="prismShaderSettings"
-          />
-          <div class="bg-black/20 inset-0 absolute" />
+      <section class="bg-black relative z-0 isolate">
+        <div class="h-[100svh] pointer-events-none [animation:hero-scroll-drift_linear_both] top-0 sticky overflow-hidden hero-scroll-parallax motion-reduce:[animation:none]">
+          <div class="inset-[-5%] absolute">
+            <PrismGradientBackground
+              class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
+              :speed="prismSettings.speed"
+              :ambient-opacity="prismSettings.ambientOpacity"
+              :radius="prismSettings.radius"
+              :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
+              :colors="{ dark: prismSettings.darkColors, light: prismSettings.lightColors }"
+              :shader="prismShaderSettings"
+            />
+          </div>
+          <div class="bg-black/8 inset-0 absolute" />
+          <div class="inset-0 absolute from-transparent to-black/25 via-transparent bg-gradient-to-br" />
+          <div class="h-[24svh] inset-x-0 bottom-0 absolute from-transparent to-black/8 bg-gradient-to-b" />
         </div>
-        <div class="pointer-events-none inset-0 absolute z-[1] from-transparent to-black/75 via-transparent bg-gradient-to-br" />
 
-        <div class="relative z-10">
-          <section class="mx-auto px-4 pb-16 pt-36 flex flex-col max-w-[88rem] min-h-[80dvh] justify-end lg:px-10 sm:px-6 lg:pb-20 sm:pt-44">
+        <div class="relative z-10 -mt-[100svh]">
+          <section class="mx-auto px-4 pb-16 pt-36 flex flex-col max-w-[88rem] min-h-[92svh] justify-end lg:px-10 sm:px-6 lg:pb-20 sm:pt-44">
             <p class="text-xs text-signal-red-400 tracking-[0.22em] font-meta uppercase">
               Public commits. Private consequences.
             </p>
@@ -173,26 +177,39 @@ const evidenceModules = [
             </div>
           </section>
 
-          <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
-            <template #preview>
-              <button
-                type="button"
-                data-testid="test-2-preview-button"
-                class="text-[10px] text-explore-copy tracking-[0.1em] font-meta px-4 py-2.5 border-[1px] border-signal-red-500/30 rounded-xl border-solid bg-signal-red-950/35 inline-flex gap-2 uppercase transition-colors items-center hover:border-signal-red-500/55 hover:bg-signal-red-950/60 disabled:opacity-45 disabled:cursor-wait"
-                :disabled="isRoastPending || !isPageInteractive"
-                @click="startPreview"
-              >
-                <span class="rounded-full bg-signal-red-500 h-1.5 w-1.5 shadow-[0_0_10px_var(--explore-glow)]" />
-                Run sample roast · no API
-              </button>
-            </template>
-          </RebrandTargetStage>
+          <div class="pb-[clamp(8rem,15vw,16rem)]">
+            <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
+              <template #preview>
+                <button
+                  type="button"
+                  data-testid="test-2-preview-button"
+                  class="text-[10px] text-explore-copy tracking-[0.1em] font-meta px-4 py-2.5 border-[1px] border-signal-red-500/30 rounded-xl border-solid bg-signal-red-950/35 inline-flex gap-2 uppercase transition-colors items-center hover:border-signal-red-500/55 hover:bg-signal-red-950/60 disabled:opacity-45 disabled:cursor-wait"
+                  :disabled="isRoastPending || !isPageInteractive"
+                  @click="startPreview"
+                >
+                  <span class="rounded-full bg-signal-red-500 h-1.5 w-1.5 shadow-[0_0_10px_var(--explore-glow)]" />
+                  Run sample roast · no API
+                </button>
+              </template>
+            </RebrandTargetStage>
+          </div>
         </div>
 
-        <div class="h-48 pointer-events-none inset-x-0 bottom-0 absolute z-20 from-transparent to-black via-black/80 bg-gradient-to-b" />
-      </div>
+        <div aria-hidden="true" class="h-[100svh]" />
+      </section>
 
-      <section class="bg-black relative z-10">
+      <RebrandChapterShell edge="rise-right" tone="paper" class="z-20 -mt-[100svh]">
+        <div class="mx-auto px-4 pt-6 max-w-[88rem] lg:px-10 sm:px-6">
+          <div class="py-5 border-b-[1px] border-basalt-950/16 border-solid grid grid-cols-[1fr_auto] items-center">
+            <p class="text-[10px] text-basalt-500 tracking-[0.16em] font-meta uppercase">
+              01 / Investigation
+            </p>
+            <p class="text-[10px] text-signal-red-700 tracking-[0.16em] font-meta uppercase">
+              Public evidence
+            </p>
+          </div>
+        </div>
+
         <div v-if="isLiveRoastActive" ref="liveRoastStage">
           <RebrandLiveRoastStage
             :username="roastStore.trimmedUsername"
@@ -205,23 +222,47 @@ const evidenceModules = [
             :error="displayedError"
             :is-preview="isPreviewActive"
             :evidence="displayedEvidence"
+            :metrics="displayedMetrics"
           />
         </div>
 
-        <RebrandAnalysisStage />
+        <RebrandAnalysisStage tone="light" />
+      </RebrandChapterShell>
 
-        <div class="mx-auto px-4 pb-32 max-w-[88rem] lg:px-10 sm:px-6 lg:pb-48">
-          <div class="mb-14 gap-8 grid lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
+      <RebrandChapterShell edge="flat" tone="paper" class="z-30">
+        <div class="mx-auto px-4 pb-36 max-w-[88rem] lg:px-10 sm:px-6 lg:pb-52">
+          <div class="mb-20 py-5 border-b-[1px] border-basalt-950/16 border-solid grid grid-cols-[1fr_auto] items-center">
+            <p class="text-[10px] text-basalt-500 tracking-[0.16em] font-meta uppercase">
+              02 / Product structure
+            </p>
+            <p class="text-[10px] text-signal-red-700 tracking-[0.16em] font-meta uppercase">
+              Receipts over decoration
+            </p>
+          </div>
+          <div class="mb-20 gap-8 grid lg:mb-28 lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
             <p class="text-xs text-signal-red-500 tracking-[0.2em] font-meta uppercase">
               Product structure
             </p>
-            <h2 class="text-[clamp(3.3rem,7vw,7.5rem)] text-explore-copy leading-[0.86] tracking-[-0.065em] font-display max-w-[10ch]">
+            <h2 class="text-[clamp(3.3rem,6.5vw,6.75rem)] text-basalt-950 leading-[0.86] tracking-[-0.065em] font-display max-w-[10ch]">
               Three jobs. Nothing ornamental.
             </h2>
           </div>
-          <div class="gap-5 grid lg:grid-cols-12">
-            <article v-for="module in evidenceModules" :key="module.title" class="p-7 border-[1px] border-explore-border rounded-[2rem] border-solid bg-white/[0.025] flex flex-col min-h-[22rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] justify-between sm:p-10 sm:rounded-[2.75rem]" :class="module.className">
-              <div v-if="module.id === 'receipt'" class="p-5 border-[1px] border-explore-border rounded-2xl border-solid bg-black/55 max-w-[34rem] shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:p-6">
+          <div class="border-t-[1px] border-basalt-950/16 border-solid">
+            <article v-for="(module, index) in evidenceModules" :key="module.title" class="py-12 border-b-[1px] border-basalt-950/16 border-solid gap-10 grid lg:py-20 lg:gap-16 lg:grid-cols-[5rem_0.65fr_1.1fr]">
+              <p class="text-xs text-basalt-500 tracking-[0.12em] font-meta pt-1">
+                {{ String(index + 1).padStart(2, '0') }}
+              </p>
+
+              <div>
+                <p class="text-[10px] text-signal-red-500 tracking-[0.18em] font-meta uppercase">
+                  {{ module.label }}
+                </p>
+                <h3 class="text-3xl text-basalt-950 leading-[0.95] tracking-[-0.045em] font-display mt-6 max-w-[13ch] sm:text-5xl">
+                  {{ module.title }}
+                </h3>
+              </div>
+
+              <div v-if="module.id === 'receipt'" class="p-5 border-[1px] border-explore-border border-solid bg-explore-ink max-w-[38rem] lg:ml-auto sm:p-7">
                 <div class="flex gap-4 items-center justify-between">
                   <p class="text-[10px] text-explore-muted tracking-[0.12em] font-meta uppercase">
                     refactor-final-v2.ts
@@ -239,53 +280,39 @@ const evidenceModules = [
                 </p>
               </div>
 
-              <div v-else-if="module.id === 'heat'" class="w-full">
+              <div v-else-if="module.id === 'heat'" class="pt-3 w-full lg:ml-auto lg:max-w-[38rem]">
                 <div class="flex items-end justify-between">
-                  <span class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">Rare</span>
-                  <span class="text-[10px] text-signal-red-400 tracking-[0.14em] font-meta uppercase">Burned</span>
+                  <span class="text-[10px] text-basalt-500 tracking-[0.14em] font-meta uppercase">Rare</span>
+                  <span class="text-[10px] text-signal-red-700 tracking-[0.14em] font-meta uppercase">Burned</span>
                 </div>
-                <div class="mt-5 rounded-full bg-white/8 h-2 relative">
+                <div class="mt-5 rounded-full bg-basalt-950/16 h-2 relative">
                   <div class="rounded-full h-full w-[68%] from-signal-red-900 to-signal-red-500 bg-gradient-to-r" />
-                  <span class="border-4 border-black rounded-full border-solid bg-signal-red-500 h-6 w-6 shadow-[0_0_24px_var(--explore-glow)] left-[64%] top-1/2 absolute -translate-y-1/2" />
+                  <span class="border-4 border-bone-50 rounded-full border-solid bg-signal-red-500 h-6 w-6 shadow-[0_0_24px_var(--explore-glow)] left-[64%] top-1/2 absolute -translate-y-1/2" />
                 </div>
-                <p class="text-sm text-explore-copy font-body mt-5">
+                <p class="text-sm text-basalt-800 font-body mt-5">
                   Medium rare. Sharp, still useful.
                 </p>
               </div>
 
-              <div v-else class="max-w-[55rem]">
-                <p class="text-2xl text-explore-copy/85 leading-tight tracking-[-0.03em] font-accent italic sm:text-4xl">
+              <div v-else class="max-w-[42rem] lg:ml-auto">
+                <p class="text-2xl text-basalt-800 leading-tight tracking-[-0.03em] font-accent italic sm:text-4xl">
                   “Your test suite has excellent coverage of code nobody should have written.”
                 </p>
                 <div class="mt-6 flex gap-3">
-                  <span class="text-[9px] text-explore-muted tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-explore-border rounded-lg border-solid uppercase">Share receipt</span>
-                  <span class="text-[9px] text-explore-muted tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-explore-border rounded-lg border-solid uppercase">06 commits cited</span>
+                  <span class="text-[9px] text-basalt-600 tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-basalt-950/18 border-solid uppercase">Share receipt</span>
+                  <span class="text-[9px] text-basalt-600 tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-basalt-950/18 border-solid uppercase">06 commits cited</span>
                 </div>
-              </div>
-
-              <div class="mt-14">
-                <p class="text-[10px] text-signal-red-500 tracking-[0.18em] font-meta uppercase">
-                  {{ module.label }}
-                </p>
-                <h3 class="text-3xl text-explore-copy leading-[0.95] tracking-[-0.045em] font-display mt-6 max-w-[15ch] sm:text-5xl">
-                  {{ module.title }}
-                </h3>
               </div>
             </article>
           </div>
         </div>
-      </section>
+      </RebrandChapterShell>
 
-      <section class="bg-black relative overflow-hidden isolate">
-        <div class="pointer-events-none inset-0 absolute from-black to-black via-signal-red-950/55 bg-gradient-to-br" />
-        <div class="rounded-full bg-signal-red-900/20 h-[28rem] w-[68vw] pointer-events-none right-[-18vw] top-[16rem] absolute blur-[100px]" />
-        <div class="h-80 pointer-events-none [clip-path:polygon(0_0,100%_0,100%_82%,0_100%)] relative z-10 from-black to-transparent via-black/88 bg-gradient-to-b" />
+      <RebrandChapterShell edge="rise-right" tone="black" class="min-h-[28rem] z-40 overflow-hidden">
+        <div class="rounded-full bg-signal-red-900/14 h-[34rem] w-[82vw] pointer-events-none bottom-[-26rem] right-[-24vw] absolute blur-[140px]" />
+        <div class="rounded-full bg-signal-red-950/22 h-[24rem] w-[54vw] pointer-events-none bottom-[-20rem] left-[-20vw] absolute blur-[120px]" />
 
-        <RebrandResultReveal class="relative z-10" />
-
-        <RebrandResultDirections class="relative z-10" />
-
-        <footer class="mx-auto px-4 py-10 flex gap-4 max-w-[88rem] items-center justify-between relative z-10 lg:px-10 sm:px-6">
+        <footer class="mx-auto px-4 pb-12 pt-64 flex gap-4 max-w-[88rem] items-center justify-between relative z-20 lg:px-10 sm:px-6 sm:pt-72">
           <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
             Grillme / homepage exploration 02
           </p>
@@ -293,7 +320,7 @@ const evidenceModules = [
             View direction 01
           </NuxtLink>
         </footer>
-      </section>
+      </RebrandChapterShell>
     </main>
 
     <PrismGradientDevPanel
