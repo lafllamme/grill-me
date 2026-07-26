@@ -40,6 +40,12 @@ const { onContinue, onNotToday } = createEntryOverlayActions({
   navigateTo,
 })
 
+async function revealHomepage() {
+  onContinue()
+  await nextTick()
+  window.scrollTo(0, 0)
+}
+
 const testPagePrismDefaults: PrismGradientSettings = {
   ...PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS,
   speed: 0.476,
@@ -178,13 +184,14 @@ function updateUsername(value: string) {
   <div>
     <LandingEntryOverlay
       v-if="isEntryOverlayVisible"
-      @overlay-continue="onContinue"
+      @overlay-continue="revealHomepage"
       @overlay-decline="onNotToday"
     />
 
     <div
       data-testid="homepage-root"
-      class="text-explore-copy bg-black min-h-screen selection:text-explore-copy selection:bg-signal-red-700"
+      class="text-explore-copy bg-black selection:text-explore-copy selection:bg-signal-red-700"
+      :class="isEntryOverlayVisible ? 'fixed inset-0 overflow-hidden' : 'relative min-h-screen'"
       :aria-hidden="isEntryOverlayVisible"
       :inert="isEntryOverlayVisible || undefined"
     >

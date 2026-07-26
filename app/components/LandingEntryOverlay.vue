@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useLandingEntryOverlay, useLandingEntryOverlayRevealChrome } from '~/composables/useLandingEntryOverlay'
+import { useLandingEntryOverlayRevealChrome } from '~/composables/useLandingEntryOverlay'
 import { createCampfireAudioPlayer } from '~/utils/campfire-audio'
 
 /**
@@ -14,7 +14,6 @@ const emit = defineEmits<{
   overlayDecline: []
 }>()
 
-const isEntryOverlayVisible = useLandingEntryOverlay()
 const isEntryOverlayRevealChrome = useLandingEntryOverlayRevealChrome()
 const isHydrated = ref(false)
 const phase = ref<'dark' | 'question' | 'choices'>('dark')
@@ -96,7 +95,6 @@ function runExit(choice: 'yes' | 'no'): void {
 
     actionTimer = setTimeout(() => {
       exitStage.value = 'gone'
-      isEntryOverlayVisible.value = false
       emit('overlayContinue')
     }, actionDelay)
     return
@@ -178,7 +176,7 @@ function noHoldTextStyle(): CSSProperties {
 <template>
   <section
     v-if="exitStage !== 'gone'"
-    class="text-explore-copy bg-black flex select-none inset-0 fixed z-60 overflow-hidden"
+    class="text-explore-copy overscroll-none bg-black flex select-none inset-0 fixed z-60 overflow-hidden touch-none"
     aria-labelledby="entry-overlay-title"
     aria-modal="true"
     role="dialog"

@@ -81,3 +81,5 @@ See [Rebrand design direction](./research/design-direction.md) for the rationale
 `LandingEntryOverlay.vue` provides the deterministic entry before the landing content becomes interactive. A session cookie records dismissal so the overlay appears once per browser session while remaining SSR and hydration safe.
 
 The overlay is product UI above the global background, not a second background engine.
+
+While the gate is visible, the homepage shell is fixed outside normal document flow and marked inert. This prevents wheel, keyboard, touch, and rubber-band movement without mutating global `html` or `body` overflow. The reveal restores the normal page shell and resets the viewport to the top once.
