@@ -1,25 +1,33 @@
 <script setup lang="ts">
 import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { NuxtLink } from '#components'
 import { useHead, useSeoMeta } from '#imports'
 import LandingTopNav from '~/components/LandingTopNav.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
-import RebrandAnalysisStage from '~/components/rebrand/RebrandAnalysisStage.vue'
 import RebrandChapterShell from '~/components/rebrand/RebrandChapterShell.vue'
-import RebrandLiveRoastStage from '~/components/rebrand/RebrandLiveRoastStage.vue'
+import RebrandFuelAbout from '~/components/rebrand/RebrandFuelAbout.vue'
+import RebrandFuelArchive from '~/components/rebrand/RebrandFuelArchive.vue'
+import RebrandFuelCta from '~/components/rebrand/RebrandFuelCta.vue'
+import RebrandFuelEditorial from '~/components/rebrand/RebrandFuelEditorial.vue'
+import RebrandFuelLevels from '~/components/rebrand/RebrandFuelLevels.vue'
+import RebrandFuelPipeline from '~/components/rebrand/RebrandFuelPipeline.vue'
+import RebrandFuelPortfolio from '~/components/rebrand/RebrandFuelPortfolio.vue'
+import RebrandFuelStats from '~/components/rebrand/RebrandFuelStats.vue'
+import RebrandFuelVerdict from '~/components/rebrand/RebrandFuelVerdict.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
+import { useFuelRoastViewModel } from '~/composables/useFuelRoastViewModel'
 import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings'
 import { useRoast } from '~/composables/useRoast'
 import { useRoastPreview } from '~/composables/useRoastPreview'
+import { ROAST_INTENSITY_LEVELS } from '~/constants/roastIntensity'
 import { PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS } from '~/models/prism-gradient'
 import { useRoastStore } from '~/stores/roastStore'
 
 definePageMeta({ layout: false })
 
 useHead({ title: 'Grillme Rebrand Exploration 02' })
-useSeoMeta({ description: 'A stage-first Grillme homepage concept using Signal Red, dark glass, and progressive roast states.' })
+useSeoMeta({ description: 'A Fuel-inspired Grillme longform concept built around public evidence, progressive roast states, and editorial chapters.' })
 
 const testPagePrismDefaults: PrismGradientSettings = {
   ...PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS,
@@ -92,6 +100,27 @@ const displayedMetrics = computed(() => isPreviewActive.value ? preview.metrics.
 const displayedStatuses = computed(() => isPreviewActive.value ? preview.statuses.value : streamStatus.value)
 const displayedEvidence = computed(() => isPreviewActive.value ? preview.evidence.value : streamEvidence.value)
 const displayedError = computed(() => isPreviewActive.value ? null : streamError.value || error.value)
+const selectedIntensity = computed({
+  get: () => roastStore.roastIntensity,
+  set: value => roastStore.setRoastIntensity(value),
+})
+const selectedIntensityLabel = computed(() =>
+  ROAST_INTENSITY_LEVELS.find(level => level.value === roastStore.roastIntensity)?.label ?? 'Medium Rare',
+)
+const fuelRoast = useFuelRoastViewModel({
+  username: () => roastStore.trimmedUsername,
+  title: displayedTitle,
+  roastLines: displayedRoastLines,
+  feedback: displayedFeedback,
+  statuses: displayedStatuses,
+  evidence: displayedEvidence,
+  metrics: displayedMetrics,
+  intensityLabel: selectedIntensityLabel,
+  isPending: isRoastPending,
+  isStreaming: displayedStreaming,
+  error: displayedError,
+  isActive: isLiveRoastActive,
+})
 
 onMounted(() => {
   isPageInteractive.value = true
@@ -129,11 +158,9 @@ async function startPreview() {
   await scrollToLiveStage()
 }
 
-const evidenceModules = [
-  { id: 'receipt', label: 'Receipts, not vibes', title: 'Every punchline keeps the commit that earned it.' },
-  { id: 'heat', label: 'Controlled heat', title: 'Choose how useful the emotional damage should be.' },
-  { id: 'artifact', label: 'Built to land', title: 'The result becomes the page, not another terminal row.' },
-] as const
+function updateUsername(value: string) {
+  roastStore.setUsername(value)
+}
 </script>
 
 <template>
@@ -199,127 +226,33 @@ const evidenceModules = [
       </section>
 
       <RebrandChapterShell edge="rise-right" tone="paper" class="z-20 -mt-[100svh]">
-        <div class="mx-auto px-4 pt-6 max-w-[88rem] lg:px-10 sm:px-6">
-          <div class="py-5 border-b-[1px] border-basalt-950/16 border-solid grid grid-cols-[1fr_auto] items-center">
-            <p class="text-[10px] text-basalt-500 tracking-[0.16em] font-meta uppercase">
-              01 / Investigation
-            </p>
-            <p class="text-[10px] text-signal-red-700 tracking-[0.16em] font-meta uppercase">
-              Public evidence
-            </p>
-          </div>
-        </div>
-
-        <div v-if="isLiveRoastActive" ref="liveRoastStage">
-          <RebrandLiveRoastStage
-            :username="roastStore.trimmedUsername"
-            :is-pending="isRoastPending"
-            :is-streaming="displayedStreaming"
-            :title="displayedTitle"
-            :roast-lines="displayedRoastLines"
-            :feedback="displayedFeedback"
-            :statuses="displayedStatuses"
-            :error="displayedError"
+        <RebrandFuelAbout />
+        <div ref="liveRoastStage">
+          <RebrandFuelPortfolio
+            :model="fuelRoast"
+            :is-active="isLiveRoastActive"
             :is-preview="isPreviewActive"
-            :evidence="displayedEvidence"
-            :metrics="displayedMetrics"
+            :error="displayedError"
           />
         </div>
-
-        <RebrandAnalysisStage tone="light" />
       </RebrandChapterShell>
 
-      <RebrandChapterShell edge="flat" tone="paper" class="z-30">
-        <div class="mx-auto px-4 pb-36 max-w-[88rem] lg:px-10 sm:px-6 lg:pb-52">
-          <div class="mb-20 py-5 border-b-[1px] border-basalt-950/16 border-solid grid grid-cols-[1fr_auto] items-center">
-            <p class="text-[10px] text-basalt-500 tracking-[0.16em] font-meta uppercase">
-              02 / Product structure
-            </p>
-            <p class="text-[10px] text-signal-red-700 tracking-[0.16em] font-meta uppercase">
-              Receipts over decoration
-            </p>
-          </div>
-          <div class="mb-20 gap-8 grid lg:mb-28 lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
-            <p class="text-xs text-signal-red-500 tracking-[0.2em] font-meta uppercase">
-              Product structure
-            </p>
-            <h2 class="text-[clamp(3.3rem,6.5vw,6.75rem)] text-basalt-950 leading-[0.86] tracking-[-0.065em] font-display max-w-[10ch]">
-              Three jobs. Nothing ornamental.
-            </h2>
-          </div>
-          <div class="border-t-[1px] border-basalt-950/16 border-solid">
-            <article v-for="(module, index) in evidenceModules" :key="module.title" class="py-12 border-b-[1px] border-basalt-950/16 border-solid gap-10 grid lg:py-20 lg:gap-16 lg:grid-cols-[5rem_0.65fr_1.1fr]">
-              <p class="text-xs text-basalt-500 tracking-[0.12em] font-meta pt-1">
-                {{ String(index + 1).padStart(2, '0') }}
-              </p>
-
-              <div>
-                <p class="text-[10px] text-signal-red-500 tracking-[0.18em] font-meta uppercase">
-                  {{ module.label }}
-                </p>
-                <h3 class="text-3xl text-basalt-950 leading-[0.95] tracking-[-0.045em] font-display mt-6 max-w-[13ch] sm:text-5xl">
-                  {{ module.title }}
-                </h3>
-              </div>
-
-              <div v-if="module.id === 'receipt'" class="p-5 border-[1px] border-explore-border border-solid bg-explore-ink max-w-[38rem] lg:ml-auto sm:p-7">
-                <div class="flex gap-4 items-center justify-between">
-                  <p class="text-[10px] text-explore-muted tracking-[0.12em] font-meta uppercase">
-                    refactor-final-v2.ts
-                  </p>
-                  <span class="text-[10px] text-signal-red-400 font-meta">+84 / -3</span>
-                </div>
-                <p class="text-sm text-explore-copy/85 leading-relaxed font-mono mt-7 sm:text-base">
-                  + export const createUniversalManagerFactory =
-                </p>
-                <p class="text-sm text-signal-red-400 leading-relaxed font-mono mt-1 sm:text-base">
-                  + () =&gt; createManager(createManagerConfig())
-                </p>
-                <p class="text-xs text-explore-muted font-body mt-6">
-                  Exhibit A: abstraction as witness protection.
-                </p>
-              </div>
-
-              <div v-else-if="module.id === 'heat'" class="pt-3 w-full lg:ml-auto lg:max-w-[38rem]">
-                <div class="flex items-end justify-between">
-                  <span class="text-[10px] text-basalt-500 tracking-[0.14em] font-meta uppercase">Rare</span>
-                  <span class="text-[10px] text-signal-red-700 tracking-[0.14em] font-meta uppercase">Burned</span>
-                </div>
-                <div class="mt-5 rounded-full bg-basalt-950/16 h-2 relative">
-                  <div class="rounded-full h-full w-[68%] from-signal-red-900 to-signal-red-500 bg-gradient-to-r" />
-                  <span class="border-4 border-bone-50 rounded-full border-solid bg-signal-red-500 h-6 w-6 shadow-[0_0_24px_var(--explore-glow)] left-[64%] top-1/2 absolute -translate-y-1/2" />
-                </div>
-                <p class="text-sm text-basalt-800 font-body mt-5">
-                  Medium rare. Sharp, still useful.
-                </p>
-              </div>
-
-              <div v-else class="max-w-[42rem] lg:ml-auto">
-                <p class="text-2xl text-basalt-800 leading-tight tracking-[-0.03em] font-accent italic sm:text-4xl">
-                  “Your test suite has excellent coverage of code nobody should have written.”
-                </p>
-                <div class="mt-6 flex gap-3">
-                  <span class="text-[9px] text-basalt-600 tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-basalt-950/18 border-solid uppercase">Share receipt</span>
-                  <span class="text-[9px] text-basalt-600 tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-basalt-950/18 border-solid uppercase">06 commits cited</span>
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
+      <RebrandChapterShell edge="rise-left" tone="black" class="z-30 overflow-hidden">
+        <RebrandFuelPipeline />
       </RebrandChapterShell>
 
-      <RebrandChapterShell edge="rise-right" tone="black" class="min-h-[28rem] z-40 overflow-hidden">
-        <div class="rounded-full bg-signal-red-900/14 h-[34rem] w-[82vw] pointer-events-none bottom-[-26rem] right-[-24vw] absolute blur-[140px]" />
-        <div class="rounded-full bg-signal-red-950/22 h-[24rem] w-[54vw] pointer-events-none bottom-[-20rem] left-[-20vw] absolute blur-[120px]" />
-
-        <footer class="mx-auto px-4 pb-12 pt-64 flex gap-4 max-w-[88rem] items-center justify-between relative z-20 lg:px-10 sm:px-6 sm:pt-72">
-          <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
-            Grillme / homepage exploration 02
-          </p>
-          <NuxtLink to="/test-1" class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase hover:text-explore-copy">
-            View direction 01
-          </NuxtLink>
-        </footer>
+      <RebrandChapterShell edge="rise-right" tone="paper" class="z-40">
+        <RebrandFuelLevels v-model="selectedIntensity" />
+        <RebrandFuelVerdict :model="fuelRoast" />
+        <RebrandFuelArchive :model="fuelRoast" />
+        <RebrandFuelCta
+          :username="roastStore.githubUsername"
+          :is-pending="isRoastPending"
+          @update:username="updateUsername"
+          @submit="startRoast"
+        />
+        <RebrandFuelStats :model="fuelRoast" />
+        <RebrandFuelEditorial />
       </RebrandChapterShell>
     </main>
 

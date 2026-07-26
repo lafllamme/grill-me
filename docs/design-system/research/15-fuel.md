@@ -107,13 +107,23 @@ That principle directly addresses Grillme's current problem of placing every sta
 
 ## Prototype implementation
 
-The first structural prototype is implemented on `/test-2`.
+The complete structural study is implemented on `/test-2`.
 
 - `RebrandChapterShell` owns the scroll-linked diagonal cover edges and light/dark chapter surfaces.
-- Hero and target content scroll through one sticky Prism scene.
-- The first paper chapter is pulled back by one viewport so the shader remains pinned until the cover has fully passed it.
+- Hero and target content scroll through one sticky Prism scene. The shader remains limited to that opening world.
+- The first paper chapter is pulled back by one viewport so the shader stays pinned until the cover has fully passed it.
 - The hero drifts at ten percent of the root scroll distance while the paper cover animates from flat to approximately seven degrees.
-- Investigation and product structure share the off-white editorial world; the footer returns to black.
-- Native CSS scroll timelines drive the effect. No scroll listener or per-frame Vue state is used.
+- A typed Fuel view model merges live stream data, local preview data, and stable evidence fallbacks without changing the roast API.
+- The evidence portfolio translates Fuel's persistent side rails and sticky center projects into grade/intensity context, commits, files, reasoning, and verdict panels.
+- The dark service chapter becomes the agent pipeline. Pricing becomes roast intensity selection.
+- Testimonial, archive, contact, stats, article, and FAQ chapters are retained as Grillme-specific verdict, receipt, CTA, metric, evidence-note, and product-explanation sections.
+- Native CSS scroll timelines and sticky positioning drive the motion. No scroll listener or per-frame Vue state is used.
 
-This is a structural baseline. The content and result composition inside the chapters can now be redesigned independently without rebuilding the page transition system.
+### Deliberately not copied
+
+- Fuel photography, brand marks, orange palette, agency claims, prices, and portfolio names.
+- Full-viewport blur layers beyond the opening shader.
+- Decorative cards that do not represent a commit, file, verdict, intensity choice, or other bounded product object.
+- Sticky behavior on narrow screens, where the same chapters return to normal document flow.
+
+This implementation intentionally keeps every Fuel chapter for evaluation. Sections can be removed after the complete rhythm has been reviewed without rebuilding the transition or data architecture.
