@@ -169,8 +169,8 @@ function updateUsername(value: string) {
 
     <main class="relative overflow-clip">
       <section class="bg-black relative z-0 isolate">
-        <div class="h-[100svh] pointer-events-none [animation:hero-scroll-drift_linear_both] top-0 sticky overflow-hidden hero-scroll-parallax motion-reduce:[animation:none]">
-          <div class="inset-[-5%] absolute">
+        <div class="h-[100svh] pointer-events-none top-0 sticky overflow-hidden">
+          <div class="[animation:hero-scroll-drift_linear_both] inset-x-[-5%] bottom-[-180px] top-[-5%] absolute hero-scroll-parallax motion-reduce:[animation:none]">
             <PrismGradientBackground
               class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
               :speed="prismSettings.speed"
@@ -237,7 +237,7 @@ function updateUsername(value: string) {
         </div>
       </RebrandChapterShell>
 
-      <RebrandChapterShell edge="rise-left" tone="black" class="z-30 overflow-hidden">
+      <RebrandChapterShell edge="rise-right" tone="black" class="z-30">
         <RebrandFuelPipeline />
       </RebrandChapterShell>
 

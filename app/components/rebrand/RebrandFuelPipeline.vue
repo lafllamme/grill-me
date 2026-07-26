@@ -30,7 +30,7 @@ const pipelineSteps = [
 </script>
 
 <template>
-  <section class="mx-auto px-4 pb-36 pt-8 max-w-[96rem] min-h-[250svh] lg:px-10 sm:px-6 lg:pb-52">
+  <section class="mx-auto px-4 pb-36 pt-8 max-w-[96rem] lg:px-10 sm:px-6 lg:pb-52">
     <header class="py-5 border-t-[1px] border-white/18 border-solid gap-6 grid grid-cols-[1fr_auto] sm:grid-cols-3">
       <p class="text-[10px] text-explore-muted tracking-[0.12em] font-meta uppercase">
         ◆ (03)
@@ -43,7 +43,7 @@ const pipelineSteps = [
       </p>
     </header>
 
-    <div class="pt-[clamp(8rem,17vw,18rem)] lg:top-0 lg:sticky">
+    <div class="pt-[clamp(8rem,17vw,18rem)]">
       <div class="gap-10 grid lg:grid-cols-[0.23fr_1.77fr] lg:items-start">
         <div class="border-[1px] border-signal-red-500/28 border-solid bg-signal-red-950/55 min-h-[19rem] relative overflow-hidden">
           <div class="rounded-full bg-signal-red-600/35 h-56 w-56 left-[-5rem] top-[-4rem] absolute blur-[45px]" />
@@ -61,7 +61,7 @@ const pipelineSteps = [
       </div>
     </div>
 
-    <div class="pb-20 pt-[55svh] lg:ml-[25%]">
+    <div class="pb-20 pt-[clamp(8rem,14vw,14rem)] lg:ml-[25%]">
       <div class="border-t-[1px] border-white/18 border-solid">
         <article v-for="step in pipelineSteps" :key="step.index" class="py-9 border-b-[1px] border-white/18 border-solid gap-6 grid lg:py-12 sm:grid-cols-[3rem_3rem_minmax(0,1fr)]">
           <span class="text-xs text-signal-red-400 font-mono">{{ step.index }}</span>

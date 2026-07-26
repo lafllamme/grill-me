@@ -17,22 +17,25 @@ const surfaceClass = computed(() => {
 })
 
 const edgeClass = computed(() => {
-  if (props.edge === 'rise-left')
-    return 'chapter-cover-scroll [animation:chapter-cover-rise-left_linear_both] motion-reduce:[animation:none] motion-reduce:[transform:translateY(-27%)_skewY(7deg)]'
   if (props.edge === 'flat')
     return 'translate-y-0'
-  return 'chapter-cover-scroll [animation:chapter-cover-rise-right_linear_both] motion-reduce:[animation:none] motion-reduce:[transform:translateY(-27%)_skewY(-7deg)]'
+
+  return 'chapter-cover-scroll [animation:chapter-cover-rise_linear_both] motion-reduce:[animation:none] motion-reduce:[transform:translateY(-220px)_skewY(-7deg)]'
 })
 </script>
 
 <template>
-  <section class="relative isolate" :class="surfaceClass">
+  <section class="relative overflow-visible isolate chapter-shell-timeline" :class="surfaceClass">
     <div
       v-if="edge !== 'flat'"
       aria-hidden="true"
-      class="will-change-transform h-[110svh] pointer-events-none origin-center inset-x-[-6%] top-0 absolute"
-      :class="[surfaceClass, edgeClass, tone === 'paper' ? '' : 'shadow-[0_-44px_110px_rgba(0,0,0,0.48)]']"
-    />
+      class="h-[834px] pointer-events-none inset-x-0 top-0 absolute overflow-visible"
+    >
+      <div
+        class="will-change-transform h-full w-full origin-center"
+        :class="[surfaceClass, edgeClass]"
+      />
+    </div>
     <div class="relative z-10">
       <slot />
     </div>

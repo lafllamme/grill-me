@@ -119,6 +119,18 @@ The complete structural study is implemented on `/test-2`.
 - Testimonial, archive, contact, stats, article, and FAQ chapters are retained as Grillme-specific verdict, receipt, CTA, metric, evidence-note, and product-explanation sections.
 - Native CSS scroll timelines and sticky positioning drive the motion. No scroll listener or per-frame Vue state is used.
 
+### Chapter handoff geometry
+
+The prototype now follows Fuel's generated Framer structure and measured motion rather than approximating it with viewport-relative sizing:
+
+- Every incoming chapter owns an `834px` absolute overlap region at its top.
+- The overlap plate moves from `translateY(0) skewY(0deg)` to `translateY(-220px) skewY(-7deg)`.
+- A named view timeline maps that transform from `entry 0%` to `entry 100%`, so the motion starts when the chapter reaches the bottom of the viewport and finishes when its top reaches the top of the viewport.
+- All chapter edges rise in the same direction. Alternating diagonal directions are not part of the Fuel reference.
+- Chapter hosts remain `overflow-visible`; clipping belongs to visuals inside a chapter, never to the overlap plate.
+- The sticky hero viewport stays fixed. Only an oversized shader layer drifts inside it, preventing the parallax motion from exposing a plain black gap before the first paper chapter arrives.
+- Reduced-motion mode preserves the final static diagonal while disabling scroll-linked interpolation.
+
 ### Deliberately not copied
 
 - Fuel photography, brand marks, orange palette, agency claims, prices, and portfolio names.

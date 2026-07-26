@@ -137,21 +137,12 @@ html, body {
   font-synthesis-small-caps: none;
 }
 
-@keyframes chapter-cover-rise-right {
+@keyframes chapter-cover-rise {
   from {
     transform: translateY(0) skewY(0deg);
   }
   to {
-    transform: translateY(-27%) skewY(-7deg);
-  }
-}
-
-@keyframes chapter-cover-rise-left {
-  from {
-    transform: translateY(0) skewY(0deg);
-  }
-  to {
-    transform: translateY(-27%) skewY(7deg);
+    transform: translateY(-220px) skewY(-7deg);
   }
 }
 
@@ -168,9 +159,13 @@ html, body {
     },
   ],
   rules: [
+    ['chapter-shell-timeline', {
+      'view-timeline-axis': 'block',
+      'view-timeline-name': '--chapter-entry',
+    }],
     ['chapter-cover-scroll', {
-      'animation-range': 'entry -20% cover 68%',
-      'animation-timeline': 'view(block)',
+      'animation-range': 'entry 0% entry 100%',
+      'animation-timeline': '--chapter-entry',
     }],
     ['hero-scroll-parallax', {
       'animation-range': '0px 1500px',
