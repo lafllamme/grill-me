@@ -59,7 +59,7 @@ The combination of tight display typography, sparse labels, deep shadows, warm o
 
 The page uses a Fuel-inspired chapter wipe rather than a rectangular section cut. The Prism scene stays sticky behind the hero and target flow, drifting upward at a reduced scroll rate. A warm off-white investigation chapter then rises over it while its cover animates from flat to an approximately seven-degree angle.
 
-The diagonal belongs to a dedicated background layer. Content, rules, and interaction surfaces remain straight. Investigation and product explanation continue on the light editorial surface before a dark footer closes the sequence.
+The diagonal belongs to a dedicated background layer. Content, rules, and interaction surfaces remain straight. Investigation and product explanation continue on the light editorial surface before a dedicated dark footer closes the sequence with a shorter, faster transition plate and an oversized Grillme wordmark.
 
 Native sticky positioning and document flow create the parallax relationship. Do not drive the background through per-frame Vue reactivity. The shader receives overscan so its edge cannot become visible while the viewport and browser chrome change size.
 
@@ -84,7 +84,7 @@ The Amaranth, Coral, Log Cabin, Rangoon, Oxblood, Carmine, and Vermilion candida
 
 The earlier `#B5284E` direction was rejected because the blue component pushed the Prism and glass surfaces toward magenta/purple. `#FF0059` remains a useful high-energy reference, but it is too pink and too dominant as the default brand fill.
 
-## Layout concept for `/test-2`
+## Homepage layout at `/`
 
 - a compact floating navigation island adapted from the current production header
 - an oversized editorial hero and dedicated target stage sharing one sticky Prism scene
@@ -94,9 +94,9 @@ The earlier `#B5284E` direction was rejected because the blue component pushed t
 - three numbered editorial product rows tied directly to evidence, controlled heat, and result delivery
 - a full-height final reveal where the roast is the largest element on the page
 
-`/test-1` remains the first direction study. `/test-2` is the active homepage composition and the preferred source for component extraction.
+`/test-1` remains the first direction study. `/` is the active homepage composition.
 
-The result area on `/test-2` now uses the focused three-module bento as its active direction. The real reasoning trail remains above the result, then the live stream fills `verdict + grade`, `evidence`, and `roast points + useful feedback` without creating a card per file. The earlier scoreboard and editorial studies were removed after the focused bento was selected.
+The result area on `/` uses the Fuel-inspired evidence portfolio and editorial verdict chapters. The real reasoning trail remains part of the streamed experience while verdict, evidence, roast points, and useful feedback retain distinct visual hierarchy.
 
 ## Explicit non-goals
 

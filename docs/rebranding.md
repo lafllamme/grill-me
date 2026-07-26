@@ -69,14 +69,14 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 
 ## Bestaetigter Prototyp-Stand
 
-`/test-2` bildet die aktive Homepage- und Roast-Exploration ab. Der aktuelle Stand bestaetigt folgende Muster fuer die weitere Ausarbeitung:
+Die Startseite `/` bildet die aktive Homepage- und Roast-Richtung ab. Der aktuelle Stand bestaetigt folgende Muster fuer die weitere Ausarbeitung:
 
 - Das GitHub-Ziel wird in einer grossen, ruhigen Prompt-Surface erfasst; Roast-Intensitaet und Submit bleiben sekundaere Controls innerhalb derselben Flaeche.
 - Nach Submit scrollt die Seite weich in eine eigenstaendige Live-Roast-Buehne.
 - Reale SSE-Statusphasen werden als einklappbare Prozesshistorie dargestellt. Die UI erfindet keine verborgene Chain-of-Thought.
 - Der aktive Prozess verwendet `RebrandTextShimmer` nach dem AI-Elements-Shimmer-Prinzip: Ein einzelner transparenter Text-Layer kombiniert eine dauerhaft lesbare, gedeckte Basis mit einem separaten animierten Signal-Red-Gradienten.
 - Der Shimmer berechnet seine Breite aus der Textlaenge, laeuft linear in zwei Sekunden und bleibt auch zwischen den Highlight-Passes lesbar. Bei `prefers-reduced-motion` wird nur die statische Basisfarbe gerendert.
-- `Preview sample` spielt auf `/test-2` denselben Live-Roast-Container mit lokalen, zeitversetzten Fixture-Daten durch. Der Preview-Pfad sendet keinen GitHub- oder AI-Request und dient der visuellen Iteration an Prozess- und Result-Zustaenden.
+- `Preview sample` spielt auf `/` denselben Live-Roast-Container mit lokalen, zeitversetzten Fixture-Daten durch. Der Preview-Pfad sendet keinen GitHub- oder AI-Request und dient der visuellen Iteration an Prozess- und Result-Zustaenden.
 - Der Prozess folgt dem AI-Elements-Muster aus kontrolliertem `Reasoning` und einer separaten, vertikalen Step-Historie. Die Laufzeit stoppt mit dem ersten Resultat, die Historie schliesst danach automatisch und bleibt manuell wieder oeffenbar.
 - Ein kompaktes, patchfreies `evidence`-Event liefert ausgewaehlte Repositories, Kurz-SHAs, Commit-Messages, Diff-Statistiken und Dateipfade frueh an die UI. Preview und echter Stream verwenden damit dieselbe Form; nur die Preview-Werte sind Fixtures.
 - Schnell aufeinanderfolgende Status-Events bleiben transportseitig unverzoegert, werden im Process Trail aber mit einem kurzen Mindestabstand praesentiert. Der eigentliche Roast-Output wird davon nie aufgehalten.
@@ -90,7 +90,7 @@ Diese Punkte gelten aktuell als Arbeitsrichtung:
 
 ### Result-System
 
-`/test-2` verwendet den Focus Bento aus der zweiten Exploration als aktive Result-Richtung. Der echte Chain of Thought bleibt als voller Prozess-Rail sichtbar und kollabiert nach dem ersten Resultat. Darunter fuellt der Stream genau drei Makro-Module:
+Die Homepage verwendet die Fuel-inspirierte Evidence- und Verdict-Komposition als aktive Result-Richtung. Der echte Chain of Thought bleibt als Prozess-Rail Teil des Ablaufs:
 
 - `Verdict + Grade`: Titel und Abschlussnote bilden den primaeren Blickfang.
 - `Evidence`: Stink Score, Commit- und Dateianzahl sowie kompakte Commit-Referenzen bleiben auf einen Blick lesbar.
@@ -164,7 +164,7 @@ Diese Punkte sind noch nicht entschieden:
 
 Dieses Dokument wird in der Recherchephase fortlaufend erweitert.
 
-Die vollstaendige Referenzanalyse ist unter [`design-system/research/`](./design-system/research/README.md) dokumentiert. Die aktuelle Synthese ist [`design-direction.md`](./design-system/research/design-direction.md). `/test-1` bewahrt die erste Studie; `/test-2` ist die aktive Homepage-Komposition, aber noch kein Produktionsvertrag.
+Die vollstaendige Referenzanalyse ist unter [`design-system/research/`](./design-system/research/README.md) dokumentiert. Die aktuelle Synthese ist [`design-direction.md`](./design-system/research/design-direction.md). `/test-1` bewahrt die erste Studie; `/` ist die aktive Homepage-Komposition.
 
 Komponentenreferenzen fuer den aktiven Prozess: [AI Elements Reasoning](https://elements.ai-sdk.dev/components/reasoning), [AI Elements Chain of Thought](https://elements.ai-sdk.dev/components/chain-of-thought) und [AI Elements Shimmer](https://elements.ai-sdk.dev/components/shimmer). Die Grillme-Varianten sind native Vue-Komponenten, zeigen ausschliesslich beobachtbare Prozessphasen und verwenden Signal Red statt eines neutralen Theme-Highlights.
 

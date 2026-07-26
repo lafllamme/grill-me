@@ -167,6 +167,10 @@ html, body {
       'animation-range': 'entry 0% entry 100%',
       'animation-timeline': '--chapter-entry',
     }],
+    ['chapter-cover-scroll-compact', {
+      'animation-range': 'entry 0% entry 100%',
+      'animation-timeline': 'view(block)',
+    }],
     ['hero-scroll-parallax', {
       'animation-range': '0px 1500px',
       'animation-timeline': 'scroll(root block)',

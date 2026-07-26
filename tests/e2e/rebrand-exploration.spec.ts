@@ -24,9 +24,9 @@ test('first rebrand direction stays focused and avoids mobile overflow', async (
   })
 })
 
-test('second rebrand direction exposes target, analysis, and result as separate stages', async ({ page }) => {
+test('homepage exposes target, analysis, and result as separate stages', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/test-2')
+  await page.goto('/')
 
   await expect(page.getByRole('heading', { name: 'Your code remembers.' })).toBeVisible()
   await expect(page.getByLabel('Public GitHub username')).toHaveValue('lafllamme')
@@ -47,7 +47,7 @@ test('second rebrand direction exposes target, analysis, and result as separate 
   })
 })
 
-test('second rebrand direction scrolls into a streamed roast experience', async ({ page }) => {
+test('homepage scrolls into a streamed roast experience', async ({ page }) => {
   await page.route('**/api/roast/stream', async (route) => {
     await route.fulfill({
       status: 200,
@@ -67,7 +67,7 @@ test('second rebrand direction scrolls into a streamed roast experience', async 
     })
   })
 
-  await page.goto('/test-2')
+  await page.goto('/')
   await page.getByTestId('test-2-submit-button').click()
 
   const liveStage = page.getByTestId('test-2-live-roast')
@@ -82,14 +82,14 @@ test('second rebrand direction scrolls into a streamed roast experience', async 
   }).toBeLessThan(24)
 })
 
-test('second rebrand direction previews the complete roast without an API request', async ({ page }) => {
+test('homepage previews the complete roast without an API request', async ({ page }) => {
   let roastRequestCount = 0
   page.on('request', (request) => {
     if (request.url().includes('/api/roast/stream'))
       roastRequestCount += 1
   })
 
-  await page.goto('/test-2')
+  await page.goto('/')
   const previewButton = page.getByTestId('test-2-preview-button')
   await expect(previewButton).toBeEnabled()
   await previewButton.click()

@@ -35,6 +35,6 @@ The research separates three things:
 
 ## Prototype boundary
 
-The `/test-1` route preserves the initial direction study. `/test-2` is the active homepage composition built around the selected Signal Red direction. Both may use explicitly named exploration tokens, but neither may silently remap the production token contract. A production migration starts only after the component and layout direction is approved.
+The `/test-1` route preserves the initial direction study. The selected Signal Red and Fuel-inspired composition now runs on the production homepage at `/`.
 
 Use [INPUT.md](./INPUT.md) as the self-contained prompt for external or parallel design-agent exploration of the live roast result system.

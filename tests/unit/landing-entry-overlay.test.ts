@@ -21,7 +21,7 @@ describe('landing entry overlay actions', () => {
     expect(isOverlayVisible.value).toBe(false)
   })
 
-  it('navigates to toysrus on not-today', async () => {
+  it('navigates to toysrus on not-today without confirming the session', async () => {
     const isOverlayVisible = ref(true)
     const navigateTo = vi.fn().mockResolvedValue(undefined)
 

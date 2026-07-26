@@ -107,7 +107,7 @@ That principle directly addresses Grillme's current problem of placing every sta
 
 ## Prototype implementation
 
-The complete structural study is implemented on `/test-2`.
+The complete structural study is implemented on the homepage at `/`.
 
 - `RebrandChapterShell` owns the scroll-linked diagonal cover edges and light/dark chapter surfaces.
 - Hero and target content scroll through one sticky Prism scene. The shader remains limited to that opening world.
@@ -117,6 +117,7 @@ The complete structural study is implemented on `/test-2`.
 - The evidence portfolio translates Fuel's persistent side rails and sticky center projects into grade/intensity context, commits, files, reasoning, and verdict panels.
 - The dark service chapter becomes the agent pipeline. Pricing becomes roast intensity selection.
 - Testimonial, archive, contact, stats, article, and FAQ chapters are retained as Grillme-specific verdict, receipt, CTA, metric, evidence-note, and product-explanation sections.
+- The closing navigation is a dedicated black chapter rather than a small footer row inside the final paper chapter. Its oversized Grillme wordmark, contact prompt, and numbered links follow Fuel's terminal composition without copying its identity.
 - Native CSS scroll timelines and sticky positioning drive the motion. No scroll listener or per-frame Vue state is used.
 
 ### Chapter handoff geometry
@@ -126,10 +127,12 @@ The prototype now follows Fuel's generated Framer structure and measured motion 
 - Every incoming chapter owns an `834px` absolute overlap region at its top.
 - The overlap plate moves from `translateY(0) skewY(0deg)` to `translateY(-220px) skewY(-7deg)`.
 - A named view timeline maps that transform from `entry 0%` to `entry 100%`, so the motion starts when the chapter reaches the bottom of the viewport and finishes when its top reaches the top of the viewport.
+- The final footer is the measured exception: its overlap region is `530px` high and uses its own view timeline. This produces Fuel's quicker final paper-to-black handoff instead of stretching that transition across a full viewport.
 - All chapter edges rise in the same direction. Alternating diagonal directions are not part of the Fuel reference.
 - Chapter hosts remain `overflow-visible`; clipping belongs to visuals inside a chapter, never to the overlap plate.
 - The sticky hero viewport stays fixed. Only an oversized shader layer drifts inside it, preventing the parallax motion from exposing a plain black gap before the first paper chapter arrives.
 - Reduced-motion mode preserves the final static diagonal while disabling scroll-linked interpolation.
+- Fuel uses Lenis, but Grillme intentionally keeps native scrolling. Adding another continuous animation loop beside the WebGL shader would increase CPU cost without being necessary for the chapter geometry.
 
 ### Deliberately not copied
 

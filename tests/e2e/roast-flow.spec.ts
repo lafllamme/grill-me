@@ -107,7 +107,7 @@ test('entry overlay blocks landing until continue', async ({ page }) => {
   await expect(page.getByTestId('roast-level-burned_to_crisp')).toBeVisible()
 })
 
-test('not today navigates to toysrus in same tab', async ({ page }) => {
+test('not today navigates to toysrus in the same tab', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('entry-overlay-not-today')).toBeVisible()
   await page.getByTestId('entry-overlay-not-today').click()

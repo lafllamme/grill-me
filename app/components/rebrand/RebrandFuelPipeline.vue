@@ -30,7 +30,7 @@ const pipelineSteps = [
 </script>
 
 <template>
-  <section class="mx-auto px-4 pb-36 pt-8 max-w-[96rem] lg:px-10 sm:px-6 lg:pb-52">
+  <section id="pipeline" class="mx-auto px-4 pb-36 pt-8 max-w-[96rem] scroll-mt-20 lg:px-10 sm:px-6 lg:pb-52">
     <header class="py-5 border-t-[1px] border-white/18 border-solid gap-6 grid grid-cols-[1fr_auto] sm:grid-cols-3">
       <p class="text-[10px] text-explore-muted tracking-[0.12em] font-meta uppercase">
         ◆ (03)

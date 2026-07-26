@@ -29,4 +29,4 @@ This reference shows how a marketing page can be information-dense while maintai
 
 - One promise and one action occupy the opening shell; supporting proof waits until the product has been understood.
 - Chapter labels work as spatial separators without adding more card chrome.
-- Extract the single-action hero hierarchy and uneven evidence grid for `/test-2`.
+- Extract the single-action hero hierarchy and uneven evidence grid for the homepage.

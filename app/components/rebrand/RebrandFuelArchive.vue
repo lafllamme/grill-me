@@ -17,7 +17,7 @@ const archiveRows = computed(() => [
 </script>
 
 <template>
-  <section class="mx-auto px-4 pb-28 pt-8 max-w-[96rem] min-h-[92svh] lg:px-10 sm:px-6 lg:pb-40">
+  <section id="receipts" class="mx-auto px-4 pb-28 pt-8 max-w-[96rem] min-h-[92svh] scroll-mt-20 lg:px-10 sm:px-6 lg:pb-40">
     <RebrandChapterMeta index="06" title="Roast archive" />
 
     <div class="pt-20 border-t-[1px] border-basalt-950/16 border-solid">

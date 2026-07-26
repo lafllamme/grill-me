@@ -8,7 +8,7 @@ Technische Kernpipeline:
 
 1. User landet auf `/` und sieht zunächst ein Entry-Overlay (Blackout + Warning-CTA).
 2. Bei `GRILL ME` wird das Overlay geschlossen und der Landing-Flow freigegeben.
-3. Bei `NOT TODAY` erfolgt eine externe Navigation im selben Tab auf `https://www.toysrus.com`.
+3. `YES` bestätigt die aktuelle Browser-Session und gibt die Startseite frei. `NO` navigiert im selben Tab zu `https://www.toysrus.com`, ohne die Session zu bestätigen.
 4. User sendet `githubUsername`.
 5. Server validiert Input + Rate-Limit.
 6. Server holt GitHub-Daten inkl. optionaler Patch-Snippets.

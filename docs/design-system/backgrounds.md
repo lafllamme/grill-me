@@ -59,7 +59,7 @@ Avoid:
 
 ## Rebrand exploration
 
-`/test-1` and `/test-2` own an isolated Signal Red Prism palette and do not use the default layout. This is intentional: the routes test the proposed visual direction without changing production settings. `/test-2` mounts the shared developer panel directly with route-specific defaults and separate persistence keys, so experiments never overwrite the homepage configuration.
+`/test-1` preserves the isolated first exploration. The selected Signal Red Prism palette now belongs to the homepage at `/`. The homepage mounts the shared developer panel only in development and persists its settings under homepage-specific keys.
 
 The exploration uses:
 
@@ -68,16 +68,16 @@ The exploration uses:
 - dusty rose as the bright Prism edge
 - dark translucent shells for readable content
 - gradient masks where the animated field fades into quiet black sections
-- a low-opacity Signal Red ambient layer on `/test-2` to keep the visual field present during dark shader phases
+- a low-opacity Signal Red ambient layer on `/` to keep the visual field present during dark shader phases
 
-`/test-2` now treats Prism as a local opening-stage effect rather than a page-long substrate. The canvas covers the hero and target interaction, then a CSS mask fades it into a true black content chapter. Long-form process, analysis, and product content no longer render over an active WebGL layer. Near the page close, broad off-canvas Signal Red blurs may restore a little brand atmosphere without creating a rectangular color field; the route still mounts only one animated background.
+The homepage treats Prism as a local opening-stage effect rather than a page-long substrate. The canvas covers the hero and target interaction, then a CSS chapter edge replaces it with stable editorial surfaces. Long-form process, analysis, and product content no longer render over an active WebGL layer; the route still mounts only one animated background.
 
 On larger viewports, the opening hero uses a split composition: the primary statement establishes the left rail while the product explanation occupies the right rail. The following target chapter deliberately returns to a centered headline above a wide username surface. On smaller viewports, both compositions use a linear reading order.
 
-See [Rebrand design direction](./research/design-direction.md) for the rationale. These colors are not yet the production background contract.
+See [Rebrand design direction](./research/design-direction.md) for the rationale.
 
 ## Entry overlay (`/`)
 
-`LandingEntryOverlay.vue` still provides the deterministic blackout entry before the landing content becomes interactive. Its visibility state must remain SSR and hydration safe.
+`LandingEntryOverlay.vue` provides the deterministic entry before the landing content becomes interactive. A session cookie records dismissal so the overlay appears once per browser session while remaining SSR and hydration safe.
 
 The overlay is product UI above the global background, not a second background engine.

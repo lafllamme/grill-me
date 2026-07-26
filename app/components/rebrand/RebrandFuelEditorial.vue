@@ -29,7 +29,7 @@ const faqs = [
 </script>
 
 <template>
-  <section class="mx-auto px-4 pb-12 pt-8 max-w-[96rem] lg:px-10 sm:px-6">
+  <section class="mx-auto px-4 pb-28 pt-8 max-w-[96rem] lg:px-10 sm:px-6">
     <RebrandChapterMeta index="08" title="Evidence notes" />
 
     <div class="pt-20 gap-4 grid lg:grid-cols-4 sm:grid-cols-2">
@@ -53,7 +53,7 @@ const faqs = [
       </article>
     </div>
 
-    <div class="pb-20 pt-40">
+    <div id="faq" class="pb-20 pt-40 scroll-mt-20">
       <RebrandChapterMeta index="09" title="Frequently asked questions" />
       <div class="pt-16 gap-12 grid lg:grid-cols-[0.7fr_1.3fr]">
         <div class="border-[1px] border-basalt-950/16 border-solid bg-signal-red-50 min-h-[24rem] relative overflow-hidden">
@@ -83,12 +83,5 @@ const faqs = [
         </div>
       </div>
     </div>
-
-    <footer class="py-8 border-t-[1px] border-basalt-950/18 border-solid flex gap-5 items-center justify-between">
-      <p class="text-[10px] text-basalt-600 tracking-[0.14em] font-meta uppercase">
-        Grillme / evidence-backed code roasts
-      </p>
-      <a href="#target" class="text-[10px] text-signal-red-700 tracking-[0.14em] font-meta uppercase">Back to the grill ↑</a>
-    </footer>
   </section>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useLandingEntryOverlay, useLandingEntryOverlayRevealChrome } from '~/composables/useLandingEntryOverlay'
 import { createCampfireAudioPlayer } from '~/utils/campfire-audio'
 
 /**
@@ -18,7 +19,6 @@ const isEntryOverlayRevealChrome = useLandingEntryOverlayRevealChrome()
 const isHydrated = ref(false)
 const phase = ref<'dark' | 'question' | 'choices'>('dark')
 const exitStage = ref<'idle' | 'content' | 'veil' | 'no_hold' | 'gone'>('idle')
-const localChoice = ref<'yes' | 'no' | null>(null)
 const prefersReducedMotion = ref(false)
 
 let questionTimer: ReturnType<typeof setTimeout> | null = null
@@ -81,7 +81,6 @@ function runExit(choice: 'yes' | 'no'): void {
   if (!isHydrated.value || exitStage.value !== 'idle')
     return
 
-  localChoice.value = choice
   exitStage.value = 'content'
 
   const contentToVeilDelay = prefersReducedMotion.value ? 1 : 480
@@ -152,13 +151,6 @@ function questionStyle(): CSSProperties {
   }
 }
 
-function dividerStyle(): CSSProperties {
-  return {
-    opacity: phase.value === 'choices' ? 1 : 0,
-    transition: 'opacity 0.6s ease 0.2s',
-  }
-}
-
 function choicesStyle(): CSSProperties {
   return {
     opacity: phase.value === 'choices' ? 1 : 0,
@@ -186,14 +178,14 @@ function noHoldTextStyle(): CSSProperties {
 <template>
   <section
     v-if="exitStage !== 'gone'"
-    class="bg-black flex flex-col select-none items-center inset-0 justify-center fixed z-60 overflow-hidden"
+    class="text-explore-copy bg-black flex select-none inset-0 fixed z-60 overflow-hidden"
     aria-labelledby="entry-overlay-title"
     aria-modal="true"
     role="dialog"
     data-testid="entry-overlay-dialog"
     :style="overlayStyle()"
   >
-    <svg class="entry-overlay-grain h-full w-full pointer-events-none inset-0 absolute" aria-hidden="true">
+    <svg class="opacity-[0.016] h-full w-full pointer-events-none inset-0 absolute" aria-hidden="true">
       <filter id="entry-overlay-grain-filter">
         <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
         <feColorMatrix type="saturate" values="0" />
@@ -201,142 +193,71 @@ function noHoldTextStyle(): CSSProperties {
       <rect width="100%" height="100%" filter="url(#entry-overlay-grain-filter)" />
     </svg>
 
-    <div class="flex min-h-[24rem] w-full items-center justify-center relative">
+    <div class="px-6 py-12 flex w-full items-center justify-center relative min-h-svh">
       <div class="flex flex-col items-center" :style="contentStyle()">
-        <div class="px-6 text-center" :style="questionStyle()">
+        <div class="text-center" :style="questionStyle()">
           <h1
             id="entry-overlay-title"
-            class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display mx-auto max-w-[13ch]"
-            :style="{ fontSize: 'clamp(2.8rem, 10vw, 9rem)' }"
+            class="text-[clamp(3.1rem,9.2vw,9rem)] text-explore-copy leading-[0.82] tracking-[-0.065em] font-display font-semibold mx-auto max-w-[10ch]"
           >
             Are you sure
             <br>
-            you wanna
+            you want to
             <br>
-            <span class="text-primary">enter ?</span>
+            <span class="text-signal-red-500">enter ?</span>
           </h1>
         </div>
 
         <div
-          class="mb-12 mt-16 bg-stone-800 h-12 w-px"
-          :style="dividerStyle()"
+          class="my-12 bg-basalt-800 h-14 w-px sm:my-16"
+          :style="choicesStyle()"
           aria-hidden="true"
         />
 
-        <div class="flex gap-24" :style="choicesStyle()">
+        <div class="flex gap-14 items-center sm:gap-24" :style="choicesStyle()">
           <button
             type="button"
             data-testid="entry-overlay-continue"
             :disabled="isExitActionBlocked()"
-            class="entry-option group text-on-surface"
+            class="group text-[clamp(1.5rem,3.2vw,2.8rem)] text-basalt-200 leading-none tracking-[-0.035em] font-display font-semibold px-2 bg-transparent min-h-11 transition-colors relative focus-visible:text-explore-copy hover:text-explore-copy focus-visible:outline-2 focus-visible:outline-signal-red-500 focus-visible:outline-offset-6 disabled:opacity-50"
             @click="handleContinue"
           >
             YES
-            <span class="entry-option-underline bg-primary" />
+            <span class="bg-signal-red-500 h-px pointer-events-none origin-left scale-x-0 transition-transform duration-300 inset-x-2 absolute group-focus-visible:scale-x-100 group-hover:scale-x-100 -bottom-2" />
           </button>
 
           <button
             type="button"
             data-testid="entry-overlay-not-today"
             :disabled="isExitActionBlocked()"
-            class="entry-option group text-primary/55 hover:text-primary/80"
+            class="group text-[clamp(1.5rem,3.2vw,2.8rem)] text-signal-red-800 leading-none tracking-[-0.035em] font-display font-semibold px-2 bg-transparent min-h-11 transition-colors relative focus-visible:text-signal-red-600 hover:text-signal-red-600 focus-visible:outline-2 focus-visible:outline-signal-red-500 focus-visible:outline-offset-6 disabled:opacity-50"
             @click="handleNotToday"
           >
             NO
-            <span class="entry-option-underline bg-primary/65" />
+            <span class="bg-signal-red-700 h-px pointer-events-none origin-left scale-x-0 transition-transform duration-300 inset-x-2 absolute group-focus-visible:scale-x-100 group-hover:scale-x-100 -bottom-2" />
           </button>
         </div>
       </div>
 
       <div class="px-6 text-center flex items-center inset-0 justify-center absolute" :style="noHoldTextStyle()">
         <div>
-          <p
-            class="text-on-surface leading-[0.9] tracking-[-0.03em] font-black font-display"
-            :style="{ fontSize: 'clamp(2rem, 6.8vw, 5.4rem)' }"
-          >
+          <p class="text-[clamp(2.6rem,6.5vw,6rem)] text-explore-copy leading-[0.88] tracking-[-0.055em] font-display font-semibold">
             Decision recorded.
             <br>
-            <span class="text-primary/80">Confidence level: low.</span>
+            <span class="text-signal-red-500">Confidence remains questionable.</span>
           </p>
-          <p class="text-xs text-on-surface-variant/70 tracking-[0.14em] font-meta mt-6 uppercase">
-            Sending you somewhere more comfortable...
+          <p class="text-[10px] text-basalt-400 tracking-[0.16em] font-meta mt-7 uppercase">
+            Opening the evidence room anyway
           </p>
         </div>
       </div>
     </div>
 
     <span
-      class="text-[10px] text-on-surface-variant/50 tracking-widest font-meta uppercase bottom-6 right-8 fixed"
+      class="text-[10px] text-basalt-500 tracking-[0.16em] font-meta uppercase bottom-6 right-7 absolute sm:bottom-8 sm:right-9"
       :style="exitStage === 'no_hold' ? { opacity: 0, transition: 'opacity 200ms ease' } : cornerLabelStyle()"
     >
-      T3 / Mist
-      <span v-if="localChoice" class="text-primary"> · {{ localChoice.toUpperCase() }}</span>
+      Grillme / Session entry
     </span>
   </section>
 </template>
-
-<style scoped>
-.entry-option {
-  position: relative;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  font-size: clamp(1.4rem, 3.5vw, 3rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  text-transform: uppercase;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 4px 6px;
-  transition: color 0.5s ease;
-  touch-action: manipulation;
-}
-
-.entry-option:focus-visible {
-  outline: 2px solid color-mix(in srgb, #FF3300 65%, #fff 35%);
-  outline-offset: 0.35rem;
-  border-radius: 0.35rem;
-}
-
-.entry-option:active {
-  transform: scale(0.92);
-}
-
-.entry-option:disabled {
-  cursor: default;
-}
-
-.entry-option-underline {
-  position: absolute;
-  left: 0;
-  bottom: -0.25rem;
-  width: 100%;
-  height: 1px;
-  transform-origin: left;
-  transform: scaleX(0);
-  transition: transform 300ms;
-}
-
-.group:hover .entry-option-underline,
-.group:focus-visible .entry-option-underline {
-  transform: scaleX(1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .entry-option,
-  .entry-option-underline {
-    transition-duration: 1ms;
-  }
-}
-
-.entry-overlay-grain {
-  opacity: 0.018;
-}
-
-@media (max-width: 768px) {
-  .entry-overlay-grain {
-    opacity: 0.012;
-  }
-}
-</style>

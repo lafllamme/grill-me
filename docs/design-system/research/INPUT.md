@@ -33,7 +33,7 @@ Current implementation references:
 - `app/components/rebrand/RebrandReasoning.vue`
 - `app/components/rebrand/RebrandProcessTrail.vue`
 - `app/composables/useRoastReasoning.ts`
-- `app/pages/test-2.vue`
+- `app/pages/index.vue`
 - `shared/roast/contracts.ts`
 
 ## Implementation environment
@@ -48,7 +48,7 @@ If you create an interactive prototype in this repository, work within the exist
 
 Do not install a React AI component library merely because it inspired the interaction. Translate useful patterns into native Vue components. Do not add standalone component CSS when UnoCSS can express the design. Visible UnoCSS borders require an explicit width, color, and `border-solid`.
 
-The exploration may remain isolated on `/test-2`; it must not silently migrate production tokens or replace the production homepage.
+The selected direction is now the production homepage at `/`. Alternative explorations must not silently change its tokens or public roast contracts.
 
 ## Current design and concrete criticism
 

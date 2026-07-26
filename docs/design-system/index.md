@@ -17,16 +17,15 @@ Ergaenzende laufende Richtungsarbeit:
 Aktiver Prototyp:
 
 - `/test-1` bewahrt die erste Rebrand-Komposition.
-- `/test-2` erprobt die aktive stage-first Homepage mit Prompt-Surface, realem Roast-Stream, Prozesshistorie und progressivem Result-Reveal.
+- `/` verwendet die aktive Fuel-inspirierte Homepage mit Prompt-Surface, realem Roast-Stream, Prozesshistorie und progressivem Result-Reveal.
 
-## Landing Entry Overlay Pattern
+## Landing Entry Overlay
 
-Für die Startseite (`/`) gilt ein verpflichtender Entry-Overlay-Pattern:
+Die Homepage startet mit einer eigenständigen, schwarzen Entry-Seite vor der Fuel-inspirierten Longform Experience. Die bewusst zentrierte Originalkomposition bleibt erhalten; Signal Red ersetzt den früheren orangefarbenen Akzent.
 
-- Overlay erscheint initial vollständig über dem Landing-Content.
-- Primäre CTA (`GRILL ME`) und sekundäre CTA (`NOT TODAY`) verwenden `rounded-full`.
-- Overlay-Styling nutzt ausschließlich bestehende Color- und Font-Tokens.
-- Umsetzung muss SSR/Hydration-sicher deterministisch initialisiert werden.
+- `YES` gibt die neue Homepage frei; `NO` verlässt die Experience über den Toys“R”Us-Redirect.
+- Ein Session-Cookie verhindert eine erneute Anzeige innerhalb derselben Browser-Session.
+- Die Initialisierung bleibt SSR- und Hydration-sicher.
 
 Siehe:
 
