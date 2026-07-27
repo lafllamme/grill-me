@@ -38,6 +38,8 @@ const PRISM = {
 
 const NOISE_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAElBMVEUAAAAAAAAAAAAAAAAAAAAAAADgKxmiAAAABnRSTlMCCgkGBAVJOAVJAAAASklEQVQ4y2NgGAWjYBSMglEwCgY/YGRgZBQUYmJiZGQEkYwMjIyMgoKCjIyMIJKBgRFIMjIyAklGRkYGRkFBYEcwMDIyMjAOUQAA1I4HwVwZAkYAAAAASUVORK5CYII='
 const MAX_PIXEL_RATIO = 1.5
+const MIN_PIXEL_RATIO = 0.5
+const MAX_RENDER_PIXELS = 1_600_000
 const TARGET_FRAME_RATE = 45
 
 const VERTEX_SHADER = `#version 300 es
@@ -279,14 +281,20 @@ function setup() {
   }
 
   const resize = () => {
-    const pixelRatio = Math.min(MAX_PIXEL_RATIO, window.devicePixelRatio || 1)
+    const cssWidth = Math.max(1, container.clientWidth)
+    const cssHeight = Math.max(1, container.clientHeight)
+    const pixelBudgetRatio = Math.sqrt(MAX_RENDER_PIXELS / (cssWidth * cssHeight))
+    const pixelRatio = Math.max(
+      MIN_PIXEL_RATIO,
+      Math.min(MAX_PIXEL_RATIO, window.devicePixelRatio || 1, pixelBudgetRatio),
+    )
     const nextWidth = Math.max(
       1,
-      Math.round(container.clientWidth * pixelRatio),
+      Math.round(cssWidth * pixelRatio),
     )
     const nextHeight = Math.max(
       1,
-      Math.round(container.clientHeight * pixelRatio),
+      Math.round(cssHeight * pixelRatio),
     )
 
     if (canvas.width === nextWidth && canvas.height === nextHeight)

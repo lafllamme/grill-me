@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useHead } from '#imports'
+import AppSmoothScroll from '~/components/AppSmoothScroll.vue'
 
 useHead({
   title: 'grillme.dev | GitHub Roast',
@@ -10,8 +11,10 @@ useHead({
 </script>
 
 <template>
-  <NuxtRouteAnnouncer />
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <AppSmoothScroll>
+    <NuxtRouteAnnouncer />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </AppSmoothScroll>
 </template>

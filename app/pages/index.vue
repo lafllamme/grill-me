@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
 import LandingEntryOverlay from '~/components/LandingEntryOverlay.vue'
@@ -24,6 +24,7 @@ import { useLandingEntryOverlay } from '~/composables/useLandingEntryOverlay'
 import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings'
 import { useRoast } from '~/composables/useRoast'
 import { useRoastPreview } from '~/composables/useRoastPreview'
+import { useSmoothScroll } from '~/composables/useSmoothScroll'
 import { ROAST_INTENSITY_LEVELS } from '~/constants/roastIntensity'
 import { PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS } from '~/models/prism-gradient'
 import { useRoastStore } from '~/stores/roastStore'
@@ -39,11 +40,19 @@ const { onContinue, onNotToday } = createEntryOverlayActions({
   isOverlayVisible: isEntryOverlayVisible,
   navigateTo,
 })
+const {
+  lenis,
+  scrollTo,
+  scrollToTop,
+  start: startSmoothScroll,
+  stop: stopSmoothScroll,
+} = useSmoothScroll()
 
 async function revealHomepage() {
+  scrollToTop({ force: true, immediate: true })
   onContinue()
   await nextTick()
-  window.scrollTo(0, 0)
+  startSmoothScroll()
 }
 
 const testPagePrismDefaults: PrismGradientSettings = {
@@ -143,12 +152,27 @@ onMounted(() => {
   isPageInteractive.value = true
 })
 
+watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
+  if (!lenisInstance)
+    return
+
+  if (isVisible) {
+    stopSmoothScroll()
+    scrollToTop({ force: true, immediate: true })
+    return
+  }
+
+  startSmoothScroll()
+}, { immediate: true })
+
+onBeforeUnmount(() => {
+  startSmoothScroll()
+})
+
 async function scrollToLiveStage() {
   await nextTick()
-  liveRoastStage.value?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start',
-  })
+  if (liveRoastStage.value)
+    scrollTo(liveRoastStage.value)
 }
 
 async function startRoast() {

@@ -214,7 +214,7 @@ function normalizeHexColor(value: string): string | null {
         </div>
       </div>
 
-      <div v-if="isPanelOpen" class="p-3 overscroll-contain flex-1 min-h-0 overflow-y-auto space-y-3">
+      <div v-if="isPanelOpen" data-lenis-prevent class="p-3 overscroll-contain flex-1 min-h-0 overflow-y-auto space-y-3">
         <label class="px-3 py-2 border border-divider rounded-lg border-solid bg-surface-container-low/70 block space-y-2">
           <span class="text-[11px] text-on-surface">Radius</span>
           <input

@@ -113,7 +113,7 @@ function formatMeatTuning(id: (typeof meatIds)[number]): string {
 </script>
 
 <template>
-  <div class="px-4 py-3 overscroll-contain border border-divider/60 rounded-[1.25rem] bg-black/32 flex flex-col gap-3 max-h-[calc(100%-2.5rem)] min-w-[14rem] right-5 top-5 absolute z-20 overflow-y-auto backdrop-blur-md">
+  <div data-lenis-prevent class="px-4 py-3 overscroll-contain border border-divider/60 rounded-[1.25rem] bg-black/32 flex flex-col gap-3 max-h-[calc(100%-2.5rem)] min-w-[14rem] right-5 top-5 absolute z-20 overflow-y-auto backdrop-blur-md">
     <div class="flex gap-3 items-center justify-between">
       <div>
         <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">

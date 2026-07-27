@@ -57,6 +57,7 @@ useResizeObserver(trailRef, updateScrollFades)
   <div data-testid="test-2-process-trail" class="max-w-[58rem] relative">
     <div
       ref="trailRef"
+      data-lenis-prevent
       class="pr-2 overscroll-contain scroll-smooth max-h-[55dvh] [scrollbar-width:none] overflow-y-auto sm:max-h-[26rem] [&::-webkit-scrollbar]:hidden"
       @scroll.passive="updateScrollFades"
     >

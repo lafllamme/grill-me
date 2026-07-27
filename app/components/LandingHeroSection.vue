@@ -1,12 +1,10 @@
 <script lang="ts" setup>
-import { useWindowScroll } from '@vueuse/core'
 import { useRoast } from '#imports'
+import { useSmoothScroll } from '~/composables/useSmoothScroll'
 
 const roastStore = useRoastStore()
 const { pending, error, isStreaming, streamError, roastUsername, cancelRoast } = useRoast()
-const { y } = useWindowScroll({
-  behavior: 'smooth',
-})
+const { scrollTo } = useSmoothScroll()
 
 function scrollToTerminal() {
   if (!import.meta.client)
@@ -16,9 +14,7 @@ function scrollToTerminal() {
   if (!terminalElement)
     return
 
-  const topOffset = 24
-  const targetY = terminalElement.getBoundingClientRect().top + window.scrollY - topOffset
-  y.value = Math.max(0, targetY)
+  scrollTo(terminalElement, { offset: -24 })
 }
 
 async function submitRoast() {

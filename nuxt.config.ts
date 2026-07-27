@@ -2,9 +2,10 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  css: ['~/assets/css/main.css'],
+  css: ['lenis/dist/lenis.css', '~/assets/css/main.css'],
 
   modules: [
+    'lenis/nuxt',
     '@nuxt/a11y',
     '@nuxt/fonts',
     '@nuxt/icon',
