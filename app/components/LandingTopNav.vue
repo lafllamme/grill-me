@@ -8,7 +8,7 @@ import { useAuthSession } from '~/composables/useAuthSession'
 
 const props = withDefaults(defineProps<{
   variant?: 'default' | 'signal'
-  surface?: 'glass' | 'dark'
+  surface?: 'glass' | 'dark' | 'fuel'
 }>(), {
   variant: 'default',
   surface: 'glass',
@@ -25,16 +25,30 @@ const primaryButtonClass = computed(() => isSignalVariant.value
   : 'bg-ember-600 active:bg-ember-800 hover:bg-ember-700')
 const signalTextClass = computed(() => isSignalVariant.value ? 'text-signal-red-400' : 'text-primary')
 const signalBorderClass = computed(() => isSignalVariant.value ? 'border-signal-red-500/30' : 'border-primary/30')
-const navigationSurfaceClass = computed(() => props.surface === 'dark'
-  ? 'bg-black/82 border-white/12 shadow-[0_18px_60px_rgba(0,0,0,0.28)]'
-  : 'bg-[rgba(38,38,38,0.07)] border-[lab(100%_0_0_/_0.1)]')
+const isFuelSurface = computed(() => props.surface === 'fuel')
+const navigationSurfaceClass = computed(() => {
+  if (isFuelSurface.value)
+    return 'bg-black/94 border-white/14 shadow-none'
 
-const mobileMenuItems = [
+  return props.surface === 'dark'
+    ? 'bg-black/82 border-white/12 shadow-[0_18px_60px_rgba(0,0,0,0.28)]'
+    : 'bg-[rgba(38,38,38,0.07)] border-[lab(100%_0_0_/_0.1)]'
+})
+const navigationShapeClass = computed(() => isFuelSurface.value ? 'rounded-[2px] max-w-[88rem]' : 'rounded-[14px] max-w-5xl')
+
+const defaultMenuItems = [
   { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Wall of Shame', to: '/#wall-of-shame' },
   { label: 'Metrics', to: '/#metrics' },
   { label: 'API', to: '/docs#api' },
-]
+] as const
+const fuelMenuItems = [
+  { label: 'Evidence', to: '/#evidence' },
+  { label: 'Pipeline', to: '/#pipeline' },
+  { label: 'Levels', to: '/#levels' },
+  { label: 'Receipts', to: '/#receipts' },
+] as const
+const navigationItems = computed(() => isFuelSurface.value ? fuelMenuItems : defaultMenuItems)
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -92,7 +106,7 @@ const authFeedback = computed(() => {
       >
         {{ authFeedback }}
       </p>
-      <nav class="supports-backdrop-filter:backdrop-blur-md mx-auto py-2 pl-2 pr-2 border-[1px] rounded-[14px] border-solid max-w-5xl w-full hidden items-center justify-between z-50 backdrop-blur-md lg:py-1.5 lg:pl-2.5 lg:pr-2.5 lg:flex" :class="navigationSurfaceClass">
+      <nav class="mx-auto py-2 pl-2 pr-2 border-[1px] border-solid w-full hidden items-center justify-between z-50 lg:py-1.5 lg:pl-2.5 lg:pr-2.5 lg:flex" :class="[navigationSurfaceClass, navigationShapeClass, isFuelSurface ? '' : 'supports-backdrop-filter:backdrop-blur-md backdrop-blur-md']">
         <NuxtLink to="/">
           <div class="h-9 w-28 relative">
             <GrillmeLogo class="h-full w-full" :accent="logoAccent" />
@@ -100,21 +114,18 @@ const authFeedback = computed(() => {
         </NuxtLink>
 
         <div class="inline-flex items-center">
-          <NuxtLink class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none rounded-full bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center" :class="navigationHoverClass" to="/leaderboard">
-            Leaderboard
-          </NuxtLink>
-          <NuxtLink class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none rounded-full bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center" :class="navigationHoverClass" to="/#wall-of-shame">
-            Wall of Shame
-          </NuxtLink>
-          <NuxtLink class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none rounded-full bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center" :class="navigationHoverClass" to="/#metrics">
-            Metrics
-          </NuxtLink>
-          <NuxtLink class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none rounded-full bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center" :class="navigationHoverClass" to="/docs#api">
-            API
+          <NuxtLink
+            v-for="item in navigationItems"
+            :key="item.to"
+            class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center"
+            :class="[navigationHoverClass, isFuelSurface ? 'rounded-[2px]' : 'rounded-full']"
+            :to="item.to"
+          >
+            {{ item.label }}
           </NuxtLink>
         </div>
 
-        <aside class="inline-flex gap-2 items-center">
+        <div class="inline-flex gap-2 items-center">
           <button
             class="group/button text-sm text-white leading-5 font-body font-medium px-4 outline-none border-[1px] border-transparent rounded-full border-solid inline-flex shrink-0 gap-1.5 h-9 cursor-pointer select-none whitespace-nowrap transition-all items-center justify-center bg-clip-padding"
             :class="navigationHoverClass"
@@ -137,12 +148,12 @@ const authFeedback = computed(() => {
           >
             Connect GitHub
           </button>
-        </aside>
+        </div>
       </nav>
 
       <nav
-        class="border-[1px] rounded-[14px] border-solid max-h-[calc(100lvh-2rem)] w-full relative overflow-auto backdrop-blur-md md:max-h-[calc(60lvh-2rem)] lg:hidden"
-        :class="navigationSurfaceClass"
+        class="border-[1px] border-solid max-h-[calc(100lvh-2rem)] w-full relative overflow-auto md:max-h-[calc(60lvh-2rem)] lg:hidden"
+        :class="[navigationSurfaceClass, isFuelSurface ? 'rounded-[2px]' : 'rounded-[14px] backdrop-blur-md']"
         @wheel.stop
         @touchmove.stop
       >
@@ -208,7 +219,7 @@ const authFeedback = computed(() => {
               exit="hidden"
             >
               <motion.div
-                v-for="item in mobileMenuItems"
+                v-for="item in navigationItems"
                 :key="item.to"
                 :variants="mobileMenuItemVariants"
                 :transition="{ duration: 0.3, ease: 'easeOut' }"

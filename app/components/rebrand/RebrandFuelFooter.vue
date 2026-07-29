@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import RebrandScrollHeadline from '~/components/rebrand/RebrandScrollHeadline.vue'
+
 const footerLinks = [
   { index: '01', label: 'Target', href: '#target' },
   { index: '02', label: 'Pipeline', href: '#pipeline' },
@@ -12,12 +14,17 @@ const footerLinks = [
     <div class="border-t-[1px] border-white/18 border-solid flex-1">
       <div class="pt-20 gap-20 grid lg:pt-24 lg:grid-cols-[1.25fr_0.75fr]">
         <div>
-          <p class="text-[clamp(2.8rem,5.5vw,6.5rem)] text-explore-muted leading-[0.88] tracking-[-0.065em] font-display">
-            Your next commit
-          </p>
-          <p class="text-[clamp(2.8rem,5.5vw,6.5rem)] text-explore-copy leading-[0.88] tracking-[-0.065em] font-display">
-            is already evidence.
-          </p>
+          <RebrandScrollHeadline
+            as="p"
+            class="fuel-editorial-headline text-explore-muted"
+            text="Your next commit"
+          />
+          <RebrandScrollHeadline
+            as="p"
+            class="fuel-editorial-headline text-explore-copy"
+            text="is already evidence."
+            :delay="0.11"
+          />
           <a href="#target" class="text-lg text-explore-copy font-body mt-16 pb-3 border-b-[1px] border-white/60 border-solid flex max-w-[21rem] items-center justify-between sm:text-xl">
             Start another roast
             <span aria-hidden="true">↗</span>

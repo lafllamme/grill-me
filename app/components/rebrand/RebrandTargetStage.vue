@@ -3,6 +3,7 @@ import type { RoastIntensityValue } from '~/constants/roastIntensity'
 import { onClickOutside } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { Icon } from '#components'
+import RebrandScrollHeadline from '~/components/rebrand/RebrandScrollHeadline.vue'
 import { ROAST_INTENSITY_LEVELS } from '~/constants/roastIntensity'
 import { useRoastStore } from '~/stores/roastStore'
 
@@ -65,13 +66,14 @@ onMounted(() => {
         <p class="text-[10px] text-signal-red-400 tracking-[0.2em] font-meta uppercase sm:text-xs">
           Source target
         </p>
-        <h2 class="text-[clamp(2.8rem,6vw,6.5rem)] text-explore-copy leading-[0.88] tracking-[-0.06em] font-display mt-5">
-          Who are we grilling ?
-        </h2>
+        <RebrandScrollHeadline
+          class="fuel-editorial-headline text-explore-copy mt-5"
+          text="Who are we grilling?"
+        />
       </div>
 
       <div>
-        <form class="border-[1px] border-explore-border rounded-[2rem] border-solid bg-black/58 shadow-[inset_0_1px_10px_rgba(255,255,255,0.055),0_36px_140px_rgba(37,0,6,0.48)] transition-colors backdrop-blur-2xl focus-within:border-explore-border-high sm:rounded-[2.5rem]" @submit.prevent="submitTarget">
+        <form class="border-[1px] border-explore-border rounded-xl border-solid bg-black/70 shadow-[inset_0_1px_10px_rgba(255,255,255,0.045),0_28px_100px_rgba(37,0,6,0.38)] transition-colors backdrop-blur-xl focus-within:border-explore-border-high sm:rounded-2xl" @submit.prevent="submitTarget">
           <div class="px-6 pb-10 pt-8 min-h-[13rem] sm:px-10 sm:pb-12 sm:pt-10">
             <label for="test-2-username" class="text-[10px] text-explore-muted tracking-[0.16em] font-meta uppercase">
               Public GitHub username
@@ -82,7 +84,7 @@ onMounted(() => {
                 id="test-2-username"
                 v-model="githubUsername"
                 data-testid="test-2-username-input"
-                class="text-2xl text-explore-copy leading-none tracking-[-0.035em] font-display outline-none bg-transparent flex-1 min-w-0 sm:text-4xl placeholder:text-explore-muted/55"
+                class="text-2xl text-explore-copy leading-none tracking-[-0.02em] font-body outline-none bg-transparent flex-1 min-w-0 sm:text-4xl placeholder:text-explore-muted/55"
                 type="text"
                 placeholder="What's your GitHub name?"
                 autocomplete="off"

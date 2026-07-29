@@ -12,12 +12,13 @@ import RebrandFuelAbout from '~/components/rebrand/RebrandFuelAbout.vue'
 import RebrandFuelArchive from '~/components/rebrand/RebrandFuelArchive.vue'
 import RebrandFuelCta from '~/components/rebrand/RebrandFuelCta.vue'
 import RebrandFuelEditorial from '~/components/rebrand/RebrandFuelEditorial.vue'
+import RebrandFuelFeaturedReceipt from '~/components/rebrand/RebrandFuelFeaturedReceipt.vue'
 import RebrandFuelFooter from '~/components/rebrand/RebrandFuelFooter.vue'
 import RebrandFuelLevels from '~/components/rebrand/RebrandFuelLevels.vue'
 import RebrandFuelPipeline from '~/components/rebrand/RebrandFuelPipeline.vue'
 import RebrandFuelPortfolio from '~/components/rebrand/RebrandFuelPortfolio.vue'
 import RebrandFuelStats from '~/components/rebrand/RebrandFuelStats.vue'
-import RebrandFuelVerdict from '~/components/rebrand/RebrandFuelVerdict.vue'
+import RebrandScrollHeadline from '~/components/rebrand/RebrandScrollHeadline.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
 import { useFuelRoastViewModel } from '~/composables/useFuelRoastViewModel'
 import { useLandingEntryOverlay } from '~/composables/useLandingEntryOverlay'
@@ -26,6 +27,7 @@ import { useRoast } from '~/composables/useRoast'
 import { useRoastPreview } from '~/composables/useRoastPreview'
 import { useSmoothScroll } from '~/composables/useSmoothScroll'
 import { ROAST_INTENSITY_LEVELS } from '~/constants/roastIntensity'
+import { AGGREGATE_STATS, PUBLIC_ROAST_RECEIPTS } from '~/data/rebrand-fuel'
 import { PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS } from '~/models/prism-gradient'
 import { useRoastStore } from '~/stores/roastStore'
 import { createEntryOverlayActions } from '~/utils/landing-entry-overlay'
@@ -117,6 +119,9 @@ const {
 
 const preview = useRoastPreview()
 const isPreviewActive = computed(() => activeRoastSource.value === 'preview')
+const shouldShowAggregateStats = computed(() => import.meta.dev || isPreviewActive.value)
+const featuredReceipt = PUBLIC_ROAST_RECEIPTS[0]!
+const archiveReceipts = PUBLIC_ROAST_RECEIPTS.slice(1)
 const isRoastPending = computed(() => isPreviewActive.value ? preview.isPending.value : pending.value)
 const displayedStreaming = computed(() => isPreviewActive.value ? preview.isStreaming.value : isStreaming.value)
 const displayedTitle = computed(() => isPreviewActive.value ? preview.title.value : partialTitle.value)
@@ -219,12 +224,12 @@ function updateUsername(value: string) {
       :aria-hidden="isEntryOverlayVisible"
       :inert="isEntryOverlayVisible || undefined"
     >
-      <LandingTopNav v-if="!isEntryOverlayVisible" variant="signal" surface="dark" />
+      <LandingTopNav v-if="!isEntryOverlayVisible" variant="signal" surface="fuel" />
 
       <main class="relative overflow-clip">
         <section class="bg-black relative z-0 isolate">
           <div class="h-[100svh] pointer-events-none top-0 sticky overflow-hidden">
-            <div class="[animation:hero-scroll-drift_linear_both] inset-x-[-5%] bottom-[-180px] top-[-5%] absolute hero-scroll-parallax motion-reduce:[animation:none]">
+            <div class="inset-x-[-5%] bottom-[-180px] top-[-5%] absolute fuel-hero-background motion-reduce:[animation:none]">
               <PrismGradientBackground
                 class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
                 :speed="prismSettings.speed"
@@ -240,25 +245,45 @@ function updateUsername(value: string) {
             <div class="h-[24svh] inset-x-0 bottom-0 absolute from-transparent to-black/8 bg-gradient-to-b" />
           </div>
 
-          <div class="relative z-10 -mt-[100svh]">
-            <section class="mx-auto px-4 pb-16 pt-36 flex flex-col max-w-[88rem] min-h-[92svh] justify-end lg:px-10 sm:px-6 lg:pb-20 sm:pt-44">
-              <p class="text-xs text-signal-red-400 tracking-[0.22em] font-meta uppercase">
-                Public commits. Private consequences.
-              </p>
-              <div class="mt-8 gap-10 grid lg:gap-16 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
-                <h1 class="text-[clamp(3.8rem,9vw,9rem)] text-explore-copy leading-[0.78] tracking-[-0.08em] font-display font-semibold max-w-[7.5ch] sm:leading-[0.75]">
-                  Your code remembers.
-                </h1>
-                <div class="pb-3 max-w-[35rem] lg:ml-auto lg:pb-5">
-                  <p class="text-lg text-explore-copy leading-relaxed font-body sm:text-xl">
-                    Give us a GitHub username. The agent finds the evidence, streams the investigation, and returns a roast that can cite its sources.
+          <div class="relative z-10 fuel-hero-exit -mt-[100svh] motion-reduce:[animation:none]">
+            <section class="mx-auto px-4 pb-10 pt-32 flex flex-col max-w-[88rem] min-h-[58svh] justify-between lg:px-10 sm:px-6 sm:pt-40">
+              <div class="fuel-hero-copy gap-12 grid lg:gap-24 lg:grid-cols-[0.62fr_1.38fr] lg:items-end">
+                <div class="max-w-[22rem]">
+                  <p class="text-xs text-signal-red-400 tracking-[0.2em] font-meta uppercase">
+                    Public commits. Private consequences.
                   </p>
-                  <a href="#target" class="text-xs text-explore-copy tracking-[0.12em] font-label mt-7 inline-flex uppercase">Choose a target ↓</a>
+                  <p class="text-lg text-explore-copy leading-relaxed font-body mt-8">
+                    Start your roast with one public GitHub username. Grillme finds the trail and keeps the evidence attached.
+                  </p>
+                  <a href="#evidence" class="text-sm text-explore-copy font-body mt-10 pb-2 border-b-[1px] border-white/45 border-solid flex max-w-[13rem] items-center justify-between">
+                    Explore the evidence
+                    <span aria-hidden="true">↘</span>
+                  </a>
                 </div>
+
+                <RebrandScrollHeadline
+                  as="h1"
+                  class="text-[clamp(4.4rem,10vw,10.5rem)] text-explore-copy leading-[0.84] tracking-[-0.055em] font-display font-semibold lg:text-right"
+                  :lines="['Your code', 'remembers.']"
+                  :amount="0.12"
+                  :delay="0.08"
+                />
+              </div>
+
+              <div class="mt-16 pt-5 border-t-[1px] border-white/18 border-solid gap-6 grid grid-cols-[auto_1fr_auto] items-end">
+                <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
+                  © 2026
+                </p>
+                <div class="px-4 flex gap-2 items-center justify-center">
+                  <span v-for="marker in 6" :key="marker" class="bg-white/25 h-[1px] w-5" :class="marker === 1 ? 'bg-signal-red-400 w-10' : ''" />
+                </div>
+                <p class="text-[clamp(1.6rem,3vw,3rem)] text-explore-copy leading-none tracking-[-0.04em] font-display">
+                  GRILLME
+                </p>
               </div>
             </section>
 
-            <div class="pb-[clamp(8rem,15vw,16rem)]">
+            <div class="pb-[clamp(6rem,10vw,10rem)]">
               <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
                 <template #preview>
                   <button
@@ -281,7 +306,7 @@ function updateUsername(value: string) {
 
         <RebrandChapterShell edge="rise-right" tone="paper" class="z-20 -mt-[100svh]">
           <RebrandFuelAbout />
-          <div ref="liveRoastStage">
+          <div id="evidence" ref="liveRoastStage" class="scroll-mt-20">
             <RebrandFuelPortfolio
               :model="fuelRoast"
               :is-active="isLiveRoastActive"
@@ -297,15 +322,15 @@ function updateUsername(value: string) {
 
         <RebrandChapterShell edge="rise-right" tone="paper" class="z-40">
           <RebrandFuelLevels v-model="selectedIntensity" />
-          <RebrandFuelVerdict :model="fuelRoast" />
-          <RebrandFuelArchive :model="fuelRoast" />
+          <RebrandFuelFeaturedReceipt :receipt="featuredReceipt" />
+          <RebrandFuelArchive :receipts="archiveReceipts" />
           <RebrandFuelCta
             :username="roastStore.githubUsername"
             :is-pending="isRoastPending"
             @update:username="updateUsername"
             @submit="startRoast"
           />
-          <RebrandFuelStats :model="fuelRoast" />
+          <RebrandFuelStats v-if="shouldShowAggregateStats" :stats="AGGREGATE_STATS" />
           <RebrandFuelEditorial />
         </RebrandChapterShell>
 

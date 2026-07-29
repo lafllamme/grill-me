@@ -1,19 +1,10 @@
 <script setup lang="ts">
-import type { FuelRoastViewModel } from '~/models/rebrand-fuel'
-import { computed } from 'vue'
-
+import type { PublicRoastReceipt } from '~/models/rebrand-fuel'
 import RebrandChapterMeta from '~/components/rebrand/RebrandChapterMeta.vue'
 
-const props = defineProps<{
-  model: FuelRoastViewModel
+defineProps<{
+  receipts: readonly PublicRoastReceipt[]
 }>()
-
-const archiveRows = computed(() => [
-  { year: 'Now', username: props.model.username, title: props.model.title, commits: props.model.commits.slice(0, 3) },
-  { year: '2026', username: 'torvalds', title: 'UAF fix in BPF? More like a quick patch for the inevitable.', commits: props.model.commits.slice(0, 2) },
-  { year: '2026', username: 'sindresorhus', title: 'One utility package away from achieving package singularity.', commits: props.model.commits.slice(1, 3) },
-  { year: '2025', username: 'gaearon', title: 'The abstraction is elegant. The migration guide is a cry for help.', commits: props.model.commits.slice(0, 1) },
-])
 </script>
 
 <template>
@@ -21,19 +12,27 @@ const archiveRows = computed(() => [
     <RebrandChapterMeta index="06" title="Roast archive" />
 
     <div class="pt-20 border-t-[1px] border-basalt-950/16 border-solid">
-      <article v-for="row in archiveRows" :key="`${row.username}-${row.title}`" class="py-7 border-b-[1px] border-basalt-950/16 border-solid gap-5 grid items-center lg:grid-cols-[0.3fr_1fr_1.55fr_1fr] sm:grid-cols-[0.35fr_1.1fr_1.5fr]">
+      <article v-for="receipt in receipts" :key="receipt.id" class="py-8 border-b-[1px] border-basalt-950/16 border-solid gap-5 grid items-center fuel-view-reveal lg:grid-cols-[0.3fr_0.85fr_1.55fr_1fr] sm:grid-cols-[0.35fr_0.85fr_1.5fr] motion-reduce:[animation:none]">
         <p class="text-sm text-basalt-700 font-body">
-          {{ row.year }}
+          {{ receipt.year }}
         </p>
-        <p class="text-[clamp(1.8rem,3vw,3.5rem)] text-basalt-950 leading-none tracking-[-0.05em] font-display">
-          @{{ row.username }}
-        </p>
-        <p class="text-sm text-basalt-600 leading-relaxed font-body sm:text-base">
-          {{ row.title }}
+        <div>
+          <p class="text-[clamp(1.7rem,2.6vw,3rem)] text-basalt-950 leading-none tracking-[-0.035em] font-body">
+            @{{ receipt.username }}
+          </p>
+          <p class="text-[9px] text-signal-red-700 tracking-[0.12em] font-meta mt-3 uppercase">
+            {{ receipt.status }} / {{ receipt.grade }}
+          </p>
+        </div>
+        <p class="text-base text-basalt-700 leading-relaxed font-body sm:text-lg">
+          {{ receipt.title }}
         </p>
         <div class="gap-2 hidden justify-end lg:flex">
-          <span v-for="commit in row.commits" :key="commit.sha" class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-bone-100">
-            {{ commit.sha.slice(0, 7) }} · +{{ commit.additions }}/-{{ commit.deletions }}
+          <span class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-bone-100">
+            {{ receipt.commit.sha }} · +{{ receipt.commit.additions }}/-{{ receipt.commit.deletions }}
+          </span>
+          <span v-if="receipt.files[0]" class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-bone-100 max-w-[12rem] truncate">
+            {{ receipt.files[0].filename }}
           </span>
         </div>
       </article>

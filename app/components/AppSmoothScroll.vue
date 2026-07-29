@@ -11,7 +11,7 @@ const lenis = useLenis()
 const options = computed<LenisOptions>(() => ({
   autoRaf: false,
   anchors: true,
-  duration: 2,
+  duration: 1,
   smoothWheel: reducedMotion.value !== 'reduce',
   stopInertiaOnNavigate: true,
   syncTouch: false,

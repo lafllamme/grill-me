@@ -107,18 +107,39 @@ That principle directly addresses Grillme's current problem of placing every sta
 
 ## Prototype implementation
 
-The complete structural study is implemented on the homepage at `/`.
+The structural study is implemented on the homepage at `/`, translated into product chapters rather than copied as an agency portfolio.
 
 - `RebrandChapterShell` owns the scroll-linked diagonal cover edges and light/dark chapter surfaces.
 - Hero and target content scroll through one sticky Prism scene. The shader remains limited to that opening world.
 - The first paper chapter is pulled back by one viewport so the shader stays pinned until the cover has fully passed it.
 - The hero drifts at ten percent of the root scroll distance while the paper cover animates from flat to approximately seven degrees.
-- A typed Fuel view model merges live stream data, local preview data, and stable evidence fallbacks without changing the roast API.
-- The evidence portfolio translates Fuel's persistent side rails and sticky center projects into grade/intensity context, commits, files, reasoning, and verdict panels.
-- The dark service chapter becomes the agent pipeline. Pricing becomes roast intensity selection.
-- Testimonial, archive, contact, stats, article, and FAQ chapters are retained as Grillme-specific verdict, receipt, CTA, metric, evidence-note, and product-explanation sections.
+- `FuelRoastViewModel` remains the only source for the running roast. Separate `PublicRoastReceipt` and `AggregateStat` models prevent demo, live, and aggregate data from being mixed.
+- The evidence portfolio is the only chapter that presents the active roast. Its rails contain target/status and metrics; grade and verdict title appear only on the final sticky surface.
+- The dark service chapter becomes the four-step agent pipeline. Pricing becomes roast intensity selection without prices or sales language.
+- Fuel's testimonial becomes one evidence-backed public receipt. Its archive becomes a list of independent static receipts rather than reusing the current roast under other usernames.
+- Aggregate statistics are visible only in development or preview mode until a real aggregate source exists.
+- The decorative article grid was removed. The final editorial chapter is limited to product method and FAQ.
 - The closing navigation is a dedicated black chapter rather than a small footer row inside the final paper chapter. Its oversized Grillme wordmark, contact prompt, and numbered links follow Fuel's terminal composition without copying its identity.
-- Native CSS scroll timelines and sticky positioning drive the motion. No scroll listener or per-frame Vue state is used.
+- The product statement uses one shared velocity-marquee controller for both text rows. It pauses outside the viewport and does not compete with Lenis for scroll ownership.
+
+### Final chapter mapping
+
+1. Shader hero and target input.
+2. Product statement and evidence vocabulary marquee.
+3. Active evidence portfolio.
+4. Agent pipeline.
+5. Roast levels.
+6. Featured public receipt.
+7. Public receipt archive.
+8. Final roast CTA.
+9. Aggregate statistics when a permitted source is available.
+10. Method FAQ and terminal footer.
+
+The governing content rule is:
+
+> One data type has one primary display location.
+
+Username and active status live in the evidence rail, metrics in the metrics rail, grade and title in the final sticky surface, public examples in receipt chapters, and aggregate values in the stats chapter.
 
 ### Chapter handoff geometry
 
@@ -132,7 +153,19 @@ The prototype now follows Fuel's generated Framer structure and measured motion 
 - Chapter hosts remain `overflow-visible`; clipping belongs to visuals inside a chapter, never to the overlap plate.
 - The sticky hero viewport stays fixed. Only an oversized shader layer drifts inside it, preventing the parallax motion from exposing a plain black gap before the first paper chapter arrives.
 - Reduced-motion mode preserves the final static diagonal while disabling scroll-linked interpolation.
-- Fuel uses Lenis, but Grillme intentionally keeps native scrolling. Adding another continuous animation loop beside the WebGL shader would increase CPU cost without being necessary for the chapter geometry.
+- Lenis owns global scroll interpolation with Fuel's one-second duration and no touch synchronization. It does not calculate chapter geometry or component progress.
+- CSS view/scroll timelines own continuous motion: chapter covers, hero foreground/background drift, masked-media parallax, and sticky settling. Sticky surfaces settle by `cover 34%`; media travels across its complete view range.
+- Motion-V owns one-shot viewport entrances. Editorial headlines are first measured as one continuous `pre-wrap` text run. Browser `Range` measurements group the words into the visual lines produced by the active font, width, kerning, and tracking.
+- The final visual lines are mounted before their viewport observer starts. Each line is rendered in an `overflow-hidden` mask; its inner line moves from below the mask to `translateY(0)` without an opacity animation.
+- Motion-V also supplies the single application animation frame used to advance Lenis. Components must not add competing global frame loops.
+- The velocity marquee has one local frame controller shared by both rows. It only runs while visible and reads scroll position without publishing per-frame Vue state.
+- At the measured `1440px` reference viewport, neutral editorial copy uses `70px / 70px`, `-2.1px` tracking, and weight `500`.
+- Masked editorial copy uses an approximately `700ms` reveal with an `110ms` line stagger and the measured Framer easing `[0.44, 0, 0.34, 0.98]`. Fuel observes with `threshold: 0` and no root margin, so the sequence starts when the first pixel enters the viewport. It animates complete lines rather than individual glyphs.
+- General Sans can exceed the strict `70px` line box for ascenders, descenders, and accented glyphs. Grillme therefore gives each mask `0.12em` of vertical bleed, offsets that space with a negative margin, and starts the line at `translateY(125%)`. The visible rhythm remains `70px / 70px` while glyphs are not clipped.
+- Explicit line arrays are reserved for deliberate brand compositions. Normal editorial copy must use measured browser lines so negative tracking cannot produce mismatched wraps or clipped right edges.
+- Hero copy enters once, then the complete foreground drifts upward and fades as the first paper chapter covers the shader. The oversized shader layer moves farther and scales slightly to preserve overscan.
+- Parallax belongs only to bounded media/evidence windows. Text and complete chapter shells remain stable.
+- Reduced-motion mode disables Lenis smoothing, parallax, masked movement, sticky transforms, marquee movement, and count-up animation while preserving content order.
 
 ### Deliberately not copied
 

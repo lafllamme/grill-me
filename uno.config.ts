@@ -127,6 +127,9 @@ export default defineConfig({
     },
   },
   presets: [basePreset, presetIcons()],
+  shortcuts: {
+    'fuel-editorial-headline': 'text-[30px] leading-[30px] tracking-[-1.1px] font-body font-medium lg:text-[38px] lg:leading-[38px] lg:tracking-[-1.2px] xl:text-[70px] xl:leading-[70px] xl:tracking-[-2.1px]',
+  },
   preflights: [
     {
       getCSS: () => `
@@ -146,12 +149,85 @@ html, body {
   }
 }
 
-@keyframes hero-scroll-drift {
+@keyframes fuel-hero-background-drift {
   from {
+    transform: translateY(0) scale(1.04);
+  }
+  to {
+    transform: translateY(-12svh) scale(1.12);
+  }
+}
+
+@keyframes fuel-hero-exit {
+  from {
+    opacity: 1;
     transform: translateY(0);
   }
   to {
-    transform: translateY(-150px);
+    opacity: 0.38;
+    transform: translateY(-10svh);
+  }
+}
+
+@keyframes fuel-enter-down {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fuel-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fuel-mask-rise {
+  from {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(24px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes fuel-view-reveal {
+  from {
+    opacity: 0.2;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fuel-sticky-settle {
+  from {
+    transform: translateY(54px) scale(0.958);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fuel-media-parallax {
+  from {
+    transform: translateY(6%) scale(1.12);
+  }
+  to {
+    transform: translateY(-6%) scale(1.02);
   }
 }
 
@@ -171,9 +247,41 @@ html, body {
       'animation-range': 'entry 0% entry 100%',
       'animation-timeline': 'view(block)',
     }],
-    ['hero-scroll-parallax', {
-      'animation-range': '0px 1500px',
+    ['fuel-hero-background', {
+      'animation-fill-mode': 'both',
+      'animation-name': 'fuel-hero-background-drift',
+      'animation-range': '0px 1200px',
       'animation-timeline': 'scroll(root block)',
+      'animation-timing-function': 'linear',
+    }],
+    ['fuel-hero-exit', {
+      'animation-fill-mode': 'both',
+      'animation-name': 'fuel-hero-exit',
+      'animation-range': '0px 1200px',
+      'animation-timeline': 'scroll(root block)',
+      'animation-timing-function': 'linear',
+    }],
+    ['fuel-view-reveal', {
+      'animation-fill-mode': 'both',
+      'animation-name': 'fuel-view-reveal',
+      'animation-range': 'entry 4% cover 32%',
+      'animation-timeline': 'view(block)',
+      'animation-timing-function': 'cubic-bezier(0.22, 1, 0.36, 1)',
+    }],
+    ['fuel-sticky-settle', {
+      'animation-fill-mode': 'both',
+      'animation-name': 'fuel-sticky-settle',
+      'animation-range': 'entry 0% cover 34%',
+      'animation-timeline': 'view(block)',
+      'animation-timing-function': 'cubic-bezier(0.22, 1, 0.36, 1)',
+    }],
+    ['fuel-media-parallax', {
+      'animation-fill-mode': 'both',
+      'animation-name': 'fuel-media-parallax',
+      'animation-range': 'entry -10% exit 110%',
+      'animation-timeline': 'view(block)',
+      'animation-timing-function': 'linear',
+      'transform-origin': 'center',
     }],
   ],
   transformers: [transformerDirectives(), transformerVariantGroup()],

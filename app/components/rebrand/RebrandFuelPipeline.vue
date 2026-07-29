@@ -1,30 +1,31 @@
 <script setup lang="ts">
 import { Icon } from '#components'
+import RebrandScrollHeadline from '~/components/rebrand/RebrandScrollHeadline.vue'
 
 const pipelineSteps = [
   {
     index: '01',
     icon: 'ph:github-logo',
-    title: 'Fetch the public trail',
-    description: 'Recent commits, repositories, pull requests, and file-level diffs become the evidence pool.',
+    title: 'Fetch',
+    description: 'Open the public activity trail and resolve the commit references worth inspecting.',
   },
   {
     index: '02',
     icon: 'ph:funnel',
-    title: 'Separate signal from dependency noise',
-    description: 'Code-heavy commits outrank lockfiles, generated output, and changes with nothing useful to say.',
+    title: 'Select',
+    description: 'Rank code-heavy changes above lockfiles, generated output, and dependency noise.',
   },
   {
     index: '03',
     icon: 'ph:brackets-curly',
-    title: 'Build a compact case file',
-    description: 'Messages, filenames, diff statistics, and safe patch excerpts are packed into a bounded prompt.',
+    title: 'Pack',
+    description: 'Build a bounded evidence file from messages, filenames, diff statistics, and safe excerpts.',
   },
   {
     index: '04',
     icon: 'ph:sparkle',
-    title: 'Stream the verdict as it lands',
-    description: 'Reasoning status, title, roast points, fixes, and metrics arrive progressively instead of behind one spinner.',
+    title: 'Generate',
+    description: 'Stream the title, roast points, fixes, and metrics as each structured field becomes available.',
   },
 ] as const
 </script>
@@ -43,21 +44,19 @@ const pipelineSteps = [
       </p>
     </header>
 
-    <div class="pt-[clamp(8rem,17vw,18rem)]">
+    <div class="pt-[clamp(8rem,15vw,16rem)]">
       <div class="gap-10 grid lg:grid-cols-[0.23fr_1.77fr] lg:items-start">
-        <div class="border-[1px] border-signal-red-500/28 border-solid bg-signal-red-950/55 min-h-[19rem] relative overflow-hidden">
-          <div class="rounded-full bg-signal-red-600/35 h-56 w-56 left-[-5rem] top-[-4rem] absolute blur-[45px]" />
-          <div class="p-6 flex flex-col inset-0 justify-between absolute">
-            <Icon class="text-4xl text-signal-red-400" name="ph:flame" />
-            <p class="text-[10px] text-explore-muted tracking-[0.15em] font-meta uppercase">
-              Evidence engine
-            </p>
-          </div>
+        <div class="pt-2">
+          <Icon class="text-4xl text-signal-red-400" name="ph:flame" />
+          <p class="text-[10px] text-explore-muted tracking-[0.15em] font-meta mt-8 uppercase">
+            Evidence engine
+          </p>
         </div>
 
-        <h2 class="text-[clamp(3.8rem,7.8vw,9rem)] text-explore-copy leading-[0.83] tracking-[-0.075em] font-display">
-          An investigation pipeline built to make the joke technically defensible.
-        </h2>
+        <RebrandScrollHeadline
+          class="fuel-editorial-headline text-explore-copy"
+          text="The joke lands because the investigation came first."
+        />
       </div>
     </div>
 
@@ -67,7 +66,7 @@ const pipelineSteps = [
           <span class="text-xs text-signal-red-400 font-mono">{{ step.index }}</span>
           <Icon class="text-2xl text-explore-muted" :name="step.icon" />
           <div class="gap-5 grid lg:grid-cols-[0.8fr_1.2fr]">
-            <h3 class="text-2xl text-explore-copy leading-tight tracking-[-0.035em] font-display sm:text-3xl">
+            <h3 class="text-2xl text-explore-copy leading-tight tracking-[-0.02em] font-body sm:text-3xl">
               {{ step.title }}
             </h3>
             <p class="text-base text-explore-muted leading-relaxed font-body sm:text-lg">

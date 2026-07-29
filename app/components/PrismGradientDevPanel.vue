@@ -172,6 +172,8 @@ function normalizeHexColor(value: string): string | null {
 
   <div
     v-else
+    role="region"
+    aria-label="Prism gradient development controls"
     class="w-[340px] pointer-events-auto right-4 top-20 fixed z-30"
     :class="isPanelOpen ? 'h-[calc(100vh-6rem)]' : 'h-auto'"
   >

@@ -61,7 +61,32 @@ The page uses a Fuel-inspired chapter wipe rather than a rectangular section cut
 
 The diagonal belongs to a dedicated background layer. Content, rules, and interaction surfaces remain straight. Investigation and product explanation continue on the light editorial surface before a dedicated dark footer closes the sequence with a shorter, faster transition plate and an oversized Grillme wordmark.
 
-Native sticky positioning and document flow create the parallax relationship. Do not drive the background through per-frame Vue reactivity. The shader receives overscan so its edge cannot become visible while the viewport and browser chrome change size.
+Native sticky positioning and document flow create the parallax relationship. Lenis only interpolates global scroll input; CSS timelines own chapter geometry and Motion-V advances the Lenis frame. Do not drive the background through per-frame Vue reactivity. The shader receives overscan so its edge cannot become visible while the viewport and browser chrome change size.
+
+### 9. One data type, one primary display location
+
+Do not repeat live data to make a chapter look populated. Every product datum has one authoritative visual home:
+
+- current username, heat, and stream state: evidence context rail
+- current score and evidence counts: evidence metrics rail
+- grade and verdict title: final evidence surface
+- public examples: featured receipt and receipt archive
+- aggregate platform values: aggregate stats chapter
+
+Other chapters explain the product using stable concepts, not duplicated user state. This rule keeps the page legible while a roast progressively streams.
+
+### 10. Motion has separate owners
+
+- Lenis owns global wheel interpolation and anchor navigation.
+- CSS view and scroll timelines own continuous chapter covers, hero drift, bounded-media parallax, and sticky settling.
+- Motion-V owns one-shot viewport reveals and provides the shared Lenis animation frame.
+- Every neutral homepage chapter headline uses the shared `RebrandScrollHeadline` primitive and the `fuel-editorial-headline` typography shortcut.
+- Editorial copy is measured as one continuous text run and revealed by actual browser line, never by one observer or animation per character.
+- Each line rises by one full line-height through an overflow mask over `820ms`, staggered by `110ms`, with `[0.4, 0, 0.2, 1]` easing.
+- Explicit line composition is reserved for intentional brand moments such as the hero; responsive editorial copy must derive its lines from layout.
+- Parallax is limited to the opening atmosphere and bounded evidence visuals; explanatory text remains stable.
+- Local effects such as the velocity marquee may run only while visible and must not install another permanent scroll listener.
+- Reduced-motion mode replaces all movement with immediately visible final states.
 
 ## Selected exploration palette
 
@@ -86,17 +111,16 @@ The earlier `#B5284E` direction was rejected because the blue component pushed t
 
 ## Homepage layout at `/`
 
-- a compact floating navigation island adapted from the current production header
-- an oversized editorial hero and dedicated target stage sharing one sticky Prism scene
-- a scroll-linked off-white chapter wipe that covers the Prism scene and introduces the investigation
-- a separate agent-analysis stage that explains real streamed events rather than fake percentage progress
-- a flat continuation from investigation into product structure, followed by a dark closing chapter
-- three numbered editorial product rows tied directly to evidence, controlled heat, and result delivery
-- a full-height final reveal where the roast is the largest element on the page
+- a flat, dark navigation bar over an oversized hero and target stage sharing one sticky Prism scene
+- a scroll-linked off-white product statement with one vocabulary marquee
+- one evidence portfolio for the active roast, with stable rails and four sticky focal surfaces
+- a reduced four-step pipeline and three roast-level surfaces
+- one featured public receipt and an archive of independent demo receipts
+- a final roast CTA, conditional aggregate stats, method FAQ, and terminal footer
 
 `/test-1` remains the first direction study. `/` is the active homepage composition.
 
-The result area on `/` uses the Fuel-inspired evidence portfolio and editorial verdict chapters. The real reasoning trail remains part of the streamed experience while verdict, evidence, roast points, and useful feedback retain distinct visual hierarchy.
+The result area on `/` integrates the verdict into the final evidence surface. The real reasoning trail remains part of the streamed experience while title, grade, evidence, roast points, and useful feedback retain distinct visual hierarchy without a second verdict chapter.
 
 ## Explicit non-goals
 
