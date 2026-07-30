@@ -6,12 +6,7 @@ import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings
 
 const isDev = import.meta.dev
 const route = useRoute()
-const isEntryOverlayVisible = useLandingEntryOverlay()
-const isEntryOverlayRevealChrome = useLandingEntryOverlayRevealChrome()
-
-const shouldHideChromeForEntryOverlay = computed(() =>
-  route.path === '/' && isEntryOverlayVisible.value && !isEntryOverlayRevealChrome.value,
-)
+const shouldShowGlobalChrome = computed(() => route.path !== '/')
 
 const {
   settings,
@@ -42,7 +37,10 @@ function applySettings(nextSettings: PrismGradientSettings) {
 
 <template>
   <div class="text-on-surface bg-black min-h-screen selection:text-on-surface selection:bg-primary">
-    <div class="pointer-events-none inset-0 fixed z-0">
+    <div
+      v-if="shouldShowGlobalChrome"
+      class="pointer-events-none inset-0 fixed z-0"
+    >
       <PrismGradientBackground
         class="inset-0 absolute"
         :speed="settings.speed"
@@ -60,7 +58,7 @@ function applySettings(nextSettings: PrismGradientSettings) {
         enter-from-class="-translate-y-4"
         enter-to-class="translate-y-0"
       >
-        <LandingTopNav v-if="!shouldHideChromeForEntryOverlay" />
+        <LandingTopNav v-if="shouldShowGlobalChrome" />
       </Transition>
       <main>
         <slot />
@@ -68,7 +66,7 @@ function applySettings(nextSettings: PrismGradientSettings) {
     </div>
 
     <PrismGradientDevPanel
-      v-if="isDev && !shouldHideChromeForEntryOverlay"
+      v-if="isDev && shouldShowGlobalChrome"
       :settings="settings"
       :is-panel-open="isPanelOpen"
       :is-panel-visible="isPanelVisible"

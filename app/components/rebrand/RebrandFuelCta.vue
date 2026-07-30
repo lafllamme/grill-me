@@ -35,7 +35,7 @@ const evidenceLines = [
 
 <template>
   <section class="mx-auto px-4 pb-24 max-w-[96rem] lg:px-10 sm:px-6">
-    <div class="border-[1px] border-white/14 border-solid bg-basalt-950 min-h-[92svh] relative overflow-hidden">
+    <div class="border-[1px] border-white/14 rounded-4xl border-solid bg-basalt-950 min-h-[92svh] relative overflow-hidden">
       <div class="bg-signal-red-950/72 inset-0 absolute" />
       <div class="bg-signal-red-700/34 h-[44rem] w-[44rem] right-[-12rem] top-[-18rem] absolute blur-[105px]" />
       <div class="bg-black/58 h-[22rem] inset-x-0 bottom-0 absolute blur-[42px]" />

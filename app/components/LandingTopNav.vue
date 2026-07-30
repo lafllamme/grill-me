@@ -34,7 +34,15 @@ const navigationSurfaceClass = computed(() => {
     ? 'bg-black/82 border-white/12 shadow-[0_18px_60px_rgba(0,0,0,0.28)]'
     : 'bg-[rgba(38,38,38,0.07)] border-[lab(100%_0_0_/_0.1)]'
 })
-const navigationShapeClass = computed(() => isFuelSurface.value ? 'rounded-[2px] max-w-[88rem]' : 'rounded-[14px] max-w-5xl')
+const navigationFrameClass = computed(() => isFuelSurface.value
+  ? 'px-4 sm:px-6 lg:px-10'
+  : 'px-4 md:px-12 lg:px-0')
+const navigationShapeClass = computed(() => isFuelSurface.value
+  ? 'rounded-[22px] max-w-[96rem]'
+  : 'rounded-[14px] max-w-5xl')
+const mobileNavigationShapeClass = computed(() => isFuelSurface.value
+  ? 'rounded-[18px]'
+  : 'rounded-[14px] backdrop-blur-md')
 
 const defaultMenuItems = [
   { label: 'Leaderboard', to: '/leaderboard' },
@@ -98,7 +106,7 @@ const authFeedback = computed(() => {
 
 <template>
   <header class="pt-4 bg-transparent h-fit w-full fixed z-[999999] md:top-0">
-    <aside class="px-4 lg:px-0 md:px-12">
+    <aside :class="navigationFrameClass">
       <p
         v-if="authFeedback"
         class="text-xs tracking-[0.08em] font-meta mb-2 px-4 py-2 border-[1px] rounded-md border-solid bg-black/40 md:px-6"
@@ -118,7 +126,7 @@ const authFeedback = computed(() => {
             v-for="item in navigationItems"
             :key="item.to"
             class="group/navigation-menu-trigger text-sm text-white leading-6 font-body font-normal px-4 py-2 outline-none bg-transparent inline-flex h-9 w-max cursor-pointer transition-all items-center justify-center"
-            :class="[navigationHoverClass, isFuelSurface ? 'rounded-[2px]' : 'rounded-full']"
+            :class="[navigationHoverClass, isFuelSurface ? 'rounded-[10px]' : 'rounded-full']"
             :to="item.to"
           >
             {{ item.label }}
@@ -153,7 +161,7 @@ const authFeedback = computed(() => {
 
       <nav
         class="border-[1px] border-solid max-h-[calc(100lvh-2rem)] w-full relative overflow-auto md:max-h-[calc(60lvh-2rem)] lg:hidden"
-        :class="[navigationSurfaceClass, isFuelSurface ? 'rounded-[2px]' : 'rounded-[14px] backdrop-blur-md']"
+        :class="[navigationSurfaceClass, mobileNavigationShapeClass]"
         @wheel.stop
         @touchmove.stop
       >

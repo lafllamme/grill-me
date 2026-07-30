@@ -32,7 +32,7 @@ const levels = [
     <div class="pt-[clamp(7rem,15vw,15rem)]">
       <RebrandScrollHeadline
         class="fuel-editorial-headline text-basalt-950"
-        text="Public evidence becomes a verdict you can laugh at, verify, and improve from."
+        text="Public code leaves a trail of decisions, shortcuts, and accidental architecture. Grillme turns that evidence into a verdict you can laugh at, verify, and improve from."
       />
 
       <div class="pt-[clamp(7rem,12vw,11rem)] gap-14 grid fuel-view-reveal lg:grid-cols-[0.78fr_1.22fr] motion-reduce:[animation:none] lg:items-start">

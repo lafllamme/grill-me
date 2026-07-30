@@ -14,7 +14,7 @@ defineProps<{
     <RebrandChapterMeta index="05" title="Featured public roast" />
 
     <div class="pt-24 gap-12 grid lg:gap-20 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-      <RebrandParallaxMedia class="border-[1px] border-basalt-950/18 border-solid bg-basalt-950 min-h-[35rem] min-w-0">
+      <RebrandParallaxMedia class="border-[1px] border-basalt-950/18 rounded-4xl border-solid bg-basalt-950 min-h-[35rem] min-w-0">
         <template #media>
           <div class="bg-signal-red-950/70 inset-0 absolute" />
           <div class="bg-signal-red-700/28 h-[30rem] w-[30rem] right-[-10rem] top-[-10rem] absolute blur-[78px]" />

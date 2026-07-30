@@ -55,7 +55,7 @@ const pipelineSteps = [
 
         <RebrandScrollHeadline
           class="fuel-editorial-headline text-explore-copy"
-          text="The joke lands because the investigation came first."
+          text="The joke lands because the investigation came first: public commits are fetched, noisy changes are filtered, and every punchline stays attached to evidence."
         />
       </div>
     </div>

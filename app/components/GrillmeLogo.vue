@@ -1,13 +1,21 @@
 <script setup lang="ts">
 withDefaults(defineProps<{
   accent?: string
+  showWordmark?: boolean
 }>(), {
   accent: '#FF5633',
+  showWordmark: true,
 })
 </script>
 
 <template>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 48" fill="none" role="img" aria-label="Grillme">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    :viewBox="showWordmark ? '0 0 132 48' : '0 0 42 48'"
+    fill="none"
+    role="img"
+    aria-label="Grillme"
+  >
     <g :stroke="accent" stroke-width="4">
       <path d="M20 4V16.3604C20 19.087 16.6569 20.3998 14.8016 18.4017L7 10" />
       <path d="M40 24H27.6396C24.913 24 23.6002 20.6569 25.5983 18.8016L34 11" />
@@ -15,6 +23,7 @@ withDefaults(defineProps<{
       <path d="M0 24L12.3604 24C15.087 24 16.3998 27.3431 14.4017 29.1984L6 37" />
     </g>
     <text
+      v-if="showWordmark"
       x="46"
       y="35.5"
       fill="#F5F5F5"

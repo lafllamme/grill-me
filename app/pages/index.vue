@@ -4,7 +4,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
 import LandingEntryOverlay from '~/components/LandingEntryOverlay.vue'
-import LandingTopNav from '~/components/LandingTopNav.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import RebrandChapterShell from '~/components/rebrand/RebrandChapterShell.vue'
@@ -14,11 +13,11 @@ import RebrandFuelCta from '~/components/rebrand/RebrandFuelCta.vue'
 import RebrandFuelEditorial from '~/components/rebrand/RebrandFuelEditorial.vue'
 import RebrandFuelFeaturedReceipt from '~/components/rebrand/RebrandFuelFeaturedReceipt.vue'
 import RebrandFuelFooter from '~/components/rebrand/RebrandFuelFooter.vue'
+import RebrandFuelHeroNav from '~/components/rebrand/RebrandFuelHeroNav.vue'
 import RebrandFuelLevels from '~/components/rebrand/RebrandFuelLevels.vue'
 import RebrandFuelPipeline from '~/components/rebrand/RebrandFuelPipeline.vue'
 import RebrandFuelPortfolio from '~/components/rebrand/RebrandFuelPortfolio.vue'
 import RebrandFuelStats from '~/components/rebrand/RebrandFuelStats.vue'
-import RebrandScrollHeadline from '~/components/rebrand/RebrandScrollHeadline.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
 import { useFuelRoastViewModel } from '~/composables/useFuelRoastViewModel'
 import { useLandingEntryOverlay } from '~/composables/useLandingEntryOverlay'
@@ -224,7 +223,7 @@ function updateUsername(value: string) {
       :aria-hidden="isEntryOverlayVisible"
       :inert="isEntryOverlayVisible || undefined"
     >
-      <LandingTopNav v-if="!isEntryOverlayVisible" variant="signal" surface="fuel" />
+      <RebrandFuelHeroNav v-if="!isEntryOverlayVisible" />
 
       <main class="relative overflow-clip">
         <section class="bg-black relative z-0 isolate">
@@ -246,40 +245,55 @@ function updateUsername(value: string) {
           </div>
 
           <div class="relative z-10 fuel-hero-exit -mt-[100svh] motion-reduce:[animation:none]">
-            <section class="mx-auto px-4 pb-10 pt-32 flex flex-col max-w-[88rem] min-h-[58svh] justify-between lg:px-10 sm:px-6 sm:pt-40">
-              <div class="fuel-hero-copy gap-12 grid lg:gap-24 lg:grid-cols-[0.62fr_1.38fr] lg:items-end">
-                <div class="max-w-[22rem]">
-                  <p class="text-xs text-signal-red-400 tracking-[0.2em] font-meta uppercase">
-                    Public commits. Private consequences.
+            <section
+              id="top"
+              class="px-[clamp(1.5rem,2.4vw,3rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
+            >
+              <div
+                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[18svh]"
+              >
+                <div class="max-w-[18rem]">
+                  <p class="text-[clamp(1.35rem,1.8vw,2rem)] text-explore-copy leading-[1.02] tracking-[-0.035em] font-display font-semibold">
+                    Your code remembers.
                   </p>
-                  <p class="text-lg text-explore-copy leading-relaxed font-body mt-8">
-                    Start your roast with one public GitHub username. Grillme finds the trail and keeps the evidence attached.
+                  <p class="text-sm text-explore-copy/72 leading-relaxed font-body mt-5 max-w-[16rem]">
+                    One public GitHub username is enough. Grillme follows the trail and
+                    keeps the evidence attached.
                   </p>
-                  <a href="#evidence" class="text-sm text-explore-copy font-body mt-10 pb-2 border-b-[1px] border-white/45 border-solid flex max-w-[13rem] items-center justify-between">
-                    Explore the evidence
+                  <a
+                    href="#target"
+                    class="text-sm text-explore-copy font-body mt-9 pb-2 border-b-[1px] border-white/55 border-solid flex max-w-[14rem] transition-colors items-center justify-between hover:border-white"
+                  >
+                    Grill now
                     <span aria-hidden="true">↘</span>
                   </a>
                 </div>
-
-                <RebrandScrollHeadline
-                  as="h1"
-                  class="text-[clamp(4.4rem,10vw,10.5rem)] text-explore-copy leading-[0.84] tracking-[-0.055em] font-display font-semibold lg:text-right"
-                  :lines="['Your code', 'remembers.']"
-                  :amount="0.12"
-                  :delay="0.08"
-                />
               </div>
 
-              <div class="mt-16 pt-5 border-t-[1px] border-white/18 border-solid gap-6 grid grid-cols-[auto_1fr_auto] items-end">
-                <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
-                  © 2026
-                </p>
-                <div class="px-4 flex gap-2 items-center justify-center">
-                  <span v-for="marker in 6" :key="marker" class="bg-white/25 h-[1px] w-5" :class="marker === 1 ? 'bg-signal-red-400 w-10' : ''" />
+              <div class="mt-12">
+                <div class="mb-5 gap-6 grid grid-cols-[auto_1fr] items-end sm:grid-cols-[auto_1fr_auto]">
+                  <p class="text-[10px] text-explore-copy/60 tracking-[0.14em] font-meta uppercase">
+                    © 2026
+                  </p>
+                  <div class="px-4 flex gap-2 items-center justify-center">
+                    <span
+                      v-for="marker in 10"
+                      :key="marker"
+                      class="bg-white/25 h-3 w-[1px]"
+                      :class="marker === 1 ? 'bg-signal-red-400 h-6' : ''"
+                    />
+                  </div>
+                  <p class="text-[10px] text-explore-copy/55 tracking-[0.14em] font-meta hidden uppercase sm:block">
+                    Public commits / private consequences
+                  </p>
                 </div>
-                <p class="text-[clamp(1.6rem,3vw,3rem)] text-explore-copy leading-none tracking-[-0.04em] font-display">
-                  GRILLME
-                </p>
+
+                <h1
+                  aria-label="Grill me"
+                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.76] tracking-[-0.075em] font-display font-semibold pb-[0.04em] text-center whitespace-nowrap"
+                >
+                  GRILL ME
+                </h1>
               </div>
             </section>
 

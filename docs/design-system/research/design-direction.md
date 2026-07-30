@@ -37,6 +37,8 @@ Working radius tiers:
 - control: `12-16px`
 - pill: reserved for actions, status, or compact selectors
 
+The homepage applies these tiers selectively. Navigation, roast-level modules, featured evidence media, and the final CTA may use soft geometry. Chapter cuts, metadata rails, evidence tables, and archive rows remain sharp so the Fuel-inspired editorial grid keeps its precision.
+
 ### 4. Glass needs mass
 
 Glass is not a transparent gray rectangle. It needs a dark tint, a subtle light-facing border, a deeper lower edge, and enough opacity to keep text stable over the animated background.
@@ -82,6 +84,7 @@ Other chapters explain the product using stable concepts, not duplicated user st
 - Motion-V owns one-shot viewport reveals and provides the shared Lenis animation frame.
 - Every neutral homepage chapter headline uses the shared `RebrandScrollHeadline` primitive and the `fuel-editorial-headline` typography shortcut.
 - Editorial copy is measured as one continuous text run and revealed by actual browser line, never by one observer or animation per character.
+- Primary product and pipeline statements should provide enough copy for roughly four to five desktop lines. Short verdicts, CTA headlines, and footer wordmarks remain intentionally compact.
 - Each line rises by one full line-height through an overflow mask over `820ms`, staggered by `110ms`, with `[0.4, 0, 0.2, 1]` easing.
 - Explicit line composition is reserved for intentional brand moments such as the hero; responsive editorial copy must derive its lines from layout.
 - Parallax is limited to the opening atmosphere and bounded evidence visuals; explanatory text remains stable.
