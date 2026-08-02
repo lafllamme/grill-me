@@ -161,17 +161,8 @@ function normalizeHexColor(value: string): string | null {
 </script>
 
 <template>
-  <button
-    v-if="!isPanelVisible"
-    type="button"
-    class="text-xs text-on-surface-variant tracking-[0.12em] px-3 py-2 border border-divider rounded-lg border-solid bg-surface/85 pointer-events-auto uppercase right-4 top-20 fixed z-30 backdrop-blur-md hover:bg-surface-container"
-    @click="emit('show')"
-  >
-    Prism
-  </button>
-
   <div
-    v-else
+    v-if="isPanelVisible"
     role="region"
     aria-label="Prism gradient development controls"
     class="w-[340px] pointer-events-auto right-4 top-20 fixed z-30"
