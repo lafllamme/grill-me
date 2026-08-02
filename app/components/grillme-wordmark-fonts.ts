@@ -38,6 +38,15 @@ export const WORDMARK_FONTS: Record<string, WordmarkFontConfig> = {
     scaleX: 1.18,
     viewBoxWidth: 254,
   },
+  jakarta: {
+    label: 'Plus Jakarta Sans',
+    family: 'Plus Jakarta Sans, sans-serif',
+    weight: 800,
+    fontSize: 34,
+    letterSpacing: '-0.02em',
+    scaleX: 1.12,
+    viewBoxWidth: 258,
+  },
   zodiak: {
     label: 'Zodiak',
     family: 'Zodiak, serif',

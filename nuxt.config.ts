@@ -38,6 +38,14 @@ export default defineNuxtConfig({
         src: [{ url: '/fonts/fontshare/general-sans/General-Sans__Variable.woff2', format: 'woff2' }],
       },
       {
+        name: 'Plus Jakarta Sans',
+        global: true,
+        preload: false,
+        weight: [200, 800],
+        style: 'normal',
+        src: [{ url: '/fonts/plus-jakarta/PlusJakartaSans-Variable.woff2', format: 'woff2' }],
+      },
+      {
         name: 'Zodiak',
         global: true,
         preload: false,
