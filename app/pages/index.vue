@@ -49,10 +49,6 @@ const activeWordmarkFont = computed(() => {
 })
 const reducedMotion = usePreferredReducedMotion()
 const heroEntryInitial = computed(() => reducedMotion.value === 'reduce' ? false : 'hidden')
-const heroCopyContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-}
 const heroCopyItemVariants = {
   hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0 },
@@ -61,9 +57,30 @@ const heroWordmarkVariants = {
   hidden: { opacity: 0, y: 170 },
   visible: { opacity: 1, y: 0 },
 }
-const heroCopyTransition = { duration: 1.3, ease: [0.22, 1, 0.36, 1] as const, delay: 0.42 }
-const heroCopyItemTransition = { duration: 1.3, ease: [0.22, 1, 0.36, 1] as const }
+const heroBackgroundVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+}
+const heroCopyItemTransition = { duration: 0.68, ease: [0.22, 1, 0.36, 1] as const }
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
+const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const }
+const heroBackgroundFallbackDelay = 1500
+const isHeroBackgroundMounted = ref(false)
+const isHeroBackgroundVisible = ref(false)
+let heroBackgroundRevealTimer: ReturnType<typeof setTimeout> | null = null
+let heroBackgroundRevealFrame: number | null = null
+const heroAnimationState = computed(() => {
+  if (reducedMotion.value === 'reduce')
+    return 'visible'
+
+  return isEntryOverlayVisible.value ? 'hidden' : 'visible'
+})
+const heroBackgroundAnimationState = computed(() => {
+  if (reducedMotion.value === 'reduce')
+    return 'visible'
+
+  return isHeroBackgroundVisible.value ? 'visible' : 'hidden'
+})
 const { onContinue, onNotToday } = createEntryOverlayActions({
   isOverlayVisible: isEntryOverlayVisible,
   navigateTo,
@@ -179,8 +196,31 @@ const fuelRoast = useFuelRoastViewModel({
   isActive: isLiveRoastActive,
 })
 
+function scheduleHeroBackgroundReveal() {
+  if (isEntryOverlayVisible.value || isHeroBackgroundMounted.value || !import.meta.client)
+    return
+
+  heroBackgroundRevealFrame = window.requestAnimationFrame(() => {
+    isHeroBackgroundMounted.value = true
+    heroBackgroundRevealTimer = window.setTimeout(() => {
+      isHeroBackgroundVisible.value = true
+      heroBackgroundRevealTimer = null
+    }, heroBackgroundFallbackDelay)
+    heroBackgroundRevealFrame = null
+  })
+}
+
+function revealHeroBackground() {
+  isHeroBackgroundVisible.value = true
+  if (heroBackgroundRevealTimer) {
+    clearTimeout(heroBackgroundRevealTimer)
+    heroBackgroundRevealTimer = null
+  }
+}
+
 onMounted(() => {
   isPageInteractive.value = true
+  scheduleHeroBackgroundReveal()
 })
 
 watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
@@ -196,7 +236,16 @@ watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
   startSmoothScroll()
 }, { immediate: true })
 
+watch(isEntryOverlayVisible, (isVisible) => {
+  if (!isVisible)
+    scheduleHeroBackgroundReveal()
+})
+
 onBeforeUnmount(() => {
+  if (import.meta.client && heroBackgroundRevealFrame !== null)
+    window.cancelAnimationFrame(heroBackgroundRevealFrame)
+  if (heroBackgroundRevealTimer)
+    clearTimeout(heroBackgroundRevealTimer)
   startSmoothScroll()
 })
 
@@ -255,17 +304,29 @@ function updateUsername(value: string) {
       <main class="relative overflow-clip">
         <section class="bg-black relative z-0 isolate">
           <div class="h-[100svh] pointer-events-none top-0 sticky overflow-hidden">
-            <div class="inset-x-[-5%] bottom-[-180px] top-[-5%] absolute fuel-hero-background motion-reduce:[animation:none]">
-              <PrismGradientBackground
-                class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
-                :speed="prismSettings.speed"
-                :ambient-opacity="prismSettings.ambientOpacity"
-                :radius="prismSettings.radius"
-                :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
-                :colors="{ dark: prismSettings.darkColors, light: prismSettings.lightColors }"
-                :shader="prismShaderSettings"
-              />
-            </div>
+            <motion.div
+              aria-hidden="true"
+              class="inset-0 absolute"
+              :initial="heroEntryInitial"
+              :animate="heroBackgroundAnimationState"
+              :variants="heroBackgroundVariants"
+              :transition="heroBackgroundTransition"
+            >
+              <div class="inset-x-[-5%] bottom-[-180px] top-[-5%] absolute fuel-hero-background motion-reduce:[animation:none]">
+                <PrismGradientBackground
+                  v-if="isHeroBackgroundMounted"
+                  class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
+                  :speed="prismSettings.speed"
+                  :ambient-opacity="prismSettings.ambientOpacity"
+                  :radius="prismSettings.radius"
+                  :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
+                  :colors="{ dark: prismSettings.darkColors, light: prismSettings.lightColors }"
+                  :shader="prismShaderSettings"
+                  @error="revealHeroBackground"
+                  @ready="revealHeroBackground"
+                />
+              </div>
+            </motion.div>
             <div class="bg-black/8 inset-0 absolute" />
             <div class="inset-0 absolute from-transparent to-black/25 via-transparent bg-gradient-to-br" />
             <div class="h-[24svh] inset-x-0 bottom-0 absolute from-transparent to-black/8 bg-gradient-to-b" />
@@ -276,20 +337,16 @@ function updateUsername(value: string) {
               id="top"
               class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
             >
-              <motion.div
+              <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
-                :initial="heroEntryInitial"
-                animate="visible"
-                :variants="heroCopyContainerVariants"
-                :transition="heroCopyTransition"
               >
                 <div class="w-[15.6rem] max-w-full">
                   <motion.p
                     class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal"
                     :initial="heroEntryInitial"
-                    animate="visible"
+                    :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.44 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.08 }"
                   >
                     <span class="block">Your code remembers.</span>
                     <span class="block">Public commits leave a trail,</span>
@@ -299,15 +356,15 @@ function updateUsername(value: string) {
                     href="#target"
                     class="text-base text-explore-copy/78 font-body font-normal mt-10 pb-3 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white"
                     :initial="heroEntryInitial"
-                    animate="visible"
+                    :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.58 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.24 }"
                   >
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
                   </motion.a>
                 </div>
-              </motion.div>
+              </div>
 
               <div class="mt-[1.1rem]">
                 <div class="mb-5 gap-6 grid grid-cols-[auto_1fr] items-end sm:grid-cols-[auto_1fr_auto]">
@@ -329,9 +386,9 @@ function updateUsername(value: string) {
 
                 <motion.h1
                   aria-label="Grill me"
-                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right"
+                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right ml-auto w-full max-w-[57.75rem]"
                   :initial="heroEntryInitial"
-                  animate="visible"
+                  :animate="heroAnimationState"
                   :variants="heroWordmarkVariants"
                   :transition="heroWordmarkTransition"
                   :style="{

@@ -30,6 +30,11 @@ const props = withDefaults(defineProps<PrismGradientBackgroundProps>(), {
   class: '',
 })
 
+const emit = defineEmits<{
+  ready: []
+  error: []
+}>()
+
 const PRISM = {
   dark: ['#050505', '#66B3FF', '#FFFFFF'],
   light: ['#FAFAFA', '#66B3FF', '#050505'],
@@ -145,6 +150,8 @@ void main() {
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const webglFailed = ref(false)
+const hasRenderedFrame = ref(false)
+const hasAnnouncedReady = ref(false)
 const mounted = ref(false)
 const colorMode = useColorMode()
 
@@ -182,6 +189,8 @@ let requestRender: (() => void) | null = null
 function setup() {
   cleanup?.()
   cleanup = null
+  hasRenderedFrame.value = false
+  hasAnnouncedReady.value = false
 
   const canvas = canvasRef.value
   const container = containerRef.value
@@ -379,6 +388,11 @@ function setup() {
 
     gl.uniform1f(uniforms.time, elapsed * prismSpeed + shaderSettings.value.offset * 0.01)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
+    hasRenderedFrame.value = true
+    if (!hasAnnouncedReady.value) {
+      hasAnnouncedReady.value = true
+      emit('ready')
+    }
 
     if (!reduceMotion && props.speed > 0)
       frameId = requestAnimationFrame(draw)
@@ -439,6 +453,11 @@ watch([colors, shaderSettings, () => props.speed], () => {
   requestRender?.()
 }, { deep: true })
 
+watch(webglFailed, (hasFailed) => {
+  if (hasFailed)
+    emit('error')
+})
+
 onBeforeUnmount(() => {
   cleanup?.()
   cleanup = null
@@ -478,7 +497,7 @@ const ambientStyle = computed(() => ({
     :style="{ borderRadius: props.radius }"
   >
     <div class="inset-0 absolute" :style="fallbackStyle" />
-    <canvas ref="canvasRef" class="size-full block transition-opacity duration-300 relative" :class="webglFailed ? 'opacity-0' : 'opacity-100'" />
+    <canvas ref="canvasRef" class="size-full block transition-opacity duration-300 relative" :class="webglFailed || !hasRenderedFrame ? 'opacity-0' : 'opacity-100'" />
     <div
       v-if="props.ambientOpacity > 0"
       class="pointer-events-none inset-0 absolute mix-blend-screen"
