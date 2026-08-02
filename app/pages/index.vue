@@ -253,14 +253,14 @@ function updateUsername(value: string) {
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[18svh]"
               >
-                <div class="max-w-[20rem]">
-                  <p class="text-[clamp(1.35rem,1.8vw,2rem)] text-explore-copy leading-[1.02] tracking-[-0.035em] font-display font-semibold max-w-[14ch]">
-                    Your code
-                    <span class="text-signal-red-400 block">remembers.</span>
+                <div class="max-w-[21rem]">
+                  <p class="text-[clamp(1.35rem,1.8vw,2rem)] text-explore-copy leading-[1.08] tracking-[-0.035em] font-body font-normal">
+                    <span class="block">Your code remembers.</span>
+                    <span class="text-explore-copy/52 block">Every public commit leaves a receipt.</span>
                   </p>
-                  <a href="#target" class="text-sm text-explore-copy font-body mt-10 pb-2 border-b-[1px] border-white/55 border-solid flex max-w-[14rem] transition-colors items-center justify-between hover:border-white">
+                  <a href="#target" class="text-sm text-explore-copy/78 font-body mt-10 pb-2 border-b-[1px] border-white/55 border-solid flex max-w-[14rem] transition-colors items-center justify-between hover:text-explore-copy hover:border-white">
                     Grill now
-                    <span aria-hidden="true">↘</span>
+                    <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
                   </a>
                 </div>
               </div>
