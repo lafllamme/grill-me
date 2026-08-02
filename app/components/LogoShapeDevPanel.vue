@@ -12,17 +12,17 @@ const router = useRouter()
 
 const activeShape = computed(() => {
   const raw = route.query.logo
-  return typeof raw === 'string' ? raw : undefined
+  return typeof raw === 'string' ? raw : '85'
 })
 
 const activeFont = computed(() => {
   const raw = route.query.font
-  return typeof raw === 'string' ? raw : 'azeret'
+  return typeof raw === 'string' ? raw : 'bricolage'
 })
 
-function selectShape(id?: string) {
+function selectShape(id = '85') {
   const query = { ...route.query }
-  if (id) {
+  if (id && id !== '85') {
     query.logo = id
   }
   else {
@@ -43,9 +43,9 @@ function selectFont(id: string) {
 }
 
 function stepShape(direction: 1 | -1) {
-  const currentIndex = activeShape.value ? SHAPE_IDS.indexOf(activeShape.value) : -1
-  const nextIndex = (currentIndex + direction + SHAPE_IDS.length + 1) % (SHAPE_IDS.length + 1)
-  selectShape(nextIndex === SHAPE_IDS.length ? undefined : SHAPE_IDS[nextIndex])
+  const currentIndex = SHAPE_IDS.indexOf(activeShape.value)
+  const nextIndex = (currentIndex + direction + SHAPE_IDS.length) % SHAPE_IDS.length
+  selectShape(SHAPE_IDS[nextIndex])
 }
 </script>
 
@@ -53,36 +53,36 @@ function stepShape(direction: 1 | -1) {
   <div
     class="text-explore-copy p-3 border border-white/10 rounded-xl bg-black/70 max-w-[560px] left-6 bottom-6 fixed z-50 backdrop-blur-md"
   >
-    <div class="mb-2 flex gap-2 items-center">
-      <span class="text-[10px] tracking-[0.14em] font-meta uppercase opacity-60">Logo mark</span>
-      <button
-        type="button"
-        class="text-xs px-2 py-0.5 rounded-md transition-colors hover:bg-white/15"
-        aria-label="Previous logo shape"
-        @click="stepShape(-1)"
-      >
-        ←
-      </button>
-      <button
-        type="button"
-        class="text-xs px-2 py-0.5 rounded-md transition-colors hover:bg-white/15"
-        aria-label="Next logo shape"
-        @click="stepShape(1)"
-      >
-        →
-      </button>
-      <button
-        type="button"
-        class="text-[11px] font-meta px-2 py-0.5 rounded-md transition-colors"
-        :class="!activeShape ? 'bg-white/20' : 'opacity-60 hover:bg-white/15 hover:opacity-100'"
-        @click="selectShape(undefined)"
-      >
-        ✳ default
-      </button>
-      <span
-        v-if="activeShape"
-        class="text-[11px] font-meta opacity-60"
-      >#{{ activeShape }}</span>
+    <div class="mb-3 flex items-center justify-between">
+      <div class="gap-2 flex items-center">
+        <span class="text-[10px] tracking-[0.14em] font-meta uppercase opacity-60">Logo mark</span>
+        <span class="text-[11px] font-meta px-2 py-0.5 rounded-md bg-white/20">#{{ activeShape }} · Stripe flame</span>
+      </div>
+      <div class="gap-1 flex items-center">
+        <button
+          type="button"
+          class="text-xs px-2 py-0.5 rounded-md transition-colors hover:bg-white/15"
+          aria-label="Previous logo shape"
+          @click="stepShape(-1)"
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          class="text-xs px-2 py-0.5 rounded-md transition-colors hover:bg-white/15"
+          aria-label="Next logo shape"
+          @click="stepShape(1)"
+        >
+          →
+        </button>
+        <button
+          type="button"
+          class="text-[11px] font-meta px-2 py-0.5 rounded-md opacity-60 transition-colors hover:bg-white/15 hover:opacity-100"
+          @click="selectShape()"
+        >
+          Reset
+        </button>
+      </div>
     </div>
     <div class="grid grid-cols-12 gap-1">
       <button
@@ -90,6 +90,8 @@ function stepShape(direction: 1 | -1) {
         :key="id"
         type="button"
         class="text-[10px] font-meta px-1 py-0.5 rounded transition-colors"
+        :aria-label="`Select logo shape ${id}`"
+        :aria-pressed="activeShape === id"
         :class="activeShape === id ? 'bg-white/25' : 'opacity-55 hover:bg-white/15 hover:opacity-100'"
         @click="selectShape(id)"
       >
@@ -103,6 +105,7 @@ function stepShape(direction: 1 | -1) {
         :key="id"
         type="button"
         class="text-[11px] font-meta px-2 py-0.5 rounded-md transition-colors"
+        :aria-pressed="activeFont === id"
         :class="activeFont === id ? 'bg-white/20' : 'opacity-60 hover:bg-white/15 hover:opacity-100'"
         @click="selectFont(id)"
       >

@@ -6,7 +6,7 @@ import GrillmeLogo from '~/components/GrillmeLogo.vue'
 const route = useRoute()
 const logoShapeVariant = computed(() => {
   const raw = route.query.logo
-  return typeof raw === 'string' ? raw : undefined
+  return typeof raw === 'string' ? raw : '85'
 })
 const logoFontVariant = computed(() => {
   const raw = route.query.font
