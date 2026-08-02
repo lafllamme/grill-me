@@ -4,10 +4,6 @@ import { computed, ref } from 'vue'
 import GrillmeLogo from '~/components/GrillmeLogo.vue'
 
 const route = useRoute()
-const logoShapeVariant = computed(() => {
-  const raw = route.query.logo
-  return typeof raw === 'string' ? raw : '85'
-})
 const logoFontVariant = computed(() => {
   const raw = route.query.font
   return typeof raw === 'string' ? raw : undefined
@@ -35,7 +31,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
       >
         <GrillmeLogo
           accent="#F5F5F5"
-          :shape="logoShapeVariant"
+          shape="85"
           :font="logoFontVariant"
           wordmark="GRILL"
           class="h-full w-auto"
