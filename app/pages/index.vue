@@ -66,9 +66,7 @@ const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as cons
 const heroBackgroundFallbackDelay = 1500
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
-const isHeroRevealStarted = ref(false)
 let heroBackgroundRevealFrame: number | null = null
-let heroRevealFrame: number | null = null
 const { start: startHeroBackgroundFallback, stop: stopHeroBackgroundFallback } = useTimeoutFn(() => {
   isHeroBackgroundVisible.value = true
 }, heroBackgroundFallbackDelay, { immediate: false })
@@ -76,7 +74,7 @@ const heroAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
     return 'visible'
 
-  return isHeroRevealStarted.value ? 'visible' : 'hidden'
+  return isEntryOverlayVisible.value ? 'hidden' : 'visible'
 })
 const heroBackgroundAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
@@ -100,7 +98,6 @@ async function revealHomepage() {
   scrollToTop({ force: true, immediate: true })
   onContinue()
   await nextTick()
-  startHeroReveal()
   startSmoothScroll()
 }
 
@@ -216,26 +213,9 @@ function revealHeroBackground() {
   stopHeroBackgroundFallback()
 }
 
-function startHeroReveal() {
-  if (isHeroRevealStarted.value || heroRevealFrame !== null || !import.meta.client)
-    return
-
-  if (reducedMotion.value === 'reduce') {
-    isHeroRevealStarted.value = true
-    return
-  }
-
-  heroRevealFrame = window.requestAnimationFrame(() => {
-    isHeroRevealStarted.value = true
-    heroRevealFrame = null
-  })
-}
-
 onMounted(() => {
   isPageInteractive.value = true
   scheduleHeroBackgroundReveal()
-  if (!isEntryOverlayVisible.value)
-    startHeroReveal()
 })
 
 watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
@@ -252,17 +232,13 @@ watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
 }, { immediate: true })
 
 watch(isEntryOverlayVisible, (isVisible) => {
-  if (!isVisible) {
+  if (!isVisible)
     scheduleHeroBackgroundReveal()
-    startHeroReveal()
-  }
 })
 
 onBeforeUnmount(() => {
   if (import.meta.client && heroBackgroundRevealFrame !== null)
     window.cancelAnimationFrame(heroBackgroundRevealFrame)
-  if (import.meta.client && heroRevealFrame !== null)
-    window.cancelAnimationFrame(heroRevealFrame)
   stopHeroBackgroundFallback()
   startSmoothScroll()
 })
@@ -317,10 +293,7 @@ function updateUsername(value: string) {
       :aria-hidden="isEntryOverlayVisible"
       :inert="isEntryOverlayVisible || undefined"
     >
-      <RebrandFuelHeroNav
-        v-if="!isEntryOverlayVisible"
-        :is-revealed="isHeroRevealStarted"
-      />
+      <RebrandFuelHeroNav v-if="!isEntryOverlayVisible" />
 
       <main class="relative overflow-clip">
         <section class="bg-black relative z-0 isolate">
@@ -367,7 +340,7 @@ function updateUsername(value: string) {
                     :initial="heroEntryInitial"
                     :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.14 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.08 }"
                   >
                     <span class="block">Your code remembers.</span>
                     <span class="block">Public commits leave a trail,</span>
@@ -379,7 +352,7 @@ function updateUsername(value: string) {
                     :initial="heroEntryInitial"
                     :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.34 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.24 }"
                   >
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
@@ -411,7 +384,7 @@ function updateUsername(value: string) {
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
                   :variants="heroWordmarkVariants"
-                  :transition="{ ...heroWordmarkTransition, delay: 0.18 }"
+                  :transition="heroWordmarkTransition"
                   :style="{
                     fontFamily: activeWordmarkFont.family,
                     fontWeight: activeWordmarkFont.weight,

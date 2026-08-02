@@ -5,12 +5,6 @@ import { computed, ref } from 'vue'
 
 import GrillmeLogo from '~/components/GrillmeLogo.vue'
 
-const props = withDefaults(defineProps<{
-  isRevealed?: boolean
-}>(), {
-  isRevealed: false,
-})
-
 const route = useRoute()
 const logoFontVariant = computed(() => {
   const raw = route.query.font
@@ -27,22 +21,21 @@ const navigationItems = [
 const hoveredNavigationIndex = ref<number | null>(null)
 const reducedMotion = usePreferredReducedMotion()
 const heroEntryInitial = computed(() => reducedMotion.value === 'reduce' ? false : 'hidden')
-const heroAnimationState = computed(() => props.isRevealed || reducedMotion.value === 'reduce' ? 'visible' : 'hidden')
 
 const heroHeaderVariants = {
-  hidden: { opacity: 0, y: -28 },
+  hidden: { opacity: 0, y: -100 },
   visible: { opacity: 1, y: 0 },
 }
 const navigationItemVariants = {
-  hidden: { opacity: 0, y: -8 },
+  hidden: { opacity: 0, y: -14 },
   visible: { opacity: 1, y: 0 },
 }
-const heroHeaderTransition = { duration: 0.95, ease: [0.22, 1, 0.36, 1] as const, delay: 0.02 }
+const heroHeaderTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.15 }
 function createNavigationItemTransition(index: number) {
   return {
-    duration: 0.78,
+    duration: 0.72,
     ease: [0.22, 1, 0.36, 1] as const,
-    delay: 0.16 + index * 0.2,
+    delay: 0.18 + index * 0.18,
   }
 }
 </script>
@@ -52,7 +45,7 @@ function createNavigationItemTransition(index: number) {
     <motion.div
       class="px-[clamp(1.5rem,1.5vw,2rem)] mt-6 flex h-[4.375rem] w-full pointer-events-auto items-center justify-between relative"
       :initial="heroEntryInitial"
-      :animate="heroAnimationState"
+      animate="visible"
       :variants="heroHeaderVariants"
       :transition="heroHeaderTransition"
     >
@@ -80,7 +73,7 @@ function createNavigationItemTransition(index: number) {
             :href="item.href"
             class="group text-sm text-explore-copy font-body pr-3.5 relative"
             :initial="heroEntryInitial"
-            :animate="heroAnimationState"
+            animate="visible"
             :variants="navigationItemVariants"
             :transition="createNavigationItemTransition(navigationIndex)"
             @mouseenter="hoveredNavigationIndex = navigationIndex"
