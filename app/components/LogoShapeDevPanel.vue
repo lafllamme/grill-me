@@ -15,12 +15,7 @@ const activeFont = computed(() => {
 
 function selectFont(id: string) {
   const query = { ...route.query }
-  if (id === 'azeret') {
-    delete query.font
-  }
-  else {
-    query.font = id
-  }
+  query.font = id
   void router.replace({ query })
 }
 </script>
