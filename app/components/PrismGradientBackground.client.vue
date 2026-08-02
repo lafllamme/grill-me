@@ -497,7 +497,7 @@ const ambientStyle = computed(() => ({
     :style="{ borderRadius: props.radius }"
   >
     <div class="inset-0 absolute" :style="fallbackStyle" />
-    <canvas ref="canvasRef" class="size-full block transition-opacity duration-300 relative" :class="webglFailed || !hasRenderedFrame ? 'opacity-0' : 'opacity-100'" />
+    <canvas ref="canvasRef" class="size-full block relative" :class="webglFailed || !hasRenderedFrame ? 'opacity-0' : 'opacity-100'" />
     <div
       v-if="props.ambientOpacity > 0"
       class="pointer-events-none inset-0 absolute mix-blend-screen"
