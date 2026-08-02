@@ -4,6 +4,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
 import LandingEntryOverlay from '~/components/LandingEntryOverlay.vue'
+import LogoShapeDevPanel from '~/components/LogoShapeDevPanel.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import RebrandChapterShell from '~/components/rebrand/RebrandChapterShell.vue'
@@ -247,7 +248,7 @@ function updateUsername(value: string) {
           <div class="relative z-10 fuel-hero-exit -mt-[100svh] motion-reduce:[animation:none]">
             <section
               id="top"
-              class="px-[clamp(1.5rem,2.4vw,3rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
+              class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
             >
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[18svh]"
@@ -352,6 +353,8 @@ function updateUsername(value: string) {
           <RebrandFuelFooter />
         </RebrandChapterShell>
       </main>
+
+      <LogoShapeDevPanel v-if="!isEntryOverlayVisible" />
 
       <PrismGradientDevPanel
         v-if="!isEntryOverlayVisible"

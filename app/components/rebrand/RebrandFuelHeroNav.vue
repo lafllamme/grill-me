@@ -1,5 +1,17 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
 import GrillmeLogo from '~/components/GrillmeLogo.vue'
+
+const route = useRoute()
+const logoShapeVariant = computed(() => {
+  const raw = route.query.logo
+  return typeof raw === 'string' ? raw : undefined
+})
+const logoFontVariant = computed(() => {
+  const raw = route.query.font
+  return typeof raw === 'string' ? raw : undefined
+})
 
 const navigationItems = [
   { label: 'Home', index: '01', href: '#top' },
@@ -7,36 +19,53 @@ const navigationItems = [
   { label: 'Pipeline', index: '03', href: '#pipeline' },
   { label: 'Receipts', index: '04', href: '#receipts' },
 ] as const
+
+const hoveredNavigationIndex = ref<number | null>(null)
 </script>
 
 <template>
   <header class="pointer-events-none inset-x-0 top-0 absolute z-40">
     <div
-      class="px-[clamp(1.5rem,2.4vw,3rem)] pt-[clamp(1.5rem,2.6vw,3rem)] gap-5 grid grid-cols-[auto_1fr_auto] w-full pointer-events-auto items-start"
+      class="px-[clamp(1.5rem,1.5vw,2rem)] py-[max(0.875rem,calc(3.9vw-1.7rem))] flex w-full pointer-events-auto items-center justify-between relative"
     >
       <a
         href="#top"
         aria-label="Grillme home"
-        class="w-10 block"
+        class="h-[18px] block"
       >
         <GrillmeLogo
           accent="#F5F5F5"
-          :show-wordmark="false"
+          :shape="logoShapeVariant"
+          :font="logoFontVariant"
+          class="h-full w-auto"
         />
       </a>
 
       <nav
         aria-label="Homepage sections"
-        class="gap-8 hidden justify-self-center md:flex lg:gap-11"
+        class="gap-20 hidden items-center inset-y-0 left-1/2 absolute md:flex lg:gap-[6.5rem] -translate-x-1/2"
+        @mouseleave="hoveredNavigationIndex = null"
       >
         <a
-          v-for="item in navigationItems"
+          v-for="(item, navigationIndex) in navigationItems"
           :key="item.href"
           :href="item.href"
-          class="group text-sm text-explore-copy/72 font-body pb-1 border-b-[1px] border-transparent border-solid flex gap-1.5 transition-colors items-start hover:text-explore-copy hover:border-white/75"
+          class="group text-sm text-explore-copy font-body transition-opacity duration-300 ease-out relative"
+          :class="hoveredNavigationIndex !== null && hoveredNavigationIndex !== navigationIndex
+            ? 'opacity-30'
+            : 'opacity-100'"
+          @mouseenter="hoveredNavigationIndex = navigationIndex"
+          @focus="hoveredNavigationIndex = navigationIndex"
+          @blur="hoveredNavigationIndex = null"
         >
-          <span>{{ item.label }}</span>
-          <span class="text-[9px] text-explore-copy/45 font-meta">
+          <span class="pb-1 inline-block relative">
+            {{ item.label }}
+            <span
+              aria-hidden="true"
+              class="bg-explore-copy h-px origin-left scale-x-0 transition-transform duration-300 ease-out inset-x-0 bottom-0 absolute group-focus-visible:scale-x-100 group-hover:scale-x-100"
+            />
+          </span>
+          <span class="text-[9px] text-explore-copy/50 font-meta absolute -right-3 -top-1">
             {{ item.index }}
           </span>
         </a>
