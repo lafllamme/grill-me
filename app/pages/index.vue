@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
+import { usePreferredReducedMotion } from '@vueuse/core'
+import { motion } from 'motion-v'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
@@ -45,6 +47,23 @@ const activeWordmarkFont = computed(() => {
   const fontId = typeof raw === 'string' ? raw : 'jakarta'
   return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.jakarta!
 })
+const reducedMotion = usePreferredReducedMotion()
+const heroEntryInitial = computed(() => reducedMotion.value === 'reduce' ? false : 'hidden')
+const heroCopyContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+}
+const heroCopyItemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0 },
+}
+const heroWordmarkVariants = {
+  hidden: { opacity: 0, y: 170 },
+  visible: { opacity: 1, y: 0 },
+}
+const heroCopyTransition = { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const, delay: 0.42 }
+const heroCopyItemTransition = { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const }
+const heroWordmarkTransition = { duration: 1.17, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
 const { onContinue, onNotToday } = createEntryOverlayActions({
   isOverlayVisible: isEntryOverlayVisible,
   navigateTo,
@@ -257,21 +276,38 @@ function updateUsername(value: string) {
               id="top"
               class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
             >
-              <div
+              <motion.div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
+                :initial="heroEntryInitial"
+                animate="visible"
+                :variants="heroCopyContainerVariants"
+                :transition="heroCopyTransition"
               >
                 <div class="w-[15.6rem] max-w-full">
-                  <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
+                  <motion.p
+                    class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal"
+                    :initial="heroEntryInitial"
+                    animate="visible"
+                    :variants="heroCopyItemVariants"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.44 }"
+                  >
                     <span class="block">Your code remembers.</span>
                     <span class="block">Public commits leave a trail,</span>
                     <span class="text-explore-copy/52 block">and Grillme keeps the receipts.</span>
-                  </p>
-                  <a href="#target" class="text-base text-explore-copy/78 font-body font-normal mt-10 pb-3 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white">
+                  </motion.p>
+                  <motion.a
+                    href="#target"
+                    class="text-base text-explore-copy/78 font-body font-normal mt-10 pb-3 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white"
+                    :initial="heroEntryInitial"
+                    animate="visible"
+                    :variants="heroCopyItemVariants"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.58 }"
+                  >
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
-                  </a>
+                  </motion.a>
                 </div>
-              </div>
+              </motion.div>
 
               <div class="mt-[1.1rem]">
                 <div class="mb-5 gap-6 grid grid-cols-[auto_1fr] items-end sm:grid-cols-[auto_1fr_auto]">
@@ -291,9 +327,13 @@ function updateUsername(value: string) {
                   </p>
                 </div>
 
-                <h1
+                <motion.h1
                   aria-label="Grill me"
                   class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right"
+                  :initial="heroEntryInitial"
+                  animate="visible"
+                  :variants="heroWordmarkVariants"
+                  :transition="heroWordmarkTransition"
                   :style="{
                     fontFamily: activeWordmarkFont.family,
                     fontWeight: activeWordmarkFont.weight,
@@ -301,7 +341,7 @@ function updateUsername(value: string) {
                   }"
                 >
                   GRILL ME
-                </h1>
+                </motion.h1>
               </div>
             </section>
 

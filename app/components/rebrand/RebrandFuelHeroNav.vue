@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePreferredReducedMotion } from '@vueuse/core'
+import { motion } from 'motion-v'
 import { computed, ref } from 'vue'
 
 import GrillmeLogo from '~/components/GrillmeLogo.vue'
@@ -17,56 +19,88 @@ const navigationItems = [
 ] as const
 
 const hoveredNavigationIndex = ref<number | null>(null)
+const reducedMotion = usePreferredReducedMotion()
+const heroEntryInitial = computed(() => reducedMotion.value === 'reduce' ? false : 'hidden')
+
+const heroHeaderVariants = {
+  hidden: { opacity: 0, y: -100 },
+  visible: { opacity: 1, y: 0 },
+}
+const navigationVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { delayChildren: 0.1, staggerChildren: 0.1 },
+  },
+}
+const navigationItemVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0 },
+}
+const heroHeaderTransition = { duration: 1.17, ease: [0.22, 1, 0.36, 1] as const }
+const navigationItemTransition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
 </script>
 
 <template>
   <header class="pointer-events-none inset-x-0 top-0 absolute z-40">
-    <div
+    <motion.div
       class="px-[clamp(1.5rem,1.5vw,2rem)] py-[max(0.875rem,calc(3.9vw-1.7rem))] flex w-full pointer-events-auto items-center justify-between relative"
+      :initial="heroEntryInitial"
+      animate="visible"
+      :variants="heroHeaderVariants"
+      :transition="heroHeaderTransition"
     >
-      <a
-        href="#top"
-        aria-label="Grillme home"
-        class="h-[20px] block translate-y-[10px]"
-      >
-        <GrillmeLogo
-          accent="#F5F5F5"
-          shape="85"
-          :font="logoFontVariant"
-          wordmark="GRILL"
-          class="h-full w-auto"
-        />
-      </a>
-
-      <nav
-        aria-label="Homepage sections"
-        class="gap-20 hidden translate-y-[12px] items-center inset-y-0 left-1/2 absolute md:flex lg:gap-[5.5rem] -translate-x-1/2"
-        @mouseleave="hoveredNavigationIndex = null"
-      >
-        <a
-          v-for="(item, navigationIndex) in navigationItems"
-          :key="item.href"
-          :href="item.href"
-          class="group text-sm text-explore-copy font-body pr-3.5 transition-opacity duration-300 ease-out relative"
-          :class="hoveredNavigationIndex !== null && hoveredNavigationIndex !== navigationIndex
-            ? 'opacity-30'
-            : 'opacity-100'"
-          @mouseenter="hoveredNavigationIndex = navigationIndex"
-          @focus="hoveredNavigationIndex = navigationIndex"
-          @blur="hoveredNavigationIndex = null"
-        >
-          <span class="inline-block relative">
-            {{ item.label }}
-            <span
-              aria-hidden="true"
-              class="bg-explore-copy h-px w-0 transition-[width] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] left-0 bottom-[-0.25rem] absolute group-focus-visible:w-full group-hover:w-full"
-            />
-          </span>
-          <span class="text-[9px] text-explore-copy/50 leading-[1] font-meta top-0 absolute -right-2.5">
-            {{ item.index }}
-          </span>
+      <div class="h-[20px]">
+        <a href="#top" aria-label="Grillme home" class="h-[20px] block translate-y-[10px]">
+          <GrillmeLogo
+            accent="#F5F5F5"
+            shape="85"
+            :font="logoFontVariant"
+            wordmark="GRILL"
+            class="h-full w-auto"
+          />
         </a>
-      </nav>
+      </div>
+
+      <div class="flex translate-y-[12px] items-center inset-y-0 left-1/2 absolute -translate-x-1/2">
+        <motion.nav
+          aria-label="Homepage sections"
+          class="gap-20 hidden items-center md:flex lg:gap-[5.5rem]"
+          :initial="heroEntryInitial"
+          animate="visible"
+          :variants="navigationVariants"
+          :transition="{ duration: 0.5, ease: 'easeOut' }"
+          @mouseleave="hoveredNavigationIndex = null"
+        >
+          <motion.a
+            v-for="(item, navigationIndex) in navigationItems"
+            :key="item.href"
+            :href="item.href"
+            class="group text-sm text-explore-copy font-body pr-3.5 transition-opacity duration-300 ease-out relative"
+            :initial="heroEntryInitial"
+            animate="visible"
+            :variants="navigationItemVariants"
+            :transition="navigationItemTransition"
+            :class="hoveredNavigationIndex !== null && hoveredNavigationIndex !== navigationIndex
+              ? 'opacity-30'
+              : 'opacity-100'"
+            @mouseenter="hoveredNavigationIndex = navigationIndex"
+            @focus="hoveredNavigationIndex = navigationIndex"
+            @blur="hoveredNavigationIndex = null"
+          >
+            <span class="inline-block relative">
+              {{ item.label }}
+              <span
+                aria-hidden="true"
+                class="bg-explore-copy h-px w-0 transition-[width] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] bottom-[-0.25rem] left-0 absolute group-focus-visible:w-full group-hover:w-full"
+              />
+            </span>
+            <span class="text-[9px] text-explore-copy/50 leading-[1] font-meta top-0 absolute -right-2.5">
+              {{ item.index }}
+            </span>
+          </motion.a>
+        </motion.nav>
+      </div>
 
       <a
         href="#target"
@@ -84,6 +118,6 @@ const hoveredNavigationIndex = ref<number | null>(null)
           </span>
         </span>
       </a>
-    </div>
+    </motion.div>
   </header>
 </template>
