@@ -31,7 +31,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
       <a
         href="#top"
         aria-label="Grillme home"
-        class="h-[18px] block translate-y-[9px]"
+        class="h-[20px] block translate-y-[10px]"
       >
         <GrillmeLogo
           accent="#F5F5F5"
@@ -44,14 +44,14 @@ const hoveredNavigationIndex = ref<number | null>(null)
 
       <nav
         aria-label="Homepage sections"
-        class="gap-20 hidden items-center inset-y-0 left-1/2 absolute md:flex lg:gap-[6.5rem] -translate-x-1/2 translate-y-[12px]"
+        class="gap-20 hidden translate-y-[12px] items-center inset-y-0 left-1/2 absolute md:flex lg:gap-[5rem] -translate-x-1/2"
         @mouseleave="hoveredNavigationIndex = null"
       >
         <a
           v-for="(item, navigationIndex) in navigationItems"
           :key="item.href"
           :href="item.href"
-          class="group text-sm text-explore-copy font-body transition-opacity duration-300 ease-out relative"
+          class="group text-sm text-explore-copy font-body pr-3.5 transition-opacity duration-300 ease-out relative"
           :class="hoveredNavigationIndex !== null && hoveredNavigationIndex !== navigationIndex
             ? 'opacity-30'
             : 'opacity-100'"
@@ -66,7 +66,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
               class="bg-explore-copy h-px origin-left scale-x-0 transition-transform duration-300 ease-out inset-x-0 bottom-0 absolute group-focus-visible:scale-x-100 group-hover:scale-x-100"
             />
           </span>
-          <span class="text-[9px] text-explore-copy/50 font-meta absolute -right-3 -top-1">
+          <span class="text-[9px] text-explore-copy/50 leading-[1] font-meta top-0 absolute -right-2.5">
             {{ item.index }}
           </span>
         </a>
