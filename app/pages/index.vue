@@ -42,8 +42,8 @@ const isEntryOverlayVisible = useLandingEntryOverlay()
 const route = useRoute()
 const activeWordmarkFont = computed(() => {
   const raw = route.query.font
-  const fontId = typeof raw === 'string' ? raw : 'bricolage'
-  return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.bricolage!
+  const fontId = typeof raw === 'string' ? raw : 'jakarta'
+  return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.jakarta!
 })
 const { onContinue, onNotToday } = createEntryOverlayActions({
   isOverlayVisible: isEntryOverlayVisible,
@@ -298,7 +298,6 @@ function updateUsername(value: string) {
                     fontFamily: activeWordmarkFont.family,
                     fontWeight: activeWordmarkFont.weight,
                     letterSpacing: activeWordmarkFont.letterSpacing,
-                    transform: `scaleX(${activeWordmarkFont.scaleX * 1.11})`,
                   }"
                 >
                   GRILL ME

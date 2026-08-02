@@ -10,7 +10,7 @@ const router = useRouter()
 
 const activeFont = computed(() => {
   const raw = route.query.font
-  return typeof raw === 'string' ? raw : 'bricolage'
+  return typeof raw === 'string' ? raw : 'jakarta'
 })
 
 function selectFont(id: string) {

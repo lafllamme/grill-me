@@ -6,7 +6,7 @@ import GrillmeLogo from '~/components/GrillmeLogo.vue'
 const route = useRoute()
 const logoFontVariant = computed(() => {
   const raw = route.query.font
-  return typeof raw === 'string' ? raw : undefined
+  return typeof raw === 'string' ? raw : 'jakarta'
 })
 
 const navigationItems = [
