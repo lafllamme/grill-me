@@ -71,23 +71,25 @@ function createNavigationItemTransition(index: number) {
             v-for="(item, navigationIndex) in navigationItems"
             :key="item.href"
             :href="item.href"
-            class="group text-sm text-explore-copy font-body pr-3.5 transition-opacity duration-300 ease-out relative"
+            class="group text-sm text-explore-copy font-body pr-3.5 relative"
             :initial="heroEntryInitial"
             animate="visible"
             :variants="navigationItemVariants"
             :transition="createNavigationItemTransition(navigationIndex)"
-            :class="hoveredNavigationIndex !== null && hoveredNavigationIndex !== navigationIndex
-              ? 'opacity-30'
-              : 'opacity-100'"
             @mouseenter="hoveredNavigationIndex = navigationIndex"
             @focus="hoveredNavigationIndex = navigationIndex"
             @blur="hoveredNavigationIndex = null"
           >
-            <span class="inline-block relative">
+            <span
+              class="inline-block transition-opacity duration-300 ease-out relative"
+              :class="hoveredNavigationIndex !== null && hoveredNavigationIndex !== navigationIndex
+                ? 'opacity-50'
+                : 'opacity-100'"
+            >
               {{ item.label }}
               <span
                 aria-hidden="true"
-                class="bg-explore-copy h-px w-0 transition-[width] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] bottom-[-0.25rem] left-0 absolute group-focus-visible:w-full group-hover:w-full"
+                class="bg-explore-copy h-px w-0 transition-[width] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] bottom-[-0.15rem] left-0 absolute group-focus-visible:w-full group-hover:w-full"
               />
             </span>
             <span class="text-[9px] text-explore-copy/50 leading-[1] font-meta top-0 absolute -right-2.5">
