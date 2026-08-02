@@ -59,11 +59,11 @@ const hoveredNavigationIndex = ref<number | null>(null)
           @focus="hoveredNavigationIndex = navigationIndex"
           @blur="hoveredNavigationIndex = null"
         >
-          <span class="pb-1 inline-block relative">
+          <span class="inline-block relative">
             {{ item.label }}
             <span
               aria-hidden="true"
-              class="bg-explore-copy h-px origin-left scale-x-0 transition-transform duration-300 ease-out inset-x-0 bottom-0 absolute group-focus-visible:scale-x-100 group-hover:scale-x-100"
+              class="bg-explore-copy h-px w-px transition-[width] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] inset-x-0 bottom-1 absolute group-focus-visible:w-full group-hover:w-full"
             />
           </span>
           <span class="text-[9px] text-explore-copy/50 leading-[1] font-meta top-0 absolute -right-2.5">
