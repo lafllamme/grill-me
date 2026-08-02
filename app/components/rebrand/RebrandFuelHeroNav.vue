@@ -63,7 +63,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
             {{ item.label }}
             <span
               aria-hidden="true"
-              class="bg-explore-copy h-px w-px transition-[width] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] inset-x-0 bottom-1 absolute group-focus-visible:w-full group-hover:w-full"
+              class="bg-explore-copy h-px w-0 transition-[width] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] left-0 bottom-1 absolute group-focus-visible:w-full group-hover:w-full"
             />
           </span>
           <span class="text-[9px] text-explore-copy/50 leading-[1] font-meta top-0 absolute -right-2.5">
