@@ -253,18 +253,12 @@ function updateUsername(value: string) {
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[18svh]"
               >
-                <div class="max-w-[18rem]">
-                  <p class="text-[clamp(1.35rem,1.8vw,2rem)] text-explore-copy leading-[1.02] tracking-[-0.035em] font-display font-semibold">
-                    Your code remembers.
+                <div class="max-w-[20rem]">
+                  <p class="text-[clamp(1.35rem,1.8vw,2rem)] text-explore-copy leading-[1.02] tracking-[-0.035em] font-display font-semibold max-w-[14ch]">
+                    Your code
+                    <span class="text-signal-red-400 block">remembers.</span>
                   </p>
-                  <p class="text-sm text-explore-copy/72 leading-relaxed font-body mt-5 max-w-[16rem]">
-                    One public GitHub username is enough. Grillme follows the trail and
-                    keeps the evidence attached.
-                  </p>
-                  <a
-                    href="#target"
-                    class="text-sm text-explore-copy font-body mt-9 pb-2 border-b-[1px] border-white/55 border-solid flex max-w-[14rem] transition-colors items-center justify-between hover:border-white"
-                  >
+                  <a href="#target" class="text-sm text-explore-copy font-body mt-10 pb-2 border-b-[1px] border-white/55 border-solid flex max-w-[14rem] transition-colors items-center justify-between hover:border-white">
                     Grill now
                     <span aria-hidden="true">↘</span>
                   </a>
