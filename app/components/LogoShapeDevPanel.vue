@@ -51,7 +51,7 @@ function stepShape(direction: 1 | -1) {
 
 <template>
   <div
-    class="text-explore-copy p-3 border border-white/10 rounded-xl bg-black/70 max-w-[560px] left-6 bottom-6 fixed z-50 backdrop-blur-md"
+    class="text-explore-copy p-3 border border-white/10 rounded-xl bg-black/70 max-w-[560px] right-6 bottom-28 fixed z-50 backdrop-blur-md"
   >
     <div class="mb-3 flex items-center justify-between">
       <div class="gap-2 flex items-center">

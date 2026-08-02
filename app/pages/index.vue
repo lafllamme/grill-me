@@ -3,6 +3,7 @@ import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/model
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
+import { WORDMARK_FONTS } from '~/components/grillme-wordmark-fonts'
 import LandingEntryOverlay from '~/components/LandingEntryOverlay.vue'
 import LogoShapeDevPanel from '~/components/LogoShapeDevPanel.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
@@ -38,6 +39,12 @@ useHead({ title: 'Grillme — Evidence-backed code roasts' })
 useSeoMeta({ description: 'A Fuel-inspired Grillme longform concept built around public evidence, progressive roast states, and editorial chapters.' })
 
 const isEntryOverlayVisible = useLandingEntryOverlay()
+const route = useRoute()
+const activeWordmarkFont = computed(() => {
+  const raw = route.query.font
+  const fontId = typeof raw === 'string' ? raw : 'bricolage'
+  return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.bricolage!
+})
 const { onContinue, onNotToday } = createEntryOverlayActions({
   isOverlayVisible: isEntryOverlayVisible,
   navigateTo,
@@ -286,7 +293,13 @@ function updateUsername(value: string) {
 
                 <h1
                   aria-label="Grill me"
-                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] tracking-[-0.075em] font-display font-semibold pb-[0.04em] text-right whitespace-nowrap origin-right scale-x-[1.11]"
+                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right"
+                  :style="{
+                    fontFamily: activeWordmarkFont.family,
+                    fontWeight: activeWordmarkFont.weight,
+                    letterSpacing: activeWordmarkFont.letterSpacing,
+                    transform: `scaleX(${activeWordmarkFont.scaleX * 1.11})`,
+                  }"
                 >
                   GRILL ME
                 </h1>
