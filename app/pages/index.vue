@@ -61,9 +61,9 @@ const heroWordmarkVariants = {
   hidden: { opacity: 0, y: 170 },
   visible: { opacity: 1, y: 0 },
 }
-const heroCopyTransition = { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const, delay: 0.42 }
-const heroCopyItemTransition = { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const }
-const heroWordmarkTransition = { duration: 1.17, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
+const heroCopyTransition = { duration: 1.3, ease: [0.22, 1, 0.36, 1] as const, delay: 0.42 }
+const heroCopyItemTransition = { duration: 1.3, ease: [0.22, 1, 0.36, 1] as const }
+const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
 const { onContinue, onNotToday } = createEntryOverlayActions({
   isOverlayVisible: isEntryOverlayVisible,
   navigateTo,

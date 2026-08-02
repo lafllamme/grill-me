@@ -37,8 +37,8 @@ const navigationItemVariants = {
   hidden: { opacity: 0, y: -10 },
   visible: { opacity: 1, y: 0 },
 }
-const heroHeaderTransition = { duration: 1.17, ease: [0.22, 1, 0.36, 1] as const }
-const navigationItemTransition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
+const heroHeaderTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const }
+const navigationItemTransition = { duration: 0.62, ease: [0.22, 1, 0.36, 1] as const }
 </script>
 
 <template>
