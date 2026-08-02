@@ -251,7 +251,7 @@ function updateUsername(value: string) {
               class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
             >
               <div
-                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[12svh]"
+                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
               >
                 <div class="w-[min(19.5vw,17.5rem)] max-w-full">
                   <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
@@ -259,7 +259,7 @@ function updateUsername(value: string) {
                     <span class="block">Public commits leave a trail,</span>
                     <span class="text-explore-copy/52 block">and Grillme keeps the receipts.</span>
                   </p>
-                  <a href="#target" class="text-[clamp(0.9rem,1.05vw,1.25rem)] text-explore-copy/78 font-body font-normal mt-10 pb-2 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white">
+                  <a href="#target" class="text-base text-explore-copy/78 font-body font-normal mt-10 pb-4 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white">
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
                   </a>
