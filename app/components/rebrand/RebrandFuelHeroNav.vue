@@ -31,7 +31,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
       <a
         href="#top"
         aria-label="Grillme home"
-        class="h-[18px] block"
+        class="h-[18px] block translate-y-[9px]"
       >
         <GrillmeLogo
           accent="#F5F5F5"
@@ -43,7 +43,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
 
       <nav
         aria-label="Homepage sections"
-        class="gap-20 hidden items-center inset-y-0 left-1/2 absolute md:flex lg:gap-[6.5rem] -translate-x-1/2"
+        class="gap-20 hidden items-center inset-y-0 left-1/2 absolute md:flex lg:gap-[6.5rem] -translate-x-1/2 translate-y-[12px]"
         @mouseleave="hoveredNavigationIndex = null"
       >
         <a

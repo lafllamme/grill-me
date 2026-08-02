@@ -27,7 +27,7 @@ export const WORDMARK_FONTS: Record<string, WordmarkFontConfig> = {
     fontSize: 34,
     letterSpacing: '-0.015em',
     scaleX: 1.18,
-    viewBoxWidth: 249,
+    viewBoxWidth: 257,
   },
   general: {
     label: 'General Sans',

@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<{
   accent: '#FF5633',
   showWordmark: true,
   shape: undefined,
-  font: 'azeret',
+  font: 'bricolage',
 })
 
 /**
