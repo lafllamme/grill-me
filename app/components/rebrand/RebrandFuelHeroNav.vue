@@ -37,6 +37,7 @@ const hoveredNavigationIndex = ref<number | null>(null)
           accent="#F5F5F5"
           :shape="logoShapeVariant"
           :font="logoFontVariant"
+          wordmark="GRILL"
           class="h-full w-auto"
         />
       </a>

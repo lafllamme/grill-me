@@ -10,11 +10,14 @@ const props = withDefaults(defineProps<{
   shape?: string
   /** Wordmark font variant, see WORDMARK_FONTS. */
   font?: string
+  /** Short header lockup label; the hero headline remains independent. */
+  wordmark?: 'GRILL' | 'GRILLME'
 }>(), {
   accent: '#FF5633',
   showWordmark: true,
   shape: undefined,
   font: 'bricolage',
+  wordmark: 'GRILLME',
 })
 
 /**
@@ -77,12 +80,19 @@ const lockupWordmarkX = computed(() =>
 const activeFont = computed(() =>
   WORDMARK_FONTS[props.font] ?? WORDMARK_FONTS.azeret!,
 )
+
+const activeWordmark = computed(() => props.wordmark)
+const activeWordmarkViewBoxWidth = computed(() =>
+  activeWordmark.value === 'GRILL'
+    ? activeFont.value.viewBoxWidth - 52
+    : activeFont.value.viewBoxWidth,
+)
 </script>
 
 <template>
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    :viewBox="showWordmark ? `0 0 ${activeFont.viewBoxWidth} 48` : '0 0 42 48'"
+    :viewBox="showWordmark ? `0 0 ${activeWordmarkViewBoxWidth} 48` : '0 0 42 48'"
     fill="none"
     role="img"
     aria-label="Grillme"
@@ -125,7 +135,7 @@ const activeFont = computed(() =>
         :letter-spacing="activeFont.letterSpacing"
         :transform="`scale(${activeFont.scaleX} 1)`"
       >
-        GRILLME
+        {{ activeWordmark }}
       </text>
     </g>
     <g
@@ -133,14 +143,14 @@ const activeFont = computed(() =>
       transform="translate(0 -2)"
     >
       <circle
-        :cx="activeFont.viewBoxWidth - 12"
+        :cx="activeWordmarkViewBoxWidth - 12"
         cy="22.5"
         r="10.5"
         stroke="#F5F5F5"
         stroke-width="2.2"
       />
       <text
-        :x="activeFont.viewBoxWidth - 12"
+        :x="activeWordmarkViewBoxWidth - 12"
         y="27.5"
         fill="#F5F5F5"
         font-family="General Sans, sans-serif"
