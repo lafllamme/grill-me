@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
-import { usePreferredReducedMotion } from '@vueuse/core'
+import { usePreferredReducedMotion, useTimeoutFn } from '@vueuse/core'
 import { motion } from 'motion-v'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
@@ -66,8 +66,10 @@ const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as cons
 const heroBackgroundFallbackDelay = 1500
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
-let heroBackgroundRevealTimer: number | null = null
 let heroBackgroundRevealFrame: number | null = null
+const { start: startHeroBackgroundFallback, stop: stopHeroBackgroundFallback } = useTimeoutFn(() => {
+  isHeroBackgroundVisible.value = true
+}, heroBackgroundFallbackDelay, { immediate: false })
 const heroAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
     return 'visible'
@@ -201,20 +203,14 @@ function scheduleHeroBackgroundReveal() {
 
   heroBackgroundRevealFrame = window.requestAnimationFrame(() => {
     isHeroBackgroundMounted.value = true
-    heroBackgroundRevealTimer = window.setTimeout(() => {
-      isHeroBackgroundVisible.value = true
-      heroBackgroundRevealTimer = null
-    }, heroBackgroundFallbackDelay)
+    startHeroBackgroundFallback()
     heroBackgroundRevealFrame = null
   })
 }
 
 function revealHeroBackground() {
   isHeroBackgroundVisible.value = true
-  if (heroBackgroundRevealTimer) {
-    clearTimeout(heroBackgroundRevealTimer)
-    heroBackgroundRevealTimer = null
-  }
+  stopHeroBackgroundFallback()
 }
 
 onMounted(() => {
@@ -243,8 +239,7 @@ watch(isEntryOverlayVisible, (isVisible) => {
 onBeforeUnmount(() => {
   if (import.meta.client && heroBackgroundRevealFrame !== null)
     window.cancelAnimationFrame(heroBackgroundRevealFrame)
-  if (heroBackgroundRevealTimer)
-    clearTimeout(heroBackgroundRevealTimer)
+  stopHeroBackgroundFallback()
   startSmoothScroll()
 })
 
