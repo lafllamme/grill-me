@@ -1,5 +1,6 @@
 import type { PrismGradientSettings } from '~/models/prism-gradient'
 import { useDebounceFn } from '@vueuse/core'
+import { useCookie } from '#imports'
 import {
   PRISM_GRADIENT_DEFAULT_SETTINGS,
 } from '~/models/prism-gradient'
@@ -86,9 +87,13 @@ export function usePrismGradientSettings(options: PrismGradientSettingsOptions =
   const defaults = createDefaultSettings(options.defaults ?? PRISM_GRADIENT_DEFAULT_SETTINGS)
   const storageKey = options.storageKey ?? PRISM_GRADIENT_STORAGE_KEY
   const panelOpenStorageKey = options.panelOpenStorageKey ?? PRISM_GRADIENT_PANEL_OPEN_STORAGE_KEY
+  const panelVisibilityCookieKey = `${panelOpenStorageKey}:visible`
   const settings = reactive<PrismGradientSettings>(createDefaultSettings(defaults))
   const isPanelOpen = ref(false)
-  const isPanelVisible = ref(true)
+  const isPanelVisible = useCookie<boolean>(panelVisibilityCookieKey, {
+    default: () => true,
+    sameSite: 'lax',
+  })
 
   const saveSettings = () => {
     if (!import.meta.client)
