@@ -7,7 +7,6 @@ import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
 import { WORDMARK_FONTS } from '~/components/grillme-wordmark-fonts'
 import LandingEntryOverlay from '~/components/LandingEntryOverlay.vue'
-import LogoShapeDevPanel from '~/components/LogoShapeDevPanel.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import RebrandChapterShell from '~/components/rebrand/RebrandChapterShell.vue'
@@ -67,7 +66,7 @@ const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as cons
 const heroBackgroundFallbackDelay = 1500
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
-let heroBackgroundRevealTimer: ReturnType<typeof setTimeout> | null = null
+let heroBackgroundRevealTimer: number | null = null
 let heroBackgroundRevealFrame: number | null = null
 const heroAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
@@ -386,7 +385,7 @@ function updateUsername(value: string) {
 
                 <motion.h1
                   aria-label="Grill me"
-                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right ml-auto w-full max-w-[57.75rem]"
+                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right ml-auto w-full max-w-none"
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
                   :variants="heroWordmarkVariants"
@@ -457,8 +456,6 @@ function updateUsername(value: string) {
           <RebrandFuelFooter />
         </RebrandChapterShell>
       </main>
-
-      <LogoShapeDevPanel v-if="!isEntryOverlayVisible" />
 
       <PrismGradientDevPanel
         v-if="!isEntryOverlayVisible"

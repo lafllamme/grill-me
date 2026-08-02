@@ -101,19 +101,29 @@ function createNavigationItemTransition(index: number) {
 
       <a
         href="#target"
-        class="text-explore-ink p-1.5 border-[1px] border-white/60 rounded-[3px] border-solid bg-explore-copy gap-2 grid grid-cols-[3.5rem_1fr] min-h-[4.375rem] min-w-[16.9375rem] transition-colors hover:bg-white"
+        class="group text-explore-ink py-[2px] pl-[2px] pr-2 border-[1px] border-white/60 rounded-[5px] border-solid bg-explore-copy gap-2.5 grid grid-cols-[4rem_1fr] h-[4.375rem] min-w-[16.9375rem] transition-colors relative hover:bg-white"
       >
-        <span class="rounded-[2px] bg-signal-red-600 grid min-h-[3.5rem] place-items-center">
-          <span class="border-[1px] border-explore-copy rounded-full border-solid h-2.5 w-2.5" />
+        <span class="rounded-[2.5px] bg-signal-red-600 grid self-center size-16 overflow-hidden place-items-center">
+          <img
+            src="https://thumbs.dreamstime.com/b/crosshair-symbol-isoliert-auf-schwarzem-hintergrund-einfaches-logo-161246758.jpg"
+            alt=""
+            class="size-full transition-transform duration-500 ease-out object-cover group-hover:scale-110"
+          >
         </span>
-        <span class="py-0.5 grid content-center">
-          <span class="text-xs font-display font-semibold sm:text-sm">
-            Start the roast
+        <span class="py-0.5 pr-6 flex flex-col justify-between">
+          <span class="text-[1.2rem] leading-[0.95] tracking-[-0.035em] font-body font-medium">
+            Face the heat
           </span>
-          <span class="text-[8px] tracking-[0.08em] font-meta uppercase sm:text-[9px]">
-            Public GitHub · Grill now ↘
+          <span class="flex flex-col">
+            <span class="text-[9px] leading-[1.1] tracking-[0.08em] font-meta uppercase">
+              Public GitHub
+            </span>
+            <span class="text-[9px] text-explore-ink/50 leading-[1.1] tracking-[0.08em] font-meta uppercase">
+              No Mercy
+            </span>
           </span>
         </span>
+        <span aria-hidden="true" class="text-lg leading-none transition-transform duration-300 ease-out right-2 top-2 absolute group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
       </a>
     </motion.div>
   </header>
