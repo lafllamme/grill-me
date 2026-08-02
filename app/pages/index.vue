@@ -271,7 +271,7 @@ function updateUsername(value: string) {
                 </div>
               </div>
 
-              <div class="mt-12">
+              <div class="mt-[1.1rem]">
                 <div class="mb-5 gap-6 grid grid-cols-[auto_1fr] items-end sm:grid-cols-[auto_1fr_auto]">
                   <p class="text-[10px] text-explore-copy/60 tracking-[0.14em] font-meta uppercase">
                     © 2026
@@ -291,7 +291,7 @@ function updateUsername(value: string) {
 
                 <h1
                   aria-label="Grill me"
-                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.76] tracking-[-0.075em] font-display font-semibold pb-[0.04em] text-center whitespace-nowrap"
+                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] tracking-[-0.075em] font-display font-semibold pb-[0.04em] text-right whitespace-nowrap origin-right scale-x-[1.11]"
                 >
                   GRILL ME
                 </h1>
