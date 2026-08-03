@@ -53,8 +53,8 @@ const heroCopyItemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 const heroCopyLineVariants = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { y: '125%' },
+  visible: { y: '0%' },
 }
 const heroWordmarkVariants = {
   hidden: { opacity: 0, y: 170 },
@@ -65,7 +65,7 @@ const heroBackgroundVariants = {
   visible: { opacity: 1 },
 }
 const heroCopyItemTransition = { duration: 0.68, ease: [0.22, 1, 0.36, 1] as const }
-const heroCopyLineTransition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const }
+const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as const }
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const }
 const heroBackgroundFallbackDelay = 1500
@@ -352,15 +352,15 @@ function updateUsername(value: string) {
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
               >
-                <div class="w-[15.6rem] max-w-full">
+                <div class="w-[clamp(15.6rem,24vw,28rem)] max-w-full">
                   <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
                     <span
                       v-for="(line, lineIndex) in heroCopyLines"
                       :key="line"
-                      class="block overflow-hidden"
+                      class="py-[0.12em] block overflow-hidden -my-[0.12em]"
                     >
                       <motion.span
-                        class="inline-block"
+                        class="align-top inline-block whitespace-pre-wrap sm:whitespace-nowrap"
                         :class="lineIndex === heroCopyLines.length - 1 ? 'text-explore-copy/52' : ''"
                         :initial="heroEntryInitial"
                         :animate="heroAnimationState"
