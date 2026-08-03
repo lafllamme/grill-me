@@ -346,7 +346,7 @@ function updateUsername(value: string) {
           <div class="relative z-10 fuel-hero-exit -mt-[100svh] motion-reduce:[animation:none]">
             <section
               id="top"
-              class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between lg:pb-7 sm:pt-28"
+              class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between relative lg:pb-7 sm:pt-28"
             >
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
@@ -385,23 +385,6 @@ function updateUsername(value: string) {
               </div>
 
               <div class="mt-[1.1rem]">
-                <div class="mb-5 gap-6 grid grid-cols-[auto_1fr] items-end sm:grid-cols-[auto_1fr_auto]">
-                  <p class="text-[10px] text-explore-copy/60 tracking-[0.14em] font-meta uppercase">
-                    © 2026
-                  </p>
-                  <div class="px-4 flex gap-2 items-center justify-center">
-                    <span
-                      v-for="marker in 10"
-                      :key="marker"
-                      class="bg-white/25 h-3 w-[1px]"
-                      :class="marker === 1 ? 'bg-signal-red-400 h-6' : ''"
-                    />
-                  </div>
-                  <p class="text-[10px] text-explore-copy/55 tracking-[0.14em] font-meta hidden uppercase sm:block">
-                    Public commits / private consequences
-                  </p>
-                </div>
-
                 <motion.h1
                   aria-label="Grill me"
                   class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right ml-auto w-full max-w-none"
@@ -418,6 +401,34 @@ function updateUsername(value: string) {
                   GRILL ME
                 </motion.h1>
               </div>
+
+              <motion.div
+                class="left-[clamp(1.5rem,1.5vw,2rem)] bottom-6 absolute h-[46px] flex items-center"
+                :initial="heroEntryInitial"
+                :animate="heroAnimationState"
+                :variants="heroCopyItemVariants"
+                :transition="{ ...heroCopyItemTransition, delay: 2.35 }"
+                :style="{
+                  fontFamily: activeWordmarkFont.family,
+                  fontWeight: 400,
+                  letterSpacing: '-0.02em',
+                }"
+              >
+                <p class="text-base text-explore-copy/80 leading-[1.26] font-body w-[56px] shrink-0">
+                  © 2026
+                </p>
+                <div class="ml-2.5 flex gap-[9px] items-end">
+                  <span
+                    v-for="marker in 11"
+                    :key="marker"
+                    class="bg-explore-copy/50 h-2.5 w-[1px]"
+                    :class="marker === 6 ? 'h-10' : ''"
+                  />
+                </div>
+                <p class="text-base text-explore-copy/80 leading-[1.26] font-body w-[20px] shrink-0 ml-2.5">
+                  19'
+                </p>
+              </motion.div>
             </section>
 
             <div class="pb-[clamp(6rem,10vw,10rem)]">
