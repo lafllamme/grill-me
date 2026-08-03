@@ -70,10 +70,9 @@ const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as con
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const }
 const heroBackgroundFallbackDelay = 1500
 const heroCopyLines = [
-  'Public code leaves a trail of decisions,',
-  'shortcuts, and accidental architecture.',
-  'Grillme turns that evidence into a verdict',
-  'you can laugh at, verify, and improve.',
+  'Public code leaves a trail,',
+  'of choices and shortcuts.',
+  'Grillme keeps the receipts.',
 ] as const
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
@@ -352,7 +351,7 @@ function updateUsername(value: string) {
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
               >
-                <div class="w-[clamp(15.6rem,24vw,28rem)] max-w-full">
+                <div class="w-[15.6rem] max-w-full">
                   <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
                     <span
                       v-for="(line, lineIndex) in heroCopyLines"
