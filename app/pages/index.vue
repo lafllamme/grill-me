@@ -52,6 +52,10 @@ const heroCopyItemVariants = {
   hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0 },
 }
+const heroCopyLineVariants = {
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0 },
+}
 const heroWordmarkVariants = {
   hidden: { opacity: 0, y: 170 },
   visible: { opacity: 1, y: 0 },
@@ -61,9 +65,16 @@ const heroBackgroundVariants = {
   visible: { opacity: 1 },
 }
 const heroCopyItemTransition = { duration: 0.68, ease: [0.22, 1, 0.36, 1] as const }
+const heroCopyLineTransition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const }
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const }
 const heroBackgroundFallbackDelay = 1500
+const heroCopyLines = [
+  'Public code leaves a trail of decisions,',
+  'shortcuts, and accidental architecture.',
+  'Grillme turns that evidence into a verdict',
+  'you can laugh at, verify, and improve.',
+] as const
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
 let heroBackgroundRevealFrame: number | null = null
@@ -342,24 +353,31 @@ function updateUsername(value: string) {
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
               >
                 <div class="w-[15.6rem] max-w-full">
-                  <motion.p
-                    class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal"
-                    :initial="heroEntryInitial"
-                    :animate="heroAnimationState"
-                    :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.08 }"
-                  >
-                    <span class="block">Your code remembers.</span>
-                    <span class="block">Public commits leave a trail,</span>
-                    <span class="text-explore-copy/52 block">and Grillme keeps the receipts.</span>
-                  </motion.p>
+                  <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
+                    <span
+                      v-for="(line, lineIndex) in heroCopyLines"
+                      :key="line"
+                      class="block overflow-hidden"
+                    >
+                      <motion.span
+                        class="inline-block"
+                        :class="lineIndex === heroCopyLines.length - 1 ? 'text-explore-copy/52' : ''"
+                        :initial="heroEntryInitial"
+                        :animate="heroAnimationState"
+                        :variants="heroCopyLineVariants"
+                        :transition="{ ...heroCopyLineTransition, delay: 0.08 + lineIndex * 0.12 }"
+                      >
+                        {{ line }}
+                      </motion.span>
+                    </span>
+                  </p>
                   <motion.a
                     href="#target"
                     class="text-base text-explore-copy/78 font-body font-normal mt-10 pb-3 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white"
                     :initial="heroEntryInitial"
                     :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.24 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 0.68 }"
                   >
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
