@@ -70,9 +70,9 @@ const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as con
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const }
 const heroBackgroundFallbackDelay = 1500
 const heroCopyLines = [
-  'Public code leaves a trail,',
-  'of choices and shortcuts.',
-  'Grillme keeps the receipts.',
+  'Public code leaves a trail of decisions,',
+  'shortcuts become evidence.',
+  'Grillme keeps receipts.',
 ] as const
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
@@ -351,7 +351,7 @@ function updateUsername(value: string) {
               <div
                 class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
               >
-                <div class="w-[15.6rem] max-w-full">
+                <div class="w-fit max-w-full">
                   <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
                     <span
                       v-for="(line, lineIndex) in heroCopyLines"
@@ -372,14 +372,14 @@ function updateUsername(value: string) {
                   </p>
                   <motion.a
                     href="#target"
-                    class="text-base text-explore-copy/78 font-body font-normal mt-10 pb-3 border-b-[1px] border-white/55 border-solid flex max-w-full transition-colors items-center justify-between hover:text-explore-copy hover:border-white"
+                    class="group text-base text-explore-copy font-body font-normal mt-10 pb-3 border-b-[1px] border-explore-copy/85 border-solid flex w-full transition-colors duration-300 ease-out items-center justify-between hover:text-explore-copy/75 hover:border-explore-copy/70"
                     :initial="heroEntryInitial"
                     :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
                     :transition="{ ...heroCopyItemTransition, delay: 0.68 }"
                   >
                     Grill now
-                    <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/80 h-2.5 w-2.5 border-solid" />
+                    <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/85 h-2.5 w-2.5 border-solid transition-colors duration-300 ease-out group-hover:border-explore-copy/70" />
                   </motion.a>
                 </div>
               </div>
