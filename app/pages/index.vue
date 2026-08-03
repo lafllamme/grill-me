@@ -213,6 +213,14 @@ function revealHeroBackground() {
   stopHeroBackgroundFallback()
 }
 
+function cancelHeroBackgroundRevealFrame() {
+  if (!import.meta.client || heroBackgroundRevealFrame === null)
+    return
+
+  window.cancelAnimationFrame(heroBackgroundRevealFrame)
+  heroBackgroundRevealFrame = null
+}
+
 onMounted(() => {
   isPageInteractive.value = true
   scheduleHeroBackgroundReveal()
@@ -237,8 +245,7 @@ watch(isEntryOverlayVisible, (isVisible) => {
 })
 
 onBeforeUnmount(() => {
-  if (import.meta.client && heroBackgroundRevealFrame !== null)
-    window.cancelAnimationFrame(heroBackgroundRevealFrame)
+  cancelHeroBackgroundRevealFrame()
   stopHeroBackgroundFallback()
   startSmoothScroll()
 })

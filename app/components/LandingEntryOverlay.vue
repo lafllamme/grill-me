@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
+import { useTimeoutFn } from '@vueuse/core'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLandingEntryOverlayRevealChrome } from '~/composables/useLandingEntryOverlay'
 import { createCampfireAudioPlayer } from '~/utils/campfire-audio'
@@ -20,11 +21,30 @@ const phase = ref<'dark' | 'question' | 'choices'>('dark')
 const exitStage = ref<'idle' | 'content' | 'veil' | 'no_hold' | 'gone'>('idle')
 const prefersReducedMotion = ref(false)
 
-let questionTimer: ReturnType<typeof setTimeout> | null = null
-let choicesTimer: ReturnType<typeof setTimeout> | null = null
-let contentExitTimer: ReturnType<typeof setTimeout> | null = null
-let actionTimer: ReturnType<typeof setTimeout> | null = null
 const campfireAudioPlayer = createCampfireAudioPlayer()
+const contentExitDelay = ref(480)
+const exitActionDelay = ref(1100)
+const exitStageAfterContent = ref<'veil' | 'no_hold'>('veil')
+const exitChoice = ref<'yes' | 'no'>('yes')
+const { start: startQuestionTimer } = useTimeoutFn(() => {
+  phase.value = 'question'
+}, 900, { immediate: false })
+const { start: startChoicesTimer } = useTimeoutFn(() => {
+  phase.value = 'choices'
+}, 2200, { immediate: false })
+const { start: startContentExitTimer } = useTimeoutFn(() => {
+  exitStage.value = exitStageAfterContent.value
+  isEntryOverlayRevealChrome.value = exitStageAfterContent.value === 'veil'
+}, contentExitDelay, { immediate: false })
+const { start: startActionTimer } = useTimeoutFn(() => {
+  if (exitChoice.value === 'yes') {
+    exitStage.value = 'gone'
+    emit('overlayContinue')
+    return
+  }
+
+  emit('overlayDecline')
+}, exitActionDelay, { immediate: false })
 
 onMounted(() => {
   isEntryOverlayRevealChrome.value = false
@@ -36,25 +56,11 @@ onMounted(() => {
     return
   }
 
-  questionTimer = setTimeout(() => {
-    phase.value = 'question'
-  }, 900)
-
-  choicesTimer = setTimeout(() => {
-    phase.value = 'choices'
-  }, 2200)
+  startQuestionTimer()
+  startChoicesTimer()
 })
 
 onBeforeUnmount(() => {
-  if (questionTimer)
-    clearTimeout(questionTimer)
-  if (choicesTimer)
-    clearTimeout(choicesTimer)
-  if (contentExitTimer)
-    clearTimeout(contentExitTimer)
-  if (actionTimer)
-    clearTimeout(actionTimer)
-
   campfireAudioPlayer.releaseHandle()
 })
 
@@ -88,15 +94,12 @@ function runExit(choice: 'yes' | 'no'): void {
     void playCampfireAudio()
     const actionDelay = prefersReducedMotion.value ? 1 : 1100
 
-    contentExitTimer = setTimeout(() => {
-      exitStage.value = 'veil'
-      isEntryOverlayRevealChrome.value = true
-    }, contentToVeilDelay)
-
-    actionTimer = setTimeout(() => {
-      exitStage.value = 'gone'
-      emit('overlayContinue')
-    }, actionDelay)
+    exitChoice.value = 'yes'
+    exitStageAfterContent.value = 'veil'
+    contentExitDelay.value = contentToVeilDelay
+    exitActionDelay.value = actionDelay
+    startContentExitTimer()
+    startActionTimer()
     return
   }
 
@@ -104,13 +107,12 @@ function runExit(choice: 'yes' | 'no'): void {
   const noRedirectDelay = prefersReducedMotion.value ? 1 : 3200
   isEntryOverlayRevealChrome.value = false
 
-  contentExitTimer = setTimeout(() => {
-    exitStage.value = 'no_hold'
-  }, noHoldDelay)
-
-  actionTimer = setTimeout(async () => {
-    emit('overlayDecline')
-  }, noRedirectDelay)
+  exitChoice.value = 'no'
+  exitStageAfterContent.value = 'no_hold'
+  contentExitDelay.value = noHoldDelay
+  exitActionDelay.value = noRedirectDelay
+  startContentExitTimer()
+  startActionTimer()
 }
 
 function isExitActionBlocked(): boolean {
