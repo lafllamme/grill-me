@@ -66,8 +66,8 @@ const heroBackgroundVariants = {
 }
 const heroCopyItemTransition = { duration: 0.68, ease: [0.22, 1, 0.36, 1] as const }
 const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as const }
-const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0 }
-const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const }
+const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.1 }
+const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.55 }
 const heroBackgroundFallbackDelay = 1500
 const heroCopyLines = [
   'Public code leaves a trail of decisions,',
@@ -364,7 +364,7 @@ function updateUsername(value: string) {
                         :initial="heroEntryInitial"
                         :animate="heroAnimationState"
                         :variants="heroCopyLineVariants"
-                        :transition="{ ...heroCopyLineTransition, delay: 0.08 + lineIndex * 0.12 }"
+                        :transition="{ ...heroCopyLineTransition, delay: 1.1 + lineIndex * 0.12 }"
                       >
                         {{ line }}
                       </motion.span>
@@ -376,7 +376,7 @@ function updateUsername(value: string) {
                     :initial="heroEntryInitial"
                     :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.68 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 1.6 }"
                   >
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/85 h-2.5 w-2.5 border-solid transition-colors duration-300 ease-out group-hover:border-explore-copy/70" />
