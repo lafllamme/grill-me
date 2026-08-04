@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/models/prism-gradient'
-import { usePreferredReducedMotion, useTimeoutFn } from '@vueuse/core'
+import { useMouseInElement, usePreferredReducedMotion, useTimeoutFn } from '@vueuse/core'
 import { motion } from 'motion-v'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { navigateTo } from '#app'
@@ -69,11 +69,44 @@ const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as c
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.1 }
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.55 }
 const heroBackgroundFallbackDelay = 1500
+const timeRulerMarkerCount = 11
+const timeRulerRef = ref<HTMLElement | null>(null)
+const { elementX: timeRulerElementX, elementWidth: timeRulerElementWidth, isOutside: isTimeRulerOutside } = useMouseInElement(timeRulerRef, { touch: false })
 const heroCopyLines = [
   'Public code leaves a trail of decisions,',
   'shortcuts become evidence.',
   'Grillme keeps receipts.',
 ] as const
+const timeRulerMarkers = computed(() => {
+  const defaultMarkers = Array.from({ length: timeRulerMarkerCount }, (_, index) => ({
+    height: index === 5 ? 40 : 10,
+    opacity: 0.5,
+  }))
+
+  if (isTimeRulerOutside.value || reducedMotion.value === 'reduce' || timeRulerElementWidth.value <= 0)
+    return defaultMarkers
+
+  const step = timeRulerElementWidth.value / (timeRulerMarkerCount - 1)
+  const activeIndex = Math.round(Math.min(Math.max(timeRulerElementX.value, 0), timeRulerElementWidth.value) / step)
+
+  const hoverMarkers = defaultMarkers.map(() => ({
+    height: 10,
+    opacity: 0.5,
+  }))
+
+  return hoverMarkers.map((marker, index) => {
+    const distance = Math.abs(index - activeIndex)
+
+    if (distance === 0)
+      return { height: 40, opacity: 0.85 }
+    if (distance === 1)
+      return { height: 22, opacity: 0.7 }
+    if (distance === 2)
+      return { height: 15, opacity: 0.6 }
+
+    return marker
+  })
+})
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
 let heroBackgroundRevealFrame: number | null = null
@@ -403,7 +436,7 @@ function updateUsername(value: string) {
               </div>
 
               <motion.div
-                class="left-[clamp(1.5rem,1.5vw,2rem)] bottom-6 absolute h-[46px] flex items-center"
+                class="left-[clamp(1.5rem,1.5vw,2rem)] bottom-6 absolute h-[46px] flex items-end"
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
@@ -417,12 +450,12 @@ function updateUsername(value: string) {
                 <p class="text-base text-explore-copy/80 leading-[1.26] font-body w-[56px] shrink-0">
                   © 2026
                 </p>
-                <div class="ml-2.5 flex gap-[9px] items-end">
+                <div ref="timeRulerRef" class="ml-2.5 flex gap-[9px] h-[46px] shrink-0 pb-[6px] box-border items-end cursor-ew-resize">
                   <span
-                    v-for="marker in 11"
-                    :key="marker"
-                    class="bg-explore-copy/50 h-2.5 w-[1px]"
-                    :class="marker === 6 ? 'h-10' : ''"
+                    v-for="(marker, markerIndex) in timeRulerMarkers"
+                    :key="markerIndex"
+                    class="bg-explore-copy w-[1px] transition-[height,opacity] duration-300 ease-out"
+                    :style="{ height: `${marker.height}px`, opacity: marker.opacity }"
                   />
                 </div>
                 <p class="text-base text-explore-copy/80 leading-[1.26] font-body w-[20px] shrink-0 ml-2.5">
