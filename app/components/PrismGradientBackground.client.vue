@@ -45,7 +45,7 @@ const NOISE_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAM
 const MAX_PIXEL_RATIO = 1.5
 const MIN_PIXEL_RATIO = 0.5
 const MAX_RENDER_PIXELS = 1_600_000
-const TARGET_FRAME_RATE = 45
+const TARGET_FRAME_RATE = 60
 
 const VERTEX_SHADER = `#version 300 es
 in vec4 a_position;

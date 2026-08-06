@@ -72,7 +72,7 @@ export default defineNuxtConfig({
       {
         name: 'Climate Crisis',
         global: true,
-        preload: false,
+        preload: true,
         weight: 400,
         style: 'normal',
         src: [{ url: '/fonts/climate-crisis/Climate-Crisis__Variable.woff2', format: 'woff2' }],

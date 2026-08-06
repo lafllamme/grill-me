@@ -82,7 +82,7 @@ const heroCrosshairTransition = {
 }
 const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as const }
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.1 }
-const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.55 }
+const heroBackgroundTransition = { duration: 0.65, ease: [0.4, 0, 0.2, 1] as const }
 const heroBackgroundFallbackDelay = 1500
 const timeRulerMarkerCount = 11
 const timeRulerRef = ref<HTMLElement | null>(null)
@@ -129,9 +129,12 @@ const timeRulerMarkers = computed(() => {
 })
 const isHeroBackgroundMounted = ref(false)
 const isHeroBackgroundVisible = ref(false)
+const isHeroBackgroundReady = ref(false)
 let heroBackgroundRevealFrame: number | null = null
 const { start: startHeroBackgroundFallback, stop: stopHeroBackgroundFallback } = useTimeoutFn(() => {
-  isHeroBackgroundVisible.value = true
+  isHeroBackgroundReady.value = true
+  if (!isEntryOverlayVisible.value)
+    isHeroBackgroundVisible.value = true
 }, heroBackgroundFallbackDelay, { immediate: false })
 const heroAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
@@ -261,7 +264,7 @@ const fuelRoast = useFuelRoastViewModel({
 })
 
 function scheduleHeroBackgroundReveal() {
-  if (isEntryOverlayVisible.value || isHeroBackgroundMounted.value || !import.meta.client)
+  if (isHeroBackgroundMounted.value || !import.meta.client)
     return
 
   heroBackgroundRevealFrame = window.requestAnimationFrame(() => {
@@ -272,8 +275,10 @@ function scheduleHeroBackgroundReveal() {
 }
 
 function revealHeroBackground() {
-  isHeroBackgroundVisible.value = true
+  isHeroBackgroundReady.value = true
   stopHeroBackgroundFallback()
+  if (!isEntryOverlayVisible.value)
+    isHeroBackgroundVisible.value = true
 }
 
 function cancelHeroBackgroundRevealFrame() {
@@ -303,14 +308,17 @@ watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
 }, { immediate: true })
 
 watch(isEntryOverlayVisible, (isVisible) => {
-  if (!isVisible)
+  if (!isVisible) {
     scheduleHeroBackgroundReveal()
+    if (isHeroBackgroundReady.value)
+      isHeroBackgroundVisible.value = true
+  }
 })
 
 onBeforeUnmount(() => {
   cancelHeroBackgroundRevealFrame()
   stopHeroBackgroundFallback()
-  startSmoothScroll()
+  stopSmoothScroll()
 })
 
 async function scrollToLiveStage() {
@@ -380,7 +388,7 @@ function updateUsername(value: string) {
                 <PrismGradientBackground
                   v-if="isHeroBackgroundMounted"
                   class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
-                  :speed="prismSettings.speed"
+                  :speed="isEntryOverlayVisible ? 0 : prismSettings.speed"
                   :ambient-opacity="prismSettings.ambientOpacity"
                   :radius="prismSettings.radius"
                   :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
