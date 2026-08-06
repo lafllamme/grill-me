@@ -81,8 +81,8 @@ const heroCrosshairTransition = {
   times: [0, 0.64, 1],
 }
 const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as const }
-const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const }
-const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.05 }
+const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.1 }
+const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.55 }
 const heroBackgroundFallbackDelay = 1500
 const timeRulerMarkerCount = 11
 const timeRulerRef = ref<HTMLElement | null>(null)
@@ -415,7 +415,7 @@ function updateUsername(value: string) {
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
                   :variants="heroCrosshairVariants[markerIndex]"
-                  :transition="{ ...heroCrosshairTransition, delay: 0.55 + markerIndex * 0.08 }"
+                  :transition="{ ...heroCrosshairTransition, delay: 1.95 + markerIndex * 0.08 }"
                 >
                   <span class="bg-current h-px w-full left-0 top-1/2 absolute -translate-y-1/2" />
                   <span class="bg-current h-full w-px left-1/2 top-0 absolute -translate-x-1/2" />
@@ -438,7 +438,7 @@ function updateUsername(value: string) {
                         :initial="heroEntryInitial"
                         :animate="heroAnimationState"
                         :variants="heroCopyLineVariants"
-                        :transition="{ ...heroCopyLineTransition, delay: lineIndex * 0.12 }"
+                        :transition="{ ...heroCopyLineTransition, delay: 1.1 + lineIndex * 0.12 }"
                       >
                         {{ line }}
                       </motion.span>
@@ -450,7 +450,7 @@ function updateUsername(value: string) {
                     :initial="heroEntryInitial"
                     :animate="heroAnimationState"
                     :variants="heroCopyItemVariants"
-                    :transition="{ ...heroCopyItemTransition, delay: 0.3 }"
+                    :transition="{ ...heroCopyItemTransition, delay: 1.6 }"
                   >
                     Grill now
                     <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/85 h-2.5 w-2.5 border-solid transition-colors duration-300 ease-out group-hover:border-explore-copy/70" />
@@ -488,7 +488,7 @@ function updateUsername(value: string) {
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
-                :transition="{ ...heroCopyItemTransition, delay: 1.05 }"
+                :transition="{ ...heroCopyItemTransition, delay: 2.7 }"
               >
                 <p class="text-[11px] text-explore-copy/80 leading-[1.55] tracking-[-0.02em] font-body">
                   <span
@@ -502,7 +502,7 @@ function updateUsername(value: string) {
                       :initial="heroEntryInitial"
                       :animate="heroAnimationState"
                       :variants="heroCopyLineVariants"
-                      :transition="{ ...heroCopyLineTransition, delay: 1.05 + lineIndex * 0.1 }"
+                      :transition="{ ...heroCopyLineTransition, delay: 2.7 + lineIndex * 0.1 }"
                     >
                       {{ line }}
                     </motion.span>
@@ -515,7 +515,7 @@ function updateUsername(value: string) {
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
-                :transition="{ ...heroCopyItemTransition, delay: 0.15 }"
+                :transition="{ ...heroCopyItemTransition, delay: 2.35 }"
                 :style="{
                   fontFamily: activeWordmarkFont.family,
                   fontWeight: 400,
