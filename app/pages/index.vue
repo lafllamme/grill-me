@@ -488,7 +488,7 @@ function updateUsername(value: string) {
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
-                :transition="{ ...heroCopyItemTransition, delay: 2.7 }"
+                :transition="{ ...heroCopyItemTransition, delay: 3 }"
               >
                 <p class="text-[11px] text-explore-copy/80 leading-[1.55] tracking-[-0.02em] font-body">
                   <span
@@ -502,7 +502,7 @@ function updateUsername(value: string) {
                       :initial="heroEntryInitial"
                       :animate="heroAnimationState"
                       :variants="heroCopyLineVariants"
-                      :transition="{ ...heroCopyLineTransition, delay: 2.7 + lineIndex * 0.1 }"
+                      :transition="{ ...heroCopyLineTransition, delay: 3 + lineIndex * 0.1 }"
                     >
                       {{ line }}
                     </motion.span>
@@ -515,7 +515,7 @@ function updateUsername(value: string) {
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
-                :transition="{ ...heroCopyItemTransition, delay: 2.35 }"
+                :transition="{ ...heroCopyItemTransition, delay: 0.95 }"
                 :style="{
                   fontFamily: activeWordmarkFont.family,
                   fontWeight: 400,
