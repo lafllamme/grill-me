@@ -30,12 +30,12 @@ const navigationItemVariants = {
   hidden: { opacity: 0, y: -14 },
   visible: { opacity: 1, y: 0 },
 }
-const heroHeaderTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.65 }
+const heroHeaderTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const }
 function createNavigationItemTransition(index: number) {
   return {
     duration: 0.72,
     ease: [0.22, 1, 0.36, 1] as const,
-    delay: 0.9 + index * 0.16,
+    delay: index * 0.16,
   }
 }
 </script>
