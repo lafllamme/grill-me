@@ -40,10 +40,11 @@ useHead({ title: 'Grillme — Evidence-backed code roasts' })
 useSeoMeta({ description: 'A Fuel-inspired Grillme longform concept built around public evidence, progressive roast states, and editorial chapters.' })
 
 const isEntryOverlayVisible = useLandingEntryOverlay()
+const isDev = import.meta.dev
 const route = useRoute()
 const activeWordmarkFont = computed(() => {
   const raw = route.query.font
-  const fontId = typeof raw === 'string' ? raw : 'jakarta'
+  const fontId = typeof raw === 'string' ? raw : 'climate'
   return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.jakarta!
 })
 const reducedMotion = usePreferredReducedMotion()
@@ -56,10 +57,10 @@ const heroCopyLineVariants = {
   hidden: { y: '125%' },
   visible: { y: '0%' },
 }
-const heroWordmarkVariants = {
-  hidden: { opacity: 0, y: 170 },
+const heroWordmarkVariants = computed(() => ({
+  hidden: { opacity: 0, y: activeWordmarkFont.value.heroEntryOffset },
   visible: { opacity: 1, y: 0 },
-}
+}))
 const heroBackgroundVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
@@ -420,7 +421,7 @@ function updateUsername(value: string) {
               <div class="mt-[1.1rem]">
                 <motion.h1
                   aria-label="Grill me"
-                  class="text-[clamp(4.65rem,16.8vw,21rem)] text-explore-copy leading-[0.64] pb-[0.04em] text-right whitespace-nowrap origin-right ml-auto w-full max-w-none"
+                  class="text-explore-copy pb-[0.04em] whitespace-nowrap origin-right ml-auto flex w-full max-w-none justify-end"
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
                   :variants="heroWordmarkVariants"
@@ -428,10 +429,17 @@ function updateUsername(value: string) {
                   :style="{
                     fontFamily: activeWordmarkFont.family,
                     fontWeight: activeWordmarkFont.weight,
-                    letterSpacing: activeWordmarkFont.letterSpacing,
+                    fontSize: activeWordmarkFont.heroFontSize,
+                    lineHeight: activeWordmarkFont.heroLineHeight,
+                    letterSpacing: activeWordmarkFont.heroLetterSpacing,
                   }"
                 >
-                  GRILL ME
+                  <span
+                    class="inline-block origin-right"
+                    :style="{ transform: `scaleX(${activeWordmarkFont.heroScaleX})` }"
+                  >
+                    GRILL ME
+                  </span>
                 </motion.h1>
               </div>
 
@@ -521,7 +529,7 @@ function updateUsername(value: string) {
       </main>
 
       <PrismGradientDevPanel
-        v-if="!isEntryOverlayVisible"
+        v-if="isDev && !isEntryOverlayVisible"
         :settings="prismSettings"
         :defaults="testPagePrismDefaults"
         :is-panel-open="isPrismPanelOpen"

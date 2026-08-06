@@ -122,6 +122,7 @@ export default defineConfig({
       body: '"General Sans", sans-serif',
       mono: '"Azeret Mono", monospace',
       meta: '"Azeret Mono", monospace',
+      climate: '"Climate Crisis", sans-serif',
       serif: '"Zodiak", serif',
       accent: '"Zodiak", serif',
     },

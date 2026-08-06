@@ -69,6 +69,14 @@ export default defineNuxtConfig({
         style: 'normal',
         src: [{ url: '/fonts/fontshare/azeret-mono/Azeret-Mono__Variable.woff2', format: 'woff2' }],
       },
+      {
+        name: 'Climate Crisis',
+        global: true,
+        preload: false,
+        weight: 400,
+        style: 'normal',
+        src: [{ url: '/fonts/climate-crisis/Climate-Crisis__Variable.woff2', format: 'woff2' }],
+      },
     ],
   },
   runtimeConfig: {
