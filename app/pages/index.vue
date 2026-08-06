@@ -53,10 +53,15 @@ const heroCopyItemVariants = {
   hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0 },
 }
-const heroCrosshairVariants = {
-  hidden: { opacity: 0, y: -120 },
-  visible: { opacity: 0.75, y: 0 },
-}
+const heroCrosshairVariants = [
+  -1,
+  1,
+  -1,
+  1,
+].map(direction => ({
+  hidden: { opacity: 0, y: direction * 120 },
+  visible: { opacity: [0, 0.82, 0.58], y: 0 },
+}))
 const heroCopyLineVariants = {
   hidden: { y: '125%' },
   visible: { y: '0%' },
@@ -70,7 +75,11 @@ const heroBackgroundVariants = {
   visible: { opacity: 1 },
 }
 const heroCopyItemTransition = { duration: 0.68, ease: [0.22, 1, 0.36, 1] as const }
-const heroCrosshairTransition = { duration: 0.95, ease: [0.22, 1, 0.36, 1] as const }
+const heroCrosshairTransition = {
+  duration: 1.35,
+  ease: [0.22, 1, 0.36, 1] as const,
+  times: [0, 0.64, 1],
+}
 const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as const }
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.1 }
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.55 }
@@ -405,8 +414,8 @@ function updateUsername(value: string) {
                   :class="position"
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
-:variants="heroCrosshairVariants[markerIndex]"
-:transition="{ ...heroCrosshairTransition, delay: 1.95 + markerIndex * 0.08 }"
+                  :variants="heroCrosshairVariants[markerIndex]"
+                  :transition="{ ...heroCrosshairTransition, delay: 1.95 + markerIndex * 0.08 }"
                 >
                   <span class="bg-current h-px w-full left-0 top-1/2 absolute -translate-y-1/2" />
                   <span class="bg-current h-full w-px left-1/2 top-0 absolute -translate-x-1/2" />
