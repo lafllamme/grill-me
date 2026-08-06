@@ -405,8 +405,8 @@ function updateUsername(value: string) {
                   :class="position"
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
-                  :variants="heroCrosshairVariants"
-                  :transition="{ ...heroCrosshairTransition, delay: 1.95 + markerIndex * 0.12 }"
+:variants="heroCrosshairVariants[markerIndex]"
+:transition="{ ...heroCrosshairTransition, delay: 1.95 + markerIndex * 0.08 }"
                 >
                   <span class="bg-current h-px w-full left-0 top-1/2 absolute -translate-y-1/2" />
                   <span class="bg-current h-full w-px left-1/2 top-0 absolute -translate-x-1/2" />
