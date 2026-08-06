@@ -53,6 +53,10 @@ const heroCopyItemVariants = {
   hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0 },
 }
+const heroCrosshairVariants = {
+  hidden: { opacity: 0, y: -120 },
+  visible: { opacity: 0.75, y: 0 },
+}
 const heroCopyLineVariants = {
   hidden: { y: '125%' },
   visible: { y: '0%' },
@@ -66,6 +70,7 @@ const heroBackgroundVariants = {
   visible: { opacity: 1 },
 }
 const heroCopyItemTransition = { duration: 0.68, ease: [0.22, 1, 0.36, 1] as const }
+const heroCrosshairTransition = { duration: 0.95, ease: [0.22, 1, 0.36, 1] as const }
 const heroCopyLineTransition = { duration: 0.7, ease: [0.44, 0, 0.34, 0.98] as const }
 const heroWordmarkTransition = { duration: 1.35, ease: [0.22, 1, 0.36, 1] as const, delay: 0.1 }
 const heroBackgroundTransition = { duration: 1.1, ease: [0.4, 0, 0.2, 1] as const, delay: 0.55 }
@@ -77,6 +82,11 @@ const heroCopyLines = [
   'Public code leaves a trail of decisions,',
   'shortcuts become evidence.',
   'Grillme keeps receipts.',
+] as const
+const heroSignalLines = [
+  '01 / Evidence',
+  'Public commits',
+  'Private consequences',
 ] as const
 const timeRulerMarkers = computed(() => {
   const defaultMarkers = Array.from({ length: timeRulerMarkerCount }, (_, index) => ({
@@ -382,8 +392,29 @@ function updateUsername(value: string) {
               id="top"
               class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between relative lg:pb-7 sm:pt-28"
             >
+              <div aria-hidden="true" class="pointer-events-none z-20 inset-0 absolute hidden lg:block">
+                <motion.span
+                  v-for="(position, markerIndex) in [
+                    'left-[38%] top-[63%]',
+                    'left-[54%] top-[51%]',
+                    'left-[70%] top-[63%]',
+                    'left-[87%] top-[51%]',
+                  ]"
+                  :key="position"
+                  class="text-explore-copy h-4 w-4 absolute -translate-x-1/2 -translate-y-1/2"
+                  :class="position"
+                  :initial="heroEntryInitial"
+                  :animate="heroAnimationState"
+                  :variants="heroCrosshairVariants"
+                  :transition="{ ...heroCrosshairTransition, delay: 1.95 + markerIndex * 0.12 }"
+                >
+                  <span class="bg-current h-px w-full left-0 top-1/2 absolute -translate-y-1/2" />
+                  <span class="bg-current h-full w-px left-1/2 top-0 absolute -translate-x-1/2" />
+                </motion.span>
+              </div>
+
               <div
-                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh]"
+                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh] lg:pt-[8svh]"
               >
                 <div class="w-fit max-w-full">
                   <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
@@ -444,6 +475,33 @@ function updateUsername(value: string) {
               </div>
 
               <motion.div
+                class="left-[clamp(12rem,18.3vw,22rem)] bottom-[clamp(10rem,30vh,16rem)] z-20 hidden absolute lg:block"
+                :initial="heroEntryInitial"
+                :animate="heroAnimationState"
+                :variants="heroCopyItemVariants"
+                :transition="{ ...heroCopyItemTransition, delay: 2.7 }"
+              >
+                <p class="text-[11px] text-explore-copy/80 leading-[1.55] tracking-[-0.02em] font-body">
+                  <span
+                    v-for="(line, lineIndex) in heroSignalLines"
+                    :key="line"
+                    class="block overflow-hidden"
+                  >
+                    <motion.span
+                      class="inline-block"
+                      :class="lineIndex === 0 ? 'text-explore-copy/52' : ''"
+                      :initial="heroEntryInitial"
+                      :animate="heroAnimationState"
+                      :variants="heroCopyLineVariants"
+                      :transition="{ ...heroCopyLineTransition, delay: 2.7 + lineIndex * 0.1 }"
+                    >
+                      {{ line }}
+                    </motion.span>
+                  </span>
+                </p>
+              </motion.div>
+
+              <motion.div
                 class="left-[clamp(1.5rem,1.5vw,2rem)] bottom-6 absolute h-[46px] flex items-end"
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
@@ -472,18 +530,17 @@ function updateUsername(value: string) {
               </motion.div>
             </section>
 
-            <div class="pb-[clamp(6rem,10vw,10rem)]">
+            <div class="pb-[clamp(8rem,14vw,14rem)]">
               <RebrandTargetStage :is-pending="isRoastPending" @submit="startRoast">
                 <template #preview>
                   <button
                     type="button"
                     data-testid="test-2-preview-button"
-                    class="text-[10px] text-explore-copy tracking-[0.1em] font-meta px-4 py-2.5 border-[1px] border-signal-red-500/30 rounded-xl border-solid bg-signal-red-950/35 inline-flex gap-2 uppercase transition-colors items-center hover:border-signal-red-500/55 hover:bg-signal-red-950/60 disabled:opacity-45 disabled:cursor-wait"
+                    class="text-[10px] text-explore-muted tracking-[0.1em] font-meta px-2 py-2 uppercase transition-colors hover:text-explore-copy disabled:opacity-45 disabled:cursor-wait"
                     :disabled="isRoastPending || !isPageInteractive"
                     @click="startPreview"
                   >
-                    <span class="rounded-full bg-signal-red-500 h-1.5 w-1.5 shadow-[0_0_10px_var(--explore-glow)]" />
-                    Run sample roast · no API
+                    Try a sample roast
                   </button>
                 </template>
               </RebrandTargetStage>
