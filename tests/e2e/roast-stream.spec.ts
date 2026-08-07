@@ -56,13 +56,12 @@ test('browser roast flow for lafllamme does not leave a persistent stream error 
   test.setTimeout(120_000)
 
   await page.goto('/')
-  await page.getByTestId('entry-overlay-continue').click()
-  await expect(page.getByTestId('entry-overlay-dialog')).toBeHidden({ timeout: 10_000 })
+  await expect(page.getByTestId('landing-entrance-preloader')).toBeHidden({ timeout: 10_000 })
 
   const usernameInput = page.getByTestId('roast-username-input')
   const submitButton = page.getByTestId('roast-submit-button')
 
-  await expect(usernameInput).toBeEditable()
+  await expect(usernameInput).toBeEditable({ timeout: 10_000 })
   await usernameInput.click()
   await usernameInput.fill('')
   await usernameInput.pressSequentially(TEST_USERNAME)

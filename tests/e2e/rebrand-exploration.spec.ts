@@ -1,4 +1,9 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+
+async function waitForEntrance(page: Page): Promise<void> {
+  await expect(page.getByTestId('landing-entrance-preloader')).toBeHidden({ timeout: 10_000 })
+}
 
 function createSseBody(events: Record<string, unknown>[]): string {
   return events
@@ -27,6 +32,7 @@ test('first rebrand direction stays focused and avoids mobile overflow', async (
 test('homepage exposes target, analysis, and result as separate stages', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
+  await waitForEntrance(page)
 
   await expect(page.getByRole('heading', { name: 'Your code remembers.' })).toBeVisible()
   await expect(page.getByLabel('Public GitHub username')).toHaveValue('lafllamme')
@@ -68,6 +74,7 @@ test('homepage scrolls into a streamed roast experience', async ({ page }) => {
   })
 
   await page.goto('/')
+  await waitForEntrance(page)
   await page.getByTestId('test-2-submit-button').click()
 
   const liveStage = page.getByTestId('test-2-live-roast')
@@ -90,6 +97,7 @@ test('homepage previews the complete roast without an API request', async ({ pag
   })
 
   await page.goto('/')
+  await waitForEntrance(page)
   const previewButton = page.getByTestId('test-2-preview-button')
   await expect(previewButton).toBeEnabled()
   await previewButton.click()

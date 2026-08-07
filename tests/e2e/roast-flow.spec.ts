@@ -91,27 +91,17 @@ test('stream roast api emits SSE envelope', async ({ request }) => {
   expect(donePos).toBeGreaterThan(titlePos)
 })
 
-test('entry overlay blocks landing until continue', async ({ page }) => {
+test('entrance preloader reveals the landing page before interaction', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByTestId('entry-overlay-dialog')).toBeVisible()
-  await expect(page.getByTestId('entry-overlay-continue')).toBeVisible()
-  await page.getByTestId('entry-overlay-continue').click()
-
-  await expect(page.getByTestId('entry-overlay-dialog')).toBeHidden()
-  await expect(page.getByTestId('roast-intensity-slider')).toBeVisible()
+  await expect(page.getByTestId('landing-entrance-preloader')).toBeVisible()
+  await expect(page.getByTestId('landing-entrance-preloader')).toBeHidden({ timeout: 10_000 })
+  await expect(page.getByTestId('roast-intensity-slider')).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText('Roast Level')).toBeVisible()
   await expect(page.getByText('Critical Temperature')).toBeVisible()
   await expect(page.getByTestId('roast-level-rare')).toBeVisible()
   await expect(page.getByTestId('roast-level-medium_rare')).toBeVisible()
   await expect(page.getByTestId('roast-level-medium')).toBeVisible()
   await expect(page.getByTestId('roast-level-burned_to_crisp')).toBeVisible()
-})
-
-test('not today navigates to toysrus in the same tab', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByTestId('entry-overlay-not-today')).toBeVisible()
-  await page.getByTestId('entry-overlay-not-today').click()
-  await page.waitForURL('https://www.toysrus.com/**', { timeout: 20_000 })
 })
 
 test('leaderboard api responds with stable shape', async ({ request }) => {

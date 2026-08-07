@@ -3,10 +3,9 @@ import type { PrismGradientSettings, PrismGradientShaderSettings } from '~/model
 import { useMouseInElement, usePreferredReducedMotion, useTimeoutFn } from '@vueuse/core'
 import { motion } from 'motion-v'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { navigateTo } from '#app'
 import { useHead, useSeoMeta } from '#imports'
 import { WORDMARK_FONTS } from '~/components/grillme-wordmark-fonts'
-import LandingEntryOverlay from '~/components/LandingEntryOverlay.vue'
+import LandingEntrancePreloader from '~/components/LandingEntrancePreloader.vue'
 import PrismGradientBackground from '~/components/PrismGradientBackground.client.vue'
 import PrismGradientDevPanel from '~/components/PrismGradientDevPanel.vue'
 import RebrandChapterShell from '~/components/rebrand/RebrandChapterShell.vue'
@@ -23,7 +22,6 @@ import RebrandFuelPortfolio from '~/components/rebrand/RebrandFuelPortfolio.vue'
 import RebrandFuelStats from '~/components/rebrand/RebrandFuelStats.vue'
 import RebrandTargetStage from '~/components/rebrand/RebrandTargetStage.vue'
 import { useFuelRoastViewModel } from '~/composables/useFuelRoastViewModel'
-import { useLandingEntryOverlay } from '~/composables/useLandingEntryOverlay'
 import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings'
 import { useRoast } from '~/composables/useRoast'
 import { useRoastPreview } from '~/composables/useRoastPreview'
@@ -32,14 +30,13 @@ import { ROAST_INTENSITY_LEVELS } from '~/constants/roastIntensity'
 import { AGGREGATE_STATS, PUBLIC_ROAST_RECEIPTS } from '~/data/rebrand-fuel'
 import { PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS } from '~/models/prism-gradient'
 import { useRoastStore } from '~/stores/roastStore'
-import { createEntryOverlayActions } from '~/utils/landing-entry-overlay'
 
 definePageMeta({ layout: false })
 
 useHead({ title: 'Grillme — Evidence-backed code roasts' })
 useSeoMeta({ description: 'A Fuel-inspired Grillme longform concept built around public evidence, progressive roast states, and editorial chapters.' })
 
-const isEntryOverlayVisible = useLandingEntryOverlay()
+const isEntranceVisible = ref(true)
 const isDev = import.meta.dev
 const route = useRoute()
 const activeWordmarkFont = computed(() => {
@@ -133,24 +130,20 @@ const isHeroBackgroundReady = ref(false)
 let heroBackgroundRevealFrame: number | null = null
 const { start: startHeroBackgroundFallback, stop: stopHeroBackgroundFallback } = useTimeoutFn(() => {
   isHeroBackgroundReady.value = true
-  if (!isEntryOverlayVisible.value)
+  if (!isEntranceVisible.value)
     isHeroBackgroundVisible.value = true
 }, heroBackgroundFallbackDelay, { immediate: false })
 const heroAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
     return 'visible'
 
-  return isEntryOverlayVisible.value ? 'hidden' : 'visible'
+  return isEntranceVisible.value ? 'hidden' : 'visible'
 })
 const heroBackgroundAnimationState = computed(() => {
   if (reducedMotion.value === 'reduce')
     return 'visible'
 
   return isHeroBackgroundVisible.value ? 'visible' : 'hidden'
-})
-const { onContinue, onNotToday } = createEntryOverlayActions({
-  isOverlayVisible: isEntryOverlayVisible,
-  navigateTo,
 })
 const {
   lenis,
@@ -159,13 +152,6 @@ const {
   start: startSmoothScroll,
   stop: stopSmoothScroll,
 } = useSmoothScroll()
-
-async function revealHomepage() {
-  scrollToTop({ force: true, immediate: true })
-  onContinue()
-  await nextTick()
-  startSmoothScroll()
-}
 
 const testPagePrismDefaults: PrismGradientSettings = {
   ...PRISM_GRADIENT_DEFAULT_SHADER_SETTINGS,
@@ -212,6 +198,13 @@ const roastStore = useRoastStore()
 const liveRoastStage = ref<HTMLElement | null>(null)
 const isLiveRoastActive = ref(false)
 const isPageInteractive = ref(false)
+
+function completeEntrance() {
+  scrollToTop({ force: true, immediate: true })
+  isEntranceVisible.value = false
+  isPageInteractive.value = true
+  startSmoothScroll()
+}
 const activeRoastSource = ref<'api' | 'preview'>('api')
 const {
   result,
@@ -277,7 +270,7 @@ function scheduleHeroBackgroundReveal() {
 function revealHeroBackground() {
   isHeroBackgroundReady.value = true
   stopHeroBackgroundFallback()
-  if (!isEntryOverlayVisible.value)
+  if (!isEntranceVisible.value)
     isHeroBackgroundVisible.value = true
 }
 
@@ -290,11 +283,11 @@ function cancelHeroBackgroundRevealFrame() {
 }
 
 onMounted(() => {
-  isPageInteractive.value = true
+  isPageInteractive.value = false
   scheduleHeroBackgroundReveal()
 })
 
-watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
+watch([isEntranceVisible, lenis], ([isVisible, lenisInstance]) => {
   if (!lenisInstance)
     return
 
@@ -307,7 +300,7 @@ watch([isEntryOverlayVisible, lenis], ([isVisible, lenisInstance]) => {
   startSmoothScroll()
 }, { immediate: true })
 
-watch(isEntryOverlayVisible, (isVisible) => {
+watch(isEntranceVisible, (isVisible) => {
   if (!isVisible) {
     scheduleHeroBackgroundReveal()
     if (isHeroBackgroundReady.value)
@@ -358,20 +351,16 @@ function updateUsername(value: string) {
 
 <template>
   <div>
-    <LandingEntryOverlay
-      v-if="isEntryOverlayVisible"
-      @overlay-continue="revealHomepage"
-      @overlay-decline="onNotToday"
-    />
+    <LandingEntrancePreloader @complete="completeEntrance" />
 
     <div
       data-testid="homepage-root"
       class="text-explore-copy bg-black selection:text-explore-copy selection:bg-signal-red-700"
-      :class="isEntryOverlayVisible ? 'fixed inset-0 overflow-hidden' : 'relative min-h-screen'"
-      :aria-hidden="isEntryOverlayVisible"
-      :inert="isEntryOverlayVisible || undefined"
+      :class="isEntranceVisible ? 'fixed inset-0 overflow-hidden' : 'relative min-h-screen'"
+      :aria-hidden="isEntranceVisible"
+      :inert="isEntranceVisible || undefined"
     >
-      <RebrandFuelHeroNav v-if="!isEntryOverlayVisible" />
+      <RebrandFuelHeroNav v-if="!isEntranceVisible" />
 
       <main class="relative overflow-clip">
         <section class="bg-black relative z-0 isolate">
@@ -388,7 +377,7 @@ function updateUsername(value: string) {
                 <PrismGradientBackground
                   v-if="isHeroBackgroundMounted"
                   class="scale-[1.05] inset-0 absolute motion-reduce:scale-100"
-                  :speed="isEntryOverlayVisible ? 0 : prismSettings.speed"
+                  :speed="isEntranceVisible ? 0 : prismSettings.speed"
                   :ambient-opacity="prismSettings.ambientOpacity"
                   :radius="prismSettings.radius"
                   :noise="{ opacity: prismSettings.noiseOpacity, scale: prismSettings.noiseScale }"
@@ -603,7 +592,7 @@ function updateUsername(value: string) {
       </main>
 
       <PrismGradientDevPanel
-        v-if="isDev && !isEntryOverlayVisible"
+        v-if="isDev && !isEntranceVisible"
         :settings="prismSettings"
         :defaults="testPagePrismDefaults"
         :is-panel-open="isPrismPanelOpen"
