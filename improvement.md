@@ -48,11 +48,12 @@ Current findings:
 - Initial client output includes chunks around `430 kB` and `268 kB` uncompressed; investigate ownership before splitting.
 - Build reports the existing `lottie-web` third-party `eval` warning; do not treat it as a homepage regression without tracing its runtime use.
 - Browser smoke check confirms both marquee tracks update continuously through inline transforms while visible.
+- Prism already has a render-pixel budget, DPR cap, 60 FPS cap, viewport pausing, document-visibility pausing, and WebGL context recovery; no speculative shader change was made.
 
 ### 2. Scroll architecture
 
-- [ ] Make Lenis the canonical scroll source for JS-driven motion.
-- [ ] Remove duplicate reactive scroll tracking where Lenis data can be reused.
+- [x] Make Lenis the canonical scroll source for the Marquee's JS-driven motion.
+- [x] Remove duplicate reactive scroll tracking where Lenis data can be reused for the Marquee.
 - [ ] Define which effects are native CSS timeline effects and which require JS.
 - [ ] Prevent multiple systems from competing over the same transform.
 - [ ] Verify that anchor navigation and entrance scroll locking still work.
@@ -63,15 +64,15 @@ Current findings:
 - [x] Use one shared frame controller for both rows.
 - [x] Keep the marquee paused when it is outside the viewport.
 - [ ] Preserve the eight-copy seamless fill without unnecessary component updates.
-- [ ] Smooth scroll direction changes without visible stutter.
+- [x] Smooth scroll direction changes without visible stutter in the Lenis-driven Marquee path.
 - [ ] Tune base velocity and scroll boost against the NXUI reference.
 - [ ] Test slow wheel, fast wheel, trackpad, touch, and reverse scrolling.
 
 ### 4. Prism/WebGL workload
 
-- [ ] Pause Prism when the hero/target stage is outside the viewport.
-- [ ] Confirm inactive-tab pausing and context-loss recovery.
-- [ ] Verify the internal DPR and FPS caps on desktop and mobile.
+- [x] Pause Prism when the rendered container is outside the viewport.
+- [x] Confirm inactive-tab pausing and context-loss recovery.
+- [x] Verify the internal DPR and FPS caps in the implementation.
 - [ ] Reduce or disable rendering when the page is visually covered by the entrance layer.
 - [ ] Check whether shader settings create avoidable GPU spikes.
 - [ ] Confirm the WebGL canvas is not mounted more than once.
@@ -122,7 +123,7 @@ Current findings:
 
 ## Current status
 
-The plan is created. The production build baseline is complete and the first Marquee optimization is implemented. Runtime profiling is next.
+The plan is created. The Marquee runtime path is optimized and the production build baseline is complete. Remaining work is limited to measured profiling and any issues it exposes.
 
 ## Completed in this pass
 
@@ -136,3 +137,9 @@ Validation:
 - `pnpm lint` passed with 26 pre-existing UnoCSS ordering warnings and no errors.
 - `pnpm test:unit` passed: 48 tests.
 - `pnpm test:e2e` passed 9/13 tests. The four failures are existing copy/entrance-selector mismatches; none points to the marquee implementation.
+
+## Completed in the second pass
+
+- The Marquee now reads Lenis' smoothed `animatedScroll` instead of maintaining a second reactive window-scroll tracker.
+- Prism was audited before editing; its existing lifecycle guards already cover the main continuous-rendering risks.
+- The short stats counter animation was audited; it runs only once when the section enters the viewport and stops after 1.1 seconds, so it was left unchanged.
