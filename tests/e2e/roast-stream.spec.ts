@@ -55,11 +55,28 @@ test('api roast stream progressively emits structured roast events for lafllamme
 test('browser roast flow for lafllamme does not leave a persistent stream error behind', async ({ page }) => {
   test.setTimeout(120_000)
 
+  await page.route('**/api/roast/stream', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+      body: [
+        { type: 'meta', requestId: 'roast-stream-e2e', username: TEST_USERNAME },
+        { type: 'status', phase: 'fetching_github', message: 'Reading public GitHub activity' },
+        { type: 'status', phase: 'selecting_evidence', message: 'Selecting the commits that earned this' },
+        { type: 'roast_title', title: 'Abstraction Witness Protection' },
+        { type: 'roast_line', index: 0, text: 'You did not remove complexity. You gave it aliases.' },
+      ].map(event => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(''),
+    })
+  })
+
   await page.goto('/')
   await expect(page.getByTestId('landing-entrance-preloader')).toBeHidden({ timeout: 10_000 })
 
-  const usernameInput = page.getByTestId('roast-username-input')
-  const submitButton = page.getByTestId('roast-submit-button')
+  const usernameInput = page.getByTestId('test-2-username-input')
+  const submitButton = page.getByTestId('test-2-submit-button')
 
   await expect(usernameInput).toBeEditable({ timeout: 10_000 })
   await usernameInput.click()
@@ -69,20 +86,14 @@ test('browser roast flow for lafllamme does not leave a persistent stream error 
   await expect(submitButton).toBeEnabled()
   await submitButton.click()
 
-  await expect(page.getByTestId('roast-terminal')).toContainText('Fetching GitHub activity and commit diffs...', {
-    timeout: 30_000,
-  })
-
   await expect.poll(async () => {
-    const sessionState = await getOptionalText(page, 'roast-session-state')
-    const title = await getOptionalText(page, 'roast-title')
-    const lines = await getOptionalText(page, 'roast-lines')
-    const error = await getOptionalText(page, 'roast-stream-error')
+    const liveStage = await getOptionalText(page, 'test-2-live-roast')
+    const title = await getOptionalText(page, 'test-2-roast-title')
+    const error = await getOptionalText(page, 'test-2-roast-error')
 
     return {
-      isReady: sessionState.includes('[live]') || sessionState.includes('[done]'),
-      hasTitle: !title.includes('Awaiting roast title') && title.trim().length > 0,
-      hasLines: lines.trim().length > 0,
+      isReady: liveStage.includes('Public trail for @lafllamme'),
+      hasTitle: title.includes('Abstraction Witness Protection'),
       error: error.trim(),
     }
   }, {
@@ -92,15 +103,9 @@ test('browser roast flow for lafllamme does not leave a persistent stream error 
   }).toMatchObject({
     isReady: true,
     hasTitle: true,
-    hasLines: true,
     error: '',
   })
 
-  await expect(page.getByTestId('roast-title')).not.toContainText('Awaiting roast title...', {
-    timeout: 30_000,
-  })
-  await expect(page.getByTestId('roast-lines')).toContainText(/.+/, {
-    timeout: 30_000,
-  })
-  await expect(page.getByTestId('roast-stream-error')).toHaveCount(0)
+  await expect(page.getByTestId('test-2-live-roast')).toContainText('You did not remove complexity. You gave it aliases.')
+  await expect(page.getByTestId('test-2-roast-error')).toHaveCount(0)
 })

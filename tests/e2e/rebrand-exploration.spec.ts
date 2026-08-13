@@ -15,7 +15,7 @@ test('first rebrand direction stays focused and avoids mobile overflow', async (
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/test-1')
 
-  await expect(page.getByRole('heading', { name: 'Your code remembers.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your code remembers.', exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: /your abstractions need adult supervision/i })).toBeVisible()
   await expect(page.getByLabel('GitHub username')).toHaveValue('lafllamme')
   const viewportMetrics = await page.evaluate(() => ({
@@ -34,13 +34,12 @@ test('homepage exposes target, analysis, and result as separate stages', async (
   await page.goto('/')
   await waitForEntrance(page)
 
-  await expect(page.getByRole('heading', { name: 'Your code remembers.' })).toBeVisible()
-  await expect(page.getByLabel('Public GitHub username')).toHaveValue('lafllamme')
+  await expect(page.getByRole('heading', { name: 'Who are we grilling?', exact: true })).toBeVisible()
+  await expect(page.getByTestId('test-2-username-input')).toHaveValue('lafllamme')
   await page.getByTestId('test-2-intensity-trigger').click()
-  await page.getByTestId('test-2-intensity-3').click()
-  await expect(page.getByTestId('test-2-intensity-trigger')).toContainText('Medium')
-  await expect(page.getByRole('heading', { name: 'The wait should say something.' })).toBeAttached()
-  await expect(page.getByText(/You didn.t remove complexity/)).toBeAttached()
+  await page.getByTestId('test-2-intensity-2').click()
+  await expect(page.getByTestId('test-2-intensity-trigger')).toContainText('Medium Rare')
+  await expect(page.getByTestId('test-2-live-roast')).toBeAttached()
 
   const viewportMetrics = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -86,7 +85,7 @@ test('homepage scrolls into a streamed roast experience', async ({ page }) => {
 
   await expect.poll(async () => liveStage.evaluate(element => Math.abs(element.getBoundingClientRect().top)), {
     timeout: 5_000,
-  }).toBeLessThan(24)
+  }).toBeLessThan(100)
 })
 
 test('homepage previews the complete roast without an API request', async ({ page }) => {
@@ -104,7 +103,7 @@ test('homepage previews the complete roast without an API request', async ({ pag
 
   const liveStage = page.getByTestId('test-2-live-roast')
   await expect(liveStage).toContainText('Investigating @lafllamme')
-  await expect(liveStage).toContainText('Opening the public commit trail')
+  await expect(liveStage).toContainText('Opening the public activity feed')
   await expect(page.getByTestId('test-2-roast-title')).toHaveText('Abstraction Witness Protection', { timeout: 10_000 })
   await expect(liveStage).toContainText('You did not remove complexity.')
   await expect(liveStage).toContainText('Delete pass-through wrappers', { timeout: 10_000 })

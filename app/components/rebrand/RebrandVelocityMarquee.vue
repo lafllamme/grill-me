@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useIntersectionObserver, usePreferredReducedMotion, useRafFn } from '@vueuse/core'
-import { useLenis } from 'lenis/vue'
+import { defaultWindow, useIntersectionObserver, usePreferredReducedMotion, useRafFn, useScroll } from '@vueuse/core'
 import { onMounted, ref, watch } from 'vue'
 
 withDefaults(defineProps<{
@@ -20,7 +19,7 @@ let primaryOffset = 0
 let secondaryOffset = 0
 let scrollDirection = 1
 let scrollBoost = 0
-const lenis = useLenis()
+const { y: scrollY } = useScroll(defaultWindow)
 let previousScrollY = 0
 const reducedMotion = usePreferredReducedMotion()
 const defaultVelocity = 0.65
@@ -34,10 +33,6 @@ function updateTrackTransforms() {
     secondaryTrackRef.value.style.transform = `translateX(${toWrappedPercent(secondaryOffset)})`
 }
 
-function getScrollPosition() {
-  return lenis.value?.animatedScroll ?? globalThis.window?.scrollY ?? 0
-}
-
 let lastTimestamp = 0
 
 const { pause, resume } = useRafFn(({ timestamp }) => {
@@ -46,12 +41,13 @@ const { pause, resume } = useRafFn(({ timestamp }) => {
 
   const delta = lastTimestamp ? timestamp - lastTimestamp : 16
   lastTimestamp = timestamp
-  const currentScrollY = getScrollPosition()
-  const scrollDelta = currentScrollY - previousScrollY
-  previousScrollY = currentScrollY
+  const scrollDelta = scrollY.value - previousScrollY
+  previousScrollY = scrollY.value
 
-  if (Math.abs(scrollDelta) > 0.25)
-    scrollDirection = Math.sign(scrollDelta)
+  if (scrollDelta < 0)
+    scrollDirection = -1
+  else if (scrollDelta > 0)
+    scrollDirection = 1
 
   const frameSeconds = delta / 1000
   const targetBoost = Math.min(Math.abs(scrollDelta) / 5, 5)
@@ -62,12 +58,15 @@ const { pause, resume } = useRafFn(({ timestamp }) => {
   updateTrackTransforms()
 }, { immediate: false })
 
-onMounted(updateTrackTransforms)
+onMounted(() => {
+  updateTrackTransforms()
+  previousScrollY = scrollY.value
+})
 
 useIntersectionObserver(sectionRef, ([entry]) => {
   isVisible.value = Boolean(entry?.isIntersecting)
   if (isVisible.value && reducedMotion.value !== 'reduce') {
-    previousScrollY = getScrollPosition()
+    previousScrollY = scrollY.value
     lastTimestamp = 0
     resume()
   }
@@ -83,6 +82,7 @@ watch(reducedMotion, (preference) => {
     secondaryOffset = 0
     scrollDirection = 1
     scrollBoost = 0
+    previousScrollY = scrollY.value
     lastTimestamp = 0
     updateTrackTransforms()
     pause()

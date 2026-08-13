@@ -52,8 +52,8 @@ Current findings:
 
 ### 2. Scroll architecture
 
-- [x] Make Lenis the canonical scroll source for the Marquee's JS-driven motion.
-- [x] Remove duplicate reactive scroll tracking where Lenis data can be reused for the Marquee.
+- [x] Keep Lenis as the page's smooth-scroll source while the Marquee samples the native window scroll position like the NXUI reference.
+- [x] Keep the Marquee's scroll sampling isolated to one shared frame loop.
 - [ ] Define which effects are native CSS timeline effects and which require JS.
 - [ ] Prevent multiple systems from competing over the same transform.
 - [ ] Verify that anchor navigation and entrance scroll locking still work.
@@ -63,9 +63,9 @@ Current findings:
 - [x] Move per-frame transforms from Vue refs to direct DOM style updates.
 - [x] Use one shared frame controller for both rows.
 - [x] Keep the marquee paused when it is outside the viewport.
-- [ ] Preserve the eight-copy seamless fill without unnecessary component updates.
-- [x] Smooth scroll direction changes without visible stutter in the Lenis-driven Marquee path.
-- [ ] Tune base velocity and scroll boost against the NXUI reference.
+- [x] Preserve the eight-copy seamless fill without unnecessary component updates.
+- [x] Smooth scroll direction changes without visible stutter in the native-scroll Marquee path.
+- [x] Tune base velocity and scroll boost against the NXUI reference.
 - [ ] Test slow wheel, fast wheel, trackpad, touch, and reverse scrolling.
 
 ### 4. Prism/WebGL workload
@@ -123,7 +123,7 @@ Current findings:
 
 ## Current status
 
-The plan is created. The Marquee runtime path is optimized and the production build baseline is complete. Remaining work is limited to measured profiling and any issues it exposes.
+The plan is created. The Marquee and Prism runtime paths are optimized and the production build baseline is complete. Remaining work is measured profiling, broader responsive validation, and the reveal/sticky audit.
 
 ## Completed in this pass
 
@@ -140,6 +140,7 @@ Validation:
 
 ## Completed in the second pass
 
-- The Marquee now reads Lenis' smoothed `animatedScroll` instead of maintaining a second reactive window-scroll tracker.
+- The Marquee follows the NXUI-style native window-scroll sampling model again, with a slower base velocity and a smoothed scroll boost to avoid direction-change stutter.
+- The Marquee keeps the project-specific performance safeguards: direct DOM transforms, one shared RAF loop, viewport pausing, reduced-motion handling, and eight-copy seamless fill.
 - Prism was audited before editing; its existing lifecycle guards already cover the main continuous-rendering risks.
 - The short stats counter animation was audited; it runs only once when the section enters the viewport and stops after 1.1 seconds, so it was left unchanged.

@@ -95,13 +95,10 @@ test('entrance preloader reveals the landing page before interaction', async ({ 
   await page.goto('/')
   await expect(page.getByTestId('landing-entrance-preloader')).toBeVisible()
   await expect(page.getByTestId('landing-entrance-preloader')).toBeHidden({ timeout: 10_000 })
-  await expect(page.getByTestId('roast-intensity-slider')).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByText('Roast Level')).toBeVisible()
-  await expect(page.getByText('Critical Temperature')).toBeVisible()
-  await expect(page.getByTestId('roast-level-rare')).toBeVisible()
-  await expect(page.getByTestId('roast-level-medium_rare')).toBeVisible()
-  await expect(page.getByTestId('roast-level-medium')).toBeVisible()
-  await expect(page.getByTestId('roast-level-burned_to_crisp')).toBeVisible()
+  await expect(page.getByTestId('test-2-username-input')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByTestId('test-2-intensity-trigger')).toBeVisible()
+  await expect(page.getByTestId('test-2-submit-button')).toBeVisible()
+  await expect(page.getByTestId('test-2-preview-button')).toBeVisible()
 })
 
 test('leaderboard api responds with stable shape', async ({ request }) => {
