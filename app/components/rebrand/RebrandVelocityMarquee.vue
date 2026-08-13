@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defaultWindow, useIntersectionObserver, usePreferredReducedMotion, useRafFn, useScroll } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 withDefaults(defineProps<{
   items: readonly string[]
@@ -12,11 +12,13 @@ withDefaults(defineProps<{
 })
 
 const sectionRef = ref<HTMLElement | null>(null)
+const primaryTrackRef = ref<HTMLElement | null>(null)
+const secondaryTrackRef = ref<HTMLElement | null>(null)
 const isVisible = ref(false)
-const primaryOffset = ref(0)
-const secondaryOffset = ref(0)
-const scrollDirection = ref(1)
-const scrollBoost = ref(0)
+let primaryOffset = 0
+let secondaryOffset = 0
+let scrollDirection = 1
+let scrollBoost = 0
 const { y: scrollY } = useScroll(defaultWindow)
 const previousScrollY = ref(0)
 const reducedMotion = usePreferredReducedMotion()
@@ -24,15 +26,12 @@ const defaultVelocity = 0.65
 const trackCopies = 8
 const marqueeTextClass = 'text-[clamp(2.2rem,5vw,5.8rem)] text-basalt-950 leading-none tracking-[-0.045em] font-body whitespace-nowrap'
 const toWrappedPercent = (value: number) => `${(((value % 12.5) + 12.5) % 12.5) - 12.5}%`
-
-const trackStyle = computed(() => ({
-  transform: `translateX(${toWrappedPercent(primaryOffset.value)})`,
-}))
-const reverseTrackStyle = computed(() => {
-  return {
-    transform: `translateX(${toWrappedPercent(secondaryOffset.value)})`,
-  }
-})
+function updateTrackTransforms() {
+  if (primaryTrackRef.value)
+    primaryTrackRef.value.style.transform = `translateX(${toWrappedPercent(primaryOffset)})`
+  if (secondaryTrackRef.value)
+    secondaryTrackRef.value.style.transform = `translateX(${toWrappedPercent(secondaryOffset)})`
+}
 
 let lastTimestamp = 0
 
@@ -46,34 +45,40 @@ const { pause, resume } = useRafFn(({ timestamp }) => {
   previousScrollY.value = scrollY.value
 
   if (Math.abs(scrollDelta) > 0.25)
-    scrollDirection.value = Math.sign(scrollDelta)
+    scrollDirection = Math.sign(scrollDelta)
 
   const frameSeconds = delta / 1000
   const targetBoost = Math.min(Math.abs(scrollDelta) / 5, 5)
-  scrollBoost.value += (targetBoost - scrollBoost.value) * Math.min(frameSeconds * 8, 1)
-  const move = defaultVelocity * (1 + scrollBoost.value) * frameSeconds
-  primaryOffset.value += scrollDirection.value * move
-  secondaryOffset.value -= scrollDirection.value * move
+  scrollBoost += (targetBoost - scrollBoost) * Math.min(frameSeconds * 8, 1)
+  const move = defaultVelocity * (1 + scrollBoost) * frameSeconds
+  primaryOffset += scrollDirection * move
+  secondaryOffset -= scrollDirection * move
+  updateTrackTransforms()
 }, { immediate: false })
+
+onMounted(updateTrackTransforms)
 
 useIntersectionObserver(sectionRef, ([entry]) => {
   isVisible.value = Boolean(entry?.isIntersecting)
   if (isVisible.value && reducedMotion.value !== 'reduce') {
     previousScrollY.value = scrollY.value
+    lastTimestamp = 0
     resume()
   }
   else {
+    lastTimestamp = 0
     pause()
   }
 })
 
 watch(reducedMotion, (preference) => {
   if (preference === 'reduce') {
-    primaryOffset.value = 0
-    secondaryOffset.value = 0
-    scrollDirection.value = 1
-    scrollBoost.value = 0
+    primaryOffset = 0
+    secondaryOffset = 0
+    scrollDirection = 1
+    scrollBoost = 0
     lastTimestamp = 0
+    updateTrackTransforms()
     pause()
   }
   else if (isVisible.value) {
@@ -85,7 +90,7 @@ watch(reducedMotion, (preference) => {
 <template>
   <div ref="sectionRef" class="relative left-1/2 py-8 border-y-[1px] border-basalt-950/16 border-solid w-screen -translate-x-1/2 overflow-hidden" :aria-label="label">
     <div class="space-y-6">
-      <div class="will-change-transform w-max motion-reduce:transform-none" :style="trackStyle">
+      <div ref="primaryTrackRef" class="will-change-transform w-max motion-reduce:transform-none">
         <div v-for="copyIndex in trackCopies" :key="`forward-copy-${copyIndex}`" class="pr-10 inline-flex gap-10" :aria-hidden="copyIndex > 1">
           <span v-for="(item, index) in items" :key="`forward-copy-${index}-${item}`" :class="marqueeTextClass">
             {{ item }}
@@ -95,7 +100,7 @@ watch(reducedMotion, (preference) => {
           </span>
         </div>
       </div>
-      <div class="will-change-transform w-max motion-reduce:transform-none" :style="reverseTrackStyle" aria-hidden="true">
+      <div ref="secondaryTrackRef" class="will-change-transform w-max motion-reduce:transform-none" aria-hidden="true">
         <div v-for="copyIndex in trackCopies" :key="`reverse-copy-${copyIndex}`" class="pr-10 inline-flex gap-10">
           <span v-for="(item, index) in secondaryItems" :key="`reverse-first-${index}-${item}`" :class="marqueeTextClass">
             {{ item }}
