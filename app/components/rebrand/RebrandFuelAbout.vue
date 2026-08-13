@@ -4,7 +4,8 @@ import RebrandParallaxMedia from '~/components/rebrand/RebrandParallaxMedia.vue'
 import RebrandScrollHeadline from '~/components/rebrand/RebrandScrollHeadline.vue'
 import RebrandVelocityMarquee from '~/components/rebrand/RebrandVelocityMarquee.vue'
 
-const evidenceTerms = ['PUBLIC COMMITS', 'DIFFS', 'EVIDENCE', 'VERDICT'] as const
+const evidenceTerms = ['GET ROASTED', 'FACE THE DIFF', 'FIX THE CODE'] as const
+const evidencePrinciples = ['EVIDENCE FIRST', 'NO VIBES', 'JUST SIGNAL'] as const
 
 const levels = [
   {
@@ -82,7 +83,7 @@ const levels = [
     </div>
 
     <div class="pt-[clamp(7rem,13vw,13rem)]">
-      <RebrandVelocityMarquee :items="evidenceTerms" />
+      <RebrandVelocityMarquee :items="evidenceTerms" :secondary-items="evidencePrinciples" />
     </div>
   </section>
 </template>
