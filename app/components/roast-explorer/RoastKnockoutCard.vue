@@ -178,21 +178,17 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
 <template>
   <div class="p-5 bg-background lg:p-12 sm:p-8">
     <div class="mx-auto min-h-[54rem] max-w-6xl">
-      <div class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta flex gap-3 uppercase items-center justify-between">
-        <span>Roast console / live assembly</span><span>{{ fixture.intensity.level }} rd. bout</span>
-      </div>
-
-      <div class="mt-8 gap-6 grid min-w-0 lg:grid-cols-[minmax(13rem,0.27fr)_minmax(0,0.45fr)_minmax(18rem,0.38fr)] lg:items-start">
-        <aside class="order-2 min-w-0 gap-4 grid lg:min-h-[41rem] lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] lg:order-1">
+      <div class="gap-6 grid min-w-0 lg:grid-cols-[minmax(16rem,0.32fr)_minmax(0,0.42fr)_minmax(18rem,0.36fr)] lg:items-start">
+        <aside class="order-2 min-w-0 gap-4 grid lg:min-h-[41rem] lg:grid-rows-[15rem_minmax(0,1fr)] lg:order-1">
           <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container">
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
-              Target
+              Username
             </p>
             <div class="mt-5 min-h-[10rem] flex flex-col">
-              <p class="text-[clamp(1.7rem,2.4vw,3rem)] text-on-surface leading-[0.9] tracking-[-0.06em] font-display break-words">
+              <p class="text-[clamp(2rem,3vw,3.5rem)] text-on-surface leading-[0.9] tracking-[-0.06em] font-display break-words">
                 @{{ fixture.username }}
               </p>
-              <div class="mt-auto pt-4 border-t border-divider">
+              <div class="mt-auto pt-4">
                 <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">
                   {{ fixture.intensity.label.replaceAll('_', ' ') }}
                 </p>
@@ -220,9 +216,6 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
                     <Skeleton v-else class="rounded-[0.35rem] h-7 w-10" label="Loading score" />
                   </div>
                 </div>
-                <p class="text-[11px] text-on-surface-variant leading-relaxed font-body mt-2">
-                  {{ metric.descriptor }}
-                </p>
               </div>
             </div>
           </div>
@@ -278,17 +271,8 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
           </div>
         </article>
 
-        <aside class="order-3 min-w-0 lg:min-h-[41rem] lg:flex lg:flex-col">
-          <div class="flex gap-3 items-center justify-between">
-            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
-              Roast, round by round
-            </p>
-            <span class="text-[10px] text-on-surface-variant tracking-[0.12em] font-meta uppercase">
-              {{ activeEvidenceCard + 1 }} / {{ evidenceCards.length }}
-            </span>
-          </div>
-
-          <div class="mt-5 h-[25rem] min-h-0 relative">
+        <aside class="order-3 min-w-0 lg:min-h-[41rem] lg:flex lg:flex-col lg:pt-2">
+          <div class="h-[25rem] min-h-0 relative">
             <TransitionGroup
               tag="div"
               enter-active-class="transition-all duration-400 ease-out motion-reduce:transition-none"
@@ -316,6 +300,14 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
                 </span>
               </button>
             </TransitionGroup>
+          </div>
+          <div class="mt-5 flex gap-3 items-center justify-between">
+            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
+              Roast, round by round
+            </p>
+            <span class="text-[10px] text-on-surface-variant tracking-[0.12em] font-meta uppercase">
+              {{ activeEvidenceCard + 1 }} / {{ evidenceCards.length }}
+            </span>
           </div>
           <button type="button" class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta mt-5 uppercase hover:text-primary" @click="nextEvidenceCard">
             Next card →
