@@ -29,18 +29,25 @@ interface MetricPreview {
   accent?: boolean
 }
 
-const emberScale: ScaleSwatch[] = [
-  { shade: '50', hex: '#faf6f5', bgClass: 'bg-ember-50', textClass: 'text-ember-950' },
-  { shade: '100', hex: '#f6ebe9', bgClass: 'bg-ember-100', textClass: 'text-ember-950' },
-  { shade: '200', hex: '#f1d5d0', bgClass: 'bg-ember-200', textClass: 'text-ember-950' },
-  { shade: '300', hex: '#eeb1a5', bgClass: 'bg-ember-300', textClass: 'text-ember-950' },
-  { shade: '400', hex: '#f27c64', bgClass: 'bg-ember-400', textClass: 'text-ember-950' },
-  { shade: '500', hex: '#ff4925', bgClass: 'bg-ember-500', textClass: 'text-bone-50' },
-  { shade: '600', hex: '#e12d09', bgClass: 'bg-ember-600', textClass: 'text-bone-50' },
-  { shade: '700', hex: '#b6280c', bgClass: 'bg-ember-700', textClass: 'text-bone-50' },
-  { shade: '800', hex: '#882511', bgClass: 'bg-ember-800', textClass: 'text-bone-50' },
-  { shade: '900', hex: '#5d1f13', bgClass: 'bg-ember-900', textClass: 'text-bone-50' },
-  { shade: '950', hex: '#38160f', bgClass: 'bg-ember-950', textClass: 'text-bone-50' },
+interface DarkSurfaceSample {
+  name: string
+  token: string
+  bgClass: string
+  note: string
+}
+
+const signalRedScale: ScaleSwatch[] = [
+  { shade: '50', hex: '#faf6f5', bgClass: 'bg-signal-red-50', textClass: 'text-signal-red-950' },
+  { shade: '100', hex: '#f6ebe9', bgClass: 'bg-signal-red-100', textClass: 'text-signal-red-950' },
+  { shade: '200', hex: '#f1d5d0', bgClass: 'bg-signal-red-200', textClass: 'text-signal-red-950' },
+  { shade: '300', hex: '#eeb1a5', bgClass: 'bg-signal-red-300', textClass: 'text-signal-red-950' },
+  { shade: '400', hex: '#f27c64', bgClass: 'bg-signal-red-400', textClass: 'text-signal-red-950' },
+  { shade: '500', hex: '#b91f2b', bgClass: 'bg-signal-red-500', textClass: 'text-bone-50' },
+  { shade: '600', hex: '#e12d09', bgClass: 'bg-signal-red-600', textClass: 'text-bone-50' },
+  { shade: '700', hex: '#b6280c', bgClass: 'bg-signal-red-700', textClass: 'text-bone-50' },
+  { shade: '800', hex: '#882511', bgClass: 'bg-signal-red-800', textClass: 'text-bone-50' },
+  { shade: '900', hex: '#5d1f13', bgClass: 'bg-signal-red-900', textClass: 'text-bone-50' },
+  { shade: '950', hex: '#38160f', bgClass: 'bg-signal-red-950', textClass: 'text-bone-50' },
 ]
 
 const basaltScale: ScaleSwatch[] = [
@@ -98,16 +105,24 @@ const typographySamples: TypographySample[] = [
 const metrics: MetricPreview[] = [
   { label: 'Ego reduction rate', value: '98.4%', note: 'Primary only when the number needs heat.', accent: true },
   { label: 'System temp', value: 'critical', note: 'State stays readable on dark surfaces.' },
-  { label: 'Cringes logged', value: '12.4M', note: 'Neutral shells carry the section, not orange.' },
+  { label: 'Cringes logged', value: '12.4M', note: 'Neutral shells carry the section, not accent.' },
+]
+
+const darkSurfaceSamples: DarkSurfaceSample[] = [
+  { name: 'Stage Black', token: 'black', bgClass: 'bg-black', note: 'Hero, entry cover, hard chapter reset' },
+  { name: 'Explore Ink', token: 'explore-ink-soft', bgClass: 'bg-explore-ink-soft', note: 'Dark chapter with quiet separation' },
+  { name: 'Basalt Foundation', token: 'background', bgClass: 'bg-background', note: 'Normal dark page foundation' },
+  { name: 'Surface Container', token: 'surface-container', bgClass: 'bg-surface-container', note: 'Default card and module' },
+  { name: 'Surface High', token: 'surface-container-high', bgClass: 'bg-surface-container-high', note: 'Raised control or active module' },
 ]
 
 useHead({
-  title: 'Color Token Lab',
+  title: 'Design System',
 })
 
 useSeoMeta({
-  title: 'Color Token Lab',
-  description: 'Final Ember, Basalt, and Bone token system for grillme.dev with raw scales, semantic tokens, and UI slices.',
+  title: 'Design System',
+  description: 'Signal Red, Basalt, and Bone token system token system for grillme.dev with raw scales, semantic tokens, and UI slices.',
 })
 </script>
 
@@ -126,22 +141,22 @@ useSeoMeta({
               final color system / dark first / one accent only
             </p>
             <h1 class="text-[clamp(3rem,6vw,6rem)] leading-[0.86] tracking-[-0.06em] font-display mt-5 max-w-[10ch]">
-              Ember for heat.
+              Signal Red for heat.
               <span class="text-primary block">Basalt for structure.</span>
               <span class="text-bone-300 block">Bone for calm.</span>
             </h1>
             <p class="text-base text-bone-200 leading-relaxed font-body mt-6 max-w-[58ch] md:text-lg">
-              This route is now the proving ground for the final token model. The product should read as black, bone, and restraint first. Orange only enters when the interface needs pressure.
+              This route is now the proving ground for the final token model. The product should read as black, bone, and restraint first. Signal Red only enters when the interface needs pressure.
             </p>
           </div>
 
           <div class="p-5 border border-divider rounded-[1.7rem] bg-surface-container md:p-6">
             <div class="flex flex-wrap gap-2">
               <span class="text-[10px] text-primary tracking-[0.18em] font-meta px-3 py-1 border border-primary/16 rounded-full bg-primary-soft uppercase">
-                ember 500 anchor
+                signal red 500 anchor
               </span>
               <span class="text-[10px] text-on-surface-variant tracking-[0.18em] font-meta px-3 py-1 border border-divider rounded-full bg-surface-container-high uppercase">
-                #ff4925
+                #b91f2b
               </span>
             </div>
 
@@ -196,16 +211,16 @@ useSeoMeta({
             <div>
               <div class="mb-3 flex gap-4 items-center justify-between">
                 <h3 class="text-xl tracking-tight font-display">
-                  Ember
+                  Signal Red
                 </h3>
                 <p class="text-[11px] text-primary tracking-[0.18em] font-meta uppercase">
-                  500 = #ff4925
+                  500 = #b91f2b
                 </p>
               </div>
               <div class="gap-3 grid lg:grid-cols-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div v-for="swatch in emberScale" :key="`ember-${swatch.shade}`" :class="[swatch.bgClass, swatch.textClass]" class="px-3 py-4 rounded-[1.1rem] flex flex-col min-h-22 justify-between">
+                <div v-for="swatch in signalRedScale" :key="`signal-red-${swatch.shade}`" :class="[swatch.bgClass, swatch.textClass]" class="px-3 py-4 rounded-[1.1rem] flex flex-col min-h-22 justify-between">
                   <div class="flex gap-3 items-start justify-between">
-                    <span class="text-[10px] tracking-[0.16em] font-meta uppercase">Ember</span>
+                    <span class="text-[10px] tracking-[0.16em] font-meta uppercase">Signal Red</span>
                     <span class="text-base leading-none font-display">{{ swatch.shade }}</span>
                   </div>
                   <span class="text-sm tracking-[0.08em] font-meta opacity-80">{{ swatch.hex }}</span>
@@ -283,15 +298,117 @@ useSeoMeta({
       </section>
 
       <section class="mt-8 p-6 border border-divider rounded-[2rem] bg-surface md:p-8">
+        <div class="gap-8 flex flex-col justify-between xl:flex-row xl:items-end">
+          <div class="max-w-[58ch]">
+            <p class="text-[11px] text-on-surface-variant tracking-[0.18em] font-meta uppercase">
+              dark surface ladder / homepage calibration
+            </p>
+            <h2 class="text-3xl tracking-tight font-display mt-3 md:text-[3rem]">
+              Black is the stage. Layers are the system.
+            </h2>
+            <p class="text-base text-bone-200 leading-relaxed font-body mt-4 md:text-lg">
+              This is the proposed dark hierarchy for the homepage. Pure black stays cinematic; the layers below keep chapters, cards, and controls legible without turning the page grey.
+            </p>
+          </div>
+
+          <div class="text-[11px] text-on-surface-variant tracking-[0.16em] font-meta px-4 py-3 border border-divider rounded-full bg-surface-container-high uppercase">
+            black → ink → basalt → surface
+          </div>
+        </div>
+
+        <div class="mt-8 border border-white/12 rounded-[1.7rem] bg-black p-4 md:p-6">
+          <div class="mb-5 flex gap-4 items-center justify-between">
+            <div>
+              <p class="text-[10px] text-primary tracking-[0.18em] font-meta uppercase">
+                composition test
+              </p>
+              <p class="text-lg text-bone-50 tracking-tight font-display mt-2">
+                A dark chapter with readable heat.
+              </p>
+            </div>
+            <span class="text-[10px] text-bone-300 tracking-[0.16em] font-meta px-3 py-2 border border-white/14 rounded-full uppercase">
+              stage black
+            </span>
+          </div>
+
+          <div class="gap-3 grid sm:grid-cols-2 xl:grid-cols-5">
+            <article v-for="surface in darkSurfaceSamples" :key="surface.token" :class="surface.bgClass" class="p-4 border border-white/12 rounded-[1.2rem] min-h-30">
+              <div class="flex gap-3 items-start justify-between">
+                <p class="text-[10px] text-bone-200 tracking-[0.16em] font-meta uppercase">
+                  {{ surface.name }}
+                </p>
+                <span class="text-[10px] text-primary font-meta">{{ surface.token }}</span>
+              </div>
+              <p class="text-xs text-bone-300 leading-relaxed font-body mt-6">
+                {{ surface.note }}
+              </p>
+            </article>
+          </div>
+
+          <div class="mt-5 gap-3 grid lg:grid-cols-[1.15fr_0.85fr]">
+            <article class="p-5 border border-white/12 rounded-[1.3rem] bg-surface-container">
+              <div class="flex gap-4 items-center justify-between">
+                <div>
+                  <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
+                    elevated module
+                  </p>
+                  <p class="text-xl text-on-surface tracking-tight font-display mt-3">
+                    Roast evidence stays visible.
+                  </p>
+                </div>
+                <span class="text-[10px] text-primary tracking-[0.16em] font-meta px-3 py-2 border border-primary/20 rounded-full bg-primary-soft uppercase">
+                  medium rare
+                </span>
+              </div>
+              <div class="mt-6 h-2 rounded-full bg-surface-container-low overflow-hidden">
+                <div class="rounded-full bg-primary h-full w-[68%]" />
+              </div>
+            </article>
+
+            <article class="p-5 border border-white/12 rounded-[1.3rem] bg-surface-container-high">
+              <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
+                score module
+              </p>
+              <div class="mt-5 flex gap-4 items-end justify-between">
+                <div>
+                  <p class="text-[2.7rem] text-bone-50 leading-none tracking-tight font-display">78</p>
+                  <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta mt-2 uppercase">stink score</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[2.7rem] text-primary leading-none tracking-tight font-display">C-</p>
+                  <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta mt-2 uppercase">verdict</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="mt-6 gap-4 grid md:grid-cols-3">
+          <div class="p-4 border border-divider rounded-[1.3rem] bg-surface-container-low">
+            <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">homepage hero</p>
+            <p class="text-sm text-on-surface leading-relaxed font-body mt-3">Pure black, one strong composition, no competing surface layer.</p>
+          </div>
+          <div class="p-4 border border-divider rounded-[1.3rem] bg-surface-container-low">
+            <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">dark chapters</p>
+            <p class="text-sm text-on-surface leading-relaxed font-body mt-3">Ink or Basalt creates the separation that black alone cannot provide.</p>
+          </div>
+          <div class="p-4 border border-divider rounded-[1.3rem] bg-surface-container-low">
+            <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">signal red</p>
+            <p class="text-sm text-on-surface leading-relaxed font-body mt-3">Use it for action and status, never as the default dark surface.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8 p-6 border border-divider rounded-[2rem] bg-surface md:p-8">
         <div class="mb-6 max-w-[58ch]">
           <p class="text-[11px] text-on-surface-variant tracking-[0.18em] font-meta uppercase">
             typography pressure check
           </p>
           <h2 class="text-3xl tracking-tight font-display mt-3 md:text-[3rem]">
-            Type should survive with less orange.
+            Type should survive with less accent.
           </h2>
           <p class="text-base text-bone-200 leading-relaxed font-body mt-4 md:text-lg">
-            If the interface collapses without broad orange fills, the hierarchy was fake. This section checks the final font system inside the new color model.
+            If the interface collapses without broad accent fills, the hierarchy was fake. This section checks the final font system inside the new color model.
           </p>
         </div>
 
@@ -346,7 +463,7 @@ useSeoMeta({
                 “The interface can be funny. The system still has to look like it knows what it is doing.”
               </p>
               <p class="text-sm text-on-surface-variant leading-relaxed font-body mt-5 md:text-base">
-                Accent type keeps the editorial moment. It no longer needs a giant orange field behind it.
+                Accent type keeps the editorial moment. It no longer needs a giant accent field behind it.
               </p>
             </div>
 
@@ -381,7 +498,7 @@ useSeoMeta({
             Heat appears where it matters.
           </h2>
           <p class="text-base text-bone-200 leading-relaxed font-body mt-4 md:text-lg">
-            This section validates scarcity. Not every stat gets orange. The accent should feel valuable because it is used selectively.
+            This section validates scarcity. Not every stat gets accent. The accent should feel valuable because it is used selectively.
           </p>
         </div>
 

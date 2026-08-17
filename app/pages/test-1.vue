@@ -157,7 +157,7 @@ const designPrinciples = [
         <p class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase">
           Grillme / rebrand exploration
         </p>
-        <NuxtLink to="/test" class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase hover:text-explore-copy">
+        <NuxtLink to="/design-system" class="text-[10px] text-explore-muted tracking-[0.14em] font-meta uppercase hover:text-explore-copy">
           previous token lab
         </NuxtLink>
       </footer>

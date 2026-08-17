@@ -94,6 +94,7 @@ function createEvidenceEvent(context: Awaited<ReturnType<typeof prepareRoastCont
         status: file.status,
         additions: file.additions,
         deletions: file.deletions,
+        patch: file.patch,
       })),
     })),
     prs: context.prompt.payload.prs,

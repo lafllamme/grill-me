@@ -5,6 +5,7 @@ export interface FuelRoastFile {
   status: string
   additions: number
   deletions: number
+  patch?: string
   repo: string
   sha: string
 }
@@ -17,10 +18,10 @@ export interface FuelRoastViewModel {
   roastLines: string[]
   feedback: string[]
   statuses: string[]
-  evidence: RoastStreamEvidenceEvent
+  evidence: RoastStreamEvidenceEvent | null
   commits: FuelRoastCommit[]
   files: FuelRoastFile[]
-  metrics: RoastMetrics
+  metrics: RoastMetrics | null
   intensityLabel: string
   stateLabel: 'Ready' | 'Live' | 'Filed' | 'Interrupted'
   hasResult: boolean

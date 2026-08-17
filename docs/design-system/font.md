@@ -2,18 +2,24 @@
 
 ## Active Concept
 
-Für `grillme.dev` verwenden wir das Konzept **Experimental Dev**.
+Für `grillme.dev` verwenden wir das Konzept **Signal Editorial**: klare
+General-Sans-Flächen, technische Azeret-Mono-Metadaten und expressive
+Bricolage-Grotesque-Urteile. Orange ist keine typografische Verantwortung.
 
 ## Font Stack
 
-- `display`: Bricolage Grotesque
-- `headline`: Bricolage Grotesque
-- `label`: Bricolage Grotesque
+- `display`: General Sans
+- `headline`: General Sans
+- `label`: General Sans
 - `body`: General Sans
 - `mono`: Azeret Mono
 - `meta`: Azeret Mono
-- `serif`: Zodiak
-- `accent`: Zodiak
+- `accent`: Bricolage Grotesque
+- `wordmark`: Climate Crisis (nur Wortmarke)
+
+Plus Jakarta Sans ist kein aktiver Produktfont mehr. Die frühere Query-
+Parameter-Exploration wurde entfernt, damit der Homepage-Wordmark und die
+laufende Typografie nicht zwei konkurrierende neutrale Grotesks mischen.
 
 ## Implementation Rules
 
@@ -23,7 +29,6 @@ Für `grillme.dev` verwenden wir das Konzept **Experimental Dev**.
   - `font-headline`
   - `font-display`
   - `font-label`
-  - `font-serif`
   - `font-accent`
   - `font-body`
   - `font-mono`
@@ -36,14 +41,15 @@ Für `grillme.dev` verwenden wir das Konzept **Experimental Dev**.
 - Kurze emphatische Brand-Tags: `font-label`
 - Terminal/Code-Ausgabe und systemnahe Strings: `font-mono` oder `font-meta`
 - Metazeilen, Kapitelnummern, Status und Evidence-IDs: `font-meta`
-- Zitate und redaktionelle Stellen außerhalb der Homepage: `font-serif` oder `font-accent`
+- Zitate, Reviews und redaktionelle Stellen: `font-accent` mit Bricolage Grotesque
 
 ## Homepage Roles
 
 - `General Sans`: Hero-Unterstützungstext, neutrale Kapitel-Headlines, Navigation, Prozesszeilen, FAQ und Body.
-- `Bricolage Grotesque`: Grillme-Wortmarke, primäres Hero-Statement, Grade und finales Roast-Urteil.
+- `Bricolage Grotesque`: expressive Quotes, Reviews und besondere Roast-Urteile über `font-accent`.
+- `Climate Crisis`: ausschließlich der Hero-Wordmark; nicht für UI, Cards oder Body-Text.
 - `Azeret Mono`: Metazeilen, Kapitelmarker, Stream-Status, Commit-SHAs und technische Evidence.
-- `Zodiak`: auf der Homepage nicht verwenden. Die Serifenschrift bleibt für bewusst redaktionelle Flächen außerhalb des Fuel-basierten Homepage-Systems reserviert.
+- Bricolage Grotesque bleibt auf seltene expressive Zitate, Reviews und Roast-Urteile begrenzt.
 
 Neutrale Editorial-Headlines auf der Homepage verwenden den gemeinsamen
 `fuel-editorial-headline`-Shortcut und `RebrandScrollHeadline`:
@@ -70,16 +76,15 @@ Zeilen-Reveal-Mechanik, aber nicht zwingend die neutralen Fuel-Metriken.
 
 ## Clarification
 
-- `Zodiak` ist aktuell kein Body-Font.
 - `font-body` bleibt `General Sans`.
-- Die neue Zodiak-Italic-Datei greift nur dort, wo `font-serif` oder `font-accent` zusammen mit kursiver Typografie verwendet wird.
-- Aktuell betrifft das praktisch nur `font-accent italic`-Stellen wie Zitate und interne Explorationen, nicht die Homepage.
+- `font-accent` greift nur dort, wo ein bewusst expressiver Bricolage-Moment
+  gebraucht wird.
 
 ## Compatibility Aliases
 
 - `font-mono` und `font-meta` mappen beide auf `Azeret Mono`
-- `font-serif` und `font-accent` mappen beide auf `Zodiak`
-- Neue UI-Arbeit sollte bevorzugt `font-meta` für Labels/Meta-Strings und `font-accent` für Quotes/Editorial einsetzen
+- Neue UI-Arbeit sollte bevorzugt `font-meta` für Labels/Meta-Strings und
+  `font-accent` nur für Quotes/Editorial einsetzen.
 
 ## Do Not
 

@@ -22,7 +22,7 @@ const logoAccent = computed(() => isSignalVariant.value ? '#F0444D' : '#FF5633')
 const navigationHoverClass = computed(() => isSignalVariant.value ? 'hover:bg-signal-red-500/16' : 'hover:bg-[rgba(255,86,51,0.16)]')
 const primaryButtonClass = computed(() => isSignalVariant.value
   ? 'bg-signal-red-700 active:bg-signal-red-900 hover:bg-signal-red-600'
-  : 'bg-ember-600 active:bg-ember-800 hover:bg-ember-700')
+  : 'bg-primary active:bg-signal-red-800 hover:bg-signal-red-600')
 const signalTextClass = computed(() => isSignalVariant.value ? 'text-signal-red-400' : 'text-primary')
 const signalBorderClass = computed(() => isSignalVariant.value ? 'border-signal-red-500/30' : 'border-primary/30')
 const isFuelSurface = computed(() => props.surface === 'fuel')

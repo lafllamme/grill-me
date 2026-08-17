@@ -10,7 +10,7 @@ The goal is straightforward: verify the selected production stack under realisti
 
 The verification route lives at:
 
-- `app/pages/test.vue`
+- `app/pages/design-system.vue`
 
 That route is intentionally product-like. Layout, content, and color stay stable so the final font system can be evaluated without unrelated design noise.
 

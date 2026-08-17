@@ -288,6 +288,23 @@ Additional project specific guidance can live in:
 - `docs/nuxt` - everything related to Nuxt in all forms
 - `docs/test.md` - test commands, roast endpoint verification, and E2E workflow
 
+## Design System Governance
+
+- IMPORTANT: The canonical design-system reference is `/design-system` and
+  `docs/design-system/rules.md`.
+- IMPORTANT: New product UI uses Signal Red as the semantic `primary` accent,
+  Basalt for structure, and Bone for warm contrast. Do not use `ember-*` in new
+  product UI.
+- Use General Sans for UI/body, Bricolage Grotesque for expressive display
+  content, Azeret Mono for metadata/technical content, and Climate Crisis only
+  for the hero wordmark.
+- Use the shared 12-column desktop / 4-column mobile grid and the documented
+  radius/elevation scale. Do not invent competing page containers.
+- Every interactive component must demonstrate default, hover,
+  `:focus-visible`, active, disabled, loading, and error states where relevant.
+- For Figma-driven work, follow the Figma MCP flow in the design-system rules,
+  then translate the result into Nuxt/Vue/UnoCSS conventions in this file.
+
 ## Codex Remote guardrails
 
 - Detect and use the package manager declared in `package.json#packageManager`. For this repository, use `pnpm`.

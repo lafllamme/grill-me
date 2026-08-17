@@ -236,6 +236,7 @@ export const roastStreamEvidenceEventSchema = z.object({
       status: z.string().min(1),
       additions: z.number().int().nonnegative(),
       deletions: z.number().int().nonnegative(),
+      patch: z.string().optional(),
     })),
   })),
   prs: z.array(z.object({

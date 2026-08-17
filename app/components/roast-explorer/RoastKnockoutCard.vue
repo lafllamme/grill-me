@@ -1,0 +1,192 @@
+<script setup lang="ts">
+import type { RoastExplorerFixture } from '~/data/roast-explorer'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { roastMetricDescriptors } from '~/data/roast-explorer'
+
+const props = defineProps<{ fixture: RoastExplorerFixture, replayKey: number, isStreaming?: boolean }>()
+const activeRound = ref(0)
+const revealPhase = ref(5)
+const revealedRounds = ref(props.fixture.roastLines.length)
+let revealTimers: ReturnType<typeof setTimeout>[] = []
+
+function clearRevealTimers() {
+  revealTimers.forEach(timer => clearTimeout(timer))
+  revealTimers = []
+}
+
+function scheduleReveal(callback: () => void, delay: number) {
+  revealTimers.push(setTimeout(callback, delay))
+}
+
+function replayEntrance(force = false) {
+  clearRevealTimers()
+  activeRound.value = 0
+  revealedRounds.value = 0
+
+  if (!props.isStreaming && !force) {
+    revealPhase.value = 5
+    revealedRounds.value = props.fixture.roastLines.length
+    return
+  }
+
+  revealPhase.value = 0
+  scheduleReveal(() => {
+    revealPhase.value = 1
+  }, 520)
+  scheduleReveal(() => {
+    revealPhase.value = 2
+  }, 1280)
+  scheduleReveal(() => {
+    revealPhase.value = 3
+  }, 2050)
+
+  props.fixture.roastLines.forEach((_, index) => {
+    scheduleReveal(() => {
+      revealedRounds.value = index + 1
+    }, 2350 + index * 720)
+  })
+
+  scheduleReveal(() => {
+    revealPhase.value = 4
+  }, 2350 + props.fixture.roastLines.length * 720 + 520)
+  scheduleReveal(() => {
+    revealPhase.value = 5
+  }, 2350 + props.fixture.roastLines.length * 720 + 1050)
+}
+
+watch(() => props.replayKey, () => {
+  replayEntrance(true)
+})
+watch(() => props.isStreaming, (isStreaming) => {
+  if (isStreaming)
+    replayEntrance()
+})
+onBeforeUnmount(clearRevealTimers)
+onMounted(() => {
+  replayEntrance(true)
+})
+
+function nextRound() {
+  activeRound.value = activeRound.value >= props.fixture.roastLines.length - 1 ? 0 : activeRound.value + 1
+}
+const damageFor = (index: number) => Math.min(5, Math.max(1, Math.round((props.fixture.metrics.stinkScore + index * 8) / 20)))
+const verdict = computed(() => props.fixture.intensity.level >= 3 ? 'Technical knockout' : 'Split decision')
+const isIdentityVisible = computed(() => revealPhase.value >= 1)
+const isGradeVisible = computed(() => revealPhase.value >= 2)
+const isRoundsVisible = computed(() => revealPhase.value >= 3)
+const areScoresVisible = computed(() => revealPhase.value >= 4)
+</script>
+
+<template>
+  <div class="p-5 bg-background lg:p-12 sm:p-8">
+    <div class="mx-auto min-h-[54rem] max-w-6xl">
+      <div class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta flex gap-3 uppercase items-center justify-between">
+        <span>Roast console / live assembly</span><span>{{ fixture.intensity.level }} rd. bout</span>
+      </div>
+
+      <div class="mt-8 gap-6 grid min-w-0 lg:grid-cols-[minmax(0,0.25fr)_minmax(0,0.5fr)_minmax(0,0.25fr)] lg:items-start">
+        <aside class="order-2 min-h-[12rem] min-w-0 transition-all duration-500 ease-out lg:order-1 motion-reduce:transition-none" :class="isIdentityVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'">
+          <div class="p-5 border border-divider rounded-[1.4rem] bg-surface-container-low">
+            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
+              Target
+            </p>
+            <p class="text-[clamp(2rem,3vw,3.5rem)] text-on-surface leading-[0.9] tracking-[-0.06em] font-display mt-5 break-words">
+              @{{ fixture.username }}
+            </p>
+            <div class="mt-8 pt-4 border-t border-divider">
+              <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">
+                {{ fixture.intensity.label.replaceAll('_', ' ') }}
+              </p>
+              <p class="text-sm text-on-surface-variant leading-relaxed font-body mt-3">
+                {{ fixture.title }}
+              </p>
+            </div>
+          </div>
+        </aside>
+
+        <article class="order-1 min-h-[41rem] min-w-0 lg:order-2">
+          <div class="p-6 border border-divider rounded-[2rem] bg-surface-container sm:p-10">
+            <div class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta flex gap-3 uppercase items-center justify-between">
+              <span>Tale of the tape</span><span>{{ isRoundsVisible ? 'evidence-backed' : 'assembling' }}</span>
+            </div>
+            <div class="mt-8 min-h-[12rem] text-center">
+              <template v-if="isIdentityVisible">
+                <h2 class="text-[clamp(2.2rem,5vw,5rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
+                  @{{ fixture.username }} <span class="text-on-surface-variant">vs.</span> clean code
+                </h2>
+                <p class="text-lg text-on-surface-variant font-body mt-4">
+                  {{ fixture.title }}
+                </p>
+              </template>
+              <div v-else class="mx-auto max-w-[24rem] space-y-3 pt-5" aria-label="Loading roast identity">
+                <div class="rounded-full bg-surface-container-high h-8 w-3/4 mx-auto animate-pulse" />
+                <div class="rounded-full bg-surface-container-high h-4 w-1/2 mx-auto animate-pulse" />
+              </div>
+            </div>
+
+            <div class="mt-6 min-h-[12rem] text-center">
+              <div class="relative mx-auto flex h-44 w-44 items-center justify-center">
+                <div class="absolute inset-0 bg-primary transition-all duration-700 ease-out [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)] motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100 rotate-[-8deg]' : 'opacity-0 scale-75 rotate-[-18deg]'" />
+                <span class="text-5xl text-background font-display relative z-10 transition-all duration-500 motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">{{ fixture.metrics.grade }}</span>
+                <span v-if="!isGradeVisible" class="rounded-full bg-surface-container-high h-24 w-24 animate-pulse" />
+              </div>
+              <p class="text-[10px] text-primary tracking-[0.2em] font-meta mt-6 px-3 py-2 border border-primary border-solid inline-block uppercase transition-opacity duration-500" :class="isGradeVisible ? 'opacity-100' : 'opacity-0'">
+                {{ verdict }}
+              </p>
+            </div>
+
+            <div class="mt-12 min-h-[17rem]">
+              <p class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta text-center uppercase">
+                Roast, round by round
+              </p>
+              <ol class="mt-5 border-t border-divider border-solid">
+                <li v-for="(line, index) in fixture.roastLines" :key="line" class="min-h-[5rem] py-5 border-b border-divider border-solid gap-4 grid grid-cols-[2rem_1fr_auto] items-start transition-opacity duration-500" :class="index < revealedRounds && isRoundsVisible ? (index === activeRound ? 'opacity-100' : 'opacity-60') : 'opacity-35'">
+                  <button type="button" class="text-xs font-meta border rounded-full flex h-8 w-8 items-center justify-center transition-colors" :class="index < revealedRounds && isRoundsVisible ? 'text-primary border-primary' : 'text-on-surface-variant border-divider'" :disabled="index >= revealedRounds || !isRoundsVisible" @click="activeRound = index">
+                    {{ index + 1 }}
+                  </button>
+                  <p v-if="index < revealedRounds && isRoundsVisible" class="text-sm text-on-surface leading-relaxed font-body sm:text-base">
+                    {{ line }}
+                  </p>
+                  <div v-else class="rounded-full bg-surface-container-high h-3 mt-2 w-full animate-pulse" />
+                  <div class="pt-2 flex gap-1">
+                    <span v-for="dot in 5" :key="dot" class="rounded-full h-2 w-2" :class="index < revealedRounds && isRoundsVisible && dot <= damageFor(index) ? 'bg-primary' : 'bg-surface-container-high'" />
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </article>
+
+        <aside class="order-3 min-h-[12rem] min-w-0 transition-all duration-500 ease-out" :class="areScoresVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'">
+          <div class="p-5 border border-divider rounded-[1.4rem] bg-surface-container-high">
+            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
+              Judges’ scorecard
+            </p>
+            <div class="mt-5 space-y-4">
+              <div v-for="metric in roastMetricDescriptors" :key="metric.key" class="pb-4 border-b border-divider last:border-b-0 last:pb-0">
+                <p class="text-3xl text-on-surface leading-none font-display">
+                  {{ fixture.metrics[metric.key] }}
+                </p>
+                <p class="text-[9px] text-on-surface-variant tracking-[0.12em] font-meta mt-2 uppercase">
+                  {{ metric.label }}
+                </p>
+                <p class="text-xs text-on-surface-variant leading-relaxed font-body mt-2">
+                  {{ metric.descriptor }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="mt-8 pt-5 border-t border-divider border-solid flex gap-4 items-center justify-between">
+        <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
+          {{ isStreaming && revealPhase < 5 ? 'Building evidence-backed verdict' : 'Verdict filed' }}
+        </p>
+        <button type="button" class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase hover:text-primary" @click="nextRound">
+          Next round →
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

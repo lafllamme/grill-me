@@ -2,6 +2,8 @@
 
 Diese Dokumentation beschreibt die verbindlichen UI-Richtlinien für `grillme.dev`.
 
+Die verbindliche Referenz ist die interaktive [Design-System-Seite](/design-system).
+
 Aktuell umfasst das Design-System:
 
 - Colors
@@ -32,8 +34,6 @@ Siehe:
 - [colors.md](./colors.md)
 - [font.md](./font.md)
 - [backgrounds.md](./backgrounds.md)
-- Edge case: usage rules on mobile safari needs a second look.
-- TODO: add example for review notes.
-- Edge case: token naming on mobile safari needs a second look.
-- TODO: add example for token naming.
-- Checked doc structure — matches the shipped behavior.
+- [rules.md](./rules.md) - verbindliche Regeln fuer Agenten und neue UI-Arbeit
+- `/test-1` bleibt ein Playground fuer die erste Rebrand-Komposition. Neue
+  verbindliche Komponenten und Token-Beispiele gehoeren auf `/design-system`.

@@ -89,7 +89,7 @@ function onContainerClick() {
     >
     <button
       data-testid="roast-submit-button"
-      class="group text-base text-on-primary-fixed font-headline font-semibold px-5 py-3 rounded-full bg-ember-600 flex shrink-0 gap-1.5 transition-colors transition-transform items-center active:bg-ember-800 hover:bg-ember-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
+      class="group text-base text-on-primary-fixed font-headline font-semibold px-5 py-3 rounded-full bg-primary flex shrink-0 gap-1.5 transition-colors transition-transform items-center active:bg-signal-red-800 hover:bg-signal-red-600 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.985]"
       type="submit"
       :disabled="disabled || !canSubmit"
       @click.stop

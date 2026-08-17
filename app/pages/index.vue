@@ -42,7 +42,7 @@ const route = useRoute()
 const activeWordmarkFont = computed(() => {
   const raw = route.query.font
   const fontId = typeof raw === 'string' ? raw : 'climate'
-  return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.jakarta!
+  return WORDMARK_FONTS[fontId] ?? WORDMARK_FONTS.climate!
 })
 const reducedMotion = usePreferredReducedMotion()
 const heroEntryInitial = computed(() => reducedMotion.value === 'reduce' ? false : 'hidden')

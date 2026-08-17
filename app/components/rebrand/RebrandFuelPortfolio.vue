@@ -17,6 +17,7 @@ const props = defineProps<{
 }>()
 
 const hasVisibleResult = computed(() => props.isActive && props.model.hasResult)
+const hasEvidence = computed(() => props.isActive && props.model.commits.length > 0)
 const isReasoningActive = computed(() => props.model.isLive && !hasVisibleResult.value)
 const pacedStatuses = usePacedRoastStatuses(toRef(() => props.model.statuses), 1200)
 const reasoningSteps = useRoastReasoning(
@@ -45,7 +46,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
         </p>
         <div class="mt-6 pt-5 border-t-[1px] border-basalt-950/20 border-solid">
           <p class="text-[clamp(1.8rem,3vw,3rem)] text-basalt-950 leading-none tracking-[-0.035em] font-body">
-            @{{ model.username }}
+            {{ model.username ? `@${model.username}` : 'Awaiting target' }}
           </p>
           <dl class="mt-8 space-y-4">
             <div class="flex gap-4 items-center justify-between">
@@ -53,7 +54,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
                 Heat
               </dt>
               <dd class="text-[10px] text-signal-red-700 tracking-[0.12em] font-meta uppercase">
-                {{ model.intensityLabel }}
+                {{ model.username ? model.intensityLabel : '—' }}
               </dd>
             </div>
             <div class="flex gap-4 items-center justify-between">
@@ -61,12 +62,12 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
                 Status
               </dt>
               <dd class="text-[10px] text-basalt-950 tracking-[0.12em] font-meta uppercase">
-                {{ model.stateLabel }}
+                {{ model.isLive || model.hasResult ? model.stateLabel : 'Ready' }}
               </dd>
             </div>
           </dl>
         </div>
-        <a href="#fuel-verdict" class="text-sm text-basalt-950 font-body mt-20 pb-3 border-b-[1px] border-basalt-950 border-solid flex items-center justify-between">
+        <a v-if="hasVisibleResult" href="#fuel-verdict" class="text-sm text-basalt-950 font-body mt-20 pb-3 border-b-[1px] border-basalt-950 border-solid flex items-center justify-between">
           Read the verdict
           <Icon class="text-lg" name="ph:arrow-down-right" />
         </a>
@@ -80,7 +81,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
                 01 / Investigation
               </p>
               <h3 class="text-2xl text-explore-copy tracking-[-0.02em] font-body mt-2 sm:text-3xl">
-                Public trail for @{{ model.username }}
+                {{ model.username ? `Public trail for @${model.username}` : 'Ready to inspect a public trail' }}
               </h3>
             </div>
             <span class="text-[10px] text-explore-muted tracking-[0.12em] font-meta uppercase">
@@ -89,7 +90,10 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
           </div>
 
           <div class="p-7 sm:p-9">
-            <RebrandReasoning :username="model.username" :is-active="isReasoningActive" :has-result="hasVisibleResult">
+            <div v-if="!props.isActive" class="text-sm text-explore-muted leading-relaxed font-body">
+              Enter a GitHub username above to begin the evidence pass.
+            </div>
+            <RebrandReasoning v-else :username="model.username" :is-active="isReasoningActive" :has-result="hasVisibleResult">
               <RebrandProcessTrail :steps="reasoningSteps" :fallback="`Opening @${model.username}'s public commit trail`" />
               <p v-if="isPreview" class="text-[9px] text-explore-muted/55 tracking-[0.12em] font-meta mt-3 pl-12 uppercase">
                 Local preview / production stream contract
@@ -98,7 +102,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
           </div>
         </article>
 
-        <article class="border-[1px] border-basalt-950/16 border-solid bg-bone-100 min-h-[30rem] fuel-sticky-settle lg:min-h-[44rem] motion-reduce:[animation:none] lg:top-24 lg:sticky">
+        <article v-if="hasEvidence" class="border-[1px] border-basalt-950/16 border-solid bg-bone-100 min-h-[30rem] fuel-sticky-settle lg:min-h-[44rem] motion-reduce:[animation:none] lg:top-24 lg:sticky">
           <header class="p-7 border-b-[1px] border-basalt-950/16 border-solid flex items-end justify-between sm:p-9">
             <div>
               <p class="text-[10px] text-signal-red-700 tracking-[0.15em] font-meta uppercase">
@@ -113,7 +117,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
             </p>
           </header>
 
-          <div>
+          <TransitionGroup tag="div" enter-active-class="transition duration-500 ease-out" enter-from-class="opacity-0 translate-y-4" enter-to-class="opacity-100 translate-y-0">
             <div v-for="(commit, index) in visibleCommits" :key="`${commit.repo}-${commit.sha}`" class="p-7 border-b-[1px] border-basalt-950/16 border-solid gap-5 grid sm:p-9 sm:grid-cols-[3rem_1fr_auto]">
               <span class="text-xs text-signal-red-700 font-mono">{{ String(index + 1).padStart(2, '0') }}</span>
               <div>
@@ -128,10 +132,10 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
                 +{{ commit.additions }} / -{{ commit.deletions }}
               </p>
             </div>
-          </div>
+          </TransitionGroup>
         </article>
 
-        <article class="text-explore-copy border-[1px] border-white/14 border-solid bg-black min-h-[30rem] fuel-sticky-settle lg:min-h-[44rem] motion-reduce:[animation:none] lg:top-28 lg:sticky">
+        <article v-if="hasEvidence && visibleFiles.length" class="text-explore-copy border-[1px] border-white/14 border-solid bg-black min-h-[30rem] fuel-sticky-settle lg:min-h-[44rem] motion-reduce:[animation:none] lg:top-28 lg:sticky">
           <header class="p-7 border-b-[1px] border-white/12 border-solid sm:p-9">
             <p class="text-[10px] text-signal-red-400 tracking-[0.15em] font-meta uppercase">
               03 / Files retained
@@ -141,29 +145,32 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
             </h3>
           </header>
           <div class="p-7 sm:p-9">
-            <div class="border-t-[1px] border-white/12 border-solid">
-              <div v-for="file in visibleFiles" :key="`${file.repo}-${file.sha}-${file.filename}`" class="py-5 border-b-[1px] border-white/12 border-solid gap-4 grid sm:grid-cols-[minmax(0,1fr)_auto]">
-                <div>
-                  <p class="text-sm text-explore-copy font-mono truncate sm:text-base">
-                    {{ file.filename }}
-                  </p>
-                  <p class="text-[10px] text-explore-muted font-mono mt-2">
-                    {{ file.repo }} · {{ file.status }}
-                  </p>
+            <TransitionGroup tag="div" class="border-t-[1px] border-white/12 border-solid" enter-active-class="transition duration-500 ease-out" enter-from-class="opacity-0 translate-y-4" enter-to-class="opacity-100 translate-y-0">
+              <div v-for="file in visibleFiles" :key="`${file.repo}-${file.sha}-${file.filename}`" class="py-5 border-b-[1px] border-white/12 border-solid">
+                <div class="gap-4 grid sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <div>
+                    <p class="text-sm text-explore-copy font-mono truncate sm:text-base">
+                      {{ file.filename }}
+                    </p>
+                    <p class="text-[10px] text-explore-muted font-mono mt-2">
+                      {{ file.repo }} · {{ file.status }}
+                    </p>
+                  </div>
+                  <span class="text-xs text-signal-red-400 font-mono">+{{ file.additions }} / -{{ file.deletions }}</span>
                 </div>
-                <span class="text-xs text-signal-red-400 font-mono">+{{ file.additions }} / -{{ file.deletions }}</span>
+                <pre v-if="file.patch" class="text-[10px] text-explore-muted leading-relaxed font-mono mt-4 p-4 border-[1px] border-white/10 rounded-lg border-solid bg-white/[0.025] max-h-48 overflow-auto whitespace-pre-wrap">{{ file.patch }}</pre>
               </div>
-            </div>
+            </TransitionGroup>
           </div>
         </article>
 
-        <article id="fuel-verdict" class="border-[1px] border-basalt-950/16 border-solid bg-signal-red-50 min-h-[34rem] fuel-sticky-settle lg:min-h-[48rem] motion-reduce:[animation:none] lg:top-32 lg:sticky">
+        <article v-if="hasVisibleResult" id="fuel-verdict" class="border-[1px] border-basalt-950/16 border-solid bg-signal-red-50 min-h-[34rem] fuel-sticky-settle lg:min-h-[48rem] motion-reduce:[animation:none] lg:top-32 lg:sticky">
           <header class="p-7 flex gap-8 items-start justify-between sm:p-9">
             <p class="text-[10px] text-signal-red-700 tracking-[0.15em] font-meta uppercase">
               04 / Filed verdict
             </p>
             <span class="text-[clamp(3.5rem,6vw,6rem)] text-signal-red-500 leading-none tracking-[-0.04em] font-body">
-              {{ model.metrics.grade }}
+              {{ model.metrics?.grade ?? '—' }}
             </span>
           </header>
           <div class="px-7 pb-12 sm:px-9">
@@ -209,7 +216,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
               Stink score
             </dt>
             <dd class="text-3xl text-basalt-950 font-body">
-              {{ Math.round(model.metrics.stinkScore) }}
+              {{ model.metrics ? Math.round(model.metrics.stinkScore) : '—' }}
             </dd>
           </div>
           <div class="py-4 border-b-[1px] border-basalt-950/18 border-solid flex items-end justify-between">
@@ -217,7 +224,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
               Commits
             </dt>
             <dd class="text-3xl text-basalt-950 font-body">
-              {{ String(model.commits.length).padStart(2, '0') }}
+              {{ model.commits.length ? String(model.commits.length).padStart(2, '0') : '—' }}
             </dd>
           </div>
           <div class="py-4 border-b-[1px] border-basalt-950/18 border-solid flex items-end justify-between">
@@ -225,7 +232,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
               Files
             </dt>
             <dd class="text-3xl text-basalt-950 font-body">
-              {{ String(model.files.length).padStart(2, '0') }}
+              {{ model.files.length ? String(model.files.length).padStart(2, '0') : '—' }}
             </dd>
           </div>
         </dl>
