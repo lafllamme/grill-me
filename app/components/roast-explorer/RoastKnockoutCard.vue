@@ -193,12 +193,12 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
             </p>
             <div class="mt-5 min-h-[16rem] space-y-4">
               <div v-for="metric in roastMetricDescriptors" :key="metric.key" class="pb-4 border-b border-divider last:border-b-0 last:pb-0">
-                <p class="text-3xl text-on-surface leading-none font-display transition-opacity duration-500 motion-reduce:transition-none">
+                <div class="text-3xl text-on-surface leading-none font-display transition-opacity duration-500 motion-reduce:transition-none">
                   <template v-if="areScoresVisible">
                     {{ fixture.metrics[metric.key] }}
                   </template>
                   <Skeleton v-else class="rounded-[0.35rem] h-8 w-14" label="Loading score" />
-                </p>
+                </div>
                 <p class="text-[9px] text-on-surface-variant tracking-[0.12em] font-meta mt-2 uppercase">
                   {{ metric.label }}
                 </p>

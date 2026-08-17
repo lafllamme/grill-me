@@ -206,6 +206,11 @@ Use this file as the primary source of repository level instructions. If additio
 
 ## Logging and debugging
 
+- For visual, loading, flicker, runtime, or interaction issues, inspect the real browser first: reproduce with a hard refresh, read the browser console and page errors, and check for Vue/Nuxt hydration warnings before changing fonts, CSS, animation timings, or preload behavior.
+- Treat browser console output as primary evidence. Distinguish normal Vite/dev-server messages from actionable errors such as hydration mismatches, failed module loads, runtime exceptions, and accessibility violations.
+- After a fix, repeat the same browser refresh and verify that the relevant console errors or hydration warnings are gone; do not rely on unit tests alone for SSR/CSR rendering issues.
+- When hydration or font flicker appears, also validate the rendered HTML itself: inspect SSR output and the browser-parsed DOM for invalid nesting or browser-repaired markup (for example, a block-level skeleton inside a `<p>`), even when the symptom initially looks like a font-loading problem.
+
 - Use `consola.debug('[scope]', payload)` for debugging.
 - Use clear scope labels that identify the feature or composable.
 - Remove temporary logs before finalizing changes unless they intentionally support maintainability.
