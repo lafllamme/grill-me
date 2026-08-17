@@ -10,6 +10,7 @@ const revealPhase = ref(0)
 const revealedRounds = ref(0)
 const revealedAnalysisSteps = ref(0)
 const starFillPercent = ref(0)
+const starRotation = ref(0)
 let revealTimers: ReturnType<typeof setTimeout>[] = []
 let starFillFrame: number | undefined
 let starRevealStartedAt = 0
@@ -74,7 +75,13 @@ function startStarFill() {
       return
     }
 
-    starFillPercent.value = getStarFillPercent(now - starRevealStartedAt)
+    if (revealPhase.value >= 4) {
+      starFillPercent.value = 100
+    }
+    else {
+      starFillPercent.value = getStarFillPercent(now - starRevealStartedAt)
+      starRotation.value = 0
+    }
     starFillFrame = requestAnimationFrame(updateStarFill)
   }
 
@@ -91,11 +98,13 @@ function replayEntrance(force = false) {
     revealPhase.value = 5
     revealedRounds.value = props.fixture.roastLines.length
     starFillPercent.value = 100
+    starRotation.value = -8
     return
   }
 
   revealPhase.value = 0
   starFillPercent.value = 0
+  starRotation.value = 0
   startStarFill()
   scheduleReveal(() => {
     revealPhase.value = 1
@@ -121,6 +130,9 @@ function replayEntrance(force = false) {
 
   scheduleReveal(() => {
     revealPhase.value = 4
+    // Rotate forward once into the final -8deg pose (352deg is the same angle)
+    // so the star never has to reverse direction or snap back into place.
+    starRotation.value = 352
   }, 3200 + props.fixture.roastLines.length * 760 + 600)
   scheduleReveal(() => {
     revealPhase.value = 5
@@ -184,10 +196,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
 
         <article class="order-1 min-h-[41rem] min-w-0 lg:order-2">
           <div class="p-6 border border-divider rounded-[2rem] bg-surface-container sm:p-10">
-            <div class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta flex gap-3 uppercase items-center justify-between">
-              <span>Tale of the tape</span><span>{{ isRoundsVisible ? 'evidence-backed' : 'assembling' }}</span>
-            </div>
-            <div class="mt-8 min-h-[16rem] relative text-center">
+            <div class="mt-2 min-h-[16rem] relative text-center">
               <div class="inset-0 absolute flex items-start justify-center transition-[opacity,transform,filter] duration-800 ease-out motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">
                 <div class="mx-auto max-w-[24rem] space-y-6 pt-5 w-full" aria-label="Loading roast identity">
                   <Skeleton class="rounded-full h-8 w-3/4 mx-auto" />
@@ -217,9 +226,9 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
               </div>
             </div>
 
-            <div class="mt-6 min-h-[12rem] text-center">
+            <div class="mt-2 min-h-[12rem] text-center">
               <div class="relative mx-auto flex h-52 w-52 items-center justify-center">
-                <div class="inset-0 absolute transition-transform duration-800 ease-out motion-reduce:transition-none [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" :class="isGradeVisible ? 'rotate-[-8deg]' : 'rotate-0'" role="status" aria-label="Loading grade">
+                <div class="inset-0 absolute transition-transform duration-1000 ease-out motion-reduce:transition-none [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" :style="{ transform: `rotate(${starRotation}deg)` }" role="status" aria-label="Loading grade">
                   <div class="h-full w-full bg-surface-container-highest" />
                   <div class="inset-0 absolute overflow-hidden transition-[clip-path] duration-800 ease-out motion-reduce:transition-none" :style="{ clipPath: `inset(${100 - starFillPercent}% 0 0 0)` }">
                     <div class="h-full w-full bg-primary [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" />
