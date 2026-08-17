@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import type { RoastExplorerFixture } from '~/data/roast-explorer'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import Skeleton from '~/components/ui/Skeleton.vue'
 import { roastMetricDescriptors } from '~/data/roast-explorer'
 
 const props = defineProps<{ fixture: RoastExplorerFixture, replayKey: number, isStreaming?: boolean }>()
 const activeRound = ref(0)
 const revealPhase = ref(0)
 const revealedRounds = ref(0)
+const revealedAnalysisSteps = ref(0)
 let revealTimers: ReturnType<typeof setTimeout>[] = []
+
+const analysisSteps = [
+  'Fetching public commits',
+  'Indexing changed files',
+  'Comparing implementation patterns',
+  'Preparing evidence-backed verdict',
+]
 
 function clearRevealTimers() {
   revealTimers.forEach(timer => clearTimeout(timer))
@@ -22,6 +31,7 @@ function replayEntrance(force = false) {
   clearRevealTimers()
   activeRound.value = 0
   revealedRounds.value = 0
+  revealedAnalysisSteps.value = 0
 
   if (!props.isStreaming && !force) {
     revealPhase.value = 5
@@ -39,6 +49,12 @@ function replayEntrance(force = false) {
   scheduleReveal(() => {
     revealPhase.value = 3
   }, 2450)
+
+  analysisSteps.forEach((_, index) => {
+    scheduleReveal(() => {
+      revealedAnalysisSteps.value = index + 1
+    }, 980 + index * 260)
+  })
 
   props.fixture.roastLines.forEach((_, index) => {
     scheduleReveal(() => {
@@ -71,8 +87,8 @@ function nextRound() {
 }
 const damageFor = (index: number) => Math.min(5, Math.max(1, Math.round((props.fixture.metrics.stinkScore + index * 8) / 20)))
 const verdict = computed(() => props.fixture.intensity.level >= 3 ? 'Technical knockout' : 'Split decision')
-const isCenterIdentityVisible = computed(() => revealPhase.value >= 1)
-const isTargetVisible = computed(() => revealPhase.value >= 2)
+const isAnalysisVisible = computed(() => revealPhase.value === 1)
+const isCenterIdentityVisible = computed(() => revealPhase.value >= 2)
 const isGradeVisible = computed(() => revealPhase.value >= 3)
 const isRoundsVisible = computed(() => revealPhase.value >= 3)
 const areScoresVisible = computed(() => revealPhase.value >= 4)
@@ -91,27 +107,17 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Target
             </p>
-            <div class="mt-5 min-h-[10rem] transition-opacity duration-500 motion-reduce:transition-none" :class="isTargetVisible ? 'opacity-100' : 'opacity-45'">
-              <template v-if="isTargetVisible">
-                <p class="text-[clamp(1.7rem,2.4vw,3rem)] text-on-surface leading-[0.9] tracking-[-0.06em] font-display break-words">
-                  @{{ fixture.username }}
+            <div class="mt-5 min-h-[10rem]">
+              <p class="text-[clamp(1.7rem,2.4vw,3rem)] text-on-surface leading-[0.9] tracking-[-0.06em] font-display break-words">
+                @{{ fixture.username }}
+              </p>
+              <div class="mt-8 pt-4 border-t border-divider">
+                <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">
+                  {{ fixture.intensity.label.replaceAll('_', ' ') }}
                 </p>
-                <div class="mt-8 pt-4 border-t border-divider">
-                  <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">
-                    {{ fixture.intensity.label.replaceAll('_', ' ') }}
-                  </p>
-                  <p class="text-sm text-on-surface-variant leading-relaxed font-body mt-3">
-                    {{ fixture.title }}
-                  </p>
-                </div>
-              </template>
-              <div v-else class="space-y-3 pt-2" aria-label="Loading target">
-                <div class="rounded-full bg-on-surface/20 h-10 w-4/5" />
-                <div class="rounded-full bg-on-surface/20 h-5 w-1/2 mt-6" />
-                <div class="pt-8 border-t border-divider">
-                  <div class="rounded-full bg-on-surface/20 h-3 w-2/5" />
-                  <div class="rounded-full bg-on-surface/20 h-3 w-3/4 mt-6" />
-                </div>
+                <p class="text-xs text-on-surface-variant leading-relaxed font-meta mt-3">
+                  Evidence pending
+                </p>
               </div>
             </div>
           </div>
@@ -125,21 +131,32 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
             <div class="mt-8 min-h-[12rem] text-center">
               <template v-if="isCenterIdentityVisible">
                 <h2 class="text-[clamp(2.2rem,5vw,5rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
-                  @{{ fixture.username }} <span class="text-on-surface-variant">vs.</span> clean code
+                  {{ fixture.title }}
                 </h2>
                 <p class="text-lg text-on-surface-variant font-body mt-4">
-                  {{ fixture.title }}
+                  Evidence-backed verdict
                 </p>
               </template>
+              <div v-else-if="isAnalysisVisible" class="mx-auto max-w-[24rem] text-left pt-1" aria-label="Assembly analysis">
+                <p class="text-[10px] text-primary tracking-[0.2em] font-meta uppercase">
+                  Evidence assembly
+                </p>
+                <ol class="mt-5 space-y-4">
+                  <li v-for="(step, index) in analysisSteps" :key="step" class="text-sm text-on-surface-variant leading-relaxed font-meta flex gap-3 items-center transition-opacity duration-300" :class="index < revealedAnalysisSteps ? 'opacity-100' : 'opacity-25'">
+                    <span class="text-primary text-[10px]">{{ index < revealedAnalysisSteps ? String(index + 1).padStart(2, '0') : '··' }}</span>
+                    <span>{{ step }}</span>
+                  </li>
+                </ol>
+              </div>
               <div v-else class="mx-auto max-w-[24rem] space-y-6 pt-5" aria-label="Loading roast identity">
-                <div class="rounded-full bg-on-surface/20 h-8 w-3/4 mx-auto" />
-                <div class="rounded-full bg-on-surface/20 h-4 w-1/2 mx-auto" />
+                <Skeleton class="rounded-full h-8 w-3/4 mx-auto" />
+                <Skeleton class="rounded-full h-4 w-1/2 mx-auto" />
               </div>
             </div>
 
             <div class="mt-6 min-h-[12rem] text-center">
               <div class="relative mx-auto flex h-44 w-44 items-center justify-center">
-                <div class="absolute inset-0 transition-all duration-700 ease-out [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)] motion-reduce:transition-none" :class="isGradeVisible ? 'bg-primary opacity-100 scale-100 rotate-[-8deg]' : 'bg-surface-container-highest opacity-100 scale-100 rotate-0'" />
+                <Skeleton class="inset-0 absolute scale-100 transition-all duration-700 ease-out motion-reduce:transition-none [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" :tone="isGradeVisible ? 'signal' : 'raised'" label="Loading grade" :class="isGradeVisible ? 'rotate-[-8deg]' : 'rotate-0'" />
                 <span class="text-5xl text-background font-display relative z-10 transition-all duration-500 motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">{{ fixture.metrics.grade }}</span>
               </div>
               <p class="text-[10px] text-primary tracking-[0.2em] font-meta mt-6 px-3 py-2 border border-primary border-solid inline-block uppercase transition-opacity duration-500" :class="isGradeVisible ? 'opacity-100' : 'opacity-0'">
@@ -159,7 +176,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
                   <p v-if="index < revealedRounds && isRoundsVisible" class="text-sm text-on-surface leading-relaxed font-body sm:text-base">
                     {{ line }}
                   </p>
-                  <div v-else class="rounded-full bg-on-surface/20 h-3 mt-2 w-full" />
+                  <Skeleton v-else class="rounded-full h-3 mt-2 w-full" />
                   <div class="pt-2 flex gap-1">
                     <span v-for="dot in 5" :key="dot" class="rounded-full h-2 w-2" :class="index < revealedRounds && isRoundsVisible && dot <= damageFor(index) ? 'bg-primary' : 'bg-on-surface/20'" />
                   </div>
@@ -174,19 +191,13 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Judges’ scorecard
             </p>
-            <div class="mt-5 min-h-[16rem] space-y-4" :class="areScoresVisible ? 'opacity-100' : 'opacity-75'">
+            <div class="mt-5 min-h-[16rem] space-y-4">
               <div v-for="metric in roastMetricDescriptors" :key="metric.key" class="pb-4 border-b border-divider last:border-b-0 last:pb-0">
-                <p class="text-3xl text-on-surface leading-none font-display transition-opacity duration-500 motion-reduce:transition-none" :class="areScoresVisible ? 'opacity-100' : 'opacity-60'">
+                <p class="text-3xl text-on-surface leading-none font-display transition-opacity duration-500 motion-reduce:transition-none">
                   <template v-if="areScoresVisible">
                     {{ fixture.metrics[metric.key] }}
                   </template>
-                  <span v-else class="gap-1 h-7 flex items-end" aria-label="Loading score">
-                    <i class="bg-on-surface/20 h-4 w-1 block" />
-                    <i class="bg-on-surface/20 h-7 w-1 block" />
-                    <i class="bg-on-surface/20 h-5 w-1 block" />
-                    <i class="bg-on-surface/20 h-6 w-1 block" />
-                    <i class="bg-on-surface/20 h-3 w-1 block" />
-                  </span>
+                  <Skeleton v-else class="rounded-[0.35rem] h-8 w-14" label="Loading score" />
                 </p>
                 <p class="text-[9px] text-on-surface-variant tracking-[0.12em] font-meta mt-2 uppercase">
                   {{ metric.label }}

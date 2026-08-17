@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RoastExplorerFixture } from '~/data/roast-explorer'
+import Skeleton from '~/components/ui/Skeleton.vue'
 import { roastMetricDescriptors } from '~/data/roast-explorer'
 
 const props = defineProps<{ fixture: RoastExplorerFixture, tone?: 'dark' | 'light', isStreaming?: boolean }>()
@@ -11,7 +12,7 @@ const props = defineProps<{ fixture: RoastExplorerFixture, tone?: 'dark' | 'ligh
       <p v-if="!props.isStreaming" class="text-2xl leading-none font-body font-medium" :class="tone === 'light' ? 'text-basalt-950' : 'text-on-surface'">
         {{ props.fixture.metrics[metric.key] }}
       </p>
-      <div v-else class="rounded-full bg-on-surface/20 h-7 w-10" aria-label="Loading metric" />
+      <Skeleton v-else class="rounded-full h-7 w-10" label="Loading metric" />
       <p class="text-[9px] tracking-[0.14em] font-meta mt-2 uppercase" :class="tone === 'light' ? 'text-basalt-600' : 'text-on-surface-variant'">
         {{ metric.label }}
       </p>
