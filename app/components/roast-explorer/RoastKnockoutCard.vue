@@ -183,7 +183,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
       </div>
 
       <div class="mt-8 gap-6 grid min-w-0 lg:grid-cols-[minmax(13rem,0.27fr)_minmax(0,0.45fr)_minmax(18rem,0.38fr)] lg:items-start">
-        <aside class="order-2 min-w-0 gap-4 grid lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] lg:order-1">
+        <aside class="order-2 min-w-0 gap-4 grid lg:min-h-[41rem] lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] lg:order-1">
           <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container">
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Target
@@ -278,7 +278,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
           </div>
         </article>
 
-        <aside class="order-3 min-w-0">
+        <aside class="order-3 min-w-0 lg:min-h-[41rem] lg:flex lg:flex-col">
           <div class="flex gap-3 items-center justify-between">
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Roast, round by round
@@ -288,7 +288,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
             </span>
           </div>
 
-          <div class="mt-5 min-h-[30rem] relative">
+          <div class="mt-5 h-[25rem] min-h-0 relative">
             <TransitionGroup
               tag="div"
               enter-active-class="transition-all duration-400 ease-out motion-reduce:transition-none"
@@ -298,7 +298,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
               leave-from-class="opacity-100 translate-x-0"
               leave-to-class="opacity-0 -translate-x-4"
             >
-              <button v-for="(card, index) in visibleEvidenceCards" :key="`${card.label}-${activeEvidenceCard}`" type="button" class="p-6 text-left border-[1px] rounded-[1.5rem] border-solid inset-x-0 top-0 absolute min-h-[22rem] sm:p-7" :class="[card.kind === 'roast' ? 'border-primary bg-surface-container-high' : 'border-divider bg-surface-container', index === 0 ? 'cursor-pointer' : 'pointer-events-none']" :style="{ transform: `translateY(${index * 1.1}rem) scale(${1 - index * 0.04})`, zIndex: 3 - index, opacity: 1 - index * 0.16 }" :aria-label="`${card.label}: ${card.text}`" @click="index === 0 && nextEvidenceCard()">
+              <button v-for="(card, index) in visibleEvidenceCards" :key="`${card.label}-${activeEvidenceCard}`" type="button" class="p-6 text-left border-[1px] rounded-[1.5rem] border-solid inset-x-0 top-0 absolute h-[23rem] sm:p-7" :class="[card.kind === 'roast' ? 'border-primary bg-surface-container-high' : 'border-divider bg-surface-container', index === 0 ? 'cursor-pointer' : 'pointer-events-none']" :style="{ transform: `translate(${index * 0.8}rem, ${index * 0.8}rem) scale(${1 - index * 0.035})`, zIndex: 3 - index, opacity: 1 - index * 0.12 }" :aria-label="`${card.label}: ${card.text}`" @click="index === 0 && nextEvidenceCard()">
                 <div class="flex gap-3 items-center justify-between">
                   <span class="text-[10px] tracking-[0.2em] font-meta uppercase" :class="card.kind === 'roast' ? 'text-primary' : 'text-on-surface-variant'">
                     {{ card.label }}
