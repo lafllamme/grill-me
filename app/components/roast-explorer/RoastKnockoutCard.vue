@@ -42,18 +42,18 @@ function replayEntrance(force = false) {
   revealPhase.value = 0
   scheduleReveal(() => {
     revealPhase.value = 1
-  }, 900)
+  }, 850)
   scheduleReveal(() => {
     revealPhase.value = 2
-  }, 1700)
+  }, 1450)
   scheduleReveal(() => {
     revealPhase.value = 3
-  }, 2450)
+  }, 2900)
 
   analysisSteps.forEach((_, index) => {
     scheduleReveal(() => {
       revealedAnalysisSteps.value = index + 1
-    }, 980 + index * 260)
+    }, 1450 + index * 260)
   })
 
   props.fixture.roastLines.forEach((_, index) => {
@@ -87,11 +87,13 @@ function nextRound() {
 }
 const damageFor = (index: number) => Math.min(5, Math.max(1, Math.round((props.fixture.metrics.stinkScore + index * 8) / 20)))
 const verdict = computed(() => props.fixture.intensity.level >= 3 ? 'Technical knockout' : 'Split decision')
-const isAnalysisVisible = computed(() => revealPhase.value === 1)
-const isCenterIdentityVisible = computed(() => revealPhase.value >= 2)
-const isGradeVisible = computed(() => revealPhase.value >= 3)
-const isRoundsVisible = computed(() => revealPhase.value >= 3)
-const areScoresVisible = computed(() => revealPhase.value >= 4)
+const isAnalysisVisible = computed(() => revealPhase.value === 2)
+const isCenterIdentityVisible = computed(() => revealPhase.value >= 3)
+const isSkeletonVisible = computed(() => revealPhase.value <= 1)
+const isSkeletonResolving = computed(() => revealPhase.value === 1)
+const isGradeVisible = computed(() => revealPhase.value >= 4)
+const isRoundsVisible = computed(() => revealPhase.value >= 4)
+const areScoresVisible = computed(() => revealPhase.value >= 5)
 </script>
 
 <template>
@@ -128,16 +130,15 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
             <div class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta flex gap-3 uppercase items-center justify-between">
               <span>Tale of the tape</span><span>{{ isRoundsVisible ? 'evidence-backed' : 'assembling' }}</span>
             </div>
-            <div class="mt-8 min-h-[12rem] text-center">
-              <template v-if="isCenterIdentityVisible">
-                <h2 class="text-[clamp(2.2rem,5vw,5rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
-                  {{ fixture.title }}
-                </h2>
-                <p class="text-lg text-on-surface-variant font-body mt-4">
-                  Evidence-backed verdict
-                </p>
-              </template>
-              <div v-else-if="isAnalysisVisible" class="mx-auto max-w-[24rem] text-left pt-1" aria-label="Assembly analysis">
+            <div class="mt-8 min-h-[16rem] relative text-center">
+              <div class="inset-0 absolute flex items-start justify-center transition-[opacity,transform,filter] duration-700 ease-out motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">
+                <div class="mx-auto max-w-[24rem] space-y-6 pt-5 w-full" aria-label="Loading roast identity">
+                  <Skeleton class="rounded-full h-8 w-3/4 mx-auto" />
+                  <Skeleton class="rounded-full h-4 w-1/2 mx-auto" />
+                </div>
+              </div>
+
+              <div class="inset-0 absolute mx-auto max-w-[24rem] text-left pt-1 transition-[opacity,transform,filter,max-height] duration-700 ease-out motion-reduce:transition-none" :class="isAnalysisVisible ? 'opacity-100 translate-y-0 blur-0 max-h-[16rem]' : 'opacity-0 translate-y-[0.35rem] blur-sm max-h-0 pointer-events-none'" :aria-hidden="!isAnalysisVisible" aria-label="Assembly analysis">
                 <p class="text-[10px] text-primary tracking-[0.2em] font-meta uppercase">
                   Evidence assembly
                 </p>
@@ -148,9 +149,14 @@ const areScoresVisible = computed(() => revealPhase.value >= 4)
                   </li>
                 </ol>
               </div>
-              <div v-else class="mx-auto max-w-[24rem] space-y-6 pt-5" aria-label="Loading roast identity">
-                <Skeleton class="rounded-full h-8 w-3/4 mx-auto" />
-                <Skeleton class="rounded-full h-4 w-1/2 mx-auto" />
+
+              <div class="inset-0 absolute flex flex-col items-center transition-[opacity,transform,filter] duration-900 ease-out motion-reduce:transition-none" :class="isCenterIdentityVisible ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-[0.5rem] blur-sm pointer-events-none'" :aria-hidden="!isCenterIdentityVisible">
+                <h2 class="text-[clamp(2.2rem,5vw,5rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
+                  {{ fixture.title }}
+                </h2>
+                <p class="text-lg text-on-surface-variant font-body mt-4">
+                  Evidence-backed verdict
+                </p>
               </div>
             </div>
 
