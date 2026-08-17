@@ -27,7 +27,7 @@ test.describe('roast explorer', () => {
 
     await page.getByRole('button', { name: 'BURNED TO CRISP' }).click()
     await expect(page.getByRole('tabpanel').getByRole('article').getByText('Structural integrity: none')).toBeVisible()
-    await expect(page.getByRole('tabpanel').getByText('97', { exact: true }).first()).toBeVisible()
+    await expect(page.getByRole('tabpanel').getByText('97', { exact: true }).first()).toBeVisible({ timeout: 8_000 })
 
     await page.getByRole('button', { name: 'Replay entrance' }).click()
     await expect(page.getByText('streaming', { exact: true })).toBeVisible()

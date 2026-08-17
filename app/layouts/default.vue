@@ -6,7 +6,7 @@ import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings
 
 const isDev = import.meta.dev
 const route = useRoute()
-const shouldShowGlobalChrome = computed(() => route.path !== '/')
+const shouldShowGlobalChrome = computed(() => route.path !== '/' && route.path !== '/roast')
 
 const {
   settings,

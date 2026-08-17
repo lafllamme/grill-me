@@ -15,7 +15,7 @@ type RoastVariant = 'evidence' | 'receipt' | 'diss' | 'knockout' | 'reel'
 
 const activeLevel = ref<RoastExplorerLevel>('medium_rare')
 const activeVariant = ref<RoastVariant>('knockout')
-const isStreaming = ref(false)
+const isStreaming = ref(true)
 const showEvidence = ref(false)
 const replayKey = ref(0)
 const isHydrated = ref(false)
@@ -40,25 +40,31 @@ const variantLabel = computed(() => variantOptions.find(option => option.id === 
 
 function selectLevel(level: RoastExplorerLevel) {
   activeLevel.value = level
+  startStreamingTimer()
   replayKey.value += 1
   showEvidence.value = false
 }
 
 function selectVariant(variant: RoastVariant) {
   activeVariant.value = variant
+  startStreamingTimer()
   replayKey.value += 1
+}
+
+function startStreamingTimer() {
+  if (replayTimer)
+    clearTimeout(replayTimer)
+  isStreaming.value = true
+  replayTimer = setTimeout(() => {
+    isStreaming.value = false
+  }, 7200)
 }
 
 function replay() {
   if (!import.meta.client)
     return
-  if (replayTimer)
-    clearTimeout(replayTimer)
-  isStreaming.value = true
+  startStreamingTimer()
   replayKey.value += 1
-  replayTimer = setTimeout(() => {
-    isStreaming.value = false
-  }, 3200)
 }
 
 onBeforeUnmount(() => {
@@ -68,6 +74,7 @@ onBeforeUnmount(() => {
 
 onMounted(() => {
   isHydrated.value = true
+  startStreamingTimer()
 })
 
 useHead({ title: 'Roast Explorer' })
@@ -112,7 +119,7 @@ useSeoMeta({
             </button>
           </div>
           <div class="max-w-xl w-full sm:w-auto">
-            <RoastMetricStrip :fixture="fixture" />
+            <RoastMetricStrip :fixture="fixture" :is-streaming="isStreaming" />
           </div>
         </div>
       </section>
