@@ -9,7 +9,10 @@ const activeRound = ref(0)
 const revealPhase = ref(0)
 const revealedRounds = ref(0)
 const revealedAnalysisSteps = ref(0)
+const starFillPercent = ref(0)
 let revealTimers: ReturnType<typeof setTimeout>[] = []
+let starFillFrame: number | undefined
+let starRevealStartedAt = 0
 
 const analysisSteps = [
   'Fetching public commits',
@@ -21,10 +24,61 @@ const analysisSteps = [
 function clearRevealTimers() {
   revealTimers.forEach(timer => clearTimeout(timer))
   revealTimers = []
+  if (starFillFrame !== undefined) {
+    cancelAnimationFrame(starFillFrame)
+    starFillFrame = undefined
+  }
 }
 
 function scheduleReveal(callback: () => void, delay: number) {
   revealTimers.push(setTimeout(callback, delay))
+}
+
+function getStarFillPercent(elapsed: number) {
+  const finishAt = 3200 + props.fixture.roastLines.length * 760 + 600
+  const checkpoints = [
+    [0, 0],
+    [850, 18],
+    [1450, 44],
+    [2900, 72],
+    [finishAt, 100],
+  ] as const
+
+  for (let index = 1; index < checkpoints.length; index++) {
+    const endCheckpoint = checkpoints[index]
+    const startCheckpoint = checkpoints[index - 1]
+    if (!endCheckpoint || !startCheckpoint)
+      continue
+
+    const [endTime, endValue] = endCheckpoint
+    const [startTime, startValue] = startCheckpoint
+
+    if (elapsed <= endTime) {
+      const progress = Math.max(0, Math.min(1, (elapsed - startTime) / (endTime - startTime)))
+      return startValue + (endValue - startValue) * progress
+    }
+  }
+
+  return 100
+}
+
+function startStarFill() {
+  if (!import.meta.client)
+    return
+
+  starRevealStartedAt = performance.now()
+  const updateStarFill = (now: number) => {
+    if (revealPhase.value >= 5) {
+      starFillPercent.value = 100
+      starFillFrame = undefined
+      return
+    }
+
+    starFillPercent.value = getStarFillPercent(now - starRevealStartedAt)
+    starFillFrame = requestAnimationFrame(updateStarFill)
+  }
+
+  starFillFrame = requestAnimationFrame(updateStarFill)
 }
 
 function replayEntrance(force = false) {
@@ -36,10 +90,13 @@ function replayEntrance(force = false) {
   if (!props.isStreaming && !force) {
     revealPhase.value = 5
     revealedRounds.value = props.fixture.roastLines.length
+    starFillPercent.value = 100
     return
   }
 
   revealPhase.value = 0
+  starFillPercent.value = 0
+  startStarFill()
   scheduleReveal(() => {
     revealPhase.value = 1
   }, 850)
@@ -53,7 +110,7 @@ function replayEntrance(force = false) {
   analysisSteps.forEach((_, index) => {
     scheduleReveal(() => {
       revealedAnalysisSteps.value = index + 1
-    }, 1450 + index * 260)
+    }, 950 + index * 260)
   })
 
   props.fixture.roastLines.forEach((_, index) => {
@@ -87,7 +144,7 @@ function nextRound() {
 }
 const damageFor = (index: number) => Math.min(5, Math.max(1, Math.round((props.fixture.metrics.stinkScore + index * 8) / 20)))
 const verdict = computed(() => props.fixture.intensity.level >= 3 ? 'Technical knockout' : 'Split decision')
-const isAnalysisVisible = computed(() => revealPhase.value === 2)
+const isAnalysisVisible = computed(() => revealPhase.value >= 1 && revealPhase.value < 3)
 const isCenterIdentityVisible = computed(() => revealPhase.value >= 3)
 const isSkeletonVisible = computed(() => revealPhase.value <= 1)
 const isSkeletonResolving = computed(() => revealPhase.value === 1)
@@ -131,14 +188,14 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
               <span>Tale of the tape</span><span>{{ isRoundsVisible ? 'evidence-backed' : 'assembling' }}</span>
             </div>
             <div class="mt-8 min-h-[16rem] relative text-center">
-              <div class="inset-0 absolute flex items-start justify-center transition-[opacity,transform,filter] duration-700 ease-out motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">
+              <div class="inset-0 absolute flex items-start justify-center transition-[opacity,transform,filter] duration-800 ease-out motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">
                 <div class="mx-auto max-w-[24rem] space-y-6 pt-5 w-full" aria-label="Loading roast identity">
                   <Skeleton class="rounded-full h-8 w-3/4 mx-auto" />
                   <Skeleton class="rounded-full h-4 w-1/2 mx-auto" />
                 </div>
               </div>
 
-              <div class="inset-0 absolute mx-auto max-w-[24rem] text-left pt-1 transition-[opacity,transform,filter,max-height] duration-700 ease-out motion-reduce:transition-none" :class="isAnalysisVisible ? 'opacity-100 translate-y-0 blur-0 max-h-[16rem]' : 'opacity-0 translate-y-[0.35rem] blur-sm max-h-0 pointer-events-none'" :aria-hidden="!isAnalysisVisible" aria-label="Assembly analysis">
+              <div class="inset-0 absolute mx-auto max-w-[24rem] text-left pt-1 transition-[opacity,transform,filter,max-height] duration-800 ease-out motion-reduce:transition-none" :class="isAnalysisVisible ? 'opacity-100 translate-y-0 blur-0 max-h-[16rem]' : 'opacity-0 translate-y-[0.35rem] blur-sm max-h-0 pointer-events-none'" :aria-hidden="!isAnalysisVisible" aria-label="Assembly analysis">
                 <p class="text-[10px] text-primary tracking-[0.2em] font-meta uppercase">
                   Evidence assembly
                 </p>
@@ -150,8 +207,8 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
                 </ol>
               </div>
 
-              <div class="inset-0 absolute flex flex-col items-center transition-[opacity,transform,filter] duration-900 ease-out motion-reduce:transition-none" :class="isCenterIdentityVisible ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-[0.5rem] blur-sm pointer-events-none'" :aria-hidden="!isCenterIdentityVisible">
-                <h2 class="text-[clamp(2.2rem,5vw,5rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
+              <div class="inset-0 absolute flex flex-col items-center transition-[opacity,transform,filter] duration-800 ease-out motion-reduce:transition-none" :class="isCenterIdentityVisible ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-[0.5rem] blur-sm pointer-events-none'" :aria-hidden="!isCenterIdentityVisible">
+                <h2 class="text-[clamp(2.1rem,4.5vw,4.25rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
                   {{ fixture.title }}
                 </h2>
                 <p class="text-lg text-on-surface-variant font-body mt-4">
@@ -161,9 +218,14 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
             </div>
 
             <div class="mt-6 min-h-[12rem] text-center">
-              <div class="relative mx-auto flex h-44 w-44 items-center justify-center">
-                <Skeleton class="inset-0 absolute scale-100 transition-all duration-700 ease-out motion-reduce:transition-none [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" :tone="isGradeVisible ? 'signal' : 'raised'" label="Loading grade" :class="isGradeVisible ? 'rotate-[-8deg]' : 'rotate-0'" />
-                <span class="text-5xl text-background font-display relative z-10 transition-all duration-500 motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">{{ fixture.metrics.grade }}</span>
+              <div class="relative mx-auto flex h-52 w-52 items-center justify-center">
+                <div class="inset-0 absolute transition-transform duration-800 ease-out motion-reduce:transition-none [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" :class="isGradeVisible ? 'rotate-[-8deg]' : 'rotate-0'" role="status" aria-label="Loading grade">
+                  <div class="h-full w-full bg-surface-container-highest" />
+                  <div class="inset-0 absolute overflow-hidden transition-[clip-path] duration-800 ease-out motion-reduce:transition-none" :style="{ clipPath: `inset(${100 - starFillPercent}% 0 0 0)` }">
+                    <div class="h-full w-full bg-primary [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" />
+                  </div>
+                </div>
+                <span class="text-5xl text-background font-display relative z-10 transition-all duration-700 motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">{{ fixture.metrics.grade }}</span>
               </div>
               <p class="text-[10px] text-primary tracking-[0.2em] font-meta mt-6 px-3 py-2 border border-primary border-solid inline-block uppercase transition-opacity duration-500" :class="isGradeVisible ? 'opacity-100' : 'opacity-0'">
                 {{ verdict }}
