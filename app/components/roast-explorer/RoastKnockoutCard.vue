@@ -5,7 +5,7 @@ import Skeleton from '~/components/ui/Skeleton.vue'
 import { roastMetricDescriptors } from '~/data/roast-explorer'
 
 const props = defineProps<{ fixture: RoastExplorerFixture, replayKey: number, isStreaming?: boolean }>()
-const activeRound = ref(0)
+const activeEvidenceCard = ref(0)
 const revealPhase = ref(0)
 const revealedRounds = ref(0)
 const revealedAnalysisSteps = ref(0)
@@ -21,6 +21,18 @@ const analysisSteps = [
   'Comparing implementation patterns',
   'Preparing evidence-backed verdict',
 ]
+
+interface RoastEvidenceCard {
+  kind: 'roast' | 'feedback'
+  label: string
+  text: string
+}
+
+const evidenceCards = computed<RoastEvidenceCard[]>(() => [
+  ...props.fixture.roastLines.map((text, index) => ({ kind: 'roast' as const, label: `Roast ${String(index + 1).padStart(2, '0')}`, text })),
+  ...props.fixture.feedback.map((text, index) => ({ kind: 'feedback' as const, label: `Fix ${String(index + 1).padStart(2, '0')}`, text })),
+])
+const visibleEvidenceCards = computed(() => evidenceCards.value.slice(activeEvidenceCard.value, activeEvidenceCard.value + 3))
 
 function clearRevealTimers() {
   revealTimers.forEach(timer => clearTimeout(timer))
@@ -90,7 +102,7 @@ function startStarFill() {
 
 function replayEntrance(force = false) {
   clearRevealTimers()
-  activeRound.value = 0
+  activeEvidenceCard.value = 0
   revealedRounds.value = 0
   revealedAnalysisSteps.value = 0
 
@@ -151,17 +163,15 @@ onMounted(() => {
   replayEntrance(true)
 })
 
-function nextRound() {
-  activeRound.value = activeRound.value >= props.fixture.roastLines.length - 1 ? 0 : activeRound.value + 1
+function nextEvidenceCard() {
+  activeEvidenceCard.value = activeEvidenceCard.value >= evidenceCards.value.length - 1 ? 0 : activeEvidenceCard.value + 1
 }
-const damageFor = (index: number) => Math.min(5, Math.max(1, Math.round((props.fixture.metrics.stinkScore + index * 8) / 20)))
 const verdict = computed(() => props.fixture.intensity.level >= 3 ? 'Technical knockout' : 'Split decision')
 const isAnalysisVisible = computed(() => revealPhase.value >= 1 && revealPhase.value < 3)
 const isCenterIdentityVisible = computed(() => revealPhase.value >= 3)
 const isSkeletonVisible = computed(() => revealPhase.value <= 1)
 const isSkeletonResolving = computed(() => revealPhase.value === 1)
 const isGradeVisible = computed(() => revealPhase.value >= 4)
-const isRoundsVisible = computed(() => revealPhase.value >= 4)
 const areScoresVisible = computed(() => revealPhase.value >= 5)
 </script>
 
@@ -172,9 +182,9 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
         <span>Roast console / live assembly</span><span>{{ fixture.intensity.level }} rd. bout</span>
       </div>
 
-      <div class="mt-8 gap-6 grid min-w-0 lg:grid-cols-[minmax(0,0.25fr)_minmax(0,0.5fr)_minmax(0,0.25fr)] lg:items-start">
-        <aside class="order-2 min-h-[20rem] min-w-0 lg:order-1">
-          <div class="p-5 border border-divider rounded-[1.4rem] bg-surface-container-low">
+      <div class="mt-8 gap-6 grid min-w-0 lg:grid-cols-[minmax(13rem,0.27fr)_minmax(0,0.45fr)_minmax(18rem,0.38fr)] lg:items-start">
+        <aside class="order-2 min-w-0 space-y-4 lg:order-1">
+          <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container-low">
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Target
             </p>
@@ -189,6 +199,32 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
                 <p class="text-xs text-on-surface-variant leading-relaxed font-meta mt-3">
                   Evidence pending
                 </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container-low">
+            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
+              Judges’ scorecard
+            </p>
+            <div class="mt-4 gap-3 grid">
+              <div v-for="metric in roastMetricDescriptors" :key="metric.key" class="p-3 border border-divider rounded-[1rem] bg-surface">
+                <div class="flex gap-3 items-start justify-between">
+                  <div>
+                    <p class="text-[9px] text-on-surface-variant tracking-[0.12em] font-meta uppercase">
+                      {{ metric.label }}
+                    </p>
+                    <p class="text-[11px] text-on-surface-variant leading-relaxed font-body mt-2">
+                      {{ metric.descriptor }}
+                    </p>
+                  </div>
+                  <div class="text-2xl text-on-surface leading-none font-display shrink-0">
+                    <template v-if="areScoresVisible">
+                      {{ fixture.metrics[metric.key] }}
+                    </template>
+                    <Skeleton v-else class="rounded-[0.35rem] h-7 w-10" label="Loading score" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -241,49 +277,52 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
               </p>
             </div>
 
-            <div class="mt-12 min-h-[17rem]">
-              <p class="text-[10px] text-on-surface-variant tracking-[0.22em] font-meta text-center uppercase">
-                Roast, round by round
-              </p>
-              <ol class="mt-5 border-t border-divider border-solid">
-                <li v-for="(line, index) in fixture.roastLines" :key="line" class="min-h-[5rem] py-5 border-b border-divider border-solid gap-4 grid grid-cols-[2rem_1fr_auto] items-start transition-opacity duration-500" :class="index < revealedRounds && isRoundsVisible ? (index === activeRound ? 'opacity-100' : 'opacity-60') : 'opacity-35'">
-                  <button type="button" class="text-xs font-meta border rounded-full flex h-8 w-8 items-center justify-center transition-colors" :class="index < revealedRounds && isRoundsVisible ? 'text-primary border-primary' : 'text-on-surface-variant border-divider'" :disabled="index >= revealedRounds || !isRoundsVisible" @click="activeRound = index">
-                    {{ index + 1 }}
-                  </button>
-                  <p v-if="index < revealedRounds && isRoundsVisible" class="text-sm text-on-surface leading-relaxed font-body sm:text-base">
-                    {{ line }}
-                  </p>
-                  <Skeleton v-else class="rounded-full h-3 mt-2 w-full" />
-                  <div class="pt-2 flex gap-1">
-                    <span v-for="dot in 5" :key="dot" class="rounded-full h-2 w-2" :class="index < revealedRounds && isRoundsVisible && dot <= damageFor(index) ? 'bg-primary' : 'bg-on-surface/20'" />
-                  </div>
-                </li>
-              </ol>
-            </div>
           </div>
         </article>
 
-        <aside class="order-3 min-h-[20rem] min-w-0">
-          <div class="p-5 border border-divider rounded-[1.4rem] bg-surface-container-high">
-            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
-              Judges’ scorecard
-            </p>
-            <div class="mt-5 min-h-[16rem] space-y-4">
-              <div v-for="metric in roastMetricDescriptors" :key="metric.key" class="pb-4 border-b border-divider last:border-b-0 last:pb-0">
-                <div class="text-3xl text-on-surface leading-none font-display transition-opacity duration-500 motion-reduce:transition-none">
-                  <template v-if="areScoresVisible">
-                    {{ fixture.metrics[metric.key] }}
-                  </template>
-                  <Skeleton v-else class="rounded-[0.35rem] h-8 w-14" label="Loading score" />
-                </div>
-                <p class="text-[9px] text-on-surface-variant tracking-[0.12em] font-meta mt-2 uppercase">
-                  {{ metric.label }}
-                </p>
-                <p class="text-xs text-on-surface-variant leading-relaxed font-body mt-2">
-                  {{ metric.descriptor }}
-                </p>
-              </div>
+        <aside class="order-3 min-w-0">
+          <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container-low sm:p-6">
+            <div class="flex gap-3 items-center justify-between">
+              <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
+                Roast, round by round
+              </p>
+              <span class="text-[10px] text-on-surface-variant tracking-[0.12em] font-meta uppercase">
+                {{ activeEvidenceCard + 1 }} / {{ evidenceCards.length }}
+              </span>
             </div>
+
+            <div class="mt-5 min-h-[26rem] relative">
+              <TransitionGroup
+                tag="div"
+                enter-active-class="transition-all duration-400 ease-out motion-reduce:transition-none"
+                enter-from-class="opacity-0 translate-x-4"
+                enter-to-class="opacity-100 translate-x-0"
+                leave-active-class="transition-all duration-300 ease-in motion-reduce:transition-none"
+                leave-from-class="opacity-100 translate-x-0"
+                leave-to-class="opacity-0 -translate-x-4"
+              >
+                <button v-for="(card, index) in visibleEvidenceCards" :key="`${card.label}-${activeEvidenceCard}`" type="button" class="p-5 text-left border-[1px] rounded-[1.4rem] border-solid inset-x-0 top-0 absolute min-h-[18rem] sm:p-6" :class="[card.kind === 'roast' ? 'border-primary bg-surface-container-high' : 'border-divider bg-surface-container', index === 0 ? 'cursor-pointer' : 'pointer-events-none']" :style="{ transform: `translateY(${index * 1.1}rem) scale(${1 - index * 0.04})`, zIndex: 3 - index, opacity: 1 - index * 0.16 }" :aria-label="`${card.label}: ${card.text}`" @click="index === 0 && nextEvidenceCard()">
+                  <div class="flex gap-3 items-center justify-between">
+                    <span class="text-[10px] tracking-[0.2em] font-meta uppercase" :class="card.kind === 'roast' ? 'text-primary' : 'text-on-surface-variant'">
+                      {{ card.label }}
+                    </span>
+                    <span class="text-[10px] text-on-surface-variant tracking-[0.12em] font-meta uppercase">
+                      {{ index === 0 ? 'active' : 'queued' }}
+                    </span>
+                  </div>
+                  <p v-if="(card.kind === 'roast' && activeEvidenceCard + index < revealedRounds) || (card.kind === 'feedback' && areScoresVisible)" class="text-xl text-on-surface leading-[1.08] tracking-[-0.03em] font-body mt-12 sm:text-2xl">
+                    {{ card.text }}
+                  </p>
+                  <Skeleton v-else class="rounded-[0.4rem] h-4 mt-12 w-full" label="Loading evidence" />
+                  <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta bottom-5 left-5 absolute uppercase sm:left-6">
+                    {{ card.kind === 'roast' ? 'damage logged' : 'exchange suggested' }}
+                  </span>
+                </button>
+              </TransitionGroup>
+            </div>
+            <button type="button" class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta mt-5 uppercase hover:text-primary" @click="nextEvidenceCard">
+              Next card →
+            </button>
           </div>
         </aside>
       </div>
@@ -292,8 +331,8 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
         <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase">
           {{ isStreaming && revealPhase < 5 ? 'Building evidence-backed verdict' : 'Verdict filed' }}
         </p>
-        <button type="button" class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase hover:text-primary" @click="nextRound">
-          Next round →
+        <button type="button" class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase hover:text-primary" @click="nextEvidenceCard">
+          Next evidence →
         </button>
       </div>
     </div>
