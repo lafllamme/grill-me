@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RoastExplorerFixture } from '~/data/roast-explorer'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import RoastScoreReceipt from '~/components/roast-explorer/RoastScoreReceipt.vue'
+import RoastReceiptPrinter from '~/components/roast-explorer/RoastReceiptPrinter.vue'
 import Skeleton from '~/components/ui/Skeleton.vue'
 
 const props = defineProps<{ fixture: RoastExplorerFixture, replayKey: number, isStreaming?: boolean }>()
@@ -179,7 +179,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
   <div class="p-5 bg-background lg:p-12 sm:p-8">
     <div class="mx-auto min-h-[54rem] max-w-7xl">
       <div class="gap-8 grid min-w-0 lg:grid-cols-[minmax(18rem,0.31fr)_minmax(24rem,0.38fr)_minmax(20rem,0.31fr)] lg:items-start">
-        <aside class="order-2 min-w-0 gap-4 grid lg:min-h-[41rem] lg:grid-rows-[15rem_minmax(0,1fr)] lg:order-1">
+        <aside class="order-1 min-w-0 gap-4 grid lg:min-h-[41rem] lg:grid-rows-[15rem_minmax(0,1fr)] lg:order-1">
           <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container">
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Username
@@ -196,10 +196,10 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
             </div>
           </div>
 
-          <RoastScoreReceipt :fixture="fixture" :reveal-phase="revealPhase" />
+          <RoastReceiptPrinter :fixture="fixture" :reveal-phase="revealPhase" />
         </aside>
 
-        <article class="order-1 min-h-[41rem] min-w-0 lg:order-2">
+        <article class="order-2 min-h-[41rem] min-w-0 lg:order-2">
           <div class="min-h-[41rem] p-0 flex flex-col justify-center sm:px-4 lg:px-6">
             <div class="mt-2 min-h-[16rem] relative text-center">
               <div class="inset-0 absolute flex items-start justify-center transition-[opacity,transform,filter] duration-800 ease-out motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">

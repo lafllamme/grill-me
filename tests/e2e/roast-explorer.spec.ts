@@ -6,6 +6,10 @@ test.describe('roast explorer', () => {
     await page.goto('/roast')
     await expect(page.locator('[data-roast-explorer-ready="true"]')).toBeVisible()
 
+    await expect(page.getByTestId('roast-receipt-printer')).toBeVisible()
+    await expect(page.getByTestId('roast-printer-slot')).toBeVisible()
+    await expect(page.getByText('Welcome to GrillMe · filed / no refunds')).toBeVisible({ timeout: 8_000 })
+
     await expect(page.getByRole('tab')).toHaveCount(5)
 
     for (const label of ['Roast receipt', 'Diss track', 'Knockout card', 'Roast reel']) {
