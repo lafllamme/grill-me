@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { RoastExplorerFixture } from '~/data/roast-explorer'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import RoastScoreReceipt from '~/components/roast-explorer/RoastScoreReceipt.vue'
 import Skeleton from '~/components/ui/Skeleton.vue'
-import { roastMetricDescriptors } from '~/data/roast-explorer'
 
 const props = defineProps<{ fixture: RoastExplorerFixture, replayKey: number, isStreaming?: boolean }>()
 const activeEvidenceCard = ref(0)
@@ -192,33 +192,11 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
                 <p class="text-[10px] text-primary tracking-[0.16em] font-meta uppercase">
                   {{ fixture.intensity.label.replaceAll('_', ' ') }}
                 </p>
-                <p class="text-xs text-on-surface-variant leading-relaxed font-meta mt-3">
-                  Evidence pending
-                </p>
               </div>
             </div>
           </div>
 
-          <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container">
-            <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
-              Judges’ scorecard
-            </p>
-            <div class="mt-4 divide-y divide-divider">
-              <div v-for="metric in roastMetricDescriptors" :key="metric.key" class="py-3 first:pt-0 last:pb-0">
-                <div class="flex gap-3 items-start justify-between">
-                  <p class="text-[9px] text-on-surface-variant tracking-[0.12em] font-meta uppercase">
-                    {{ metric.label }}
-                  </p>
-                  <div class="text-2xl text-on-surface leading-none font-display shrink-0">
-                    <template v-if="areScoresVisible">
-                      {{ fixture.metrics[metric.key] }}
-                    </template>
-                    <Skeleton v-else class="rounded-[0.35rem] h-7 w-10" label="Loading score" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <RoastScoreReceipt :fixture="fixture" :reveal-phase="revealPhase" />
         </aside>
 
         <article class="order-1 min-h-[41rem] min-w-0 lg:order-2">
