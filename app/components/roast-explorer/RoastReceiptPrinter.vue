@@ -51,10 +51,10 @@ const tornEdgeClipPath = 'polygon(0 0, 100% 0, 100% 98%, 97% 100%, 94% 98%, 91% 
         data-testid="roast-printer-stage"
         class="mx-auto mt-8 max-w-[18.75rem] h-[47rem] w-[calc(100%-2rem)] relative"
       >
-        <div class="rounded-[0.9375rem] bg-bone-200 h-[6.25rem] w-full shadow-lg inset-x-0 top-0 absolute z-0" />
+        <div class="rounded-[0.9375rem] bg-basalt-700 h-[6.25rem] w-full shadow-lg inset-x-0 top-0 absolute z-0" />
 
-        <div class="rounded-[0.75rem] bg-bone-100 h-20 w-full shadow-inner inset-x-0 top-0 absolute z-20">
-          <div class="text-[0.625rem] text-basalt-950/60 tracking-[0.08em] font-meta uppercase bottom-2 left-3 absolute">
+        <div class="rounded-[0.75rem] bg-basalt-800 h-20 w-full shadow-inner inset-x-0 top-0 absolute z-20">
+          <div class="text-[0.625rem] text-bone-100/70 tracking-[0.08em] font-meta uppercase bottom-2 left-3 absolute">
             GRILLME
           </div>
           <span class="rounded-full bg-primary h-1.5 w-1.5 bottom-2 right-3 absolute" aria-hidden="true" />
@@ -69,7 +69,7 @@ const tornEdgeClipPath = 'polygon(0 0, 100% 0, 100% 98%, 97% 100%, 94% 98%, 91% 
             class="mx-auto max-w-[34rem] w-[calc(100%-0.4375rem)] origin-top transition-transform duration-[850ms] ease-out inset-x-0 top-0 absolute z-10 motion-reduce:transition-none"
             :style="{ transform: paperTranslate }"
           >
-            <div class="bg-bone-50 h-[40rem] w-full shadow-lg relative">
+            <div class="bg-bone-100 h-[40rem] w-full shadow-lg relative">
               <div
                 data-testid="roast-receipt-paper"
                 class="text-basalt-950 px-6 pb-8 pt-14 h-full w-full relative z-10"
