@@ -11,7 +11,6 @@ const isEvidenceVisible = computed(() => props.revealPhase >= 2)
 const areScoresVisible = computed(() => props.revealPhase >= 4)
 const isGradeVisible = computed(() => props.revealPhase >= 5)
 const isFiled = computed(() => props.revealPhase >= 5)
-const isReceiptVisible = computed(() => props.revealPhase >= 1)
 const commitCount = computed(() => props.fixture.meta.selectedCommitCount ?? props.fixture.meta.commitCount)
 const fileCount = computed(() => new Set(props.fixture.evidence.commits.flatMap(commit => commit.files.map(file => file.filename))).size)
 const intensity = computed(() => props.fixture.intensity.label.replaceAll('_', ' '))
@@ -23,9 +22,17 @@ const receiptItems = computed(() => [
 ])
 const receiptTotal = computed(() => receiptItems.value.reduce((total, item) => total + item.amount, 0))
 const paperTranslate = computed(() => {
+  if (props.revealPhase >= 5)
+    return 'translateY(0rem)'
+  if (props.revealPhase >= 4)
+    return 'translateY(-10rem)'
+  if (props.revealPhase >= 3)
+    return 'translateY(-19rem)'
+  if (props.revealPhase >= 2)
+    return 'translateY(-28rem)'
   if (props.revealPhase >= 1)
-    return 'translateY(0)'
-  return 'translateY(-110%)'
+    return 'translateY(-38rem)'
+  return 'translateY(-40rem)'
 })
 
 const barcodeWidths = [2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 4, 2, 1, 3, 2, 4, 1, 2, 1, 3] as const
@@ -42,8 +49,7 @@ const tornEdgeClipPath = 'polygon(0 0, 100% 0, 100% 98%, 97% 100%, 94% 98%, 91% 
     <div class="rounded-[1.5rem] bg-bone-50 h-full relative overflow-visible">
       <div
         data-testid="roast-printer-stage"
-        class="mx-auto mt-8 max-w-[18.75rem] w-[calc(100%-2rem)] transition-[height] duration-500 ease-linear relative motion-reduce:transition-none"
-        :class="isReceiptVisible ? 'h-[47rem]' : 'h-[6.875rem]'"
+        class="mx-auto mt-8 max-w-[18.75rem] h-[47rem] w-[calc(100%-2rem)] relative"
       >
         <div class="rounded-[0.9375rem] bg-bone-200 h-[6.25rem] w-full shadow-lg inset-x-0 top-0 absolute z-0" />
 
