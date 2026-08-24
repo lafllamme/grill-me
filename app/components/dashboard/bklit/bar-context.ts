@@ -22,6 +22,8 @@ export interface BklitBarContext {
   maxValue: (dataKey: string) => number
   valueAt: (dataKey: string, index: number) => number
   xAt: (index: number) => number
+  seriesColors: Record<string, string>
+  registerSeries: (dataKey: string, color: string) => void
   setHoveredIndex: (index: number | null) => void
 }
 

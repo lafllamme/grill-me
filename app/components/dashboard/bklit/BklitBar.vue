@@ -5,18 +5,28 @@ import { bklitBarContextKey } from './bar-context'
 const props = withDefaults(defineProps<{
   dataKey: string
   fill?: string
+  stroke?: string
+  animate?: boolean
   lineCap?: 'round' | 'butt' | number
   animationType?: 'grow' | 'fade'
   fadedOpacity?: number
   minBarHeight?: number
   groupGap?: number
+  staggerDelay?: number
+  stackGap?: number
+  perspective?: boolean
 }>(), {
   fill: 'currentColor',
+  stroke: undefined,
+  animate: true,
   lineCap: 'round',
   animationType: 'grow',
   fadedOpacity: 0.3,
   minBarHeight: 0,
   groupGap: 4,
+  staggerDelay: 0,
+  stackGap: 0,
+  perspective: false,
 })
 
 const injectedContext = inject(bklitBarContextKey)
@@ -24,6 +34,8 @@ if (!injectedContext) {
   throw new Error('BklitBar must be rendered inside BklitBarChart')
 }
 const context = injectedContext
+
+context.registerSeries(props.dataKey, props.stroke ?? (props.fill.startsWith('var(--color-chart-line-') ? props.fill.replace('var(--color-', 'var(--color-') : props.fill))
 
 const bandWidth = computed(() => {
   const step = (context.chartWidth - context.plotLeft - context.plotRight) / Math.max(context.data.length, 1)
@@ -55,8 +67,8 @@ function getRadius() {
 </script>
 
 <template>
-  <g :class="[props.animationType === 'fade' ? 'animate-fade-in' : '', props.fill === 'var(--color-chart-line-primary)' ? 'text-chart-line-primary' : '', props.fill === 'var(--color-chart-line-secondary)' ? 'text-chart-line-secondary' : '']">
-    <rect v-for="(_, index) in context.data" :key="index" class="transition-[opacity,transform] duration-300 origin-bottom cursor-crosshair" :class="props.animationType === 'grow' ? 'origin-bottom' : ''" :x="getRect(index).x" :y="getRect(index).y" :width="barWidth" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)" @pointerenter="context.setHoveredIndex(index)" @pointerleave="context.setHoveredIndex(null)">
+  <g :class="[props.animationType === 'fade' ? 'animate-fade-in' : '', props.fill === 'var(--color-chart-line-primary)' ? 'text-chart-line-primary' : '', props.fill === 'var(--color-chart-line-secondary)' ? 'text-chart-line-secondary' : '']" :style="{ '--bklit-stagger-delay': `${props.staggerDelay}s` }">
+    <rect v-for="(_, index) in context.data" :key="index" class="transition-[opacity,transform] duration-300 origin-bottom cursor-crosshair" :class="[props.animationType === 'grow' ? 'origin-bottom' : '', props.animate ? 'animate-bklit-bar-reveal' : '']" :style="{ animationDelay: `${props.staggerDelay + index * 0.035}s` }" :x="getRect(index).x" :y="getRect(index).y" :width="barWidth" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)">
       <title>{{ context.data[index]?.[context.xDataKey] }}: {{ context.valueAt(props.dataKey, index) }}</title>
     </rect>
     <template v-for="(_, index) in context.data" :key="`hover-${index}`">

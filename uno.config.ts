@@ -239,10 +239,26 @@ html, body {
   }
 }
 
+@keyframes bklit-bar-reveal {
+  from {
+    opacity: 0;
+    transform: scaleY(0.02);
+    transform-origin: bottom;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
 `,
     },
   ],
   rules: [
+    ['animate-bklit-bar-reveal', {
+      animation: 'bklit-bar-reveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both',
+    }],
     ['chapter-shell-timeline', {
       'view-timeline-axis': 'block',
       'view-timeline-name': '--chapter-entry',
