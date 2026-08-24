@@ -79,6 +79,8 @@ export default defineConfig({
       'surface-container-lowest': '#0f0e0d',
       'surface-variant': '#3d3833',
       'surface-bright': '#504943',
+      'chart-track': '#252831',
+      'chart-hover': '#2f3035',
       'muted': '#1a1715',
       'on-background': '#fcf7f0',
       'on-surface': '#fcf7f0',

@@ -94,6 +94,7 @@ export default defineNuxtConfig({
       include: [
         '@tresjs/core',
         '@vueuse/core',
+        'd3-shape',
         'motion-v',
         'ogl',
         'three',
