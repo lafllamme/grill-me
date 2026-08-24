@@ -11,6 +11,9 @@ if (!context) {
 
 <template>
   <g>
-    <text v-for="(item, index) in context.data" :key="index" :x="context.xAt(index)" y="298" text-anchor="middle" class="fill-on-surface-variant text-[12px] font-body">{{ item[context.xDataKey] }}</text>
+    <template v-for="(item, index) in context.data" :key="index">
+      <rect v-if="context.hoveredIndex.value === index" :x="context.xAt(index) - 32" y="278" width="64" height="32" rx="16" class="fill-on-background" />
+      <text :x="context.xAt(index)" y="299" text-anchor="middle" :class="context.hoveredIndex.value === index ? 'fill-background font-body font-semibold' : 'fill-on-surface-variant font-body'" class="text-[12px]">{{ item[context.xDataKey] }}</text>
+    </template>
   </g>
 </template>

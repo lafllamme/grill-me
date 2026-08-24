@@ -59,5 +59,8 @@ function getRadius() {
     <rect v-for="(_, index) in context.data" :key="index" class="transition-[opacity,transform] duration-300 origin-bottom cursor-crosshair" :class="props.animationType === 'grow' ? 'origin-bottom' : ''" :x="getRect(index).x" :y="getRect(index).y" :width="barWidth" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)" @pointerenter="context.setHoveredIndex(index)" @pointerleave="context.setHoveredIndex(null)">
       <title>{{ context.data[index]?.[context.xDataKey] }}: {{ context.valueAt(props.dataKey, index) }}</title>
     </rect>
+    <template v-for="(_, index) in context.data" :key="`hover-${index}`">
+      <circle v-if="context.hoveredIndex.value === index" :cx="getRect(index).x + barWidth / 2" :cy="getRect(index).y" r="5" class="fill-chart-track" :stroke="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" stroke-width="2" />
+    </template>
   </g>
 </template>

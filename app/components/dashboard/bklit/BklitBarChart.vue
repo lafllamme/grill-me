@@ -2,6 +2,7 @@
 import type { BklitBarContext, BklitBarDatum } from './bar-context'
 import { computed, provide, ref } from 'vue'
 import { bklitBarContextKey } from './bar-context'
+import BklitBarChartLoading from './BklitBarChartLoading.vue'
 
 const props = withDefaults(defineProps<{
   data: readonly BklitBarDatum[]
@@ -39,6 +40,14 @@ const plotLeft = 48
 const maxValue = (_dataKey: string) => Math.max(...props.data.flatMap(item => Object.entries(item).filter(([key]) => key !== props.xDataKey).map(([, value]) => typeof value === 'number' ? value : 0)), 1)
 const valueAt = (dataKey: string, index: number) => Number(props.data[index]?.[dataKey]) || 0
 const xAt = (index: number) => plotLeft + (index + 0.5) * ((chartWidth - plotLeft - plotRight) / Math.max(props.data.length, 1))
+const seriesKeys = computed(() => Object.keys(props.data[0] ?? {}).filter(key => key !== props.xDataKey && typeof props.data[0]?.[key] === 'number'))
+const tooltipStyle = computed(() => {
+  if (hoveredIndex.value === null) {
+    return {}
+  }
+  const x = xAt(hoveredIndex.value) / chartWidth * 100
+  return { left: `${Math.min(Math.max(x + 4, 12), 78)}%`, top: '12%' }
+})
 
 const context: BklitBarContext = {
   data: props.data,
@@ -69,18 +78,21 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
 <template>
   <div class="relative w-full" :style="chartStyle" :data-animation-duration="props.animationDuration">
     <svg class="w-full h-full overflow-visible" viewBox="0 0 640 320" role="img" aria-label="Roast change volume bar chart">
-      <g v-if="status === 'loading'" class="animate-pulse">
-        <rect v-for="index in 7" :key="index" class="fill-chart-track" :x="48 + (index - 1) * 78" :y="100 + (index % 3) * 14" width="42" :height="120 - (index % 3) * 20" rx="5" />
-        <text x="320" y="282" text-anchor="middle" class="fill-on-surface-variant text-[12px] font-meta">Loading evidence…</text>
-      </g>
+      <BklitBarChartLoading v-if="status === 'loading'" />
       <g v-else>
         <slot />
       </g>
       <slot name="grid" />
       <slot name="x-axis" />
+      <line v-if="hoveredIndex !== null && status === 'ready'" :x1="xAt(hoveredIndex)" :x2="xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-surface-variant" stroke-width="1" opacity="0.75" />
     </svg>
-    <div v-if="hoveredIndex !== null && status === 'ready'" class="pointer-events-none rounded-[8px] bg-surface-bright text-on-background text-[10px] px-3 py-2 top-2 right-2 absolute font-meta">
-      {{ props.data[hoveredIndex]?.[props.xDataKey] }} · {{ props.data[hoveredIndex]?.additions }} additions
+    <div v-if="hoveredIndex !== null && status === 'ready'" class="pointer-events-none min-w-[160px] rounded-none bg-surface-bright text-on-background px-4 py-3 absolute font-body shadow-[0_14px_28px_rgba(0,0,0,0.35)]" :style="tooltipStyle">
+      <p class="text-base font-body font-semibold">{{ props.data[hoveredIndex]?.[props.xDataKey] }}</p>
+      <div v-for="key in seriesKeys" :key="key" class="text-sm text-on-surface-variant flex gap-3 items-center mt-3">
+        <span class="rounded-full bg-chart-line-primary h-3 w-3 shrink-0" :class="key === 'deletions' ? 'bg-chart-line-secondary' : ''" />
+        <span class="flex-1">{{ key }}</span>
+        <strong class="text-on-background font-body">{{ Number(props.data[hoveredIndex]?.[key] ?? 0).toLocaleString() }}</strong>
+      </div>
     </div>
   </div>
 </template>
