@@ -50,11 +50,20 @@ const plotHeight = baseline - context.plotTop
 
 function getRect(index: number) {
   const value = context.valueAt(props.dataKey, index)
-  const height = Math.max(props.minBarHeight, value / context.maxValue(props.dataKey) * plotHeight)
+  const valueLength = Math.max(props.minBarHeight, value / context.maxValue(props.dataKey) * (context.orientation === 'horizontal' ? context.chartWidth - context.plotLeft - context.plotRight : plotHeight))
   const groupGap = context.seriesCount > 1 ? props.groupGap : 0
   const groupWidth = barWidth.value * context.seriesCount + (context.seriesCount - 1) * groupGap
-  const seriesIndex = props.dataKey === 'additions' ? 0 : 1
-  return { x: context.xAt(index) - groupWidth / 2 + seriesIndex * (barWidth.value + groupGap), y: baseline - height, height }
+  const seriesIndex = Math.max(0, context.seriesOrder.indexOf(props.dataKey))
+  if (context.orientation === 'horizontal') {
+    return { x: context.plotLeft, y: context.yAt(index) - groupWidth / 2 + seriesIndex * (barWidth.value + groupGap), width: valueLength, height: barWidth.value }
+  }
+  if (context.stacked) {
+    const stackIndex = Math.max(0, context.seriesOrder.indexOf(props.dataKey))
+    const stackBefore = context.seriesOrder.slice(0, stackIndex).reduce((total, key) => total + context.valueAt(key, index) / context.maxValue(key) * plotHeight, 0)
+    const stackOffset = stackIndex * context.stackGap
+    return { x: context.xAt(index) - bandWidth.value / 2, y: baseline - stackBefore - valueLength - stackOffset, width: bandWidth.value, height: valueLength }
+  }
+  return { x: context.xAt(index) - groupWidth / 2 + seriesIndex * (barWidth.value + groupGap), y: baseline - valueLength, width: barWidth.value, height: valueLength }
 }
 
 function getOpacity(index: number) {
@@ -68,11 +77,11 @@ function getRadius() {
 
 <template>
   <g :class="[props.animationType === 'fade' ? 'animate-fade-in' : '', props.fill === 'var(--color-chart-line-primary)' ? 'text-chart-line-primary' : '', props.fill === 'var(--color-chart-line-secondary)' ? 'text-chart-line-secondary' : '']" :style="{ '--bklit-stagger-delay': `${props.staggerDelay}s` }">
-    <rect v-for="(_, index) in context.data" :key="index" class="transition-[opacity,transform] duration-300 origin-bottom cursor-crosshair" :class="[props.animationType === 'grow' ? 'origin-bottom' : '', props.animate ? 'animate-bklit-bar-reveal' : '']" :style="{ animationDelay: `${props.staggerDelay + index * 0.035}s` }" :x="getRect(index).x" :y="getRect(index).y" :width="barWidth" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)">
+    <rect v-for="(_, index) in context.data" :key="index" class="cursor-crosshair origin-bottom transition-[opacity,transform] duration-300" :class="[props.animationType === 'grow' ? 'origin-bottom' : '', props.animate ? 'animate-bklit-bar-reveal' : '']" :style="{ animationDelay: `${props.staggerDelay + index * 0.035}s` }" :x="getRect(index).x" :y="getRect(index).y" :width="getRect(index).width" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)">
       <title>{{ context.data[index]?.[context.xDataKey] }}: {{ context.valueAt(props.dataKey, index) }}</title>
     </rect>
     <template v-for="(_, index) in context.data" :key="`hover-${index}`">
-      <circle v-if="context.hoveredIndex.value === index" :cx="getRect(index).x + barWidth / 2" :cy="getRect(index).y" r="5" class="fill-chart-track" :stroke="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" stroke-width="2" />
+      <circle v-if="context.hoveredIndex.value === index" :cx="context.orientation === 'horizontal' ? getRect(index).x + getRect(index).width : getRect(index).x + getRect(index).width / 2" :cy="context.orientation === 'horizontal' ? getRect(index).y + getRect(index).height / 2 : getRect(index).y" r="5" class="fill-chart-track" :stroke="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" stroke-width="2" />
     </template>
   </g>
 </template>

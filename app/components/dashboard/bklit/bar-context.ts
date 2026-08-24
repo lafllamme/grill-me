@@ -22,7 +22,12 @@ export interface BklitBarContext {
   maxValue: (dataKey: string) => number
   valueAt: (dataKey: string, index: number) => number
   xAt: (index: number) => number
+  yAt: (index: number) => number
+  orientation: 'vertical' | 'horizontal'
+  stacked: boolean
+  stackGap: number
   seriesColors: Record<string, string>
+  seriesOrder: string[]
   registerSeries: (dataKey: string, color: string) => void
   setHoveredIndex: (index: number | null) => void
 }
