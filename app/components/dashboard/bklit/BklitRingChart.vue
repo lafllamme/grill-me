@@ -38,7 +38,7 @@ const ringPaths = computed(() => createRingPaths({
 const context: BklitRingContext = {
   data: props.data,
   hoveredIndex,
-  setHoveredIndex: index => {
+  setHoveredIndex: (index) => {
     if (hoverClearTimer) {
       clearTimeout(hoverClearTimer)
       hoverClearTimer = undefined

@@ -33,7 +33,7 @@ const props = withDefaults(defineProps<{
   status: 'ready',
   animationDuration: 1100,
   animationEasing: 'ease-out',
-  margin: () => ({ top: 24, right: 24, bottom: 46, left: 48 }),
+  margin: () => ({ top: 40, right: 40, bottom: 40, left: 40 }),
   aspectRatio: '2 / 1',
   barGap: 0.2,
   groupGap: 4,
@@ -48,7 +48,7 @@ const hoveredIndex = ref<number | null>(null)
 const status = computed(() => props.status)
 const chartWidth = 640
 const chartHeight = 320
-const margin = computed<BklitBarMargin>(() => ({ top: props.margin?.top ?? 24, right: props.margin?.right ?? 24, bottom: props.margin?.bottom ?? 46, left: props.margin?.left ?? 48 }))
+const margin = computed<BklitBarMargin>(() => ({ top: props.margin?.top ?? 40, right: props.margin?.right ?? 40, bottom: props.margin?.bottom ?? 40, left: props.margin?.left ?? 40 }))
 const plotTop = margin.value.top
 const plotRight = margin.value.right
 const plotBottom = margin.value.bottom
@@ -59,6 +59,7 @@ const seriesColors: Record<string, string> = {}
 const seriesOrder: string[] = []
 const tooltipX = ref<number | null>(null)
 const tooltipY = ref<number | null>(null)
+const xPositions = ref<Record<string, number>>({})
 const yPositions = ref<Record<string, number>>({})
 
 const maxValue = (_dataKey: string) => Math.max(...props.data.flatMap(item => Object.entries(item).filter(([key]) => key !== props.xDataKey).map(([, value]) => typeof value === 'number' ? value : 0)), 1)
@@ -83,7 +84,13 @@ function scheduleHover(index: number) {
       tooltipX.value = xAt(index)
       const positions = Object.fromEntries(seriesKeys.value.map(key => [key, chartHeight - plotBottom - valueAt(key, index) / maxValue(key) * plotHeight]))
       yPositions.value = positions
-      tooltipY.value = Math.max(plotTop + 18, Math.min(chartHeight - plotBottom - 18, Math.min(...Object.values(positions), chartHeight - plotBottom - 18)))
+      const step = plotWidth / Math.max(props.data.length, 1)
+      const bandWidth = step * (1 - props.barGap)
+      const groupGap = seriesKeys.value.length > 1 ? props.groupGap : 0
+      const width = props.barWidth ?? Math.max(10, (bandWidth - groupGap * (seriesKeys.value.length - 1)) / seriesKeys.value.length)
+      const groupWidth = width * seriesKeys.value.length + groupGap * (seriesKeys.value.length - 1)
+      xPositions.value = Object.fromEntries(seriesKeys.value.map((key, seriesIndex) => [key, xAt(index) - groupWidth / 2 + seriesIndex * (width + groupGap) + width / 2]))
+      tooltipY.value = plotTop
     }
     pointerFrame.value = null
   })
@@ -99,6 +106,7 @@ function clearHover() {
   tooltipX.value = null
   tooltipY.value = null
   yPositions.value = {}
+  xPositions.value = {}
 }
 
 function handlePointerMove(event: PointerEvent) {
@@ -131,6 +139,7 @@ const context: BklitBarContext = {
   hoveredIndex,
   tooltipX,
   tooltipY,
+  xPositions,
   yPositions,
   chartWidth,
   chartHeight,
@@ -174,7 +183,6 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
       <slot name="grid" />
       <slot v-if="status === 'ready'" name="x-axis" />
       <slot v-if="status === 'ready'" name="y-axis" />
-      <line v-if="hoveredIndex !== null && status === 'ready'" :x1="tooltipX ?? xAt(hoveredIndex)" :x2="tooltipX ?? xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-background" stroke-width="1" opacity="0.68" />
     </svg>
     <BklitChartTooltip />
   </div>

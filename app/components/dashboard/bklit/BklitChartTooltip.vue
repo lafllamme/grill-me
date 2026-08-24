@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import { bklitBarContextKey } from './bar-context'
+import BklitDateTicker from './BklitDateTicker.vue'
+import BklitTooltipDot from './BklitTooltipDot.vue'
+import BklitTooltipIndicator from './BklitTooltipIndicator.vue'
+import { useBklitSpring } from './use-bklit-spring'
 
 const props = withDefaults(defineProps<{
   showCrosshair?: boolean
@@ -12,29 +16,36 @@ if (!context) {
   throw new Error('BklitChartTooltip must be rendered inside BklitBarChart')
 }
 
-const tooltipStyle = computed(() => {
-  if (context.tooltipX.value === null || context.tooltipY.value === null)
-    return {}
-  const flip = context.tooltipX.value > context.chartWidth * 0.68
-  return {
-    left: `${context.tooltipX.value / context.chartWidth * 100}%`,
-    top: `${context.tooltipY.value / context.chartHeight * 100}%`,
-    transform: `translate(${flip ? '-100%' : '0'}, -100%) ${flip ? 'translate(-16px, -16px)' : 'translate(16px, -16px)'}`,
-  }
-})
-
 const seriesKeys = computed(() => Object.keys(context.data[0] ?? {}).filter(key => key !== context.xDataKey && typeof context.data[0]?.[key] === 'number'))
+const isFlipped = computed(() => (context.tooltipX.value ?? 0) > context.chartWidth * 0.68)
+const tooltipX = useBklitSpring(context.tooltipX)
+const tooltipStyle = computed(() => ({
+  left: `${tooltipX.value / context.chartWidth * 100}%`,
+  top: '16px',
+  transform: isFlipped.value ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+}))
 </script>
 
 <template>
-  <div v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'" class="text-on-background font-body px-5 py-4 rounded-none bg-chart-tooltip min-w-[190px] pointer-events-none shadow-[0_14px_28px_rgba(0,0,0,0.35)] transition-[left,top,transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] absolute" :style="tooltipStyle">
-    <p class="text-base font-semibold">
-      {{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}
-    </p>
-    <div v-for="key in seriesKeys" :key="key" class="text-sm text-on-surface-variant mt-4 flex gap-3 items-center">
-      <span v-if="props.showDots" class="rounded-full shrink-0 h-3 w-3" :style="{ backgroundColor: context.seriesColors[key] ?? '#2a2a2e' }" />
-      <span class="flex-1">{{ key }}</span>
-      <strong class="text-on-background font-body">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
+  <template v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'">
+    <BklitTooltipIndicator v-if="props.showCrosshair" />
+    <svg v-if="props.showDots" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
+      <BklitTooltipDot v-for="key in seriesKeys" :key="key" :data-key="key" :color="context.seriesColors[key]" />
+    </svg>
+    <BklitDateTicker />
+    <div class="pointer-events-none absolute z-30 min-w-[140px] overflow-hidden rounded-lg bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="tooltipStyle">
+      <div class="px-3 py-2.5">
+        <p class="mb-2 text-xs font-medium">{{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}</p>
+        <div class="space-y-1.5">
+          <div v-for="key in seriesKeys" :key="key" class="flex items-center justify-between gap-4 text-sm">
+            <span class="flex min-w-0 items-center gap-2 text-on-surface-variant">
+              <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? '#2a2a2e' }" />
+              <span>{{ key }}</span>
+            </span>
+            <strong class="shrink-0 tabular-nums text-on-background font-medium">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </template>
 </template>

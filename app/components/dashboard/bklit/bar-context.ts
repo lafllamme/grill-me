@@ -11,6 +11,7 @@ export interface BklitBarContext {
   hoveredIndex: Ref<number | null>
   tooltipX: Ref<number | null>
   tooltipY: Ref<number | null>
+  xPositions: Ref<Record<string, number>>
   yPositions: Ref<Record<string, number>>
   chartWidth: number
   chartHeight: number

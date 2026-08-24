@@ -80,8 +80,5 @@ function getRadius() {
     <rect v-for="(_, index) in context.data" :key="index" class="cursor-crosshair origin-bottom transition-[opacity,transform] duration-300" :class="[props.animationType === 'grow' ? 'origin-bottom' : '', props.animate ? 'animate-bklit-bar-reveal' : '']" :style="{ animationDelay: `${props.staggerDelay + index * 0.035}s` }" :x="getRect(index).x" :y="getRect(index).y" :width="getRect(index).width" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)">
       <title>{{ context.data[index]?.[context.xDataKey] }}: {{ context.valueAt(props.dataKey, index) }}</title>
     </rect>
-    <template v-for="(_, index) in context.data" :key="`hover-${index}`">
-      <circle v-if="context.hoveredIndex.value === index" :cx="context.orientation === 'horizontal' ? getRect(index).x + getRect(index).width : getRect(index).x + getRect(index).width / 2" :cy="context.orientation === 'horizontal' ? getRect(index).y + getRect(index).height / 2 : getRect(index).y" r="5" class="fill-chart-track" :stroke="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" stroke-width="2" />
-    </template>
   </g>
 </template>
