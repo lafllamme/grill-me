@@ -83,12 +83,12 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
         <slot />
       </g>
       <slot name="grid" />
-      <slot name="x-axis" />
+      <slot v-if="status === 'ready'" name="x-axis" />
       <line v-if="hoveredIndex !== null && status === 'ready'" :x1="xAt(hoveredIndex)" :x2="xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-surface-variant" stroke-width="1" opacity="0.75" />
     </svg>
-    <div v-if="hoveredIndex !== null && status === 'ready'" class="pointer-events-none min-w-[160px] rounded-none bg-surface-bright text-on-background px-4 py-3 absolute font-body shadow-[0_14px_28px_rgba(0,0,0,0.35)]" :style="tooltipStyle">
+    <div v-if="hoveredIndex !== null && status === 'ready'" class="pointer-events-none min-w-[190px] rounded-none bg-chart-tooltip text-on-background px-5 py-4 absolute font-body shadow-[0_14px_28px_rgba(0,0,0,0.35)]" :style="tooltipStyle">
       <p class="text-base font-body font-semibold">{{ props.data[hoveredIndex]?.[props.xDataKey] }}</p>
-      <div v-for="key in seriesKeys" :key="key" class="text-sm text-on-surface-variant flex gap-3 items-center mt-3">
+      <div v-for="key in seriesKeys" :key="key" class="text-sm text-on-surface-variant flex gap-3 items-center mt-4">
         <span class="rounded-full bg-chart-line-primary h-3 w-3 shrink-0" :class="key === 'deletions' ? 'bg-chart-line-secondary' : ''" />
         <span class="flex-1">{{ key }}</span>
         <strong class="text-on-background font-body">{{ Number(props.data[hoveredIndex]?.[key] ?? 0).toLocaleString() }}</strong>

@@ -84,6 +84,7 @@ export default defineConfig({
       'chart-line-primary': '#2a2a2e',
       'chart-line-secondary': '#5c5d65',
       'chart-grid': 'rgba(92, 93, 101, 0.28)',
+      'chart-tooltip': '#18181b',
       'muted': '#1a1715',
       'on-background': '#fcf7f0',
       'on-surface': '#fcf7f0',
