@@ -31,9 +31,7 @@ export function useBklitSpring(target: Ref<number | null>, initial = 0) {
   }
 
   watch(target, () => {
-    stop()
-    velocity = 0
-    if (typeof requestAnimationFrame !== 'undefined') {
+    if (typeof requestAnimationFrame !== 'undefined' && frame === null) {
       frame = requestAnimationFrame(animate)
     }
   }, { immediate: true })
