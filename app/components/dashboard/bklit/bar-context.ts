@@ -15,6 +15,10 @@ export interface BklitBarContext {
   plotRight: number
   plotBottom: number
   plotLeft: number
+  barGap: number
+  barWidth: number | undefined
+  groupGap: number
+  seriesCount: number
   maxValue: (dataKey: string) => number
   valueAt: (dataKey: string, index: number) => number
   xAt: (index: number) => number

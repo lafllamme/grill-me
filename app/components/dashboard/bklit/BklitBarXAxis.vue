@@ -11,6 +11,6 @@ if (!context) {
 
 <template>
   <g>
-    <text v-for="(item, index) in context.data" :key="index" :x="context.xAt(index)" y="298" text-anchor="middle" class="fill-on-surface-variant text-[10px] font-meta">{{ item[context.xDataKey] }}</text>
+    <text v-for="(item, index) in context.data" :key="index" :x="context.xAt(index)" y="298" text-anchor="middle" class="fill-on-surface-variant text-[12px] font-body">{{ item[context.xDataKey] }}</text>
   </g>
 </template>

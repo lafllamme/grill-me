@@ -11,6 +11,8 @@ const props = withDefaults(defineProps<{
   aspectRatio?: string
   barGap?: number
   barWidth?: number
+  groupGap?: number
+  seriesCount?: number
   orientation?: 'vertical' | 'horizontal'
   stacked?: boolean
 }>(), {
@@ -19,6 +21,8 @@ const props = withDefaults(defineProps<{
   animationDuration: 1100,
   aspectRatio: '2 / 1',
   barGap: 0.2,
+  groupGap: 4,
+  seriesCount: 1,
   orientation: 'vertical',
   stacked: false,
 })
@@ -32,7 +36,7 @@ const plotRight = 24
 const plotBottom = 46
 const plotLeft = 48
 
-const maxValue = (dataKey: string) => Math.max(...props.data.map(item => Number(item[dataKey]) || 0), 1)
+const maxValue = (_dataKey: string) => Math.max(...props.data.flatMap(item => Object.entries(item).filter(([key]) => key !== props.xDataKey).map(([, value]) => typeof value === 'number' ? value : 0)), 1)
 const valueAt = (dataKey: string, index: number) => Number(props.data[index]?.[dataKey]) || 0
 const xAt = (index: number) => plotLeft + (index + 0.5) * ((chartWidth - plotLeft - plotRight) / Math.max(props.data.length, 1))
 
@@ -47,6 +51,10 @@ const context: BklitBarContext = {
   plotRight,
   plotBottom,
   plotLeft,
+  barGap: props.barGap,
+  barWidth: props.barWidth,
+  groupGap: props.groupGap,
+  seriesCount: props.seriesCount,
   maxValue,
   valueAt,
   xAt,

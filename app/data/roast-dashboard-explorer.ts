@@ -22,6 +22,14 @@ export const roastDashboardExplorerFixture = {
     { label: 'Mar 24', commits: 6, files: 18, additions: 522 },
     { label: 'Mar 28', commits: 2, files: 5, additions: 139 },
   ] satisfies RoastTimelineDatum[],
+  barChangeVolume: [
+    { label: '1c83407', additions: 522, deletions: 101 },
+    { label: '73e2475', additions: 249, deletions: 38 },
+    { label: 'a04f921', additions: 314, deletions: 72 },
+    { label: 'c82a100', additions: 438, deletions: 126 },
+    { label: 'e6b71d2', additions: 366, deletions: 84 },
+    { label: 'f9d022a', additions: 487, deletions: 154 },
+  ],
   languages: [
     { label: 'TypeScript', value: 42, color: 'bg-primary' },
     { label: 'Vue', value: 28, color: 'bg-secondary' },

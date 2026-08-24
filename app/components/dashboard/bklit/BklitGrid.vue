@@ -10,7 +10,7 @@ if (!context) {
 </script>
 
 <template>
-  <g v-if="horizontal !== false" class="stroke-divider" stroke-width="1" stroke-dasharray="3 6">
-    <line v-for="index in 4" :key="index" :x1="context.plotLeft" :x2="context.chartWidth - context.plotRight" :y1="context.plotTop + (index - 1) * 67" :y2="context.plotTop + (index - 1) * 67" />
+  <g v-if="horizontal !== false" class="stroke-chart-grid" stroke-width="1" stroke-dasharray="3 6">
+    <line v-for="index in 5" :key="index" :x1="context.plotLeft" :x2="context.chartWidth - context.plotRight" :y1="context.plotTop + (index - 1) * ((context.chartHeight - context.plotTop - context.plotBottom) / 4)" :y2="context.plotTop + (index - 1) * ((context.chartHeight - context.plotTop - context.plotBottom) / 4)" />
   </g>
 </template>
