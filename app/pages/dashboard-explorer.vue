@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useHead, useSeoMeta } from '#imports'
+import BklitBar from '~/components/dashboard/bklit/BklitBar.vue'
+import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
+import BklitBarXAxis from '~/components/dashboard/bklit/BklitBarXAxis.vue'
+import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import DashboardCommitBars from '~/components/dashboard/DashboardCommitBars.vue'
 import DashboardRadarPreview from '~/components/dashboard/DashboardRadarPreview.vue'
 import DashboardRepositoryMap from '~/components/dashboard/DashboardRepositoryMap.vue'
@@ -21,6 +25,8 @@ const activeVariant = ref<VariantId>('profile')
 const activeIndex = computed(() => variants.findIndex(item => item.id === activeVariant.value))
 const fixture = roastDashboardFixture
 const explorerFixture = roastDashboardExplorerFixture
+const isBarLoading = ref(true)
+let barLoadingTimer: ReturnType<typeof setTimeout> | undefined
 
 function selectVariant(id: VariantId) {
   activeVariant.value = id
@@ -49,6 +55,23 @@ function handleTabKeydown(event: KeyboardEvent) {
     activeVariant.value = variants[variants.length - 1]!.id
   }
 }
+
+function replayBarLoading() {
+  isBarLoading.value = true
+  if (barLoadingTimer) {
+    clearTimeout(barLoadingTimer)
+  }
+  barLoadingTimer = setTimeout(() => {
+    isBarLoading.value = false
+  }, 1400)
+}
+
+onMounted(replayBarLoading)
+onBeforeUnmount(() => {
+  if (barLoadingTimer) {
+    clearTimeout(barLoadingTimer)
+  }
+})
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
 useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'Three mocked information architectures for the roast dashboard.' })
@@ -88,6 +111,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'Three mocked 
           </article>
           <article class="rounded-[28px] bg-surface-container p-6 sm:p-8 lg:col-span-5 lg:p-10"><p class="text-[10px] text-primary-strong tracking-[0.18em] font-meta uppercase">Profile dimensions</p><DashboardRadarPreview class="mt-8" :data="fixture.profile" /><div class="space-y-3 border-t-[1px] border-divider pt-5 mt-6"><div v-for="item in fixture.profile" :key="item.label" class="flex gap-3 items-center"><span class="text-xs text-on-background flex-1">{{ item.label }}</span><span class="text-xs text-on-surface-variant font-meta">{{ item.value }}</span></div></div></article>
           <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-12"><div class="flex items-center justify-between"><p class="text-[10px] text-on-surface-variant tracking-[0.18em] font-meta uppercase">Supporting evidence</p><span class="text-[10px] text-primary-strong font-meta">MOCKED</span></div><DashboardRingChart class="mt-8" :data="fixture.profile" /></article>
+          <article class="rounded-[28px] bg-surface-container p-6 sm:p-8 lg:col-span-12"><div class="flex flex-wrap gap-4 items-end justify-between"><div><p class="text-[10px] text-primary-strong tracking-[0.18em] font-meta uppercase">Commit evidence / bar chart</p><h3 class="text-2xl tracking-[-0.05em] font-display mt-3">Change volume</h3></div><button class="text-[10px] text-on-surface-variant tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-outline border-solid font-meta uppercase hover:text-on-background focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayBarLoading">Replay loading</button></div><BklitBarChart class="mt-8" :data="fixture.commits" x-data-key="label" :status="isBarLoading ? 'loading' : 'ready'"><template #grid><BklitGrid horizontal /></template><BklitBar data-key="additions" fill="var(--color-primary)" /><BklitBar data-key="deletions" fill="var(--color-surface-bright)" animation-type="fade" /><template #x-axis><BklitBarXAxis /></template></BklitBarChart><div class="text-[10px] text-on-surface-variant tracking-[0.14em] mt-5 flex gap-5 font-meta uppercase"><span><i class="rounded-full bg-primary h-2 w-2 mr-2 inline-block" /> additions</span><span><i class="rounded-full bg-surface-bright h-2 w-2 mr-2 inline-block" /> deletions</span></div></article>
         </main>
         <main v-else-if="activeVariant === 'timeline'" id="timeline-panel" key="timeline" class="grid gap-4 lg:grid-cols-12" role="tabpanel" aria-labelledby="timeline-tab">
           <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-12 lg:p-10"><div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-[10px] text-primary-strong tracking-[0.18em] font-meta uppercase">Evidence first / change rhythm</p><h2 class="text-4xl tracking-[-0.07em] font-display mt-4 sm:text-6xl">The pattern is the punchline.</h2></div><p class="max-w-[18rem] text-xs text-on-surface-variant leading-5">A timeline makes the roast feel earned: when did the codebase accelerate, and where?</p></div><DashboardTimelineChart class="mt-12" :data="explorerFixture.timeline" /></article>
