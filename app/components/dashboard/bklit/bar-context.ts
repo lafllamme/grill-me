@@ -9,6 +9,9 @@ export interface BklitBarContext {
   xDataKey: string
   status: Ref<'loading' | 'ready'>
   hoveredIndex: Ref<number | null>
+  tooltipX: Ref<number | null>
+  tooltipY: Ref<number | null>
+  yPositions: Ref<Record<string, number>>
   chartWidth: number
   chartHeight: number
   plotTop: number

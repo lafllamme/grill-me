@@ -3,6 +3,7 @@ import type { BklitBarContext, BklitBarDatum } from './bar-context'
 import { computed, onBeforeUnmount, provide, ref } from 'vue'
 import { bklitBarContextKey } from './bar-context'
 import BklitBarChartLoading from './BklitBarChartLoading.vue'
+import BklitChartTooltip from './BklitChartTooltip.vue'
 
 interface BklitBarMargin {
   top: number
@@ -56,35 +57,16 @@ const plotWidth = chartWidth - plotLeft - plotRight
 const plotHeight = chartHeight - plotTop - plotBottom
 const seriesColors: Record<string, string> = {}
 const seriesOrder: string[] = []
+const tooltipX = ref<number | null>(null)
+const tooltipY = ref<number | null>(null)
+const yPositions = ref<Record<string, number>>({})
 
 const maxValue = (_dataKey: string) => Math.max(...props.data.flatMap(item => Object.entries(item).filter(([key]) => key !== props.xDataKey).map(([, value]) => typeof value === 'number' ? value : 0)), 1)
 const valueAt = (dataKey: string, index: number) => Number(props.data[index]?.[dataKey]) || 0
 const xAt = (index: number) => plotLeft + (index + 0.5) * ((chartWidth - plotLeft - plotRight) / Math.max(props.data.length, 1))
 const seriesKeys = computed(() => Object.keys(props.data[0] ?? {}).filter(key => key !== props.xDataKey && typeof props.data[0]?.[key] === 'number'))
-const firstSeriesKey = computed(() => seriesKeys.value[0] ?? '')
 const pointerFrame = ref<number | null>(null)
 const pendingIndex = ref<number | null>(null)
-
-const firstSeriesY = computed(() => {
-  if (hoveredIndex.value === null || !firstSeriesKey.value) {
-    return plotTop + plotHeight / 2
-  }
-  const value = valueAt(firstSeriesKey.value, hoveredIndex.value)
-  return chartHeight - plotBottom - value / maxValue(firstSeriesKey.value) * plotHeight
-})
-
-const tooltipStyle = computed(() => {
-  if (hoveredIndex.value === null) {
-    return {}
-  }
-  const x = xAt(hoveredIndex.value)
-  const shouldFlip = x > chartWidth * 0.68
-  return {
-    left: `${x / chartWidth * 100}%`,
-    top: `${firstSeriesY.value / chartHeight * 100}%`,
-    transform: `translate(${shouldFlip ? '-100%' : '0'}, -50%) ${shouldFlip ? 'translateX(-16px)' : 'translateX(16px)'}`,
-  }
-})
 
 function scheduleHover(index: number) {
   pendingIndex.value = index
@@ -96,6 +78,13 @@ function scheduleHover(index: number) {
   }
   pointerFrame.value = requestAnimationFrame(() => {
     hoveredIndex.value = pendingIndex.value
+    if (pendingIndex.value !== null) {
+      const index = pendingIndex.value
+      tooltipX.value = xAt(index)
+      const positions = Object.fromEntries(seriesKeys.value.map(key => [key, chartHeight - plotBottom - valueAt(key, index) / maxValue(key) * plotHeight]))
+      yPositions.value = positions
+      tooltipY.value = Math.max(plotTop + 18, Math.min(chartHeight - plotBottom - 18, Math.min(...Object.values(positions), chartHeight - plotBottom - 18)))
+    }
     pointerFrame.value = null
   })
 }
@@ -107,6 +96,9 @@ function clearHover() {
   }
   pendingIndex.value = null
   hoveredIndex.value = null
+  tooltipX.value = null
+  tooltipY.value = null
+  yPositions.value = {}
 }
 
 function handlePointerMove(event: PointerEvent) {
@@ -137,6 +129,9 @@ const context: BklitBarContext = {
   xDataKey: props.xDataKey,
   status,
   hoveredIndex,
+  tooltipX,
+  tooltipY,
+  yPositions,
   chartWidth,
   chartHeight,
   plotTop,
@@ -179,17 +174,8 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
       <slot name="grid" />
       <slot v-if="status === 'ready'" name="x-axis" />
       <slot v-if="status === 'ready'" name="y-axis" />
-      <line v-if="hoveredIndex !== null && status === 'ready'" :x1="xAt(hoveredIndex)" :x2="xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-surface-variant" stroke-width="1" opacity="0.75" />
+      <line v-if="hoveredIndex !== null && status === 'ready'" :x1="tooltipX ?? xAt(hoveredIndex)" :x2="tooltipX ?? xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-surface-variant" stroke-width="1" opacity="0.75" />
     </svg>
-    <div v-if="hoveredIndex !== null && status === 'ready'" class="text-on-background font-body px-5 py-4 rounded-none bg-chart-tooltip min-w-[190px] pointer-events-none shadow-[0_14px_28px_rgba(0,0,0,0.35)] transition-[left,top,transform,opacity] duration-200 ease-out absolute" :style="tooltipStyle">
-      <p class="text-base font-body font-semibold">
-        {{ props.data[hoveredIndex]?.[props.xDataKey] }}
-      </p>
-      <div v-for="key in seriesKeys" :key="key" class="text-sm text-on-surface-variant mt-4 flex gap-3 items-center">
-        <span class="rounded-full shrink-0 h-3 w-3" :style="{ backgroundColor: seriesColors[key] ?? 'var(--color-chart-line-primary)' }" />
-        <span class="flex-1">{{ key }}</span>
-        <strong class="text-on-background font-body">{{ Number(props.data[hoveredIndex]?.[key] ?? 0).toLocaleString() }}</strong>
-      </div>
-    </div>
+    <BklitChartTooltip />
   </div>
 </template>
