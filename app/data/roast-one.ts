@@ -1,0 +1,63 @@
+import { roastExplorerFixtures } from '~/data/roast-explorer'
+
+export const roastOneFixture = roastExplorerFixtures.medium_rare
+
+export const roastOneRounds = [
+  { number: '01', label: 'roast', active: true },
+  { number: '02', label: 'stink', active: false },
+  { number: '03', label: 'spaghetti', active: false },
+  { number: '04', label: 'fix', active: false },
+  { number: '05', label: 'roast', active: false },
+  { number: '06', label: 'stink', active: false },
+] as const
+
+export const roastOneBarcodeBars = [
+  2,
+  1,
+  3,
+  1,
+  1,
+  2,
+  1,
+  3,
+  2,
+  1,
+  1,
+  2,
+  3,
+  1,
+  2,
+  1,
+  3,
+  1,
+  2,
+  2,
+  1,
+  3,
+  1,
+  1,
+  2,
+  1,
+  3,
+  2,
+  1,
+  2,
+  1,
+  1,
+  3,
+  1,
+  2,
+  1,
+  2,
+  3,
+  1,
+  1,
+  2,
+  1,
+  3,
+  2,
+  1,
+  1,
+] as const
+
+export const roastOneReceiptTeeth = Array.from({ length: 22 }, (_, index) => index)

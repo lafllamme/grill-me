@@ -41,19 +41,19 @@ const tornEdgeClipPath = 'polygon(0 0, 100% 0, 100% 98%, 97% 100%, 94% 98%, 91% 
 
 <template>
   <section
-    class="p-0 border-[1px] border-basalt-200 rounded-[1.5rem] border-solid bg-bone-50 h-[52rem] shadow-md relative z-20 overflow-visible"
+    class="p-0 border-[1px] border-basalt-200 rounded-[2rem] border-solid bg-bone-50 h-[52rem] shadow-md relative z-20 overflow-visible"
     data-testid="roast-receipt-printer"
     aria-live="polite"
     aria-label="Roast receipt printer"
   >
-    <div class="rounded-[1.5rem] bg-bone-50 h-full relative overflow-visible">
+    <div class="rounded-[2rem] bg-bone-50 h-full relative overflow-visible">
       <div
         data-testid="roast-printer-stage"
         class="mx-auto mt-8 max-w-[18.75rem] h-[47rem] w-[calc(100%-2rem)] relative"
       >
-        <div class="rounded-[0.9375rem] bg-basalt-700 h-[6.25rem] w-full shadow-lg inset-x-0 top-0 absolute z-0" />
+        <div class="rounded-[1.25rem] bg-basalt-700 h-[6.25rem] w-full shadow-lg inset-x-0 top-0 absolute z-0" />
 
-        <div class="rounded-[0.75rem] bg-basalt-800 h-20 w-full shadow-inner inset-x-0 top-0 absolute z-20">
+        <div class="rounded-[1rem] bg-basalt-800 h-20 w-full shadow-inner inset-x-0 top-0 absolute z-20">
           <div class="text-[0.625rem] text-bone-100/70 tracking-[0.08em] font-meta uppercase bottom-2 left-3 absolute">
             GRILLME
           </div>
@@ -62,14 +62,14 @@ const tornEdgeClipPath = 'polygon(0 0, 100% 0, 100% 98%, 97% 100%, 94% 98%, 91% 
 
         <div
           data-testid="roast-printer-slot"
-          class="border-t-[5px] border-basalt-950 rounded-t-[0.25rem] border-solid inset-x-5 bottom-0 top-[5.3125rem] absolute z-30 overflow-hidden"
+          class="border-t-[5px] border-basalt-950 rounded-t-[0.5rem] border-solid inset-x-5 bottom-0 top-[5.3125rem] absolute z-30 overflow-hidden"
           aria-hidden="true"
         >
           <div
             class="mx-auto max-w-[34rem] w-[calc(100%-0.4375rem)] origin-top transition-transform duration-[850ms] ease-out inset-x-0 top-0 absolute z-10 motion-reduce:transition-none"
             :style="{ transform: paperTranslate }"
           >
-            <div class="bg-bone-100 h-[40rem] w-full shadow-lg relative">
+            <div class="rounded-b-[0.75rem] bg-bone-100 h-[40rem] w-full shadow-lg relative">
               <div
                 data-testid="roast-receipt-paper"
                 class="text-basalt-950 px-6 pb-8 pt-14 h-full w-full relative z-10"
