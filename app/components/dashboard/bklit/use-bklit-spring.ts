@@ -20,7 +20,7 @@ export function useBklitSpring(target: Ref<number | null>, initial = 0) {
     }
     const destination = target.value ?? initial
     const distance = destination - value.value
-    velocity = velocity * 0.78 + distance * 0.22
+    velocity = velocity * 0.7 + distance * 0.12
     value.value += velocity
     if (Math.abs(distance) < 0.08 && Math.abs(velocity) < 0.08) {
       value.value = destination

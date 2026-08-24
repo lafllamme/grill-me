@@ -17,7 +17,7 @@ if (!context) {
 }
 
 const seriesKeys = computed(() => Object.keys(context.data[0] ?? {}).filter(key => key !== context.xDataKey && typeof context.data[0]?.[key] === 'number'))
-const isFlipped = computed(() => (context.tooltipX.value ?? 0) > context.chartWidth * 0.68)
+const isFlipped = computed(() => (context.tooltipX.value ?? 0) > context.chartWidth * 0.76)
 const tooltipX = useBklitSpring(context.tooltipX)
 const tooltipStyle = computed(() => ({
   left: `${tooltipX.value / context.chartWidth * 100}%`,
