@@ -19,7 +19,7 @@ const tooltipStyle = computed(() => {
   return {
     left: `${context.tooltipX.value / context.chartWidth * 100}%`,
     top: `${context.tooltipY.value / context.chartHeight * 100}%`,
-    transform: `translate(${flip ? '-100%' : '0'}, -50%) ${flip ? 'translateX(-16px)' : 'translateX(16px)'}`,
+    transform: `translate(${flip ? '-100%' : '0'}, -100%) ${flip ? 'translate(-16px, -16px)' : 'translate(16px, -16px)'}`,
   }
 })
 
@@ -32,7 +32,7 @@ const seriesKeys = computed(() => Object.keys(context.data[0] ?? {}).filter(key 
       {{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}
     </p>
     <div v-for="key in seriesKeys" :key="key" class="text-sm text-on-surface-variant mt-4 flex gap-3 items-center">
-      <span v-if="props.showDots" class="rounded-full shrink-0 h-3 w-3" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-chart-line-primary)' }" />
+      <span v-if="props.showDots" class="rounded-full shrink-0 h-3 w-3" :style="{ backgroundColor: context.seriesColors[key] ?? '#2a2a2e' }" />
       <span class="flex-1">{{ key }}</span>
       <strong class="text-on-background font-body">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
     </div>

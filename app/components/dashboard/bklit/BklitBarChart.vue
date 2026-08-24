@@ -152,7 +152,7 @@ const context: BklitBarContext = {
   seriesColors,
   seriesOrder,
   registerSeries: (dataKey, color) => {
-    seriesColors[dataKey] = color
+    seriesColors[dataKey] = color === 'var(--color-chart-line-secondary)' ? '#5c5d65' : color === 'var(--color-chart-line-primary)' ? '#2a2a2e' : color
     if (!seriesOrder.includes(dataKey))
       seriesOrder.push(dataKey)
   },
@@ -174,7 +174,7 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
       <slot name="grid" />
       <slot v-if="status === 'ready'" name="x-axis" />
       <slot v-if="status === 'ready'" name="y-axis" />
-      <line v-if="hoveredIndex !== null && status === 'ready'" :x1="tooltipX ?? xAt(hoveredIndex)" :x2="tooltipX ?? xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-surface-variant" stroke-width="1" opacity="0.75" />
+      <line v-if="hoveredIndex !== null && status === 'ready'" :x1="tooltipX ?? xAt(hoveredIndex)" :x2="tooltipX ?? xAt(hoveredIndex)" :y1="plotTop" :y2="chartHeight - plotBottom" class="stroke-on-background" stroke-width="1" opacity="0.68" />
     </svg>
     <BklitChartTooltip />
   </div>
