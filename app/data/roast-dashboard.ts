@@ -36,6 +36,28 @@ export const roastDashboardFixture = {
     { label: 'Testability', value: 31, maxValue: 100, descriptor: 'Behaviour under-covered' },
     { label: 'Maintainability', value: 39, maxValue: 100, descriptor: 'Wrappers multiply' },
   ] satisfies RoastDashboardRingDatum[],
+  radarProfile: {
+    metrics: [
+      { key: 'readability', label: 'Readability' },
+      { key: 'maintainability', label: 'Maintainability' },
+      { key: 'testability', label: 'Testability' },
+      { key: 'discipline', label: 'Change discipline' },
+      { key: 'abstraction', label: 'Abstraction' },
+      { key: 'documentation', label: 'Documentation' },
+    ],
+    data: [{
+      label: 'Current profile',
+      color: 'var(--color-primary-strong)',
+      values: {
+        readability: 42,
+        maintainability: 39,
+        testability: 31,
+        discipline: 48,
+        abstraction: 57,
+        documentation: 26,
+      },
+    }],
+  },
   bklitProfile: [
     { label: 'Organic', value: 4250, maxValue: 5000, descriptor: '', color: '#0ea5e9' },
     { label: 'Paid', value: 3120, maxValue: 5000, descriptor: '', color: '#a855f7' },
