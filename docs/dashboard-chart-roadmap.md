@@ -21,6 +21,17 @@ For each selected chart we port only the required composition, but we preserve
 the relevant source behaviour: props, geometry, hover states, loading states,
 animation timing, tooltips, responsive sizing, and reduced-motion behaviour.
 
+### Mandatory porting protocol
+
+When a chart is requested, do not recreate the visible preview from memory.
+First inspect the linked Bklit page and its GitHub source. Follow every import
+used by the selected example until the composition is complete, including
+context providers, child components, motion utilities, hooks, responsive
+measurement, and interaction state. Port the required files and behaviours to
+Vue one-to-one before adapting the data or placing the chart in the dashboard.
+If a source behaviour is intentionally omitted, document the omission and get
+that decision before calling the chart ported.
+
 ## Dashboard hierarchy
 
 1. Verdict and headline: what the AI concluded.

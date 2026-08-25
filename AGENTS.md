@@ -37,6 +37,17 @@ Use this file as the primary source of repository level instructions. If additio
 
 ## Design system governance
 
+### Bklit chart porting
+
+For every requested Bklit chart, the linked documentation page and the Bklit
+GitHub source are the implementation source of truth. Inspect the complete
+selected example and follow its imports before editing. Port every required
+child component, context/provider, motion utility, hook, responsive sizing
+path, prop, interaction, loading state, and reduced-motion behaviour into Vue;
+do not replace the composition with a visual approximation. A chart may only
+be marked complete after browser comparison against the Bklit reference. Any
+intentional omission must be documented before implementation continues.
+
 - Follow the design system docs in `docs/design-system/`.
 - Color tokens are mandatory and must follow `docs/design-system/colors.md`.
 - Typography is mandatory and must follow `docs/design-system/font.md`.
