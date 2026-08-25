@@ -22,7 +22,7 @@ const stops = computed(() => {
   if (props.fadeEdges === 'bottom') {
     return [{ offset: '0%', opacity: 1 }, { offset: `${innerEnd}%`, opacity: 1 }, { offset: '100%', opacity: 0 }]
   }
-  return [{ offset: '0%', opacity: 0 }, { offset: `${fade}%`, opacity: 1 }, { offset: `${innerEnd}%`, opacity: 1 }, { offset: '100%', opacity: 0 }]
+  return [{ offset: '0%', opacity: 0 }, { offset: `${fade}%`, opacity: 1 }, { offset: '50%', opacity: 1 }, { offset: `${innerEnd}%`, opacity: 1 }, { offset: '100%', opacity: 0 }]
 })
 </script>
 

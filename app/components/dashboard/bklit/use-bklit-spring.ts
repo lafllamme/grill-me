@@ -1,41 +1,26 @@
 import type { Ref } from 'vue'
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { useMotionValue, useMotionValueEvent, useSpring } from 'motion-v'
+import { ref, watch } from 'vue'
 
-export function useBklitSpring(target: Ref<number | null>, initial = 0) {
-  const value = ref(target.value ?? initial)
-  let frame: number | null = null
-  let velocity = 0
+export interface BklitSpringConfig {
+  stiffness: number
+  damping: number
+}
 
-  const stop = () => {
-    if (frame !== null && typeof cancelAnimationFrame !== 'undefined') {
-      cancelAnimationFrame(frame)
-    }
-    frame = null
-  }
+const defaultConfig: BklitSpringConfig = { stiffness: 300, damping: 30 }
 
-  const animate = () => {
-    if (typeof requestAnimationFrame === 'undefined') {
-      value.value = target.value ?? initial
-      return
-    }
-    const destination = target.value ?? initial
-    const distance = destination - value.value
-    velocity = velocity * 0.7 + distance * 0.12
-    value.value += velocity
-    if (Math.abs(distance) < 0.08 && Math.abs(velocity) < 0.08) {
-      value.value = destination
-      stop()
-      return
-    }
-    frame = requestAnimationFrame(animate)
-  }
+export function useBklitSpring(target: Ref<number | null>, config: BklitSpringConfig = defaultConfig, initial = 0) {
+  const source = useMotionValue(target.value ?? initial)
+  const spring = useSpring(source, config)
+  const value = ref(spring.get())
 
-  watch(target, () => {
-    if (typeof requestAnimationFrame !== 'undefined' && frame === null) {
-      frame = requestAnimationFrame(animate)
-    }
+  useMotionValueEvent(spring, 'change', (nextValue) => {
+    value.value = nextValue
+  })
+
+  watch(target, (nextValue) => {
+    source.set(nextValue ?? initial)
   }, { immediate: true })
 
-  onBeforeUnmount(stop)
   return value
 }
