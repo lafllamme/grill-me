@@ -47,7 +47,7 @@ export const roastDashboardFixture = {
     ],
     data: [{
       label: 'Your profile',
-      color: 'var(--color-primary-strong)',
+      color: 'var(--color-primary-strong, #f0444d)',
       values: {
         readability: 42,
         maintainability: 39,
@@ -58,7 +58,7 @@ export const roastDashboardFixture = {
       },
     }, {
       label: 'Healthy baseline',
-      color: 'var(--color-success)',
+      color: 'var(--color-success, #18c9a5)',
       values: {
         readability: 78,
         maintainability: 82,
@@ -66,6 +66,28 @@ export const roastDashboardFixture = {
         discipline: 80,
         abstraction: 68,
         documentation: 72,
+      },
+    }, {
+      label: 'Repository median',
+      color: 'var(--color-chart-line-secondary, #5c5d65)',
+      values: {
+        readability: 61,
+        maintainability: 58,
+        testability: 52,
+        discipline: 64,
+        abstraction: 55,
+        documentation: 48,
+      },
+    }, {
+      label: 'Maintainer target',
+      color: 'var(--color-bone-400, #d8bfa8)',
+      values: {
+        readability: 88,
+        maintainability: 86,
+        testability: 84,
+        discipline: 90,
+        abstraction: 76,
+        documentation: 82,
       },
     }],
   },

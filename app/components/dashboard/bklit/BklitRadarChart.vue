@@ -30,24 +30,33 @@ function colorFor(index: number) {
   return props.data[index]?.color ?? 'var(--color-primary-strong)'
 }
 
+function averageFor(values: Record<string, number>) {
+  const valuesList = Object.values(values)
+  return valuesList.length ? Math.round(valuesList.reduce((sum, value) => sum + value, 0) / valuesList.length) : 0
+}
+
 provideBklitRadarContext({ data: props.data, metrics: props.metrics, levels: props.levels, radius, center, hoveredIndex, getPoint, pointsFor, colorFor })
 const isReady = computed(() => props.data.length > 0 && props.metrics.length > 2)
 </script>
 
 <template>
   <figure v-if="isReady" class="min-w-0" aria-label="Code profile radar chart">
-    <div class="mx-auto max-w-[360px] aspect-square relative">
-      <svg class="h-full w-full overflow-visible" :class="animate ? 'bklit-radar-enter' : ''" viewBox="0 0 320 320" role="img" aria-label="Roast profile dimensions">
-        <BklitRadarGrid />
-        <BklitRadarAxis />
-        <BklitRadarLabels />
-        <BklitRadarArea v-for="(_, index) in data" :key="`area-${index}`" :index="index" />
-      </svg>
-    </div>
-    <div v-if="data.length > 1" class="mt-1 flex flex-wrap gap-x-5 gap-y-2 justify-center">
-      <button v-for="(series, index) in data" :key="series.label" class="text-[10px] text-on-surface-variant tracking-[0.12em] font-meta uppercase transition-colors hover:text-on-background focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @mouseenter="hoveredIndex = index" @mouseleave="hoveredIndex = null">
-        <i class="mr-2 rounded-full h-2 w-2 inline-block" :style="{ backgroundColor: colorFor(index) }" />{{ series.label }}
-      </button>
+    <div class="flex flex-col gap-4 items-center md:flex-row md:items-center">
+      <div class="w-full max-w-[360px] md:w-[58%]">
+        <svg class="h-full w-full overflow-visible" :class="animate ? 'bklit-radar-enter' : ''" viewBox="0 0 320 320" role="img" aria-label="Roast profile dimensions">
+          <BklitRadarGrid />
+          <BklitRadarAxis />
+          <BklitRadarLabels />
+          <BklitRadarArea v-for="(_, index) in data" :key="`area-${index}`" :index="index" />
+        </svg>
+      </div>
+      <div v-if="data.length > 1" class="w-full flex flex-col gap-1 md:w-[42%]">
+        <button v-for="(series, index) in data" :key="series.label" class="text-left text-xs text-on-surface-variant tracking-[0.08em] rounded-[6px] px-3 py-2 flex gap-3 items-center transition-colors hover:text-on-background focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" :class="hoveredIndex === index ? 'bg-surface-bright text-on-background' : ''" type="button" @mouseenter="hoveredIndex = index" @mouseleave="hoveredIndex = null">
+          <i class="mr-2 rounded-full h-2 w-2 shrink-0 inline-block" :style="{ backgroundColor: colorFor(index) }" />
+          <span class="flex-1">{{ series.label }}</span>
+          <strong class="font-meta">{{ averageFor(series.values) }}%</strong>
+        </button>
+      </div>
     </div>
   </figure>
 </template>
