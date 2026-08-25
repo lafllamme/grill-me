@@ -46,7 +46,7 @@ export const roastDashboardFixture = {
       { key: 'documentation', label: 'Documentation' },
     ],
     data: [{
-      label: 'Current profile',
+      label: 'Your profile',
       color: 'var(--color-primary-strong)',
       values: {
         readability: 42,
@@ -55,6 +55,17 @@ export const roastDashboardFixture = {
         discipline: 48,
         abstraction: 57,
         documentation: 26,
+      },
+    }, {
+      label: 'Healthy baseline',
+      color: 'var(--color-success)',
+      values: {
+        readability: 78,
+        maintainability: 82,
+        testability: 74,
+        discipline: 80,
+        abstraction: 68,
+        documentation: 72,
       },
     }],
   },
