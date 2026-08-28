@@ -4,9 +4,11 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 withDefaults(defineProps<{
   grade: string
   size?: 'sm' | 'md' | 'lg'
+  gradeSize?: 'xs' | 'sm' | 'md'
   tone?: 'dark' | 'light'
 }>(), {
   size: 'md',
+  gradeSize: 'sm',
   tone: 'dark',
 })
 
@@ -57,11 +59,17 @@ const sizeClasses = {
   md: 'h-28 w-28 text-4xl',
   lg: 'h-40 w-40 text-5xl',
 } as const
+
+const gradeSizeClasses = {
+  xs: 'text-xl',
+  sm: 'text-2xl',
+  md: 'text-4xl',
+} as const
 </script>
 
 <template>
   <div
-    class="relative mx-auto flex items-center justify-center"
+    class="relative flex items-center justify-center"
     data-testid="roast-one-grade-star"
     :class="sizeClasses[size]"
   >
@@ -89,6 +97,7 @@ const sizeClasses = {
       class="font-display relative z-10 transition-all duration-700 motion-reduce:transition-none"
       :class="[
         tone === 'light' ? 'text-basalt-950' : 'text-background',
+        gradeSizeClasses[gradeSize],
         isGradeVisible ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
       ]"
     >

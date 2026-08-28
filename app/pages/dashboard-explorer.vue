@@ -55,12 +55,10 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
         <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-4 lg:p-8">
           <div class="flex items-start justify-between gap-4">
             <h2 class="text-2xl tracking-[-0.04em] font-body">Verdict</h2>
-            <div class="flex flex-col items-end gap-2">
-              <RoastOneGradeStar :grade="fixture.grade" size="sm" />
-              <span class="text-xs text-on-surface-variant rounded-full bg-surface-container-highest px-3 py-1 font-meta">{{ fixture.growthLevel }}</span>
-            </div>
+            <RoastOneGradeStar :grade="fixture.grade" grade-size="xs" size="sm" />
           </div>
-          <h3 class="max-w-[12ch] text-4xl tracking-[-0.06em] font-display leading-[0.94] mt-8 sm:text-5xl">{{ fixture.headline }}</h3>
+          <span class="text-[11px] text-primary tracking-[0.08em] rounded-full px-3 py-1.5 border-[1px] border-primary/30 border-solid inline-flex font-meta uppercase mt-6">{{ fixture.growthLevel }}</span>
+          <h3 class="max-w-[12ch] text-4xl tracking-[-0.06em] font-display leading-[0.94] mt-5 sm:text-5xl">{{ fixture.headline }}</h3>
           <p class="max-w-[34rem] text-base text-on-surface leading-7 mt-6">{{ fixture.note }}</p>
         </article>
         <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-12"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
