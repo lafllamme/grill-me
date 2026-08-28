@@ -40,7 +40,7 @@ const levels = [
         type="button"
         class="p-7 text-left border-[1px] border-basalt-950/16 rounded-[24px] border-solid flex flex-col min-h-[31rem] transition-[transform,background-color,color] duration-300 justify-between fuel-view-reveal sm:p-9 motion-reduce:[animation:none]"
         :class="[
-          selectedIntensity === level.value ? 'bg-basalt-950 text-explore-copy' : 'bg-basalt-50 text-basalt-950 hover:bg-bone-100',
+          selectedIntensity === level.value ? 'bg-basalt-950 text-explore-copy' : 'bg-[#fbfcfc] text-basalt-950 hover:bg-[#f6f8f8]',
           index === 1 ? 'lg:translate-y-12' : index === 2 ? 'lg:translate-y-24' : '',
         ]"
         @click="selectedIntensity = level.value"

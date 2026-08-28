@@ -29,6 +29,18 @@ interface DarkPattern {
   buttonClass: string
 }
 
+function getRelativeLuminance(hex: string) {
+  const channels = hex.slice(1).match(/../g)?.map(channel => Number.parseInt(channel, 16) / 255) ?? [0, 0, 0]
+  const linearChannels = channels.map(channel => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * linearChannels[0]! + 0.7152 * linearChannels[1]! + 0.0722 * linearChannels[2]!
+}
+
+function getSurfaceContrast(pattern: DarkPattern) {
+  const stageLuminance = getRelativeLuminance(pattern.stageHex)
+  const cardLuminance = getRelativeLuminance(pattern.cardHex)
+  return `${((Math.max(stageLuminance, cardLuminance) + 0.05) / (Math.min(stageLuminance, cardLuminance) + 0.05)).toFixed(2)}:1`
+}
+
 interface PatternSection {
   label: string
   title: string
@@ -106,20 +118,22 @@ const allPatterns: DarkPattern[] = [
   { name: 'Graphite Hush', mood: 'neutral, low attention', stageClass: 'bg-[#0b0b0b]', contextClass: 'bg-[#111112]', cardClass: 'bg-[#171718]', stageHex: '#0b0b0b', contextHex: '#111112', cardHex: '#171718', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#9d9995]', buttonClass: 'bg-[#d9d5cf] text-[#0b0b0b]' },
   { name: 'Basalt Quiet', mood: 'warm structure, less contrast', stageClass: 'bg-[#0f0e0d]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#1a1715]', stageHex: '#0f0e0d', contextHex: '#181614', cardHex: '#1a1715', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]', buttonClass: 'bg-[#ead8c6] text-[#0f0e0d]' },
   { name: 'Explorer Soft', mood: 'warm stage, barely lifted card', stageClass: 'bg-[#131211]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#1a1715]', stageHex: '#131211', contextHex: '#181614', cardHex: '#1a1715', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]', buttonClass: 'bg-[#ead8c6] text-[#131211]' },
-  { name: 'Paper Snow', mood: 'plain white, soft slate card', stageClass: 'bg-white', contextClass: 'bg-[#eef1f0]', cardClass: 'bg-[#dfe4e2]', stageHex: '#ffffff', contextHex: '#eef1f0', cardHex: '#dfe4e2', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
-  { name: 'Cloud Slate', mood: 'cool canvas, lifted slate', stageClass: 'bg-[#f7f8f8]', contextClass: 'bg-[#e8ecec]', cardClass: 'bg-[#cfd6d7]', stageHex: '#f7f8f8', contextHex: '#e8ecec', cardHex: '#cfd6d7', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
-  { name: 'White Stone', mood: 'clean canvas, mineral contrast', stageClass: 'bg-white', contextClass: 'bg-[#f0f0ef]', cardClass: 'bg-[#d0cfca]', stageHex: '#ffffff', contextHex: '#f0f0ef', cardHex: '#d0cfca', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
-  { name: 'Silver Cloud', mood: 'cool white, calm separation', stageClass: 'bg-[#f5f6f7]', contextClass: 'bg-[#e7e9eb]', cardClass: 'bg-[#c7ccd1]', stageHex: '#f5f6f7', contextHex: '#e7e9eb', cardHex: '#c7ccd1', copyClass: 'text-[#181614]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
-  { name: 'Chalk Graphite', mood: 'chalk field, decisive card', stageClass: 'bg-[#f4f4f2]', contextClass: 'bg-[#e9e8e4]', cardClass: 'bg-[#c8c5bf]', stageHex: '#f4f4f2', contextHex: '#e9e8e4', cardHex: '#c8c5bf', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
-  { name: 'Bone Graphite', mood: 'warm paper, grounded card', stageClass: 'bg-[#fdfcf9]', contextClass: 'bg-[#f1eeea]', cardClass: 'bg-[#c7c0b8]', stageHex: '#fdfcf9', contextHex: '#f1eeea', cardHex: '#c7c0b8', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Paper Snow', mood: 'soft white stage, lifted card', stageClass: 'bg-[#f4f5f3]', contextClass: 'bg-[#f8f9f7]', cardClass: 'bg-white', stageHex: '#f4f5f3', contextHex: '#f8f9f7', cardHex: '#ffffff', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'Cloud Slate', mood: 'cool cloud stage, lifted card', stageClass: 'bg-[#edf0f0]', contextClass: 'bg-[#f4f6f6]', cardClass: 'bg-[#fbfcfc]', stageHex: '#edf0f0', contextHex: '#f4f6f6', cardHex: '#fbfcfc', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'White Stone', mood: 'mineral stage, clean card', stageClass: 'bg-[#f0f0ee]', contextClass: 'bg-[#f7f7f4]', cardClass: 'bg-[#fdfcf9]', stageHex: '#f0f0ee', contextHex: '#f7f7f4', cardHex: '#fdfcf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Silver Cloud', mood: 'cool silver stage, crisp card', stageClass: 'bg-[#e9ecef]', contextClass: 'bg-[#f2f4f5]', cardClass: 'bg-[#f9fafb]', stageHex: '#e9ecef', contextHex: '#f2f4f5', cardHex: '#f9fafb', copyClass: 'text-[#181614]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'Chalk Graphite', mood: 'chalk stage, bright card', stageClass: 'bg-[#ebeae7]', contextClass: 'bg-[#f4f3ef]', cardClass: 'bg-[#faf9f6]', stageHex: '#ebeae7', contextHex: '#f4f3ef', cardHex: '#faf9f6', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Bone Graphite', mood: 'warm paper stage, lifted card', stageClass: 'bg-[#eee9e3]', contextClass: 'bg-[#f6f1eb]', cardClass: 'bg-[#fffdf9]', stageHex: '#eee9e3', contextHex: '#f6f1eb', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
   { name: 'Fog White', mood: 'fog canvas, lifted white card', stageClass: 'bg-[#edf0ef]', contextClass: 'bg-[#e5e9e8]', cardClass: 'bg-white', stageHex: '#edf0ef', contextHex: '#e5e9e8', cardHex: '#ffffff', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#b91f2b] text-white' },
   { name: 'Taupe White', mood: 'warm stage, quiet paper card', stageClass: 'bg-[#e8e3dd]', contextClass: 'bg-[#eeeae5]', cardClass: 'bg-[#fffdf9]', stageHex: '#e8e3dd', contextHex: '#eeeae5', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
   { name: 'Stone Cloud', mood: 'stone canvas, soft white card', stageClass: 'bg-[#e8e8e6]', contextClass: 'bg-[#eeeeec]', cardClass: 'bg-[#f8f8f6]', stageHex: '#e8e8e6', contextHex: '#eeeeec', cardHex: '#f8f8f6', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
   { name: 'Paper Lift', mood: 'paper canvas, elevated white card', stageClass: 'bg-[#f1f0ed]', contextClass: 'bg-[#f6f5f2]', cardClass: 'bg-white', stageHex: '#f1f0ed', contextHex: '#f6f5f2', cardHex: '#ffffff', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
   { name: 'Slate Cloud', mood: 'cool slate, crisp white card', stageClass: 'bg-[#e5e8e9]', contextClass: 'bg-[#edf0f0]', cardClass: 'bg-[#fbfcfc]', stageHex: '#e5e8e9', contextHex: '#edf0f0', cardHex: '#fbfcfc', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Slate Cloud Soft', mood: 'near-white slate stage, lifted card', stageClass: 'bg-[#eef1f1]', contextClass: 'bg-[#f6f8f8]', cardClass: 'bg-white', stageHex: '#eef1f1', contextHex: '#f6f8f8', cardHex: '#ffffff', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'Slate Cloud Rich', mood: 'deeper slate stage, crisp card', stageClass: 'bg-[#dde2e3]', contextClass: 'bg-[#e9edef]', cardClass: 'bg-[#f8faf9]', stageHex: '#dde2e3', contextHex: '#e9edef', cardHex: '#f8faf9', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
 ]
 
-const lightPatternNames = ['Paper Snow', 'Cloud Slate', 'White Stone', 'Silver Cloud', 'Chalk Graphite', 'Bone Graphite', 'Fog White', 'Taupe White', 'Stone Cloud', 'Paper Lift', 'Slate Cloud']
+const lightPatternNames = ['Paper Snow', 'Cloud Slate', 'White Stone', 'Silver Cloud', 'Chalk Graphite', 'Bone Graphite', 'Fog White', 'Taupe White', 'Stone Cloud', 'Paper Lift', 'Slate Cloud', 'Slate Cloud Soft', 'Slate Cloud Rich']
 const darkPatterns = allPatterns.filter(pattern => !['Black Bone Focus', 'Redline Deep', ...lightPatternNames].includes(pattern.name))
 const colorPatterns = allPatterns.filter(pattern => pattern.name === 'Redline Deep')
 const lightPatterns = allPatterns.filter(pattern => lightPatternNames.includes(pattern.name))
@@ -137,9 +151,9 @@ const patternSections: PatternSection[] = [
     patterns: colorPatterns,
   },
   {
-    label: 'Light · 11 patterns',
+    label: 'Light · 13 patterns',
     title: 'Find the right light.',
-    description: 'The same stage, context, and surface logic — rebuilt entirely with light neutrals.',
+    description: 'The same stage, context, and surface logic — rebuilt entirely with light neutrals. Slate Cloud is the current winner.',
     patterns: lightPatterns,
   },
 ]
@@ -292,10 +306,13 @@ useSeoMeta({
             <div class="flex gap-3 items-start justify-between">
               <div>
                 <p :class="pattern.copyClass" class="text-sm leading-tight font-body">
-                  <Icon v-if="pattern.name === 'Void Whisper'" name="ph:crown-simple" class="text-primary-strong mr-1 align-[-0.12em]" />{{ pattern.name }}
+                  <Icon v-if="['Void Whisper', 'Slate Cloud'].includes(pattern.name)" name="ph:crown-simple" class="text-primary-strong mr-1 align-[-0.12em]" />{{ pattern.name }}
                 </p>
                 <p :class="pattern.mutedClass" class="text-[10px] leading-tight font-meta mt-1">
                   {{ pattern.mood }}
+                </p>
+                <p :class="pattern.mutedClass" class="text-[9px] tracking-[0.08em] font-meta uppercase mt-2">
+                  stage ↔ card {{ getSurfaceContrast(pattern) }}
                 </p>
               </div>
               <span :class="pattern.mutedClass" class="text-[10px] font-meta">{{ String(index + 1).padStart(2, '0') }}</span>

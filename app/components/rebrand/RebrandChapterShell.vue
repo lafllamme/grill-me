@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<{
 
 const surfaceClass = computed(() => {
   if (props.tone === 'paper')
-    return 'bg-bone-50'
+    return 'bg-[#e5e8e9]'
 
   return props.tone === 'ink' ? 'bg-explore-ink-soft' : 'bg-black'
 })

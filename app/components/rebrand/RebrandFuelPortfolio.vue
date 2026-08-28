@@ -102,7 +102,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
           </div>
         </article>
 
-        <article v-if="hasEvidence" class="border-[1px] border-basalt-950/16 border-solid bg-bone-100 min-h-[30rem] fuel-sticky-settle lg:min-h-[44rem] motion-reduce:[animation:none] lg:top-24 lg:sticky">
+        <article v-if="hasEvidence" class="border-[1px] border-basalt-950/16 border-solid bg-[#fbfcfc] min-h-[30rem] fuel-sticky-settle lg:min-h-[44rem] motion-reduce:[animation:none] lg:top-24 lg:sticky">
           <header class="p-7 border-b-[1px] border-basalt-950/16 border-solid flex items-end justify-between sm:p-9">
             <div>
               <p class="text-[10px] text-signal-red-700 tracking-[0.15em] font-meta uppercase">

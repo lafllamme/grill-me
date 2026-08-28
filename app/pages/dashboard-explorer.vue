@@ -18,6 +18,7 @@ interface DashboardColorProfile {
   panelClass: string
   copyClass: string
   mutedClass: string
+  surfaceContrast?: string
 }
 
 interface ChartPalette {
@@ -61,17 +62,19 @@ const colorProfiles = {
   graphiteHush: { label: 'Graphite Hush', description: 'neutral, low attention', stageClass: 'bg-[#0b0b0b]', panelClass: 'bg-[#171718]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#9d9995]' },
   basaltQuiet: { label: 'Basalt Quiet', description: 'warm structure, less contrast', stageClass: 'bg-[#0f0e0d]', panelClass: 'bg-[#1a1715]', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]' },
   explorerSoft: { label: 'Explorer Soft', description: 'warm stage, barely lifted card', stageClass: 'bg-[#131211]', panelClass: 'bg-[#1a1715]', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]' },
-  paperSnow: { label: 'Paper Snow', description: 'plain white, soft slate card', stageClass: 'bg-white', panelClass: 'bg-[#dfe4e2]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
-  cloudSlate: { label: 'Cloud Slate', description: 'cool canvas, lifted slate', stageClass: 'bg-[#f7f8f8]', panelClass: 'bg-[#cfd6d7]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
-  whiteStone: { label: 'White Stone', description: 'clean canvas, mineral contrast', stageClass: 'bg-white', panelClass: 'bg-[#d0cfca]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  silverCloud: { label: 'Silver Cloud', description: 'cool white, calm separation', stageClass: 'bg-[#f5f6f7]', panelClass: 'bg-[#c7ccd1]', copyClass: 'text-[#181614]', mutedClass: 'text-[#4e4e4e]' },
-  chalkGraphite: { label: 'Chalk Graphite', description: 'chalk field, decisive card', stageClass: 'bg-[#f4f4f2]', panelClass: 'bg-[#c8c5bf]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  boneGraphite: { label: 'Bone Graphite', description: 'warm paper, grounded card', stageClass: 'bg-[#fdfcf9]', panelClass: 'bg-[#c7c0b8]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  fogWhite: { label: 'Fog White', description: 'fog canvas, lifted white card', stageClass: 'bg-[#edf0ef]', panelClass: 'bg-white', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
-  taupeWhite: { label: 'Taupe White', description: 'warm stage, quiet paper card', stageClass: 'bg-[#e8e3dd]', panelClass: 'bg-[#fffdf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  stoneCloud: { label: 'Stone Cloud', description: 'stone canvas, soft white card', stageClass: 'bg-[#e8e8e6]', panelClass: 'bg-[#f8f8f6]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  paperLift: { label: 'Paper Lift', description: 'paper canvas, elevated white card', stageClass: 'bg-[#f1f0ed]', panelClass: 'bg-white', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  slateCloud: { label: 'Slate Cloud', description: 'cool slate, crisp white card', stageClass: 'bg-[#e5e8e9]', panelClass: 'bg-[#fbfcfc]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
+  slateCloudSoft: { label: 'Slate Cloud Soft', description: 'near-white slate stage, lifted card', stageClass: 'bg-[#eef1f1]', panelClass: 'bg-white', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.14:1' },
+  paperSnow: { label: 'Paper Snow', description: 'soft white stage, lifted card', stageClass: 'bg-[#f4f5f3]', panelClass: 'bg-white', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.09:1' },
+  cloudSlate: { label: 'Cloud Slate', description: 'cool cloud stage, lifted card', stageClass: 'bg-[#edf0f0]', panelClass: 'bg-[#fbfcfc]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.12:1' },
+  whiteStone: { label: 'White Stone', description: 'mineral stage, clean card', stageClass: 'bg-[#f0f0ee]', panelClass: 'bg-[#fdfcf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', surfaceContrast: '1.11:1' },
+  silverCloud: { label: 'Silver Cloud', description: 'cool silver stage, crisp card', stageClass: 'bg-[#e9ecef]', panelClass: 'bg-[#f9fafb]', copyClass: 'text-[#181614]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.13:1' },
+  chalkGraphite: { label: 'Chalk Graphite', description: 'chalk stage, bright card', stageClass: 'bg-[#ebeae7]', panelClass: 'bg-[#faf9f6]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', surfaceContrast: '1.14:1' },
+  boneGraphite: { label: 'Bone Graphite', description: 'warm paper stage, lifted card', stageClass: 'bg-[#eee9e3]', panelClass: 'bg-[#fffdf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', surfaceContrast: '1.19:1' },
+  fogWhite: { label: 'Fog White', description: 'fog canvas, lifted white card', stageClass: 'bg-[#edf0ef]', panelClass: 'bg-white', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.15:1' },
+  taupeWhite: { label: 'Taupe White', description: 'warm stage, quiet paper card', stageClass: 'bg-[#e8e3dd]', panelClass: 'bg-[#fffdf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', surfaceContrast: '1.26:1' },
+  stoneCloud: { label: 'Stone Cloud', description: 'stone canvas, soft white card', stageClass: 'bg-[#e8e8e6]', panelClass: 'bg-[#f8f8f6]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', surfaceContrast: '1.15:1' },
+  paperLift: { label: 'Paper Lift', description: 'paper canvas, elevated white card', stageClass: 'bg-[#f1f0ed]', panelClass: 'bg-white', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', surfaceContrast: '1.14:1' },
+  slateCloud: { label: 'Slate Cloud', description: 'cool slate, crisp white card', stageClass: 'bg-[#e5e8e9]', panelClass: 'bg-[#fbfcfc]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.20:1' },
+  slateCloudRich: { label: 'Slate Cloud Rich', description: 'deeper slate stage, crisp card', stageClass: 'bg-[#dde2e3]', panelClass: 'bg-[#f8faf9]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.25:1' },
 } satisfies Record<string, DashboardColorProfile>
 type ColorProfile = keyof typeof colorProfiles
 const activeColorProfile = ref<ColorProfile>('basalt')
@@ -80,12 +83,12 @@ const activeColorMode = ref<ColorMode>('dark')
 const colorProfileRows: ColorProfile[][] = [
   ['void', 'graphite', 'basalt', 'mauve', 'redline', 'charcoal', 'carbon', 'explorer'],
   ['voidWhisper', 'graphiteHush', 'basaltQuiet', 'explorerSoft'],
-  ['paperSnow', 'cloudSlate', 'whiteStone', 'silverCloud', 'chalkGraphite', 'boneGraphite', 'fogWhite', 'taupeWhite', 'stoneCloud', 'paperLift', 'slateCloud'],
+  ['paperSnow', 'cloudSlate', 'whiteStone', 'silverCloud', 'chalkGraphite', 'boneGraphite', 'fogWhite', 'taupeWhite', 'stoneCloud', 'paperLift', 'slateCloud', 'slateCloudSoft', 'slateCloudRich'],
 ]
 const darkColorProfileKeys = colorProfileRows.slice(0, 2).flat()
 const lightColorProfileKeys = colorProfileRows[2]!
 const visibleColorProfileKeys = computed(() => activeColorMode.value === 'dark' ? darkColorProfileKeys : lightColorProfileKeys)
-const currentColorProfile = computed(() => colorProfiles[activeColorProfile.value])
+const currentColorProfile = computed<DashboardColorProfile>(() => colorProfiles[activeColorProfile.value])
 const currentColorProfileIndex = computed(() => visibleColorProfileKeys.value.indexOf(activeColorProfile.value))
 const chartPalette = computed<ChartPalette>(() => activeColorMode.value === 'dark'
   ? {
@@ -213,8 +216,9 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
                 ←
               </button>
               <div :class="currentColorProfile.copyClass" class="px-2 min-w-36 text-center">
-                <p class="text-[10px] tracking-[0.08em] font-meta uppercase"><Icon v-if="activeColorProfile === 'voidWhisper'" name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}</p>
+                <p class="text-[10px] tracking-[0.08em] font-meta uppercase"><Icon v-if="['voidWhisper', 'slateCloud'].includes(activeColorProfile)" name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}</p>
                 <p :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">{{ currentColorProfileIndex + 1 }} / {{ visibleColorProfileKeys.length }}</p>
+                <p v-if="currentColorProfile.surfaceContrast" :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">stage ↔ card {{ currentColorProfile.surfaceContrast }}</p>
               </div>
               <button
                 :class="currentColorProfile.mutedClass"

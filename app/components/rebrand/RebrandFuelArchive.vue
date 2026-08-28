@@ -28,10 +28,10 @@ defineProps<{
           {{ receipt.title }}
         </p>
         <div class="gap-2 hidden justify-end lg:flex">
-          <span class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-bone-100">
+          <span class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-[#fbfcfc]">
             {{ receipt.commit.sha }} · +{{ receipt.commit.additions }}/-{{ receipt.commit.deletions }}
           </span>
-          <span v-if="receipt.files[0]" class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-bone-100 max-w-[12rem] truncate">
+          <span v-if="receipt.files[0]" class="text-[9px] text-basalt-700 font-mono px-3 py-2 border-[1px] border-basalt-950/16 border-solid bg-[#fbfcfc] max-w-[12rem] truncate">
             {{ receipt.files[0].filename }}
           </span>
         </div>
