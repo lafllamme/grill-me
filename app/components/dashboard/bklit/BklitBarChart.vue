@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<{
   xDataKey: 'name',
   status: 'ready',
   animationDuration: 1100,
-  animationEasing: 'ease-out',
+  animationEasing: 'cubic-bezier(0.85, 0, 0.15, 1)',
   margin: () => ({ top: 40, right: 40, bottom: 40, left: 40 }),
   aspectRatio: '2 / 1',
   barGap: 0.2,
@@ -136,6 +136,7 @@ const context: BklitBarContext = {
   data: props.data,
   xDataKey: props.xDataKey,
   status,
+  animationDuration: props.animationDuration,
   hoveredIndex,
   tooltipX,
   tooltipY,
@@ -161,7 +162,7 @@ const context: BklitBarContext = {
   seriesColors,
   seriesOrder,
   registerSeries: (dataKey, color) => {
-    seriesColors[dataKey] = color === 'var(--color-chart-line-secondary)' ? '#5c5d65' : color === 'var(--color-chart-line-primary)' ? '#2a2a2e' : color
+    seriesColors[dataKey] = color
     if (!seriesOrder.includes(dataKey))
       seriesOrder.push(dataKey)
   },
@@ -176,7 +177,7 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
 <template>
   <div class="w-full relative" :style="chartStyle" :data-animation-duration="props.animationDuration" :data-animation-easing="props.animationEasing" :data-reveal-signature="props.revealSignature" :data-stack-gap="props.stackGap">
     <svg class="h-full w-full overflow-visible" viewBox="0 0 640 320" role="img" aria-label="Roast change volume bar chart" @pointermove="handlePointerMove" @pointerleave="clearHover">
-      <BklitBarChartLoading v-if="status === 'loading'" />
+      <BklitBarChartLoading v-if="status === 'loading'" :bar-count="data.length || 12" />
       <g v-else>
         <slot />
       </g>

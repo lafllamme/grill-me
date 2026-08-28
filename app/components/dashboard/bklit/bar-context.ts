@@ -8,6 +8,7 @@ export interface BklitBarContext {
   data: readonly BklitBarDatum[]
   xDataKey: string
   status: Ref<'loading' | 'ready'>
+  animationDuration: number
   hoveredIndex: Ref<number | null>
   tooltipX: Ref<number | null>
   tooltipY: Ref<number | null>

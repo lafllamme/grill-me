@@ -73,12 +73,19 @@ function getOpacity(index: number) {
 function getRadius() {
   return props.lineCap === 'round' ? Math.min(barWidth.value / 2, 8) : typeof props.lineCap === 'number' ? props.lineCap : 0
 }
+
+const automaticStaggerDelay = computed(() => context.data.length > 1
+  ? (context.animationDuration * 0.4) / context.data.length / 1000
+  : 0)
+const getAnimationDelay = (index: number) => `${props.staggerDelay + index * automaticStaggerDelay.value}s`
 </script>
 
 <template>
-  <g :class="[props.animationType === 'fade' ? 'animate-fade-in' : '', props.fill === 'var(--color-chart-line-primary)' ? 'text-chart-line-primary' : '', props.fill === 'var(--color-chart-line-secondary)' ? 'text-chart-line-secondary' : '']" :style="{ '--bklit-stagger-delay': `${props.staggerDelay}s` }">
-    <rect v-for="(_, index) in context.data" :key="index" class="cursor-crosshair origin-bottom transition-[opacity,transform] duration-300" :class="[props.animationType === 'grow' ? 'origin-bottom' : '', props.animate ? 'animate-bklit-bar-reveal' : '']" :style="{ animationDelay: `${props.staggerDelay + index * 0.035}s` }" :x="getRect(index).x" :y="getRect(index).y" :width="getRect(index).width" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill" :opacity="getOpacity(index)">
-      <title>{{ context.data[index]?.[context.xDataKey] }}: {{ context.valueAt(props.dataKey, index) }}</title>
-    </rect>
+  <g :class="[props.fill === 'var(--color-chart-line-primary)' ? 'text-chart-line-primary' : '', props.fill === 'var(--color-chart-line-secondary)' ? 'text-chart-line-secondary' : '']">
+    <g v-for="(_, index) in context.data" :key="index" :opacity="getOpacity(index)" class="transition-[opacity,filter] duration-300">
+      <rect class="cursor-crosshair origin-bottom" :class="[props.animate && props.animationType === 'grow' ? 'animate-bklit-bar-reveal' : '', props.animate && props.animationType === 'fade' ? 'animate-bklit-bar-fade' : '']" :style="{ animationDelay: getAnimationDelay(index) }" :x="getRect(index).x" :y="getRect(index).y" :width="getRect(index).width" :height="getRect(index).height" :rx="getRadius()" :fill="props.fill.startsWith('var(--color-chart-line-') ? 'currentColor' : props.fill">
+        <title>{{ context.data[index]?.[context.xDataKey] }}: {{ context.valueAt(props.dataKey, index) }}</title>
+      </rect>
+    </g>
   </g>
 </template>

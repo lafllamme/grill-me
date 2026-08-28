@@ -1,15 +1,29 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ id: string, durationSeconds?: number }>(), { durationSeconds: 2 })
+defineProps<{ id: string }>()
+
+const gradientStops = [
+  ['0%', '0.050'],
+  ['6%', '0.082'],
+  ['13%', '0.174'],
+  ['19%', '0.312'],
+  ['25%', '0.475'],
+  ['31%', '0.638'],
+  ['38%', '0.776'],
+  ['44%', '0.868'],
+  ['50%', '0.900'],
+  ['56%', '0.868'],
+  ['63%', '0.776'],
+  ['69%', '0.638'],
+  ['75%', '0.475'],
+  ['81%', '0.312'],
+  ['88%', '0.174'],
+  ['94%', '0.082'],
+  ['100%', '0.050'],
+].map(([offset, opacity]) => ({ offset, opacity }))
 </script>
 
 <template>
-  <linearGradient :id="id" x1="-640" x2="-320" y1="0" y2="0" gradientUnits="userSpaceOnUse">
-    <stop offset="0%" stop-color="#2a2a2e" stop-opacity="0.28" />
-    <stop offset="42%" stop-color="#5c5d65" stop-opacity="0.5" />
-    <stop offset="50%" stop-color="#fcf7f0" stop-opacity="0.74" />
-    <stop offset="58%" stop-color="#5c5d65" stop-opacity="0.5" />
-    <stop offset="100%" stop-color="#2a2a2e" stop-opacity="0.28" />
-    <animate attributeName="x1" from="-640" to="1280" :dur="`${durationSeconds}s`" repeatCount="indefinite" />
-    <animate attributeName="x2" from="-320" to="1600" :dur="`${durationSeconds}s`" repeatCount="indefinite" />
+  <linearGradient :id="id" x1="0" x2="1" y1="0" y2="0">
+    <stop v-for="stop in gradientStops" :key="stop.offset" :offset="stop.offset" stop-color="white" :stop-opacity="stop.opacity" />
   </linearGradient>
 </template>

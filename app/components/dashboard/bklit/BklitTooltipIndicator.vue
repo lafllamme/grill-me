@@ -30,9 +30,9 @@ const stops = computed(() => {
   <svg v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
     <defs>
       <linearGradient :id="gradientId" x1="0%" x2="0%" y1="0%" y2="100%">
-        <stop v-for="stop in stops" :key="stop.offset" :offset="stop.offset" stop-color="#fcf7f0" :stop-opacity="stop.opacity" />
+        <stop v-for="stop in stops" :key="stop.offset" :offset="stop.offset" stop-color="var(--color-on-background)" :stop-opacity="stop.opacity" />
       </linearGradient>
     </defs>
-    <rect :x="x - 0.5" :y="context.plotTop" width="1" :height="context.chartHeight - context.plotTop - context.plotBottom" :fill="props.fadeEdges === 'none' ? '#fcf7f0' : `url(#${gradientId})`" />
+    <rect :x="x - 0.5" :y="context.plotTop" width="1" :height="context.chartHeight - context.plotTop - context.plotBottom" :fill="props.fadeEdges === 'none' ? 'var(--color-on-background)' : `url(#${gradientId})`" />
   </svg>
 </template>

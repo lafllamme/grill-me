@@ -15,5 +15,5 @@ const y = useBklitSpring(yTarget)
 </script>
 
 <template>
-  <circle v-if="context.hoveredIndex.value !== null && context.status.value === 'ready' && yTarget !== null" :cx="x" :cy="y" :r="props.size" :fill="props.color ?? context.seriesColors[props.dataKey] ?? '#2a2a2e'" class="stroke-chart-track" stroke-width="2" />
+  <circle v-if="context.hoveredIndex.value !== null && context.status.value === 'ready' && yTarget !== null" :cx="x" :cy="y" :r="props.size" :fill="props.color ?? context.seriesColors[props.dataKey] ?? 'var(--color-surface-variant)'" class="stroke-chart-track" stroke-width="2" />
 </template>

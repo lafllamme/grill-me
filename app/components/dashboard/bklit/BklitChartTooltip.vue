@@ -73,7 +73,7 @@ onBeforeUnmount(() => {
         <div class="space-y-1.5">
           <div v-for="key in seriesKeys" :key="key" class="flex items-center justify-between gap-4 text-sm">
             <span class="flex min-w-0 items-center gap-2 text-on-surface-variant">
-              <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? '#2a2a2e' }" />
+              <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-surface-variant)' }" />
               <span>{{ key }}</span>
             </span>
             <strong class="shrink-0 tabular-nums text-on-background font-medium">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
