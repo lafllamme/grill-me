@@ -7,6 +7,7 @@ import { usePrismGradientSettings } from '~/composables/usePrismGradientSettings
 const isDev = import.meta.dev
 const route = useRoute()
 const shouldShowGlobalChrome = computed(() => route.path !== '/' && route.path !== '/roast')
+const shouldShowGlobalNav = computed(() => shouldShowGlobalChrome.value && route.path !== '/dashboard-explorer')
 
 const {
   settings,
@@ -58,7 +59,7 @@ function applySettings(nextSettings: PrismGradientSettings) {
         enter-from-class="-translate-y-4"
         enter-to-class="translate-y-0"
       >
-        <LandingTopNav v-if="shouldShowGlobalChrome" />
+        <LandingTopNav v-if="shouldShowGlobalNav" />
       </Transition>
       <main>
         <slot />
