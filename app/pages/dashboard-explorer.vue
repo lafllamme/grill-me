@@ -7,6 +7,7 @@ import BklitBarXAxis from '~/components/dashboard/bklit/BklitBarXAxis.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import BklitRadarChart from '~/components/dashboard/bklit/BklitRadarChart.vue'
 import DashboardRingChart from '~/components/dashboard/DashboardRingChart.vue'
+import RoastOneGradeStar from '~/components/roast-one/RoastOneGradeStar.vue'
 import { roastDashboardFixture } from '~/data/roast-dashboard'
 import { roastDashboardExplorerFixture } from '~/data/roast-dashboard-explorer'
 
@@ -47,12 +48,20 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       </header>
 
       <div id="profile-panel" class="grid gap-4 mt-8 lg:grid-cols-12">
-        <article class="rounded-[28px] bg-surface-container p-6 sm:p-8 lg:col-span-8 lg:p-10"><h2 class="text-2xl tracking-[-0.04em] font-body">Profile</h2><BklitRadarChart class="mt-8" :data="fixture.radarProfile.data" :metrics="fixture.radarProfile.metrics" :size="460" /></article>
-        <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-4 lg:p-10">
-          <h2 class="text-2xl tracking-[-0.04em] font-body">Verdict</h2>
-          <h3 class="max-w-[12ch] text-4xl tracking-[-0.06em] font-display leading-[0.92] mt-12 sm:text-6xl">{{ fixture.headline }}</h3>
-          <p class="max-w-[34rem] text-base text-on-surface leading-7 mt-8">{{ fixture.note }}</p>
-          <div class="pt-6 mt-10 flex gap-10 border-t-[1px] border-divider border-solid"><div><span class="text-[10px] text-on-surface-variant tracking-[0.14em] font-meta block uppercase">Grade</span><strong class="text-4xl text-primary-strong font-display block mt-2">{{ fixture.grade }}</strong></div><div><span class="text-[10px] text-on-surface-variant tracking-[0.14em] font-meta block uppercase">Read</span><strong class="text-sm text-on-background font-meta block mt-4">{{ fixture.growthLevel }}</strong></div></div>
+        <article class="rounded-[28px] bg-surface-container p-6 sm:p-8 lg:col-span-8 lg:p-8">
+          <h2 class="text-2xl tracking-[-0.04em] font-body">Profile</h2>
+          <BklitRadarChart class="mt-4" :data="fixture.radarProfile.data" :metrics="fixture.radarProfile.metrics" :size="400" />
+        </article>
+        <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-4 lg:p-8">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-2xl tracking-[-0.04em] font-body">Verdict</h2>
+            <div class="flex flex-col items-end gap-2">
+              <RoastOneGradeStar :grade="fixture.grade" size="sm" />
+              <span class="text-xs text-on-surface-variant rounded-full bg-surface-container-highest px-3 py-1 font-meta">{{ fixture.growthLevel }}</span>
+            </div>
+          </div>
+          <h3 class="max-w-[12ch] text-4xl tracking-[-0.06em] font-display leading-[0.94] mt-8 sm:text-5xl">{{ fixture.headline }}</h3>
+          <p class="max-w-[34rem] text-base text-on-surface leading-7 mt-6">{{ fixture.note }}</p>
         </article>
         <article class="rounded-[28px] bg-surface p-6 sm:p-8 lg:col-span-12"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
         <article class="rounded-[28px] bg-surface-container p-6 sm:p-8 lg:col-span-12"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change volume</h2></div><button class="text-[10px] text-on-surface-variant tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-outline border-solid font-meta uppercase hover:text-on-background focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayBarLoading">Replay loading</button></div><BklitBarChart class="mt-8" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'"><template #grid><BklitGrid horizontal /></template><BklitBar data-key="additions" fill="var(--color-chart-line-primary)" /><BklitBar data-key="deletions" fill="var(--color-chart-line-secondary)" animation-type="fade" /><template #x-axis><BklitBarXAxis /></template></BklitBarChart><div class="text-[10px] text-on-surface-variant tracking-[0.14em] mt-5 flex gap-5 font-meta uppercase"><span><i class="rounded-full bg-chart-line-primary h-2 w-2 mr-2 inline-block" /> additions</span><span><i class="rounded-full bg-chart-line-secondary h-2 w-2 mr-2 inline-block" /> deletions</span></div></article>
