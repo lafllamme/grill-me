@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
   <div class="rounded-none p-6 flex flex-col gap-8 items-center sm:flex-row sm:items-center">
-    <BklitRingChart :data="data" :size="300" :stroke-width="12" :ring-gap="6" :base-inner-radius="52">
+    <BklitRingChart :data="data" :size="300" :stroke-width="12" :ring-gap="6" :base-inner-radius="52" :animation-duration="1100" :enter-stagger-scale="1">
       <BklitRing v-for="(_, index) in data" :key="index" :index="index" :show-glow="false" />
       <template #center>
         <BklitRingCenter default-label="Total Sessions" />

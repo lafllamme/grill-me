@@ -9,6 +9,8 @@ const props = withDefaults(defineProps<{
   strokeWidth?: number
   ringGap?: number
   baseInnerRadius?: number
+  animationDuration?: number
+  enterStaggerScale?: number
   startAngle?: number
   endAngle?: number
 }>(), {
@@ -18,17 +20,16 @@ const props = withDefaults(defineProps<{
   baseInnerRadius: 60,
   startAngle: -Math.PI / 2,
   endAngle: (3 * Math.PI) / 2,
+  animationDuration: 1100,
+  enterStaggerScale: 1,
 })
 
 const hoveredIndex = ref<number | null>(null)
 const isEntered = ref(false)
 let entranceTimer: ReturnType<typeof setTimeout> | undefined
-let hoverClearTimer: ReturnType<typeof setTimeout> | undefined
-let hoverSetTimer: ReturnType<typeof setTimeout> | undefined
-const outerRadius = computed(() => props.baseInnerRadius + (props.data.length - 1) * (props.strokeWidth + props.ringGap) + props.strokeWidth)
 const ringPaths = computed(() => createRingPaths({
   data: props.data,
-  outerRadius: outerRadius.value,
+  baseInnerRadius: props.baseInnerRadius,
   ringGap: props.ringGap,
   strokeWidth: props.strokeWidth,
   startAngle: props.startAngle,
@@ -38,41 +39,25 @@ const ringPaths = computed(() => createRingPaths({
 const context: BklitRingContext = {
   data: props.data,
   hoveredIndex,
+  baseInnerRadius: props.baseInnerRadius,
+  ringGap: props.ringGap,
+  strokeWidth: props.strokeWidth,
+  startAngle: props.startAngle,
+  endAngle: props.endAngle,
+  animationDuration: props.animationDuration,
+  enterStaggerScale: props.enterStaggerScale,
   setHoveredIndex: (index) => {
-    if (hoverClearTimer) {
-      clearTimeout(hoverClearTimer)
-      hoverClearTimer = undefined
-    }
-    if (hoveredIndex.value === index) {
-      return
-    }
-    if (hoverSetTimer) {
-      clearTimeout(hoverSetTimer)
-    }
-    hoverSetTimer = setTimeout(() => {
-      hoveredIndex.value = index
-      hoverSetTimer = undefined
-    }, 50)
+    hoveredIndex.value = index
   },
   clearHoveredIndex: () => {
-    if (hoverClearTimer) {
-      clearTimeout(hoverClearTimer)
-    }
-    if (hoverSetTimer) {
-      clearTimeout(hoverSetTimer)
-      hoverSetTimer = undefined
-    }
-    hoverClearTimer = setTimeout(() => {
-      hoveredIndex.value = null
-      hoverClearTimer = undefined
-    }, 120)
+    hoveredIndex.value = null
   },
   isEntered,
   getRingColor: index => props.data[index]?.color ?? 'currentColor',
   getRingPath: index => ringPaths.value[index] ?? { backgroundPath: '', progressPath: '' },
   getProgressPath: (index, progress) => {
     const item = props.data[index]
-    return item ? createProgressPath({ item, index, progress, outerRadius: outerRadius.value, ringGap: props.ringGap, strokeWidth: props.strokeWidth, startAngle: props.startAngle, endAngle: props.endAngle }) : ''
+    return item ? createProgressPath({ item, index, progress, baseInnerRadius: props.baseInnerRadius, ringGap: props.ringGap, strokeWidth: props.strokeWidth, startAngle: props.startAngle, endAngle: props.endAngle }) : ''
   },
 }
 
@@ -81,18 +66,12 @@ provide(bklitRingContextKey, context)
 onMounted(() => {
   entranceTimer = setTimeout(() => {
     isEntered.value = true
-  }, 1200)
+  }, 100)
 })
 
 onBeforeUnmount(() => {
   if (entranceTimer) {
     clearTimeout(entranceTimer)
-  }
-  if (hoverClearTimer) {
-    clearTimeout(hoverClearTimer)
-  }
-  if (hoverSetTimer) {
-    clearTimeout(hoverSetTimer)
   }
 })
 </script>

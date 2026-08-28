@@ -17,6 +17,13 @@ export interface BklitRingPath {
 
 export interface BklitRingContext {
   data: readonly BklitRingData[]
+  baseInnerRadius: number
+  ringGap: number
+  strokeWidth: number
+  startAngle: number
+  endAngle: number
+  animationDuration: number
+  enterStaggerScale: number
   hoveredIndex: Ref<number | null>
   setHoveredIndex: (index: number) => void
   clearHoveredIndex: () => void
@@ -30,21 +37,21 @@ export const bklitRingContextKey: InjectionKey<BklitRingContext> = Symbol('bklit
 
 export function createRingPaths({
   data,
-  outerRadius,
+  baseInnerRadius,
   ringGap,
   strokeWidth,
   startAngle,
   endAngle,
 }: {
   data: readonly BklitRingData[]
-  outerRadius: number
+  baseInnerRadius: number
   ringGap: number
   strokeWidth: number
   startAngle: number
   endAngle: number
 }) {
   return data.map((item, index) => {
-    const innerRadius = outerRadius - index * (strokeWidth + ringGap)
+    const innerRadius = baseInnerRadius + index * (strokeWidth + ringGap)
     const outerRingRadius = innerRadius + strokeWidth
     const progressEndAngle = startAngle + (endAngle - startAngle) * Math.min(item.value / item.maxValue, 1)
     const arc = arcGenerator<DefaultArcObject>()
@@ -65,7 +72,7 @@ export function createProgressPath({
   item,
   index,
   progress,
-  outerRadius,
+  baseInnerRadius,
   ringGap,
   strokeWidth,
   startAngle,
@@ -74,13 +81,13 @@ export function createProgressPath({
   item: BklitRingData
   index: number
   progress: number
-  outerRadius: number
+  baseInnerRadius: number
   ringGap: number
   strokeWidth: number
   startAngle: number
   endAngle: number
 }) {
-  const innerRadius = outerRadius - index * (strokeWidth + ringGap)
+  const innerRadius = baseInnerRadius + index * (strokeWidth + ringGap)
   const outerRingRadius = innerRadius + strokeWidth
   const progressEndAngle = startAngle + (endAngle - startAngle) * Math.min(Math.max(progress, 0), 1) * Math.min(item.value / item.maxValue, 1)
   const arc = arcGenerator<DefaultArcObject>()
