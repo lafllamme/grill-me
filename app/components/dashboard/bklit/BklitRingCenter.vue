@@ -25,8 +25,8 @@ const centerLabel = computed(() => context.hoveredIndex.value === null
 </script>
 
 <template>
-  <div class="text-center flex flex-col h-full items-center justify-center transition-[opacity,transform] duration-500 ease-out" :style="{ opacity: context.isEntered.value ? 1 : 0, transform: context.isEntered.value ? 'translateY(0)' : 'translateY(8px)' }">
-    <NumberFlow :value="centerValue" class="text-2xl text-on-background tracking-[-0.06em] leading-none font-display" :will-change="true" :isolate="true" />
-    <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta mt-1 uppercase">{{ centerLabel }}</span>
+  <div class="@container/chart-center size-full min-w-0 text-center flex flex-col items-center justify-center">
+    <NumberFlow :value="centerValue" class="text-on-background text-[clamp(0.75rem,22cqw,1.875rem)] font-bold tabular-nums leading-none" :will-change="true" :isolate="true" />
+    <span class="text-on-surface-variant max-w-full truncate text-[clamp(0.625rem,9cqw,0.75rem)] leading-tight">{{ centerLabel }}</span>
   </div>
 </template>

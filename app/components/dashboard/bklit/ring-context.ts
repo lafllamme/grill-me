@@ -22,15 +22,13 @@ export interface BklitRingContext {
   strokeWidth: number
   startAngle: number
   endAngle: number
-  animationDuration: number
   enterStaggerScale: number
   hoveredIndex: Ref<number | null>
   setHoveredIndex: (index: number) => void
   clearHoveredIndex: () => void
-  isEntered: Ref<boolean>
   getRingColor: (index: number) => string
-  getRingPath: (index: number) => BklitRingPath
-  getProgressPath: (index: number, progress: number) => string
+  getRingPath: (index: number, lineCap?: 'round' | 'butt') => BklitRingPath
+  getProgressPath: (index: number, progress: number, lineCap?: 'round' | 'butt') => string
 }
 
 export const bklitRingContextKey: InjectionKey<BklitRingContext> = Symbol('bklit-ring-context')
@@ -42,6 +40,7 @@ export function createRingPaths({
   strokeWidth,
   startAngle,
   endAngle,
+  lineCap = 'round',
 }: {
   data: readonly BklitRingData[]
   baseInnerRadius: number
@@ -49,6 +48,7 @@ export function createRingPaths({
   strokeWidth: number
   startAngle: number
   endAngle: number
+  lineCap?: 'round' | 'butt'
 }) {
   return data.map((item, index) => {
     const innerRadius = baseInnerRadius + index * (strokeWidth + ringGap)
@@ -57,7 +57,7 @@ export function createRingPaths({
     const arc = arcGenerator<DefaultArcObject>()
       .innerRadius(innerRadius)
       .outerRadius(outerRingRadius)
-      .cornerRadius(strokeWidth / 2)
+      .cornerRadius(lineCap === 'round' ? strokeWidth / 2 : 0)
 
     return {
       backgroundPath: arc({ innerRadius, outerRadius: outerRingRadius, startAngle, endAngle }) ?? '',
@@ -77,6 +77,7 @@ export function createProgressPath({
   strokeWidth,
   startAngle,
   endAngle,
+  lineCap = 'round',
 }: {
   item: BklitRingData
   index: number
@@ -86,6 +87,7 @@ export function createProgressPath({
   strokeWidth: number
   startAngle: number
   endAngle: number
+  lineCap?: 'round' | 'butt'
 }) {
   const innerRadius = baseInnerRadius + index * (strokeWidth + ringGap)
   const outerRingRadius = innerRadius + strokeWidth
@@ -93,7 +95,7 @@ export function createProgressPath({
   const arc = arcGenerator<DefaultArcObject>()
     .innerRadius(innerRadius)
     .outerRadius(outerRingRadius)
-    .cornerRadius(strokeWidth / 2)
+    .cornerRadius(lineCap === 'round' ? strokeWidth / 2 : 0)
 
   return progressEndAngle <= startAngle + 0.01
     ? ''

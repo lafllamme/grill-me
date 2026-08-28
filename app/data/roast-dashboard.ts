@@ -36,6 +36,14 @@ export const roastDashboardFixture = {
     { label: 'Testability', value: 31, maxValue: 100, descriptor: 'Behaviour under-covered' },
     { label: 'Maintainability', value: 39, maxValue: 100, descriptor: 'Wrappers multiply' },
   ] satisfies RoastDashboardRingDatum[],
+  ringProfile: [
+    { label: 'Human readability', value: 42, maxValue: 100, descriptor: 'Aliases hide intent', color: 'var(--color-primary-strong)' },
+    { label: 'Testability', value: 31, maxValue: 100, descriptor: 'Behaviour under-covered', color: 'var(--color-primary)' },
+    { label: 'Maintainability', value: 39, maxValue: 100, descriptor: 'Wrappers multiply', color: 'var(--color-primary-container)' },
+    { label: 'Change discipline', value: 28, maxValue: 100, descriptor: 'Commit scope drifts', color: 'var(--color-primary-strong)' },
+    { label: 'Abstraction pressure', value: 67, maxValue: 100, descriptor: 'Layers outpace intent', color: 'var(--color-primary)' },
+    { label: 'Documentation coverage', value: 24, maxValue: 100, descriptor: 'Context lives in code', color: 'var(--color-primary-container)' },
+  ] satisfies RoastDashboardRingDatum[],
   radarProfile: {
     metrics: [
       { key: 'engagement', label: 'Engagement' },

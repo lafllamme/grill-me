@@ -30,15 +30,14 @@ function ringToneClass(index: number) {
 </script>
 
 <template>
-  <div class="w-full space-y-5 transition-[opacity,transform] duration-500 ease-out sm:min-w-[18rem]" :style="{ opacity: context.isEntered.value ? 1 : 0, transform: context.isEntered.value ? 'translateX(0)' : 'translateX(16px)' }">
+  <div class="w-full space-y-5 sm:min-w-[18rem]">
     <h3 class="text-base text-on-background font-display">{{ props.heading }}</h3>
     <div
       v-for="(item, index) in context.data"
       :key="item.label"
-      class="-mx-3 rounded-sm px-3 py-2 gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto_auto] items-baseline transition-colors duration-150"
-      :class="context.hoveredIndex.value === index ? 'bg-chart-hover' : ''"
-      @pointerenter="handleEnter(index)"
-      @pointerleave="handleLeave"
+      class="gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto_auto] items-baseline"
+      @mouseenter="handleEnter(index)"
+      @mouseleave="handleLeave"
     >
       <span class="rounded-full h-2 w-2" :class="!item.color ? ringToneClass(index) : ''" :style="item.color ? { backgroundColor: item.color } : undefined" aria-hidden="true" />
       <span class="text-sm text-on-background font-body">{{ item.label }}</span>
