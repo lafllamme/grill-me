@@ -29,6 +29,14 @@ interface DarkPattern {
   buttonClass: string
 }
 
+interface PatternSection {
+  label: string
+  title: string
+  description: string
+  patterns: DarkPattern[]
+  emptyMessage?: string
+}
+
 const signalRedScale: ScaleSwatch[] = [
   { shade: '50', hex: '#fff1f1', bgClass: 'bg-signal-red-50', textClass: 'text-signal-red-950' },
   { shade: '100', hex: '#ffe1e2', bgClass: 'bg-signal-red-100', textClass: 'text-signal-red-950' },
@@ -84,16 +92,49 @@ const typographySamples: TypographySample[] = [
   { label: 'Accent', role: 'Bricolage Grotesque · rare quotes', className: 'font-accent italic', sample: 'Taste is a constraint.' },
 ]
 
-const darkPatterns: DarkPattern[] = [
-  { name: 'Void / Ink', mood: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', contextClass: 'bg-[#0b0b0c]', cardClass: 'bg-[#151517]', stageHex: '#050505', contextHex: '#0b0b0c', cardHex: '#151517', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]', buttonClass: 'bg-[#f7f3ee] text-[#050505]' },
-  { name: 'Black / Graphite', mood: 'quiet, premium, focused', stageClass: 'bg-[#080808]', contextClass: 'bg-[#151515]', cardClass: 'bg-[#202022]', stageHex: '#080808', contextHex: '#151515', cardHex: '#202022', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]', buttonClass: 'bg-[#d9d5cf] text-[#080808]' },
+const allPatterns: DarkPattern[] = [
+  { name: 'Void Ink', mood: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', contextClass: 'bg-[#0b0b0c]', cardClass: 'bg-[#151517]', stageHex: '#050505', contextHex: '#0b0b0c', cardHex: '#151517', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]', buttonClass: 'bg-[#f7f3ee] text-[#050505]' },
+  { name: 'Black Graphite', mood: 'quiet, premium, focused', stageClass: 'bg-[#080808]', contextClass: 'bg-[#151515]', cardClass: 'bg-[#202022]', stageHex: '#080808', contextHex: '#151515', cardHex: '#202022', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]', buttonClass: 'bg-[#d9d5cf] text-[#080808]' },
   { name: 'Dashboard Basalt', mood: 'warm, familiar, calmer', stageClass: 'bg-[#0f0e0d]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#211d1a]', stageHex: '#0f0e0d', contextHex: '#181614', cardHex: '#211d1a', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#d8bfa8]', buttonClass: 'bg-[#f5ebdf] text-[#0f0e0d]' },
   { name: 'Dashboard Explorer', mood: 'warm basalt, soft separation', stageClass: 'bg-[#0f0e0d]', contextClass: 'bg-[#1a1715]', cardClass: 'bg-[#181614]', stageHex: '#0f0e0d', contextHex: '#1a1715', cardHex: '#181614', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#d8bfa8]', buttonClass: 'bg-[#f5ebdf] text-[#0f0e0d]' },
   { name: 'Mauve Chamber', mood: 'soft black, warm lift', stageClass: 'bg-[#151211]', contextClass: 'bg-[#211b1a]', cardClass: 'bg-[#302725]', stageHex: '#151211', contextHex: '#211b1a', cardHex: '#302725', copyClass: 'text-[#fff7f0]', mutedClass: 'text-[#d4b9aa]', buttonClass: 'bg-[#f5e5da] text-[#151211]' },
-  { name: 'Redline / Deep', mood: 'pressure, not decoration', stageClass: 'bg-[#100506]', contextClass: 'bg-[#1d0b0d]', cardClass: 'bg-[#321417]', stageHex: '#100506', contextHex: '#1d0b0d', cardHex: '#321417', copyClass: 'text-[#fff5f1]', mutedClass: 'text-[#d4a9a5]', buttonClass: 'bg-[#f0444d] text-[#220609]' },
-  { name: 'Charcoal / Mist', mood: 'neutral, tactile, restrained', stageClass: 'bg-[#111214]', contextClass: 'bg-[#1b1c1e]', cardClass: 'bg-[#292b2e]', stageHex: '#111214', contextHex: '#1b1c1e', cardHex: '#292b2e', copyClass: 'text-[#ffffff]', mutedClass: 'text-[#a1a1aa]', buttonClass: 'bg-[#e6e6e6] text-[#292b2e]' },
+  { name: 'Redline Deep', mood: 'pressure, not decoration', stageClass: 'bg-[#100506]', contextClass: 'bg-[#1d0b0d]', cardClass: 'bg-[#321417]', stageHex: '#100506', contextHex: '#1d0b0d', cardHex: '#321417', copyClass: 'text-[#fff5f1]', mutedClass: 'text-[#d4a9a5]', buttonClass: 'bg-[#f0444d] text-[#220609]' },
+  { name: 'Charcoal Mist', mood: 'neutral, tactile, restrained', stageClass: 'bg-[#111214]', contextClass: 'bg-[#1b1c1e]', cardClass: 'bg-[#292b2e]', stageHex: '#111214', contextHex: '#1b1c1e', cardHex: '#292b2e', copyClass: 'text-[#ffffff]', mutedClass: 'text-[#a1a1aa]', buttonClass: 'bg-[#e6e6e6] text-[#292b2e]' },
   { name: 'Soft Carbon', mood: 'low contrast, calm density', stageClass: 'bg-[#1b1918]', contextClass: 'bg-[#24211f]', cardClass: 'bg-[#312c29]', stageHex: '#1b1918', contextHex: '#24211f', cardHex: '#312c29', copyClass: 'text-[#fffaf5]', mutedClass: 'text-[#c6b8ae]', buttonClass: 'bg-[#d8bfa8] text-[#1b1918]' },
-  { name: 'Black / Bone Focus', mood: 'hard stage, one bright verdict', stageClass: 'bg-[#000000]', contextClass: 'bg-[#11100f]', cardClass: 'bg-[#fffdf9]', stageHex: '#000000', contextHex: '#11100f', cardHex: '#fffdf9', copyClass: 'text-[#11100f]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+  { name: 'Black Bone Focus', mood: 'hard stage, one bright verdict', stageClass: 'bg-[#000000]', contextClass: 'bg-[#11100f]', cardClass: 'bg-[#fffdf9]', stageHex: '#000000', contextHex: '#11100f', cardHex: '#fffdf9', copyClass: 'text-[#11100f]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+  { name: 'Void Whisper', mood: 'ink with a softer edge', stageClass: 'bg-[#050505]', contextClass: 'bg-[#0b0b0b]', cardClass: 'bg-[#111112]', stageHex: '#050505', contextHex: '#0b0b0b', cardHex: '#111112', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#9f9993]', buttonClass: 'bg-[#e5dfd8] text-[#050505]' },
+  { name: 'Graphite Hush', mood: 'neutral, low attention', stageClass: 'bg-[#0b0b0b]', contextClass: 'bg-[#111112]', cardClass: 'bg-[#171718]', stageHex: '#0b0b0b', contextHex: '#111112', cardHex: '#171718', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#9d9995]', buttonClass: 'bg-[#d9d5cf] text-[#0b0b0b]' },
+  { name: 'Basalt Quiet', mood: 'warm structure, less contrast', stageClass: 'bg-[#0f0e0d]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#1a1715]', stageHex: '#0f0e0d', contextHex: '#181614', cardHex: '#1a1715', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]', buttonClass: 'bg-[#ead8c6] text-[#0f0e0d]' },
+  { name: 'Explorer Soft', mood: 'warm stage, barely lifted card', stageClass: 'bg-[#131211]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#1a1715]', stageHex: '#131211', contextHex: '#181614', cardHex: '#1a1715', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]', buttonClass: 'bg-[#ead8c6] text-[#131211]' },
+  { name: 'Paper Snow', mood: 'quiet paper, lifted card', stageClass: 'bg-[#ebe7e1]', contextClass: 'bg-[#f5f0e9]', cardClass: 'bg-[#fffdf9]', stageHex: '#ebe7e1', contextHex: '#f5f0e9', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+  { name: 'Bone Paper', mood: 'warm canvas, soft surface', stageClass: 'bg-[#f1e4d5]', contextClass: 'bg-[#faf2e8]', cardClass: 'bg-white', stageHex: '#f1e4d5', contextHex: '#faf2e8', cardHex: '#ffffff', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+  { name: 'Warm Paper', mood: 'soft field, one red action', stageClass: 'bg-[#e4d7c8]', contextClass: 'bg-[#f3e9dc]', cardClass: 'bg-[#fffdf9]', stageHex: '#e4d7c8', contextHex: '#f3e9dc', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+  { name: 'White Cloud', mood: 'clean canvas, quiet lift', stageClass: 'bg-[#e4e6e8]', contextClass: 'bg-[#f2f3f4]', cardClass: 'bg-white', stageHex: '#e4e6e8', contextHex: '#f2f3f4', cardHex: '#ffffff', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+]
+
+const lightPatternNames = ['Paper Snow', 'Bone Paper', 'Warm Paper', 'White Cloud']
+const darkPatterns = allPatterns.filter(pattern => !['Black Bone Focus', 'Redline Deep', ...lightPatternNames].includes(pattern.name))
+const colorPatterns = allPatterns.filter(pattern => pattern.name === 'Redline Deep')
+const lightPatterns = allPatterns.filter(pattern => lightPatternNames.includes(pattern.name))
+const patternSections: PatternSection[] = [
+  {
+    label: 'Dark · 11 patterns',
+    title: 'Find the right black.',
+    description: 'The dark set is the first decision: Void Whisper is the current front-runner.',
+    patterns: darkPatterns,
+  },
+  {
+    label: 'Color · 1 pattern',
+    title: 'Use color with intent.',
+    description: 'Red stays a signal, not a second background system.',
+    patterns: colorPatterns,
+  },
+  {
+    label: 'Light · 4 patterns',
+    title: 'Find the right light.',
+    description: 'The same stage, context, and surface logic — rebuilt entirely with light neutrals.',
+    patterns: lightPatterns,
+  },
 ]
 
 useHead({ title: 'Design System' })
@@ -106,11 +147,11 @@ useSeoMeta({
 
 <template>
   <div class="text-on-background bg-basalt-900 min-h-[100dvh]">
-    <div class="mx-auto px-5 pb-20 pt-28 max-w-[1180px] md:px-8 md:pt-20">
+    <div class="mx-auto px-5 pb-20 pt-28 max-w-[1320px] md:px-8 md:pt-20">
       <header class="pb-10 border-b border-outline flex flex-col gap-8 justify-between md:flex-row md:items-end">
         <div class="max-w-[48rem]">
           <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
-            Grillme / design system
+            Grillme · design system
           </p>
           <h1 class="text-[clamp(3.5rem,9vw,7.5rem)] leading-[0.86] tracking-[-0.07em] font-display mt-5">
             Less noise.
@@ -127,11 +168,11 @@ useSeoMeta({
         </p>
       </header>
 
-      <section class="mt-10 p-5 border border-outline rounded-2xl bg-surface-container md:p-8">
+      <section class="mt-10">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
             <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
-              01 / palette
+              01 · palette
             </p>
             <h2 class="text-3xl tracking-[-0.04em] font-display mt-3 md:text-5xl">
               Color has three jobs.
@@ -224,33 +265,33 @@ useSeoMeta({
         </div>
       </section> -->
 
-      <section class="mt-10 p-5 border border-outline rounded-2xl bg-surface-container md:p-8">
+      <section v-for="patternSection in patternSections" :key="patternSection.label" class="mt-10">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
             <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
-              Dark exploration / 9 patterns
+              {{ patternSection.label }}
             </p>
             <h2 class="text-3xl tracking-[-0.04em] font-display mt-3 md:text-5xl">
-              Find the right black.
+              {{ patternSection.title }}
             </h2>
           </div>
           <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[40ch]">
-            Same tiny Bento card. Nine different relationships between stage, context, and surface. Exploratory values only.
+            {{ patternSection.description }}
           </p>
         </div>
 
-        <div class="mt-8 gap-3 grid lg:grid-cols-4 sm:grid-cols-2">
-          <article v-for="(pattern, index) in darkPatterns" :key="pattern.name" :class="pattern.stageClass" class="p-3 rounded-2xl flex flex-col min-h-56">
+        <div v-if="patternSection.patterns.length" class="mt-8 gap-3 grid lg:grid-cols-4 sm:grid-cols-2">
+          <article v-for="(pattern, index) in patternSection.patterns" :key="pattern.name" :class="pattern.stageClass" class="p-3 rounded-2xl flex flex-col min-h-56">
             <div class="flex gap-3 items-start justify-between">
               <div>
                 <p :class="pattern.copyClass" class="text-sm leading-tight font-body">
-                  {{ pattern.name }}
+                  <Icon v-if="pattern.name === 'Void Whisper'" name="ph:crown-simple" class="text-primary-strong mr-1 align-[-0.12em]" />{{ pattern.name }}
                 </p>
                 <p :class="pattern.mutedClass" class="text-[10px] leading-tight font-meta mt-1">
                   {{ pattern.mood }}
                 </p>
               </div>
-              <span :class="pattern.mutedClass" class="text-[10px] font-meta">0{{ index + 1 }}</span>
+              <span :class="pattern.mutedClass" class="text-[10px] font-meta">{{ String(index + 1).padStart(2, '0') }}</span>
             </div>
 
             <div class="mt-5 flex-1">
@@ -282,16 +323,21 @@ useSeoMeta({
             </p>
           </article>
         </div>
+        <div v-else class="p-6 border border-dashed border-outline rounded-xl mt-8">
+          <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[52ch]">
+            {{ patternSection.emptyMessage }}
+          </p>
+        </div>
       </section>
 
-      <div class="mt-6 p-4 border border-outline rounded-2xl bg-surface-container md:p-5">
+      <div class="mt-6">
         <div class="gap-2 grid lg:grid-cols-4 sm:grid-cols-2">
           <div class="p-3 rounded-lg bg-black">
             <p class="text-xs text-bone-50 font-body">
               Stage
             </p>
             <p class="text-[10px] text-bone-300 font-meta mt-1">
-              black / full bleed
+              black · full bleed
             </p>
           </div>
           <div class="p-3 rounded-lg bg-bone-50">
@@ -299,7 +345,7 @@ useSeoMeta({
               Focus
             </p>
             <p class="text-[10px] text-basalt-600 font-meta mt-1">
-              bone / primary read
+              bone · primary read
             </p>
           </div>
           <div class="p-3 rounded-lg bg-surface-container-high">
@@ -307,7 +353,7 @@ useSeoMeta({
               Structure
             </p>
             <p class="text-[10px] text-on-surface-variant font-meta mt-1">
-              warm graphite / cards
+              warm graphite · cards
             </p>
           </div>
           <div class="p-3 rounded-lg bg-signal-red-700">
@@ -315,17 +361,17 @@ useSeoMeta({
               Action
             </p>
             <p class="text-[10px] text-bone-100 font-meta mt-1">
-              cherry red / one decision
+              cherry red · one decision
             </p>
           </div>
         </div>
       </div>
 
-      <section class="mt-6 p-5 border border-outline rounded-2xl bg-surface-container md:p-8">
+      <section class="mt-6">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
             <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
-              03 / type and UI
+              03 · type and UI
             </p>
             <h2 class="text-3xl tracking-[-0.04em] font-display mt-3 md:text-5xl">
               Four voices. No costume.
