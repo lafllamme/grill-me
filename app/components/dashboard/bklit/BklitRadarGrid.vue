@@ -11,10 +11,10 @@ const labelProgressValue = (index: number) => labelProgress[index]?.value ?? 1
 </script>
 
 <template>
-  <g class="bklit-radar-grid stroke-divider" :class="className">
+  <g class="bklit-radar-grid" :class="className" :style="{ stroke: 'var(--chart-grid)' }">
     <polygon v-for="index in context.levels" :key="`grid-${index}`" class="bklit-radar-grid-level" :points="context.pointsFor(Object.fromEntries(context.metrics.map(metric => [metric.key, 100])), context.radius * (index / context.levels) * progressValue(index - 1))" fill="none" :stroke="stroke || undefined" stroke-width="1" :stroke-opacity="strokeOpacity" />
     <g v-if="showLabels">
-      <text v-for="index in context.levels" :key="`level-${index}`" class="fill-on-surface-variant" :x="context.center + 5" :y="context.center - context.radius * (index / context.levels) * progressValue(index - 1)" :opacity="labelProgressValue(index - 1)" font-size="9" text-anchor="start" dominant-baseline="middle">{{ index * (100 / context.levels) }}</text>
+      <text v-for="index in context.levels" :key="`level-${index}`" :x="context.center + 5" :y="context.center - context.radius * (index / context.levels) * progressValue(index - 1)" :opacity="labelProgressValue(index - 1)" font-size="9" text-anchor="start" dominant-baseline="middle" :style="{ fill: 'var(--chart-label)' }">{{ index * (100 / context.levels) }}</text>
     </g>
   </g>
 </template>

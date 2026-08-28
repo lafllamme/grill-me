@@ -31,7 +31,7 @@ function ringToneClass(index: number) {
 
 <template>
   <div class="legend-container w-full flex flex-col gap-2 sm:min-w-[18rem]">
-    <h3 class="text-base text-on-background font-display mb-1">{{ props.heading }}</h3>
+    <h3 class="text-base font-display mb-1" :style="{ color: 'var(--chart-text)' }">{{ props.heading }}</h3>
     <div
       v-for="(item, index) in context.data"
       :key="item.label"
@@ -44,9 +44,9 @@ function ringToneClass(index: number) {
       @mouseleave="handleLeave"
     >
       <span class="rounded-full shrink-0 h-2.5 w-2.5" :class="!item.color ? ringToneClass(index) : ''" :style="item.color ? { backgroundColor: item.color } : undefined" aria-hidden="true" />
-      <span class="text-sm text-on-background font-body font-medium">{{ item.label }}</span>
-      <span class="text-sm text-on-surface-variant flex items-center gap-2 font-meta tabular-nums">
-        <strong class="text-on-background">{{ item.value.toLocaleString() }}</strong>
+      <span class="text-sm font-body font-medium" :style="{ color: 'var(--chart-text)' }">{{ item.label }}</span>
+      <span class="text-sm flex items-center gap-2 font-meta tabular-nums" :style="{ color: 'var(--chart-label)' }">
+        <strong :style="{ color: 'var(--chart-text)' }">{{ item.value.toLocaleString() }}</strong>
         <span>{{ Math.round((item.value / item.maxValue) * 100) }}%</span>
       </span>
       <div class="rounded-full bg-surface-container-highest h-1.5 col-span-full w-full overflow-hidden">

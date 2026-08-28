@@ -148,6 +148,16 @@ html, body {
   font-synthesis-small-caps: none;
 }
 
+:root {
+  --color-primary: #b91f2b;
+  --color-primary-strong: #f0444d;
+  --color-on-background: #fcf7f0;
+  --color-on-surface-variant: #d8bfa8;
+  --color-surface-variant: #3d3833;
+  --color-chart-track: #252831;
+  --color-chart-tooltip: #18181b;
+}
+
 @keyframes chapter-cover-rise {
   from {
     transform: translateY(0) skewY(0deg);
@@ -241,14 +251,35 @@ html, body {
 
 @keyframes bklit-bar-reveal {
   from {
-    opacity: 0;
     transform: scaleY(0.02);
+    transform-box: fill-box;
     transform-origin: bottom;
   }
   to {
-    opacity: 1;
     transform: scaleY(1);
+    transform-box: fill-box;
     transform-origin: bottom;
+  }
+}
+
+@keyframes bklit-bar-fade {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform-box: fill-box;
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform-box: fill-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bklit-bar-reveal,
+  .animate-bklit-bar-fade {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -257,7 +288,10 @@ html, body {
   ],
   rules: [
     ['animate-bklit-bar-reveal', {
-      animation: 'bklit-bar-reveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both',
+      animation: 'bklit-bar-reveal 1100ms cubic-bezier(0.85, 0, 0.15, 1) both',
+    }],
+    ['animate-bklit-bar-fade', {
+      animation: 'bklit-bar-fade 1100ms cubic-bezier(0.85, 0, 0.15, 1) both',
     }],
     ['chapter-shell-timeline', {
       'view-timeline-axis': 'block',

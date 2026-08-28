@@ -8,6 +8,7 @@ import type {
 } from '~~/shared/roast/contracts'
 import type { RoastReceiptPayload } from './receipt'
 import type { RoastScoringProfile } from './scoring'
+import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
 import { resolveRoastIntensityProfile } from '~~/shared/roast/intensity'
 import { requireSqlExecutor } from '../utils/db'
@@ -331,7 +332,7 @@ export async function createRoastShare(
 ): Promise<{ token: string, expiresAt: string }> {
   const sql = requireSqlExecutor(databaseUrl)
   const expiresAt = new Date(Date.now() + (input.ttlHours * 60 * 60 * 1000)).toISOString()
-  const token = `share_${crypto.randomUUID().replace(/-/g, '')}`
+  const token = `share_${randomUUID().replace(/-/g, '')}`
 
   await sql`
     INSERT INTO roast_shares (token, run_id, expires_at)

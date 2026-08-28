@@ -20,6 +20,17 @@ interface DashboardColorProfile {
   mutedClass: string
 }
 
+interface ChartPalette {
+  grid: string
+  track: string
+  hover: string
+  label: string
+  text: string
+  onBackground: string
+  onSurfaceVariant: string
+  surfaceVariant: string
+}
+
 const fixture = roastDashboardFixture
 const explorerFixture = roastDashboardExplorerFixture
 const isBarLoading = ref(true)
@@ -50,24 +61,64 @@ const colorProfiles = {
   graphiteHush: { label: 'Graphite Hush', description: 'neutral, low attention', stageClass: 'bg-[#0b0b0b]', panelClass: 'bg-[#171718]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#9d9995]' },
   basaltQuiet: { label: 'Basalt Quiet', description: 'warm structure, less contrast', stageClass: 'bg-[#0f0e0d]', panelClass: 'bg-[#1a1715]', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]' },
   explorerSoft: { label: 'Explorer Soft', description: 'warm stage, barely lifted card', stageClass: 'bg-[#131211]', panelClass: 'bg-[#1a1715]', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]' },
-  paperSnow: { label: 'Paper Snow', description: 'quiet paper, lifted card', stageClass: 'bg-[#ebe7e1]', panelClass: 'bg-[#fffdf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  bonePaper: { label: 'Bone Paper', description: 'warm canvas, soft surface', stageClass: 'bg-[#f1e4d5]', panelClass: 'bg-white', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  warmPaperSignal: { label: 'Warm Paper', description: 'soft field, one red action', stageClass: 'bg-[#e4d7c8]', panelClass: 'bg-[#fffdf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
-  whiteCloud: { label: 'White Cloud', description: 'clean canvas, quiet lift', stageClass: 'bg-[#e4e6e8]', panelClass: 'bg-white', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  paperSnow: { label: 'Paper Snow', description: 'plain white, soft slate card', stageClass: 'bg-white', panelClass: 'bg-[#dfe4e2]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
+  cloudSlate: { label: 'Cloud Slate', description: 'cool canvas, lifted slate', stageClass: 'bg-[#f7f8f8]', panelClass: 'bg-[#cfd6d7]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
+  whiteStone: { label: 'White Stone', description: 'clean canvas, mineral contrast', stageClass: 'bg-white', panelClass: 'bg-[#d0cfca]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  silverCloud: { label: 'Silver Cloud', description: 'cool white, calm separation', stageClass: 'bg-[#f5f6f7]', panelClass: 'bg-[#c7ccd1]', copyClass: 'text-[#181614]', mutedClass: 'text-[#4e4e4e]' },
+  chalkGraphite: { label: 'Chalk Graphite', description: 'chalk field, decisive card', stageClass: 'bg-[#f4f4f2]', panelClass: 'bg-[#c8c5bf]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  boneGraphite: { label: 'Bone Graphite', description: 'warm paper, grounded card', stageClass: 'bg-[#fdfcf9]', panelClass: 'bg-[#c7c0b8]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  fogWhite: { label: 'Fog White', description: 'fog canvas, lifted white card', stageClass: 'bg-[#edf0ef]', panelClass: 'bg-white', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
+  taupeWhite: { label: 'Taupe White', description: 'warm stage, quiet paper card', stageClass: 'bg-[#e8e3dd]', panelClass: 'bg-[#fffdf9]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  stoneCloud: { label: 'Stone Cloud', description: 'stone canvas, soft white card', stageClass: 'bg-[#e8e8e6]', panelClass: 'bg-[#f8f8f6]', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  paperLift: { label: 'Paper Lift', description: 'paper canvas, elevated white card', stageClass: 'bg-[#f1f0ed]', panelClass: 'bg-white', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]' },
+  slateCloud: { label: 'Slate Cloud', description: 'cool slate, crisp white card', stageClass: 'bg-[#e5e8e9]', panelClass: 'bg-[#fbfcfc]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]' },
 } satisfies Record<string, DashboardColorProfile>
 type ColorProfile = keyof typeof colorProfiles
 const activeColorProfile = ref<ColorProfile>('basalt')
+type ColorMode = 'dark' | 'light'
+const activeColorMode = ref<ColorMode>('dark')
 const colorProfileRows: ColorProfile[][] = [
   ['void', 'graphite', 'basalt', 'mauve', 'redline', 'charcoal', 'carbon', 'explorer'],
   ['voidWhisper', 'graphiteHush', 'basaltQuiet', 'explorerSoft'],
-  ['paperSnow', 'bonePaper', 'warmPaperSignal', 'whiteCloud'],
+  ['paperSnow', 'cloudSlate', 'whiteStone', 'silverCloud', 'chalkGraphite', 'boneGraphite', 'fogWhite', 'taupeWhite', 'stoneCloud', 'paperLift', 'slateCloud'],
 ]
-const colorProfileKeys = colorProfileRows.flat()
+const darkColorProfileKeys = colorProfileRows.slice(0, 2).flat()
+const lightColorProfileKeys = colorProfileRows[2]!
+const visibleColorProfileKeys = computed(() => activeColorMode.value === 'dark' ? darkColorProfileKeys : lightColorProfileKeys)
 const currentColorProfile = computed(() => colorProfiles[activeColorProfile.value])
-const currentColorProfileIndex = computed(() => colorProfileKeys.indexOf(activeColorProfile.value))
-const favoriteColorProfiles = ref<ColorProfile[]>([])
-const favoriteColorProfileDetails = computed(() => favoriteColorProfiles.value.map(profileKey => ({ key: profileKey, ...colorProfiles[profileKey] })))
-const favoritesStorageKey = 'grillme-dashboard-explorer-favorites'
+const currentColorProfileIndex = computed(() => visibleColorProfileKeys.value.indexOf(activeColorProfile.value))
+const chartPalette = computed<ChartPalette>(() => activeColorMode.value === 'dark'
+  ? {
+      grid: 'rgba(92, 93, 101, 0.28)',
+      track: '#252831',
+      hover: '#2f3035',
+      label: '#d8bfa8',
+      text: '#fcf7f0',
+      onBackground: '#fcf7f0',
+      onSurfaceVariant: '#d8bfa8',
+      surfaceVariant: '#3d3833',
+    }
+  : {
+      grid: 'rgba(92, 93, 101, 0.28)',
+      track: '#252831',
+      hover: '#2f3035',
+      label: '#4e4e4e',
+      text: '#1a211e',
+      onBackground: '#181614',
+      onSurfaceVariant: '#665d56',
+      surfaceVariant: '#d7d1cb',
+    })
+const chartStyle = computed(() => ({
+  '--color-chart-grid': chartPalette.value.grid,
+  '--color-chart-track': chartPalette.value.track,
+  '--color-chart-hover': chartPalette.value.hover,
+  '--color-on-background': chartPalette.value.onBackground,
+  '--color-on-surface-variant': chartPalette.value.onSurfaceVariant,
+  '--color-surface-variant': chartPalette.value.surfaceVariant,
+  '--chart-label': chartPalette.value.label,
+  '--chart-text': chartPalette.value.text,
+}))
+const profileRadarData = computed(() => fixture.radarProfile.data.map(item => ({ ...item })))
 let barLoadingTimer: ReturnType<typeof setTimeout> | undefined
 
 function replayBarLoading() {
@@ -81,19 +132,21 @@ function replayBarLoading() {
 }
 
 function cycleColorProfile(direction: -1 | 1) {
-  const nextIndex = (currentColorProfileIndex.value + direction + colorProfileKeys.length) % colorProfileKeys.length
-  activeColorProfile.value = colorProfileKeys[nextIndex]!
+  const profileKeys = visibleColorProfileKeys.value
+  const nextIndex = (currentColorProfileIndex.value + direction + profileKeys.length) % profileKeys.length
+  activeColorProfile.value = profileKeys[nextIndex]!
+}
+
+function setColorMode(mode: ColorMode) {
+  activeColorMode.value = mode
+  if (!visibleColorProfileKeys.value.includes(activeColorProfile.value)) {
+    activeColorProfile.value = visibleColorProfileKeys.value[0]!
+  }
 }
 
 function handleColorProfileKeydown(event: KeyboardEvent) {
   const target = event.target as HTMLElement | null
   if (target?.matches('input, textarea, select, [contenteditable="true"]')) {
-    return
-  }
-
-  if (event.key.toLowerCase() === 'l') {
-    event.preventDefault()
-    toggleFavorite()
     return
   }
 
@@ -103,37 +156,8 @@ function handleColorProfileKeydown(event: KeyboardEvent) {
   }
 }
 
-function toggleFavorite(profileKey: ColorProfile = activeColorProfile.value) {
-  favoriteColorProfiles.value = favoriteColorProfiles.value.includes(profileKey)
-    ? favoriteColorProfiles.value.filter(favoriteKey => favoriteKey !== profileKey)
-    : [...favoriteColorProfiles.value, profileKey]
-  localStorage.setItem(favoritesStorageKey, JSON.stringify(favoriteColorProfiles.value))
-}
-
-function isFavorite(profileKey: ColorProfile = activeColorProfile.value) {
-  return favoriteColorProfiles.value.includes(profileKey)
-}
-
-function loadFavorites() {
-  const storedFavorites = localStorage.getItem(favoritesStorageKey)
-  if (!storedFavorites) {
-    return
-  }
-
-  try {
-    const parsedFavorites: unknown = JSON.parse(storedFavorites)
-    if (Array.isArray(parsedFavorites)) {
-      favoriteColorProfiles.value = parsedFavorites.filter((profileKey): profileKey is ColorProfile => colorProfileKeys.includes(profileKey as ColorProfile))
-    }
-  }
-  catch {
-    localStorage.removeItem(favoritesStorageKey)
-  }
-}
-
 onMounted(() => {
   replayBarLoading()
-  loadFavorites()
   window.addEventListener('keydown', handleColorProfileKeydown)
 })
 onBeforeUnmount(() => {
@@ -148,7 +172,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
 </script>
 
 <template>
-  <div :class="[currentColorProfile.stageClass, currentColorProfile.copyClass]" class="min-h-[100dvh] overflow-x-hidden transition-colors duration-300">
+  <div :class="[currentColorProfile.stageClass, currentColorProfile.copyClass]" :style="chartStyle" class="min-h-[100dvh] overflow-x-hidden transition-colors duration-300">
     <div class="mx-auto px-5 pb-24 max-w-[1440px] sm:px-8 lg:px-12">
       <header class="py-6 flex flex-col gap-6 border-b-[1px] border-divider border-solid sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -160,6 +184,26 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
           <div class="flex gap-2 items-center">
             <div class="bg-black/20 p-1 rounded-[10px] flex gap-1 items-center border-[1px] border-white/10 border-solid">
               <button
+                :class="activeColorMode === 'dark' ? 'bg-white/15 text-current' : currentColorProfile.mutedClass"
+                class="text-[10px] tracking-[0.08em] rounded-[6px] h-8 px-3 transition-colors font-meta uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                type="button"
+                :aria-pressed="activeColorMode === 'dark'"
+                aria-label="Use dark color profiles"
+                @click="setColorMode('dark')"
+              >
+                Dark
+              </button>
+              <button
+                :class="activeColorMode === 'light' ? 'bg-white/15 text-current' : currentColorProfile.mutedClass"
+                class="text-[10px] tracking-[0.08em] rounded-[6px] h-8 px-3 transition-colors font-meta uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                type="button"
+                :aria-pressed="activeColorMode === 'light'"
+                aria-label="Use light color profiles"
+                @click="setColorMode('light')"
+              >
+                Light
+              </button>
+              <button
                 :class="currentColorProfile.mutedClass"
                 class="text-lg leading-none rounded-[6px] h-8 w-8 transition-colors hover:opacity-70 font-body focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 type="button"
@@ -170,7 +214,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               </button>
               <div :class="currentColorProfile.copyClass" class="px-2 min-w-36 text-center">
                 <p class="text-[10px] tracking-[0.08em] font-meta uppercase"><Icon v-if="activeColorProfile === 'voidWhisper'" name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}</p>
-                <p :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">{{ currentColorProfileIndex + 1 }} / {{ colorProfileKeys.length }}</p>
+                <p :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">{{ currentColorProfileIndex + 1 }} / {{ visibleColorProfileKeys.length }}</p>
               </div>
               <button
                 :class="currentColorProfile.mutedClass"
@@ -182,17 +226,6 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
                 →
               </button>
             </div>
-            <button
-              :class="isFavorite() ? 'text-primary bg-primary/12' : currentColorProfile.mutedClass"
-              class="rounded-[8px] h-10 w-10 transition-colors hover:opacity-70 flex items-center justify-center border-[1px] border-white/10 border-solid focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-              type="button"
-              :aria-pressed="isFavorite()"
-              :aria-label="isFavorite() ? 'Remove current color profile from favorites' : 'Add current color profile to favorites'"
-              title="Favorite (L)"
-              @click="toggleFavorite()"
-            >
-              <Icon name="ph:heart" class="text-lg" />
-            </button>
           </div>
           <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2 sm:text-right">{{ currentColorProfile.description }}</p>
         </fieldset>
@@ -201,7 +234,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       <div id="profile-panel" class="grid gap-4 mt-8 lg:grid-cols-12">
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-8 lg:p-8 transition-colors duration-300">
           <h2 class="text-2xl tracking-[-0.04em] font-body">Profile</h2>
-          <BklitRadarChart class="mt-4" :data="fixture.radarProfile.data" :metrics="fixture.radarProfile.metrics" :size="400" />
+          <BklitRadarChart class="mt-4" :data="profileRadarData" :metrics="fixture.radarProfile.metrics" :size="400" />
         </article>
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-4 lg:p-8 transition-colors duration-300">
           <div class="flex items-start justify-between gap-4">
@@ -215,25 +248,6 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-12 transition-colors duration-300"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-12 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change volume</h2></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayBarLoading">Replay loading</button></div><BklitBarChart class="mt-8" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'"><template #grid><BklitGrid horizontal /></template><BklitBar data-key="additions" fill="var(--color-primary-strong)" /><BklitBar data-key="deletions" fill="var(--color-primary)" /><template #x-axis><BklitBarXAxis /></template></BklitBarChart><div :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.14em] mt-5 flex gap-5 font-meta uppercase"><span><i class="rounded-full bg-primary-strong h-2 w-2 mr-2 inline-block" /> additions</span><span><i class="rounded-full bg-primary h-2 w-2 mr-2 inline-block" /> deletions</span></div></article>
       </div>
-
-      <section v-if="favoriteColorProfileDetails.length" :class="currentColorProfile.panelClass" class="rounded-[28px] p-5 mt-4 transition-colors duration-300 sm:p-6">
-        <div class="flex flex-wrap gap-3 items-baseline justify-between">
-          <h2 class="text-lg tracking-[-0.03em] font-body">Favorites</h2>
-          <span :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">{{ favoriteColorProfileDetails.length }} saved · press L to add</span>
-        </div>
-        <div class="flex flex-wrap gap-2 mt-4">
-          <button
-            v-for="favorite in favoriteColorProfileDetails"
-            :key="favorite.key"
-            :class="favorite.key === activeColorProfile ? 'bg-primary text-bone-50' : currentColorProfile.mutedClass"
-            class="text-[10px] tracking-[0.08em] rounded-[7px] px-3 py-2 border-[1px] border-current/20 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-            type="button"
-            @click="activeColorProfile = favorite.key"
-          >
-            <Icon name="ph:heart" class="mr-1.5 align-[-0.12em]" />{{ favorite.label }}
-          </button>
-        </div>
-      </section>
 
       <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] mt-8 flex flex-wrap gap-4 justify-between font-meta uppercase"><span>Grillme</span><span>Profile view</span></footer>
     </div>

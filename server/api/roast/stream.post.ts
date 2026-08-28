@@ -1,4 +1,5 @@
 import type { RoastStreamEvent } from '~~/shared/roast/contracts'
+import { randomUUID } from 'node:crypto'
 import { getRequestIP, setResponseStatus } from 'h3'
 import { parseRoastStreamRequest } from '../../roast/contracts-adapter'
 import { createDebugReport, logServerError, logServerInfo } from '../../roast/debug'
@@ -10,7 +11,7 @@ import { resolveActiveScoringProfile } from '../../roast/scoring-profile'
  * Streams roast progress events over SSE.
  */
 export default defineEventHandler(async (event) => {
-  const requestId = crypto.randomUUID().slice(0, 8)
+  const requestId = randomUUID().slice(0, 8)
 
   let parsed: Awaited<ReturnType<typeof parseRoastStreamRequest>>
   try {

@@ -20,7 +20,7 @@ const legendItems = computed(() => props.data.map(series => ({ ...series, value:
 
 <template>
   <div class="legend-container flex flex-col gap-2">
-    <h3 class="text-sm text-on-background font-semibold mb-1">{{ props.title }}</h3>
+    <h3 class="text-sm font-semibold mb-1" :style="{ color: 'var(--chart-text)' }">{{ props.title }}</h3>
     <div
       v-for="(item, index) in legendItems"
       :key="item.label"
@@ -34,8 +34,8 @@ const legendItems = computed(() => props.data.map(series => ({ ...series, value:
       @pointerleave="emit('update:hoveredIndex', null)"
     >
       <span class="rounded-full shrink-0 h-2.5 w-2.5" :style="{ backgroundColor: item.color }" aria-hidden="true" />
-      <span class="text-sm text-on-background font-body font-medium">{{ item.label }}</span>
-      <span class="text-sm text-on-surface-variant flex items-center gap-2 font-meta tabular-nums">{{ item.value.toFixed(0) }}%</span>
+      <span class="text-sm font-body font-medium" :style="{ color: 'var(--chart-text)' }">{{ item.label }}</span>
+      <span class="text-sm flex items-center gap-2 font-meta tabular-nums" :style="{ color: 'var(--chart-label)' }">{{ item.value.toFixed(0) }}%</span>
     </div>
   </div>
 </template>

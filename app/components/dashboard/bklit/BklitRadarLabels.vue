@@ -12,6 +12,6 @@ const opacityValue = (index: number) => opacityProgress[index]?.value ?? 1
 
 <template>
   <g class="bklit-radar-labels" :class="props.className">
-    <text v-for="(metric, index) in context.metrics" :key="metric.key" class="bklit-radar-label fill-on-surface-variant" :x="context.center + (context.getPoint(index, 100, context.radius + props.offset).x - context.center) * progressValue(index)" :y="context.center + (context.getPoint(index, 100, context.radius + props.offset).y - context.center) * progressValue(index)" :opacity="opacityValue(index)" :class="props.interactive ? 'transition-opacity duration-150 hover:opacity-100' : ''" :font-size="props.fontSize" font-weight="500" text-anchor="middle" dominant-baseline="middle">{{ metric.label }}</text>
+    <text v-for="(metric, index) in context.metrics" :key="metric.key" class="bklit-radar-label" :x="context.center + (context.getPoint(index, 100, context.radius + props.offset).x - context.center) * progressValue(index)" :y="context.center + (context.getPoint(index, 100, context.radius + props.offset).y - context.center) * progressValue(index)" :opacity="opacityValue(index)" :class="props.interactive ? 'transition-opacity duration-150 hover:opacity-100' : ''" :font-size="props.fontSize" font-weight="500" text-anchor="middle" dominant-baseline="middle" :style="{ fill: 'var(--chart-label)' }">{{ metric.label }}</text>
   </g>
 </template>

@@ -106,13 +106,20 @@ const allPatterns: DarkPattern[] = [
   { name: 'Graphite Hush', mood: 'neutral, low attention', stageClass: 'bg-[#0b0b0b]', contextClass: 'bg-[#111112]', cardClass: 'bg-[#171718]', stageHex: '#0b0b0b', contextHex: '#111112', cardHex: '#171718', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#9d9995]', buttonClass: 'bg-[#d9d5cf] text-[#0b0b0b]' },
   { name: 'Basalt Quiet', mood: 'warm structure, less contrast', stageClass: 'bg-[#0f0e0d]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#1a1715]', stageHex: '#0f0e0d', contextHex: '#181614', cardHex: '#1a1715', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]', buttonClass: 'bg-[#ead8c6] text-[#0f0e0d]' },
   { name: 'Explorer Soft', mood: 'warm stage, barely lifted card', stageClass: 'bg-[#131211]', contextClass: 'bg-[#181614]', cardClass: 'bg-[#1a1715]', stageHex: '#131211', contextHex: '#181614', cardHex: '#1a1715', copyClass: 'text-[#fffdf9]', mutedClass: 'text-[#cbb5a2]', buttonClass: 'bg-[#ead8c6] text-[#131211]' },
-  { name: 'Paper Snow', mood: 'quiet paper, lifted card', stageClass: 'bg-[#ebe7e1]', contextClass: 'bg-[#f5f0e9]', cardClass: 'bg-[#fffdf9]', stageHex: '#ebe7e1', contextHex: '#f5f0e9', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
-  { name: 'Bone Paper', mood: 'warm canvas, soft surface', stageClass: 'bg-[#f1e4d5]', contextClass: 'bg-[#faf2e8]', cardClass: 'bg-white', stageHex: '#f1e4d5', contextHex: '#faf2e8', cardHex: '#ffffff', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
-  { name: 'Warm Paper', mood: 'soft field, one red action', stageClass: 'bg-[#e4d7c8]', contextClass: 'bg-[#f3e9dc]', cardClass: 'bg-[#fffdf9]', stageHex: '#e4d7c8', contextHex: '#f3e9dc', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
-  { name: 'White Cloud', mood: 'clean canvas, quiet lift', stageClass: 'bg-[#e4e6e8]', contextClass: 'bg-[#f2f3f4]', cardClass: 'bg-white', stageHex: '#e4e6e8', contextHex: '#f2f3f4', cardHex: '#ffffff', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-[#fffdf9]' },
+  { name: 'Paper Snow', mood: 'plain white, soft slate card', stageClass: 'bg-white', contextClass: 'bg-[#eef1f0]', cardClass: 'bg-[#dfe4e2]', stageHex: '#ffffff', contextHex: '#eef1f0', cardHex: '#dfe4e2', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'Cloud Slate', mood: 'cool canvas, lifted slate', stageClass: 'bg-[#f7f8f8]', contextClass: 'bg-[#e8ecec]', cardClass: 'bg-[#cfd6d7]', stageHex: '#f7f8f8', contextHex: '#e8ecec', cardHex: '#cfd6d7', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'White Stone', mood: 'clean canvas, mineral contrast', stageClass: 'bg-white', contextClass: 'bg-[#f0f0ef]', cardClass: 'bg-[#d0cfca]', stageHex: '#ffffff', contextHex: '#f0f0ef', cardHex: '#d0cfca', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Silver Cloud', mood: 'cool white, calm separation', stageClass: 'bg-[#f5f6f7]', contextClass: 'bg-[#e7e9eb]', cardClass: 'bg-[#c7ccd1]', stageHex: '#f5f6f7', contextHex: '#e7e9eb', cardHex: '#c7ccd1', copyClass: 'text-[#181614]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#1a211e] text-white' },
+  { name: 'Chalk Graphite', mood: 'chalk field, decisive card', stageClass: 'bg-[#f4f4f2]', contextClass: 'bg-[#e9e8e4]', cardClass: 'bg-[#c8c5bf]', stageHex: '#f4f4f2', contextHex: '#e9e8e4', cardHex: '#c8c5bf', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Bone Graphite', mood: 'warm paper, grounded card', stageClass: 'bg-[#fdfcf9]', contextClass: 'bg-[#f1eeea]', cardClass: 'bg-[#c7c0b8]', stageHex: '#fdfcf9', contextHex: '#f1eeea', cardHex: '#c7c0b8', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Fog White', mood: 'fog canvas, lifted white card', stageClass: 'bg-[#edf0ef]', contextClass: 'bg-[#e5e9e8]', cardClass: 'bg-white', stageHex: '#edf0ef', contextHex: '#e5e9e8', cardHex: '#ffffff', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Taupe White', mood: 'warm stage, quiet paper card', stageClass: 'bg-[#e8e3dd]', contextClass: 'bg-[#eeeae5]', cardClass: 'bg-[#fffdf9]', stageHex: '#e8e3dd', contextHex: '#eeeae5', cardHex: '#fffdf9', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Stone Cloud', mood: 'stone canvas, soft white card', stageClass: 'bg-[#e8e8e6]', contextClass: 'bg-[#eeeeec]', cardClass: 'bg-[#f8f8f6]', stageHex: '#e8e8e6', contextHex: '#eeeeec', cardHex: '#f8f8f6', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Paper Lift', mood: 'paper canvas, elevated white card', stageClass: 'bg-[#f1f0ed]', contextClass: 'bg-[#f6f5f2]', cardClass: 'bg-white', stageHex: '#f1f0ed', contextHex: '#f6f5f2', cardHex: '#ffffff', copyClass: 'text-[#181614]', mutedClass: 'text-[#665d56]', buttonClass: 'bg-[#b91f2b] text-white' },
+  { name: 'Slate Cloud', mood: 'cool slate, crisp white card', stageClass: 'bg-[#e5e8e9]', contextClass: 'bg-[#edf0f0]', cardClass: 'bg-[#fbfcfc]', stageHex: '#e5e8e9', contextHex: '#edf0f0', cardHex: '#fbfcfc', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', buttonClass: 'bg-[#b91f2b] text-white' },
 ]
 
-const lightPatternNames = ['Paper Snow', 'Bone Paper', 'Warm Paper', 'White Cloud']
+const lightPatternNames = ['Paper Snow', 'Cloud Slate', 'White Stone', 'Silver Cloud', 'Chalk Graphite', 'Bone Graphite', 'Fog White', 'Taupe White', 'Stone Cloud', 'Paper Lift', 'Slate Cloud']
 const darkPatterns = allPatterns.filter(pattern => !['Black Bone Focus', 'Redline Deep', ...lightPatternNames].includes(pattern.name))
 const colorPatterns = allPatterns.filter(pattern => pattern.name === 'Redline Deep')
 const lightPatterns = allPatterns.filter(pattern => lightPatternNames.includes(pattern.name))
@@ -130,7 +137,7 @@ const patternSections: PatternSection[] = [
     patterns: colorPatterns,
   },
   {
-    label: 'Light · 4 patterns',
+    label: 'Light · 11 patterns',
     title: 'Find the right light.',
     description: 'The same stage, context, and surface logic — rebuilt entirely with light neutrals.',
     patterns: lightPatterns,

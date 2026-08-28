@@ -26,7 +26,7 @@ const centerLabel = computed(() => context.hoveredIndex.value === null
 
 <template>
   <div class="@container/chart-center size-full min-w-0 text-center flex flex-col items-center justify-center">
-    <NumberFlow :value="centerValue" class="text-on-background text-[clamp(0.75rem,22cqw,1.875rem)] font-bold tabular-nums leading-none" :will-change="true" :isolate="true" />
-    <span class="text-on-surface-variant max-w-full truncate text-[clamp(0.625rem,9cqw,0.75rem)] leading-tight">{{ centerLabel }}</span>
+    <NumberFlow :value="centerValue" class="text-[clamp(0.75rem,22cqw,1.875rem)] font-bold tabular-nums leading-none" :style="{ color: 'var(--chart-text)' }" :will-change="true" :isolate="true" />
+    <span class="max-w-full truncate text-[clamp(0.625rem,9cqw,0.75rem)] leading-tight" :style="{ color: 'var(--chart-label)' }">{{ centerLabel }}</span>
   </div>
 </template>

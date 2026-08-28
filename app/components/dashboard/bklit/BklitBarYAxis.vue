@@ -9,7 +9,7 @@ if (!context)
 </script>
 
 <template>
-  <g class="text-[10px] font-meta fill-on-surface-variant">
+  <g class="text-[10px] font-meta" :style="{ fill: 'var(--chart-label)' }">
     <template v-for="step in 5" :key="step">
       <text :x="context.plotLeft - 10" :y="context.chartHeight - context.plotBottom - (step - 1) * ((context.chartHeight - context.plotTop - context.plotBottom) / 4) + 4" text-anchor="end">
         {{ Math.round((step - 1) * 25) }}

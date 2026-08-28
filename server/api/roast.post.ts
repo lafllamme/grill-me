@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { getRequestIP, setResponseStatus } from 'h3'
 import { parseRoastRequest } from '../roast/contracts-adapter'
 import { createDebugReport, logServerError, logServerInfo } from '../roast/debug'
@@ -6,7 +7,7 @@ import { checkRateLimit } from '../roast/rate-limit'
 import { resolveActiveScoringProfile } from '../roast/scoring-profile'
 
 export default defineEventHandler(async (event) => {
-  const requestId = crypto.randomUUID().slice(0, 8)
+  const requestId = randomUUID().slice(0, 8)
 
   try {
     const parsed = await parseRoastRequest(event)
