@@ -30,21 +30,26 @@ function ringToneClass(index: number) {
 </script>
 
 <template>
-  <div class="w-full space-y-5 sm:min-w-[18rem]">
-    <h3 class="text-base text-on-background font-display">{{ props.heading }}</h3>
+  <div class="legend-container w-full flex flex-col gap-2 sm:min-w-[18rem]">
+    <h3 class="text-base text-on-background font-display mb-1">{{ props.heading }}</h3>
     <div
       v-for="(item, index) in context.data"
       :key="item.label"
-      class="-mx-3 gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto_auto] items-baseline px-3 py-2 transition-colors duration-200"
-      :class="context.hoveredIndex.value === index ? 'bg-chart-hover' : ''"
+      class="cursor-pointer rounded-none px-2 py-1.5 transition-all duration-150 ease-out gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto] items-center"
+      :class="[
+        context.hoveredIndex.value === index ? 'bg-chart-hover' : '',
+        context.hoveredIndex.value !== null && context.hoveredIndex.value !== index ? 'opacity-40' : '',
+      ]"
       @mouseenter="handleEnter(index)"
       @mouseleave="handleLeave"
     >
-      <span class="rounded-full h-2 w-2" :class="!item.color ? ringToneClass(index) : ''" :style="item.color ? { backgroundColor: item.color } : undefined" aria-hidden="true" />
-      <span class="text-sm text-on-background font-body">{{ item.label }}</span>
-      <strong class="text-sm text-on-background font-meta">{{ item.value.toLocaleString() }}</strong>
-      <span class="text-sm text-on-surface-variant font-meta">{{ Math.round((item.value / item.maxValue) * 100) }}%</span>
-      <div class="rounded-full bg-surface-container-highest h-2 col-start-2 col-end-5 overflow-hidden">
+      <span class="rounded-full shrink-0 h-2.5 w-2.5" :class="!item.color ? ringToneClass(index) : ''" :style="item.color ? { backgroundColor: item.color } : undefined" aria-hidden="true" />
+      <span class="text-sm text-on-background font-body font-medium">{{ item.label }}</span>
+      <span class="text-sm text-on-surface-variant flex items-center gap-2 font-meta tabular-nums">
+        <strong class="text-on-background">{{ item.value.toLocaleString() }}</strong>
+        <span>{{ Math.round((item.value / item.maxValue) * 100) }}%</span>
+      </span>
+      <div class="rounded-full bg-surface-container-highest h-1.5 col-span-full w-full overflow-hidden">
         <div class="rounded-full h-full" :class="!item.color ? ringToneClass(index) : ''" :style="{ width: `${Math.min((item.value / item.maxValue) * 100, 100)}%`, backgroundColor: item.color }" />
       </div>
     </div>
