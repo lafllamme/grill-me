@@ -2,12 +2,11 @@
 
 Kurze Arbeitsliste für die Charts im GrillMe-Roast-Dashboard.
 
-## Grundidee
+## Ziel
 
-Die Charts machen sichtbar, warum ein Repository den Roast verdient. Sie
-unterstützen Verdict, Profil, zeitliche Entwicklung und Commit-Evidence. Sie
-ersetzen nicht die Erklärung des Roasts und erzeugen keine unbegründeten
-Scores.
+Die Charts machen sichtbar, warum ein Repository den Roast verdient. Das
+Dashboard bleibt dabei einfach: Verdict, Profil, Evidence und erst danach
+Details. Mock-Daten sind erlaubt, müssen aber als solche erkennbar bleiben.
 
 ## Verbindliche Portierung
 
@@ -34,7 +33,7 @@ Springs, Grid und Areas den offiziellen 1100ms-Reveal-Tween. Diese Reihenfolge
 ist Teil der Portierung und darf nicht durch eine gemeinsame CSS-Animation
 ersetzt werden.
 
-## Chart-Auswahl
+## Chart-Auswahl und Quellen
 
 | Status | Chart | Dashboard-Rolle | Dokumentation | GitHub-Code | Nächster Schritt |
 | --- | --- | --- | --- | --- | --- |
@@ -60,3 +59,13 @@ ersetzt werden.
 - Der API-Vertrag bleibt unverändert.
 - Keine weiteren Charts hinzufügen, nur weil eine freie Fläche existiert.
 - Kein Chart gilt als portiert, bevor Verhalten und Darstellung im Browser geprüft wurden.
+
+## Nächster Schritt
+
+**Line Chart** ist als Nächstes vorgesehen. Vor der Umsetzung:
+
+- [ ] Dokumentation und Showcase vollständig prüfen.
+- [ ] Exakten GitHub-Entry-Point und alle Imports erfassen.
+- [ ] Passende Roast-Frage festlegen: Entwicklung eines klar benannten Signals über Zeit.
+- [ ] Mock-Dataset und spätere API-Felder getrennt dokumentieren.
+- [ ] Erst nach Browser-Abgleich in den Dashboard-Flow übernehmen.

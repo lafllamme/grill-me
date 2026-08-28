@@ -57,7 +57,7 @@ const isReady = computed(() => props.data.length > 0 && props.metrics.length > 2
 <template>
   <figure v-if="isReady" class="min-w-0" aria-label="Code profile radar chart">
     <div class="flex flex-col gap-4 items-center md:flex-row md:items-center">
-      <div class="w-full max-w-[400px] md:w-[58%]">
+      <div class="w-full max-w-[460px] md:w-[60%]">
         <svg class="h-full w-full overflow-visible" :viewBox="`0 0 ${viewBoxSize} ${viewBoxSize}`" :width="viewBoxSize" :height="viewBoxSize" role="img" aria-label="Roast profile dimensions">
           <BklitRadarGrid />
           <BklitRadarAxis />

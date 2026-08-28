@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This is the checklist for the roast dashboard's data visualisations. It keeps the
-information hierarchy, the intended roast meaning, and the Bklit porting work in
-one place while the API contract remains unchanged.
+This is the source of truth for the roast dashboard's chart work. It keeps the
+dashboard purpose, chart order, source links, and porting status in one place
+while the API contract remains unchanged.
 
-For the short implementation status, source links, and next-step checklist, see
+For the executable implementation checklist, source links, and next-step status, see
 [dashboard-chart-checklist.md](./dashboard-chart-checklist.md).
 
 Additional dashboard fields may be mocked during exploration. A chart is not
@@ -34,6 +34,18 @@ measurement, and interaction state. Port the required files and behaviours to
 Vue one-to-one before adapting the data or placing the chart in the dashboard.
 If a source behaviour is intentionally omitted, document the omission and get
 that decision before calling the chart ported.
+
+## Dashboard purpose
+
+The dashboard turns commit analysis into one fast, legible profile read:
+
+1. Verdict — what the agent concluded.
+2. Profile — the dimensions behind the conclusion.
+3. Evidence — the commits, files, and changes that support it.
+4. Detail — the places where the repository needs attention.
+
+The first implementation uses explicit mock fixtures. The API can replace those
+fixtures later without changing the chart composition or the information order.
 
 ## Dashboard hierarchy
 

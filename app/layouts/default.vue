@@ -8,6 +8,7 @@ const isDev = import.meta.dev
 const route = useRoute()
 const shouldShowGlobalChrome = computed(() => route.path !== '/' && route.path !== '/roast')
 const shouldShowGlobalNav = computed(() => shouldShowGlobalChrome.value && route.path !== '/dashboard-explorer')
+const shouldShowDevPanel = computed(() => isDev && shouldShowGlobalChrome.value && route.path !== '/dashboard-explorer')
 
 const {
   settings,
@@ -67,7 +68,7 @@ function applySettings(nextSettings: PrismGradientSettings) {
     </div>
 
     <PrismGradientDevPanel
-      v-if="isDev && shouldShowGlobalChrome"
+      v-if="shouldShowDevPanel"
       :settings="settings"
       :is-panel-open="isPanelOpen"
       :is-panel-visible="isPanelVisible"
