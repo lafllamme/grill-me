@@ -32,7 +32,7 @@ export default defineNuxtConfig({
       {
         name: 'General Sans',
         global: true,
-        preload: false,
+        preload: true,
         weight: [200, 700],
         style: 'normal',
         src: [{ url: '/fonts/fontshare/general-sans/General-Sans__Variable.woff2', format: 'woff2' }],
@@ -40,7 +40,7 @@ export default defineNuxtConfig({
       {
         name: 'Azeret Mono',
         global: true,
-        preload: false,
+        preload: true,
         weight: [100, 900],
         style: 'normal',
         src: [{ url: '/fonts/fontshare/azeret-mono/Azeret-Mono__Variable.woff2', format: 'woff2' }],

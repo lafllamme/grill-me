@@ -7,6 +7,22 @@ useHead({
   htmlAttrs: {
     lang: 'en',
   },
+  link: [
+    {
+      rel: 'preload',
+      href: '/fonts/fontshare/general-sans/General-Sans__Variable.woff2',
+      as: 'font',
+      type: 'font/woff2',
+      crossorigin: 'anonymous',
+    },
+    {
+      rel: 'preload',
+      href: '/fonts/fontshare/azeret-mono/Azeret-Mono__Variable.woff2',
+      as: 'font',
+      type: 'font/woff2',
+      crossorigin: 'anonymous',
+    },
+  ],
 })
 </script>
 
