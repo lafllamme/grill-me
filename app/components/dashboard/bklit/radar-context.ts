@@ -7,12 +7,14 @@ export interface BklitRadarContext {
   data: readonly BklitRadarData[]
   metrics: readonly BklitRadarMetric[]
   levels: number
+  animate: boolean
+  enterDurationMs: number
+  staggerScale: number
+  motionReplayKey: string
   radius: number
   center: number
   hoveredIndex: Ref<number | null>
-  activeIndex: Ref<number | null>
   setHoveredIndex: (index: number | null) => void
-  toggleActiveIndex: (index: number) => void
   getPoint: (metricIndex: number, value: number, distance?: number) => { x: number, y: number }
   pointsFor: (values: Record<string, number>, distance?: number) => string
   colorFor: (index: number) => string

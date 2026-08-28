@@ -6,6 +6,9 @@ This is the checklist for the roast dashboard's data visualisations. It keeps th
 information hierarchy, the intended roast meaning, and the Bklit porting work in
 one place while the API contract remains unchanged.
 
+For the short implementation status, source links, and next-step checklist, see
+[dashboard-chart-checklist.md](./dashboard-chart-checklist.md).
+
 Additional dashboard fields may be mocked during exploration. A chart is not
 ready for product use until its data has a clear explanation and its behaviour
 has been checked against the Bklit reference in a real browser.
@@ -47,7 +50,7 @@ unexplained scores.
 | Chart | Dashboard role | Data for MVP | Status | Next action |
 | --- | --- | --- | --- | --- |
 | Ring Chart | Compare profile dimensions | readability, testability, maintainability | Ported and visually checked | Keep as compact profile summary |
-| Radar Chart | Show the overall code profile | six mocked dimensions, normalised 0–100 | In progress | Finish visual comparison and loading state |
+| Radar Chart | Show the overall code profile | five normalized profile dimensions, 0–100 | Ported and browser-checked | Keep as the profile anchor; replace fixture values with API data later |
 | Bar Chart | Show commit/change volume | additions and deletions per commit | Ported and visually checked | Keep as evidence card |
 | Line Chart | Show change or quality trend over time | chronological commits and one or two explicit measures | Planned | Port Bklit source and choose the final metric |
 | Composed Chart | Combine volume with a trend | bars for changes, line for cumulative or quality signal | Planned | Revisit after Line Chart |
@@ -78,8 +81,8 @@ unexplained scores.
 
 1. Ring Chart — complete.
 2. Bar Chart — complete.
-3. Radar Chart — current.
-4. Line Chart — next after Radar is visually signed off.
+3. Radar Chart — complete.
+4. Line Chart — next.
 5. Composed Chart — only after the Line Chart establishes a useful trend.
 
 ## Data guardrails
