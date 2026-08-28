@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BklitRingContext, BklitRingData } from './ring-context'
-import { computed, provide, ref } from 'vue'
+import { computed, onBeforeUnmount, provide, ref } from 'vue'
 import { bklitRingContextKey, createProgressPath, createRingPaths } from './ring-context'
 
 const props = withDefaults(defineProps<{
@@ -23,6 +23,13 @@ const props = withDefaults(defineProps<{
 })
 
 const hoveredIndex = ref<number | null>(null)
+let hoverClearTimer: ReturnType<typeof setTimeout> | undefined
+
+onBeforeUnmount(() => {
+  if (hoverClearTimer) {
+    clearTimeout(hoverClearTimer)
+  }
+})
 const center = computed(() => props.size / 2)
 const designOuterRadius = computed(() => props.baseInnerRadius + Math.max(props.data.length - 1, 0) * (props.strokeWidth + props.ringGap) + props.strokeWidth)
 const geometryScale = computed(() => Math.min(1, (center.value - 8) / designOuterRadius.value))
@@ -48,10 +55,23 @@ const context: BklitRingContext = {
   endAngle: props.endAngle,
   enterStaggerScale: props.enterStaggerScale,
   setHoveredIndex: (index) => {
+    if (hoverClearTimer) {
+      clearTimeout(hoverClearTimer)
+      hoverClearTimer = undefined
+    }
     hoveredIndex.value = index
   },
   clearHoveredIndex: () => {
-    hoveredIndex.value = null
+    if (hoverClearTimer) {
+      clearTimeout(hoverClearTimer)
+    }
+
+    // Keep the active layer alive for the short gap while Motion moves the
+    // ring or the pointer crosses from a ring to its matching legend row.
+    hoverClearTimer = setTimeout(() => {
+      hoveredIndex.value = null
+      hoverClearTimer = undefined
+    }, 70)
   },
   getRingColor: index => props.data[index]?.color ?? 'currentColor',
   getRingPath: (index, lineCap = 'round') => {

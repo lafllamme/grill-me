@@ -35,7 +35,8 @@ function ringToneClass(index: number) {
     <div
       v-for="(item, index) in context.data"
       :key="item.label"
-      class="gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto_auto] items-baseline"
+      class="-mx-3 gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto_auto] items-baseline px-3 py-2 transition-colors duration-200"
+      :class="context.hoveredIndex.value === index ? 'bg-chart-hover' : ''"
       @mouseenter="handleEnter(index)"
       @mouseleave="handleLeave"
     >
