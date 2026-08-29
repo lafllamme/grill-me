@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, inject, useId } from 'vue'
 import { bklitBarContextKey } from './bar-context'
-import { useBklitSpring } from './use-bklit-spring'
 
 const props = withDefaults(defineProps<{ fadeEdges?: 'both' | 'none' | 'top' | 'bottom', fadeLength?: number }>(), { fadeEdges: 'both', fadeLength: 10 })
 const context = inject(bklitBarContextKey)
 if (!context) {
   throw new Error('BklitTooltipIndicator must be rendered inside BklitBarChart')
 }
-const x = useBklitSpring(context.tooltipX)
+const x = context.animatedTooltipX
 const gradientId = `bklit-tooltip-indicator-${useId()}`
 const stops = computed(() => {
   const fade = Math.min(40, Math.max(2, props.fadeLength))

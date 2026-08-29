@@ -1,31 +1,48 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
 import { bklitBarContextKey } from './bar-context'
 
-const props = withDefaults(defineProps<{ showAllLabels?: boolean, maxLabels?: number, tickerHalfWidth?: number }>(), { showAllLabels: false, maxLabels: 12, tickerHalfWidth: 50 })
+const props = withDefaults(defineProps<{ showAllLabels?: boolean, maxLabels?: number }>(), { showAllLabels: false, maxLabels: 12 })
 const injectedContext = inject(bklitBarContextKey)
 if (!injectedContext) {
   throw new Error('BklitBarXAxis must be rendered inside BklitBarChart')
 }
 const context = injectedContext
 
-function labelOpacity(index: number) {
-  if (context.hoveredIndex.value === index)
-    return 0
+const activeIndex = computed(() => context.hoveredIndex.value)
+const activeLabel = computed(() => {
+  const index = activeIndex.value
+  if (index === null)
+    return ''
 
+  return String(context.data[index]?.[context.xDataKey] ?? '')
+})
+
+const activeTickerWidth = computed(() => tickerWidth(activeLabel.value))
+
+function labelOpacity(index: number) {
   if (context.tooltipX.value === null)
     return 1
 
-  const distance = Math.abs(context.xAt(index) - context.tooltipX.value)
-  const fadeRadius = props.tickerHalfWidth + 20
+  const animatedX = context.animatedTooltipX.value
+  if (animatedX === null)
+    return 1
 
-  if (distance < props.tickerHalfWidth)
+  const distance = Math.abs(context.xAt(index) - animatedX)
+  const tickerHalfWidth = activeTickerWidth.value / 2
+  const fadeRadius = tickerHalfWidth + 20
+
+  if (distance < tickerHalfWidth)
     return 0
 
   if (distance < fadeRadius)
-    return (distance - props.tickerHalfWidth) / 20
+    return (distance - tickerHalfWidth) / 20
 
   return 1
+}
+
+function tickerWidth(label: string) {
+  return Math.max(72, label.length * 8 + 24)
 }
 </script>
 
@@ -38,5 +55,28 @@ function labelOpacity(index: number) {
         </text>
       </template>
     </template>
+
+    <g
+      v-if="activeIndex !== null && context.status.value === 'ready' && context.animatedTooltipX.value !== null"
+      class="pointer-events-none"
+      :transform="`translate(${context.animatedTooltipX.value}, 288)`"
+    >
+      <rect
+        :x="-activeTickerWidth / 2"
+        y="0"
+        :width="activeTickerWidth"
+        height="22"
+        rx="11"
+        fill="var(--chart-axis-badge-background, #f5f5f5)"
+      />
+      <text
+        :y="16"
+        text-anchor="middle"
+        class="font-body text-[12px] font-medium"
+        fill="var(--chart-axis-badge-foreground, #171717)"
+      >
+        {{ activeLabel }}
+      </text>
+    </g>
   </g>
 </template>

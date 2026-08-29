@@ -11,6 +11,7 @@ export interface BklitBarContext {
   animationDuration: number
   hoveredIndex: Ref<number | null>
   tooltipX: Ref<number | null>
+  animatedTooltipX: Ref<number>
   tooltipY: Ref<number | null>
   xPositions: Ref<Record<string, number>>
   yPositions: Ref<Record<string, number>>

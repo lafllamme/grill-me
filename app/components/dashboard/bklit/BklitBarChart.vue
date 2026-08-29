@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, provide, ref } from 'vue'
 import { bklitBarContextKey } from './bar-context'
 import BklitBarChartLoading from './BklitBarChartLoading.vue'
 import BklitChartTooltip from './BklitChartTooltip.vue'
+import { useBklitSpring } from './use-bklit-spring'
 
 interface BklitBarMargin {
   top: number
@@ -58,6 +59,7 @@ const plotHeight = chartHeight - plotTop - plotBottom
 const seriesColors: Record<string, string> = {}
 const seriesOrder: string[] = []
 const tooltipX = ref<number | null>(null)
+const animatedTooltipX = useBklitSpring(tooltipX)
 const tooltipY = ref<number | null>(null)
 const xPositions = ref<Record<string, number>>({})
 const yPositions = ref<Record<string, number>>({})
@@ -139,6 +141,7 @@ const context: BklitBarContext = {
   animationDuration: props.animationDuration,
   hoveredIndex,
   tooltipX,
+  animatedTooltipX,
   tooltipY,
   xPositions,
   yPositions,

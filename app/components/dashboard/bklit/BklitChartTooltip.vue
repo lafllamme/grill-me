@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { bklitBarContextKey } from './bar-context'
-import BklitDateTicker from './BklitDateTicker.vue'
 import BklitTooltipDot from './BklitTooltipDot.vue'
 import BklitTooltipIndicator from './BklitTooltipIndicator.vue'
 import { useBklitSpring } from './use-bklit-spring'
@@ -22,7 +21,7 @@ const containerWidth = ref(0)
 const containerHeight = ref(0)
 const tooltipWidth = ref(180)
 const tooltipHeight = ref(80)
-const targetX = computed(() => (context.tooltipX.value ?? 0) / context.chartWidth * containerWidth.value)
+const targetX = computed(() => context.animatedTooltipX.value / context.chartWidth * containerWidth.value)
 const targetY = computed(() => context.plotTop / context.chartHeight * containerHeight.value)
 const isFlipped = computed(() => targetX.value + tooltipWidth.value + 16 > containerWidth.value)
 const targetLeft = computed(() => isFlipped.value ? targetX.value - 16 - tooltipWidth.value : targetX.value + 16)
@@ -66,7 +65,6 @@ onBeforeUnmount(() => {
     <svg v-if="props.showDots" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
       <BklitTooltipDot v-for="key in seriesKeys" :key="key" :data-key="key" :color="context.seriesColors[key]" />
     </svg>
-    <BklitDateTicker />
     <div ref="tooltipRef" class="pointer-events-none absolute z-30 min-w-[140px] overflow-hidden rounded-lg bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="tooltipStyle">
       <div class="px-3 py-2.5">
         <p class="mb-2 text-xs font-medium">{{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}</p>
