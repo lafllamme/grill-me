@@ -61,9 +61,9 @@ const pillX = useBklitSpring(pillTarget, { stiffness: 400, damping: 35 })
 const tooltipTarget = ref<number | null>(null)
 const tooltipX = useBklitSpring(tooltipTarget, { stiffness: 100, damping: 20 })
 const highlightStartTarget = ref<number | null>(null)
-const highlightStart = useBklitSpring(highlightStartTarget, { stiffness: 220, damping: 26 })
+const highlightStart = useBklitSpring(highlightStartTarget, { stiffness: 180, damping: 28 })
 const highlightWidthTarget = ref<number | null>(null)
-const highlightWidth = useBklitSpring(highlightWidthTarget, { stiffness: 220, damping: 26 })
+const highlightWidth = useBklitSpring(highlightWidthTarget, { stiffness: 180, damping: 28 })
 const tooltipVisible = computed(() => hoveredIndex.value !== null && props.status === 'ready')
 const activeDatum = computed(() => hoveredIndex.value === null ? null : props.data[hoveredIndex.value] ?? null)
 const activeLabel = computed(() => activeDatum.value?.[props.xDataKey] ?? '')
@@ -123,11 +123,24 @@ const xLabels = computed(() => {
   const indices = Array.from({ length: targetCount }, (_, tickIndex) => Math.round(tickIndex * (props.data.length - 1) / (targetCount - 1)))
   return indices.map(index => dataLabels.value[index]).filter((item): item is { label: string, x: number } => Boolean(item))
 })
+const parsedLabels = computed(() => dataLabels.value.map((item, index) => {
+  const [month = '', day = ''] = item.label.split(' ')
+  return { month, day, index }
+}))
+const monthSegments = computed(() => parsedLabels.value.reduce<{ month: string, startIndex: number }[]>((segments, item) => {
+  if (segments.at(-1)?.month !== item.month)
+    segments.push({ month: item.month, startIndex: item.index })
+  return segments
+}, []))
+const currentMonthIndex = computed(() => {
+  const currentIndex = hoveredIndex.value ?? 0
+  return Math.max(0, monthSegments.value.findLastIndex(segment => segment.startIndex <= currentIndex))
+})
 
 function labelOpacity(x: number) {
-  if (!tooltipVisible.value || crosshairX.value === null)
+  if (!tooltipVisible.value || crosshairTarget.value === null)
     return 1
-  const distance = Math.abs(x - crosshairX.value)
+  const distance = Math.abs(x - crosshairTarget.value)
   if (distance < 50)
     return 0
   if (distance < 70)
@@ -246,7 +259,7 @@ watch(() => props.status, (status) => {
         <animate attributeName="x" :from="margin.left - 160" :to="chartWidth - margin.right" dur="2.2s" repeatCount="indefinite" />
       </rect>
       <template v-else>
-        <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" :style="{ opacity: 0.32 }" />
+        <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" :style="{ opacity: tooltipVisible ? 0.3 : 1, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
         <path v-for="series in linePaths" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
       </template>
 
@@ -263,8 +276,11 @@ watch(() => props.status, (status) => {
           <rect x="-50" y="0" width="100" height="30" rx="15" fill="var(--color-on-background)" class="shadow-lg" />
           <clipPath id="bklit-line-pill-clip"><rect x="-50" y="0" width="100" height="30" rx="15" /></clipPath>
           <g clip-path="url(#bklit-line-pill-clip)">
+            <g :style="{ transform: `translateY(${-(currentMonthIndex * 24)}px)`, transition: isReducedMotion ? 'none' : 'transform 300ms cubic-bezier(.22,1,.36,1)' }">
+              <text v-for="segment in monthSegments" :key="`pill-month-${segment.startIndex}`" x="-2" :y="20 + monthSegments.indexOf(segment) * 24" text-anchor="end" class="text-background text-[13px] font-semibold" fill="currentColor">{{ segment.month }}</text>
+            </g>
             <g :style="{ transform: `translateY(${-(hoveredIndex * 24)}px)`, transition: isReducedMotion ? 'none' : 'transform 300ms cubic-bezier(.22,1,.36,1)' }">
-              <text v-for="(item, index) in dataLabels" :key="`pill-${index}`" x="0" :y="20 + index * 24" text-anchor="middle" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.label }}</text>
+              <text v-for="item in parsedLabels" :key="`pill-day-${item.index}`" x="2" :y="20 + item.index * 24" text-anchor="start" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.day }}</text>
             </g>
           </g>
         </g>

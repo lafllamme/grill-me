@@ -14,25 +14,26 @@ export interface RoastHotspotDatum {
 }
 
 const timelineAnchors = [
-  { day: 4, commits: 2, files: 6, additions: 180 },
-  { day: 8, commits: 4, files: 11, additions: 340 },
-  { day: 12, commits: 1, files: 3, additions: 92 },
+  { day: 0, commits: 2, files: 6, additions: 180 },
+  { day: 4, commits: 4, files: 11, additions: 340 },
+  { day: 10, commits: 1, files: 3, additions: 92 },
   { day: 16, commits: 5, files: 14, additions: 410 },
-  { day: 20, commits: 3, files: 8, additions: 246 },
-  { day: 24, commits: 6, files: 18, additions: 522 },
-  { day: 28, commits: 2, files: 5, additions: 139 },
+  { day: 23, commits: 3, files: 8, additions: 246 },
+  { day: 26, commits: 6, files: 18, additions: 522 },
+  { day: 29, commits: 2, files: 5, additions: 139 },
 ] as const
 
 function createTimeline(): RoastTimelineDatum[] {
-  return Array.from({ length: 25 }, (_, index) => {
-    const day = index + 4
+  return Array.from({ length: 30 }, (_, day) => {
     const rightAnchor = timelineAnchors.find(anchor => anchor.day >= day) ?? timelineAnchors.at(-1)!
     const leftAnchor = timelineAnchors.findLast(anchor => anchor.day <= day) ?? timelineAnchors[0]
     const progress = rightAnchor.day === leftAnchor.day ? 0 : (day - leftAnchor.day) / (rightAnchor.day - leftAnchor.day)
     const interpolate = (key: 'commits' | 'files' | 'additions') => Math.round(leftAnchor[key] + (rightAnchor[key] - leftAnchor[key]) * progress)
+    const date = new Date(Date.UTC(2026, 6, 31 + day))
+    const month = date.getUTCMonth() === 6 ? 'Jul' : 'Aug'
 
     return {
-      label: `Mar ${String(day).padStart(2, '0')}`,
+      label: `${month} ${date.getUTCDate()}`,
       commits: interpolate('commits'),
       files: interpolate('files'),
       additions: interpolate('additions'),
