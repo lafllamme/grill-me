@@ -30,13 +30,17 @@ const tooltipX = useBklitSpring(targetLeft, { stiffness: 100, damping: 20 })
 const tooltipY = useBklitSpring(targetTop, { stiffness: 100, damping: 20 })
 const entranceScaleTarget = ref(0.85)
 const entranceOpacityTarget = ref(0)
+const entranceXTarget = ref(isFlipped.value ? 20 : -20)
 const entranceScale = useBklitSpring(entranceScaleTarget, { stiffness: 300, damping: 25 }, 0.85)
 const entranceOpacity = useBklitSpring(entranceOpacityTarget, { stiffness: 300, damping: 25 })
+const entranceX = useBklitSpring(entranceXTarget, { stiffness: 300, damping: 25 }, entranceXTarget.value)
 const tooltipStyle = computed(() => ({
   left: `${tooltipX.value}px`,
   top: `${tooltipY.value}px`,
   opacity: entranceOpacity.value,
-  transform: `scale(${entranceScale.value})`,
+}))
+const panelStyle = computed(() => ({
+  transform: `translateX(${entranceX.value}px) scale(${entranceScale.value})`,
   transformOrigin: isFlipped.value ? 'right top' : 'left top',
 }))
 
@@ -58,6 +62,7 @@ onMounted(() => {
   nextTick(() => {
     entranceScaleTarget.value = 1
     entranceOpacityTarget.value = 1
+    entranceXTarget.value = 0
   })
 })
 
@@ -76,27 +81,29 @@ onBeforeUnmount(() => {
     <svg v-if="props.showDots" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
       <BklitTooltipDot v-for="key in seriesKeys" :key="key" :data-key="key" :color="context.seriesColors[key]" />
     </svg>
-    <div ref="tooltipRef" class="pointer-events-none absolute z-50 min-w-[140px] overflow-hidden rounded-[8px] bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="tooltipStyle">
-      <div class="px-3 py-2.5">
-        <p class="mb-2 text-xs font-medium">{{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}</p>
-        <div class="space-y-1.5">
-          <div v-for="key in seriesKeys" :key="key" class="flex items-center justify-between gap-4 text-sm">
-            <span class="flex min-w-0 items-center gap-2 text-on-surface-variant">
-              <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-surface-variant)' }" />
-              <span>{{ key }}</span>
-            </span>
-            <Transition
-              :key="`${key}-${context.hoveredIndex.value}`"
-              mode="out-in"
-              enter-active-class="transition duration-200 ease-out"
-              enter-from-class="translate-y-2 opacity-0"
-              enter-to-class="translate-y-0 opacity-100"
-              leave-active-class="transition duration-150 ease-in"
-              leave-from-class="translate-y-0 opacity-100"
-              leave-to-class="-translate-y-2 opacity-0"
-            >
-              <strong class="shrink-0 tabular-nums text-on-background font-medium" :key="Number(context.data[context.hoveredIndex.value]?.[key] ?? 0)">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
-            </Transition>
+    <div ref="tooltipRef" class="pointer-events-none absolute z-50" :style="tooltipStyle">
+      <div class="min-w-[140px] overflow-hidden rounded-none bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="panelStyle">
+        <div class="px-3 py-2.5">
+          <p class="mb-2 text-xs font-medium">{{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}</p>
+          <div class="flex flex-col gap-1.5">
+            <div v-for="key in seriesKeys" :key="key" class="flex items-center justify-between gap-4 text-sm">
+              <span class="flex min-w-0 items-center gap-2 text-on-surface-variant/70">
+                <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-surface-variant)' }" />
+                <span>{{ key }}</span>
+              </span>
+              <Transition
+                :key="`${key}-${context.hoveredIndex.value}`"
+                mode="out-in"
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="translate-y-2 opacity-0"
+                enter-to-class="translate-y-0 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="translate-y-0 opacity-100"
+                leave-to-class="-translate-y-2 opacity-0"
+              >
+                <strong class="shrink-0 tabular-nums text-on-background font-medium" :key="Number(context.data[context.hoveredIndex.value]?.[key] ?? 0)">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
+              </Transition>
+            </div>
           </div>
         </div>
       </div>
