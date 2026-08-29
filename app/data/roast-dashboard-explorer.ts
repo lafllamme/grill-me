@@ -13,31 +13,27 @@ export interface RoastHotspotDatum {
   tone: 'critical' | 'watch' | 'stable'
 }
 
-const timelineAnchors = [
-  { day: 0, commits: 2, files: 6, additions: 180 },
-  { day: 4, commits: 4, files: 11, additions: 340 },
-  { day: 10, commits: 1, files: 3, additions: 92 },
-  { day: 16, commits: 5, files: 14, additions: 410 },
-  { day: 23, commits: 3, files: 8, additions: 246 },
-  { day: 26, commits: 6, files: 18, additions: 522 },
-  { day: 29, commits: 2, files: 5, additions: 139 },
-] as const
-
 function createTimeline(): RoastTimelineDatum[] {
+  const noise = (seed: number, amplitude: number) => {
+    const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
+    return (value - Math.floor(value)) * amplitude
+  }
+
   return Array.from({ length: 30 }, (_, day) => {
-    const rightAnchor = timelineAnchors.find(anchor => anchor.day >= day) ?? timelineAnchors.at(-1)!
-    const leftAnchor = timelineAnchors.findLast(anchor => anchor.day <= day) ?? timelineAnchors[0]
-    const progress = rightAnchor.day === leftAnchor.day ? 0 : (day - leftAnchor.day) / (rightAnchor.day - leftAnchor.day)
-    const interpolate = (key: 'commits' | 'files' | 'additions') => Math.round(leftAnchor[key] + (rightAnchor[key] - leftAnchor[key]) * progress)
     const date = new Date(Date.UTC(2026, 6, 31 + day))
+    // Keep the fixture deterministic while following Bklit's wavy sine/noise shape.
+    const referenceIndex = 29 - day
+    const additions = Math.round(Math.max(0, 300 + Math.sin(referenceIndex * 0.4) * 75 + noise(referenceIndex + 1, 50) - 25 + day * 2))
+    const files = Math.round(Math.max(1, 9 + Math.sin(referenceIndex * 0.35) * 1.8 + noise(referenceIndex + 101, 2.5) - 1.25 + day * 0.12))
+    const commits = Math.round(Math.max(1, 3 + Math.sin(referenceIndex * 0.42 + 0.5) * 1.2 + noise(referenceIndex + 201, 1.4) - 0.7))
     const month = date.getUTCMonth() === 6 ? 'Jul' : 'Aug'
 
     return {
       label: `${month} ${date.getUTCDate()}`,
       date: date.getTime(),
-      commits: interpolate('commits'),
-      files: interpolate('files'),
-      additions: interpolate('additions'),
+      commits,
+      files,
+      additions,
     }
   })
 }

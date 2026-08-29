@@ -136,11 +136,19 @@ function xAt(index: number) {
   return margin.value.left + (((times[index] ?? domainStart) - domainStart) / span) * plotWidth.value
 }
 
-const maxValue = computed(() => Math.max(1, ...props.data.flatMap(datum => props.series.map(series => Number(datum[series.dataKey]) || 0))))
-const yAt = (value: number) => margin.value.top + plotHeight.value - (value / maxValue.value) * plotHeight.value * 0.9
-const pointsFor = (series: BklitLineSeries) => props.data.map((datum, index) => ({ x: xAt(index), y: yAt(Number(datum[series.dataKey]) || 0) }))
+const maxValueFor = (series: BklitLineSeries) => Math.max(1, ...props.data.map(datum => Number(datum[series.dataKey]) || 0))
+function yAt(series: BklitLineSeries, value: number, seriesIndex: number) {
+  const normalizedValue = value / maxValueFor(series)
+  const bandTop = seriesIndex === 0 ? 0.18 : 0.7
+  const bandHeight = seriesIndex === 0 ? 0.42 : 0.2
+  return margin.value.top + plotHeight.value * (bandTop + (1 - normalizedValue) * bandHeight)
+}
+const pointsFor = (series: BklitLineSeries, seriesIndex: number) => props.data.map((datum, index) => ({ x: xAt(index), y: yAt(series, Number(datum[series.dataKey]) || 0, seriesIndex) }))
 const pathFor = (points: ChartPoint[]) => d3Line<ChartPoint>().curve(curveNatural).x(point => point.x).y(point => point.y)(points) ?? ''
-const linePaths = computed(() => props.series.map(series => ({ ...series, points: pointsFor(series), path: pathFor(pointsFor(series)) })))
+const linePaths = computed(() => props.series.map((series, seriesIndex) => {
+  const points = pointsFor(series, seriesIndex)
+  return { ...series, points, path: pathFor(points) }
+}))
 // Bklit's loading pulse is intentionally independent from the chart dataset.
 // The reference uses a deterministic seven-point skeleton so the travelling
 // segment remains legible instead of reproducing every loaded data point.
