@@ -135,7 +135,7 @@ function replayLineLoading() {
   }
   lineLoadingTimer = setTimeout(() => {
     isLineLoading.value = false
-  }, 1400)
+  }, 3700)
 }
 
 function setColorMode(mode: ColorMode) {

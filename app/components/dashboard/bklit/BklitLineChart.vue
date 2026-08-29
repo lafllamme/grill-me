@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue'
 import { usePreferredReducedMotion } from '@vueuse/core'
 import { curveNatural, line as d3Line } from 'd3-shape'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useBklitSpring } from './use-bklit-spring'
 
 export interface BklitLineDatum {
@@ -37,6 +38,10 @@ const props = withDefaults(defineProps<{
   margin: () => ({ top: 40, right: 40, bottom: 40, left: 40 }),
 })
 
+const LOADING_GRID_DELAY_MS = 750
+const LOADING_LINE_DELAY_MS = 1650
+const LOADING_CYCLE_MS = 2480
+
 const chartWidth = 640
 const chartHeight = 320
 const margin = computed(() => ({
@@ -56,8 +61,11 @@ const loadingGridFrame = ref<number | null>(null)
 const loadingLineStartedAt = ref<number | null>(null)
 const loadingLineDelayStartedAt = ref<number | null>(null)
 const loadingGridStartedAt = ref<number | null>(null)
+const loadingGridDelayStartedAt = ref<number | null>(null)
 const loadingLineProgress = ref(0)
 const loadingGridProgress = ref(0)
+const loadingLabelCharacterRefs = ref<HTMLElement[]>([])
+const loadingLabelAnimations: Animation[] = []
 const pendingIndex = ref<number | null>(null)
 const revealTarget = ref(props.status === 'ready' ? 1 : 0)
 const revealProgress = useBklitSpring(revealTarget, { stiffness: 170, damping: 28 })
@@ -122,7 +130,7 @@ const skeletonPoints = computed<ChartPoint[]>(() => Array.from({ length: 7 }, (_
 })))
 const skeletonPath = computed(() => pathFor(skeletonPoints.value))
 const loadingPulseProgress = computed(() => {
-  const elapsed = loadingLineProgress.value * 2480
+  const elapsed = loadingLineProgress.value * LOADING_CYCLE_MS
   return elapsed >= 2200 ? 1 : elapsed / 2200
 })
 const loadingClipX = computed(() => {
@@ -138,7 +146,7 @@ const loadingClipWidth = computed(() => {
   return (1 - (progress - 0.5) / 0.5) * (plotWidth.value + 20)
 })
 const loadingGridX = computed(() => {
-  const elapsed = loadingGridProgress.value * 2480
+  const elapsed = loadingGridProgress.value * LOADING_CYCLE_MS
   const progress = elapsed >= 2200 ? 1 : elapsed / 2200
   return -140 + progress * (plotWidth.value + 280)
 })
@@ -146,6 +154,7 @@ const dataLabels = computed(() => props.data.map((datum, index) => ({
   label: String(datum[props.xDataKey]),
   x: xAt(index),
 })))
+const loadingLabelCharacters = computed(() => Array.from(props.loadingLabel))
 const xLabels = computed(() => {
   const targetCount = Math.min(5, props.data.length)
   if (targetCount <= 1)
@@ -247,13 +256,13 @@ function updateLoadingLine(timestamp: number) {
   }
 
   loadingLineDelayStartedAt.value ??= timestamp
-  if (timestamp - loadingLineDelayStartedAt.value < 280) {
+  if (timestamp - loadingLineDelayStartedAt.value < LOADING_LINE_DELAY_MS) {
     loadingLineProgress.value = 0
     loadingLineFrame.value = requestAnimationFrame(updateLoadingLine)
     return
   }
   loadingLineStartedAt.value ??= timestamp
-  loadingLineProgress.value = ((timestamp - loadingLineStartedAt.value) % 2480) / 2480
+  loadingLineProgress.value = ((timestamp - loadingLineStartedAt.value) % LOADING_CYCLE_MS) / LOADING_CYCLE_MS
   loadingLineFrame.value = requestAnimationFrame(updateLoadingLine)
 }
 
@@ -263,9 +272,52 @@ function updateLoadingGrid(timestamp: number) {
     return
   }
 
+  loadingGridDelayStartedAt.value ??= timestamp
+  if (timestamp - loadingGridDelayStartedAt.value < LOADING_GRID_DELAY_MS) {
+    loadingGridProgress.value = 0
+    loadingGridFrame.value = requestAnimationFrame(updateLoadingGrid)
+    return
+  }
   loadingGridStartedAt.value ??= timestamp
-  loadingGridProgress.value = ((timestamp - loadingGridStartedAt.value) % 2480) / 2480
+  loadingGridProgress.value = ((timestamp - loadingGridStartedAt.value) % LOADING_CYCLE_MS) / LOADING_CYCLE_MS
   loadingGridFrame.value = requestAnimationFrame(updateLoadingGrid)
+}
+
+function stopLoadingLabelShimmer() {
+  for (const animation of loadingLabelAnimations)
+    animation.cancel()
+  loadingLabelAnimations.length = 0
+}
+
+function setLoadingLabelCharacterRef(element: Element | ComponentPublicInstance | null, index: number) {
+  if (element && typeof (element as Element).animate === 'function')
+    loadingLabelCharacterRefs.value[index] = element as HTMLElement
+}
+
+async function startLoadingLabelShimmer() {
+  stopLoadingLabelShimmer()
+  if (props.status !== 'loading' || isReducedMotion.value || typeof Element === 'undefined' || typeof Element.prototype.animate !== 'function')
+    return
+
+  await nextTick()
+  const duration = 1000
+  const repeatDelay = loadingLabelCharacters.value.length * 50
+  const totalCycle = duration + repeatDelay
+  for (const [index, element] of loadingLabelCharacterRefs.value.entries()) {
+    const animation = element.animate([
+      { color: 'var(--color-on-surface-variant)' },
+      { color: 'var(--color-on-background)', offset: duration / totalCycle / 2 },
+      { color: 'var(--color-on-surface-variant)', offset: duration / totalCycle },
+      { color: 'var(--color-on-surface-variant)' },
+    ], {
+      delay: index * duration / loadingLabelCharacters.value.length,
+      duration: totalCycle,
+      easing: 'ease-in-out',
+      iterations: Number.POSITIVE_INFINITY,
+      fill: 'both',
+    })
+    loadingLabelAnimations.push(animation)
+  }
 }
 
 function startLoadingAnimation() {
@@ -282,6 +334,7 @@ onMounted(() => {
     revealTarget.value = 1
   else replayReveal()
   startLoadingAnimation()
+  startLoadingLabelShimmer()
 })
 onBeforeUnmount(() => {
   if (pointerFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
@@ -292,6 +345,7 @@ onBeforeUnmount(() => {
     if (loadingGridFrame.value !== null)
       cancelAnimationFrame(loadingGridFrame.value)
   }
+  stopLoadingLabelShimmer()
 })
 
 watch(() => props.status, (status) => {
@@ -302,7 +356,9 @@ watch(() => props.status, (status) => {
     loadingLineStartedAt.value = null
     loadingLineDelayStartedAt.value = null
     loadingGridStartedAt.value = null
+    loadingGridDelayStartedAt.value = null
     startLoadingAnimation()
+    startLoadingLabelShimmer()
   }
   else if (typeof cancelAnimationFrame !== 'undefined') {
     if (loadingLineFrame.value !== null)
@@ -311,7 +367,13 @@ watch(() => props.status, (status) => {
       cancelAnimationFrame(loadingGridFrame.value)
     loadingLineFrame.value = null
     loadingGridFrame.value = null
+    stopLoadingLabelShimmer()
   }
+})
+
+watch(isReducedMotion, () => {
+  if (props.status === 'loading')
+    startLoadingLabelShimmer()
 })
 </script>
 
@@ -401,7 +463,10 @@ watch(() => props.status, (status) => {
       leave-to-class="opacity-0"
     >
       <div v-if="status === 'loading'" class="flex pointer-events-none items-center inset-0 justify-center absolute" role="status" aria-live="polite">
-        <span class="text-sm text-on-surface-variant/70 tracking-wide animate-pulse">{{ loadingLabel }}</span>
+        <span class="inline-flex select-none items-center leading-none text-sm text-on-surface-variant tracking-wide font-medium" aria-hidden="true">
+          <span v-for="(character, index) in loadingLabelCharacters" :key="`${character}-${index}`" :ref="element => setLoadingLabelCharacterRef(element, index)" class="inline-block whitespace-pre leading-none">{{ character }}</span>
+        </span>
+        <span class="sr-only">{{ loadingLabel }}</span>
       </div>
     </Transition>
 
