@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import NumberFlow from '@number-flow/vue'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BklitGaugeNotch from './BklitGaugeNotch.vue'
 
 const props = withDefaults(defineProps<{
@@ -32,6 +32,36 @@ const props = withDefaults(defineProps<{
   inactiveFill: 'var(--color-chart-track)',
   activeFillOpacity: 1,
   inactiveFillOpacity: 0.8,
+})
+
+const displayedCenterValue = ref(props.centerValue ?? 0)
+let hasStartedCenterEntrance = false
+let outerFrame = 0
+let innerFrame = 0
+
+onMounted(() => {
+  if (props.centerValue === undefined) {
+    return
+  }
+
+  displayedCenterValue.value = 0
+  outerFrame = requestAnimationFrame(() => {
+    innerFrame = requestAnimationFrame(() => {
+      displayedCenterValue.value = props.centerValue ?? 0
+      hasStartedCenterEntrance = true
+    })
+  })
+})
+
+watch(() => props.centerValue, (value) => {
+  if (value !== undefined && hasStartedCenterEntrance) {
+    displayedCenterValue.value = value
+  }
+})
+
+onBeforeUnmount(() => {
+  cancelAnimationFrame(outerFrame)
+  cancelAnimationFrame(innerFrame)
 })
 
 const clampedValue = computed(() => Math.min(100, Math.max(0, props.value)))
@@ -106,8 +136,8 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
       </g>
     </svg>
     <div v-if="centerValue !== undefined" class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-[8%] text-center">
-      <NumberFlow :value="centerValue" class="text-[clamp(1.5rem,8vw,3rem)] font-bold tabular-nums leading-none" :style="{ color: 'var(--chart-text)' }" :will-change="true" :isolate="true" />
-      <span class="mt-1 text-[clamp(0.625rem,2.5vw,0.75rem)] leading-tight" :style="{ color: 'var(--chart-label)' }">{{ defaultLabel }}</span>
+      <NumberFlow :value="displayedCenterValue" class="text-[clamp(1.5rem,8vw,3rem)] font-bold tabular-nums leading-none" :style="{ color: 'var(--chart-text)' }" :will-change="true" :isolate="true" />
+      <span class="mt-0.5 text-[clamp(0.625rem,2.5vw,0.75rem)] leading-tight" :style="{ color: 'var(--chart-label)' }">{{ defaultLabel }}</span>
     </div>
   </div>
 </template>
