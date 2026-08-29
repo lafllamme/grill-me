@@ -47,9 +47,9 @@ const props = withDefaults(defineProps<{
   margin: () => ({ top: 40, right: 40, bottom: 40, left: 40 }),
 })
 
-const LOADING_GRID_DELAY_MS = 750
-const LOADING_LINE_DELAY_MS = 1650
-const LOADING_CYCLE_MS = 2480
+const LOADING_GRID_DELAY_MS = 200
+const LOADING_LINE_DELAY_MS = 1200
+const LOADING_CYCLE_MS = 1900
 
 const chartWidth = 640
 const chartHeight = 320
@@ -82,6 +82,10 @@ const crosshairTarget = ref<number | null>(null)
 const crosshairX = useBklitSpring(crosshairTarget, { stiffness: 300, damping: 30 })
 const pillTarget = ref<number | null>(null)
 const pillX = useBklitSpring(pillTarget, { stiffness: 400, damping: 35 })
+const pillMonthTarget = ref(0)
+const pillMonthY = useBklitSpring(pillMonthTarget, { stiffness: 400, damping: 35 })
+const pillDayTarget = ref(0)
+const pillDayY = useBklitSpring(pillDayTarget, { stiffness: 400, damping: 35 })
 const tooltipTarget = ref<number | null>(null)
 const tooltipX = useBklitSpring(tooltipTarget, { stiffness: 100, damping: 20 })
 const highlightStartTarget = ref<number | null>(null)
@@ -218,6 +222,8 @@ function labelOpacity(x: number) {
 
 function setHover(index: number) {
   hoveredIndex.value = index
+  pillDayTarget.value = index * 24
+  pillMonthTarget.value = currentMonthIndex.value * 24
   const x = xAt(index)
   const xPercent = x / chartWidth * 100
   crosshairTarget.value = x
@@ -259,6 +265,8 @@ function clearHover() {
   pointerFrame.value = null
   pendingIndex.value = null
   hoveredIndex.value = null
+  pillMonthTarget.value = 0
+  pillDayTarget.value = 0
   crosshairTarget.value = null
   pillTarget.value = null
   tooltipTarget.value = null
@@ -417,8 +425,17 @@ watch(isReducedMotion, () => {
           <stop offset="90%" stop-color="white" stop-opacity="1" />
           <stop offset="100%" stop-color="white" stop-opacity="0" />
         </linearGradient>
+        <linearGradient id="bklit-line-series-fade" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="white" stop-opacity="0" />
+          <stop offset="15%" stop-color="white" stop-opacity="1" />
+          <stop offset="85%" stop-color="white" stop-opacity="1" />
+          <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
         <mask id="bklit-line-grid-mask" maskUnits="userSpaceOnUse">
           <rect :x="margin.left" :y="margin.top" :width="plotWidth" :height="plotHeight" fill="url(#bklit-line-grid-fade)" />
+        </mask>
+        <mask id="bklit-line-series-mask" maskUnits="userSpaceOnUse">
+          <rect :x="margin.left" :y="margin.top" :width="plotWidth" :height="plotHeight" fill="url(#bklit-line-series-fade)" />
         </mask>
         <linearGradient id="bklit-line-grid-shimmer" gradientUnits="userSpaceOnUse" x1="0" x2="140" y1="0" y2="0" :gradientTransform="`translate(${loadingGridX} 0)`">
           <stop offset="0%" stop-color="var(--color-on-background)" stop-opacity="0" />
@@ -462,8 +479,8 @@ watch(isReducedMotion, () => {
       <path v-if="status === 'loading' && !isReducedMotion" :d="skeletonPath" fill="none" stroke="url(#bklit-line-loading-fade)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" clip-path="url(#bklit-line-loading-pulse-clip)" />
       <path v-else-if="status === 'loading'" :d="skeletonPath" fill="none" stroke="var(--color-on-background)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" />
       <template v-else>
-        <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" :style="{ opacity: tooltipVisible ? 0.3 : 1, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
-        <path v-for="series in linePaths" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
+        <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" mask="url(#bklit-line-series-mask)" :style="{ opacity: tooltipVisible ? 0.3 : 1, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
+        <path v-for="series in linePaths" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" mask="url(#bklit-line-series-mask)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
       </template>
 
       <line v-if="tooltipVisible" :x1="crosshairX" :x2="crosshairX" :y1="margin.top" :y2="chartHeight - margin.bottom" stroke="var(--color-on-background)" stroke-width="1" opacity="0.9" />
@@ -481,10 +498,10 @@ watch(isReducedMotion, () => {
           <rect x="-50" y="0" width="100" height="30" rx="15" fill="var(--color-on-background)" class="shadow-lg" />
           <clipPath id="bklit-line-pill-clip"><rect x="-50" y="0" width="100" height="30" rx="15" /></clipPath>
           <g clip-path="url(#bklit-line-pill-clip)">
-            <g :style="{ transform: `translateY(${-(currentMonthIndex * 24)}px)`, transition: isReducedMotion ? 'none' : 'transform 300ms cubic-bezier(.22,1,.36,1)' }">
+            <g :style="{ transform: `translateY(${-(isReducedMotion ? currentMonthIndex * 24 : pillMonthY)}px)` }">
               <text v-for="segment in monthSegments" :key="`pill-month-${segment.startIndex}`" x="-2" :y="20 + monthSegments.indexOf(segment) * 24" text-anchor="end" class="text-background text-[13px] font-semibold" fill="currentColor">{{ segment.month }}</text>
             </g>
-            <g :style="{ transform: `translateY(${-(hoveredIndex * 24)}px)`, transition: isReducedMotion ? 'none' : 'transform 300ms cubic-bezier(.22,1,.36,1)' }">
+            <g :style="{ transform: `translateY(${-(isReducedMotion ? hoveredIndex * 24 : pillDayY)}px)` }">
               <text v-for="item in parsedLabels" :key="`pill-day-${item.index}`" x="2" :y="20 + item.index * 24" text-anchor="start" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.day }}</text>
             </g>
           </g>
@@ -501,7 +518,7 @@ watch(isReducedMotion, () => {
       leave-to-class="opacity-0"
     >
       <div v-if="status === 'loading'" class="flex pointer-events-none items-center inset-0 justify-center absolute" role="status" aria-live="polite">
-        <span class="inline-flex select-none items-center leading-none text-sm text-on-surface-variant tracking-wide font-medium" aria-hidden="true">
+        <span v-if="loadingLabel" class="inline-flex select-none items-center leading-none text-sm text-on-surface-variant tracking-wide font-medium" aria-hidden="true">
           <span v-for="(character, index) in loadingLabelCharacters" :key="`${character}-${index}`" :ref="element => setLoadingLabelCharacterRef(element, index)" class="inline-block whitespace-pre leading-none">{{ character }}</span>
         </span>
         <span class="sr-only">{{ loadingLabel }}</span>
