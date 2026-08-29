@@ -8,7 +8,7 @@ const durationFactor = context.enterDurationMs / 1100
 const gridStagger = 0.08 * context.staggerScale * durationFactor
 const labelDelay = context.levels * gridStagger * 0.5
 const progress = Array.from({ length: context.levels }, (_, index) => useBklitEnter(context.animate, index * gridStagger, `${context.motionReplayKey}-grid-${index}`, { type: 'spring', stiffness: 100, damping: 15, mass: 1 }))
-const labelProgress = Array.from({ length: context.levels }, (_, index) => useBklitEnter(context.animate, labelDelay + index * 0.06 * durationFactor, `${context.motionReplayKey}-grid-label-${index}`, { type: 'tween', durationSeconds: 0.5 }))
+const labelProgress = Array.from({ length: context.levels }, (_, index) => useBklitEnter(context.animate, labelDelay + index * 0.06 * durationFactor, `${context.motionReplayKey}-grid-label-${index}`, context.enterTransition))
 const progressValue = (index: number) => progress[index]?.value ?? 1
 const labelProgressValue = (index: number) => labelProgress[index]?.value ?? 1
 
