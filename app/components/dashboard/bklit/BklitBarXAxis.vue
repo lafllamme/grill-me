@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, useId } from 'vue'
 import { bklitBarContextKey } from './bar-context'
+import { useBklitSpring } from './use-bklit-spring'
 
 const props = withDefaults(defineProps<{ showAllLabels?: boolean, maxLabels?: number }>(), { showAllLabels: false, maxLabels: 12 })
 const injectedContext = inject(bklitBarContextKey)
@@ -9,16 +10,15 @@ if (!injectedContext) {
 }
 const context = injectedContext
 
+const tickerHalfWidth = 50
 const activeIndex = computed(() => context.hoveredIndex.value)
 const activeLabel = computed(() => {
   const index = activeIndex.value
-  if (index === null)
-    return ''
-
-  return String(context.data[index]?.[context.xDataKey] ?? '')
+  return index === null ? '' : String(context.data[index]?.[context.xDataKey] ?? '')
 })
-
-const activeTickerWidth = computed(() => tickerWidth(activeLabel.value))
+const activeTickerWidth = computed(() => Math.max(84, activeLabel.value.length * 8.5 + 28))
+const tickerY = useBklitSpring(computed(() => activeIndex.value === null ? 0 : -(activeIndex.value * 24)), { stiffness: 400, damping: 35 })
+const tickerClipId = `bklit-bar-ticker-${useId()}`
 
 function labelOpacity(index: number) {
   if (context.tooltipX.value === null)
@@ -29,7 +29,6 @@ function labelOpacity(index: number) {
     return 1
 
   const distance = Math.abs(context.xAt(index) - animatedX)
-  const tickerHalfWidth = activeTickerWidth.value / 2
   const fadeRadius = tickerHalfWidth + 20
 
   if (distance < tickerHalfWidth)
@@ -39,10 +38,6 @@ function labelOpacity(index: number) {
     return (distance - tickerHalfWidth) / 20
 
   return 1
-}
-
-function tickerWidth(label: string) {
-  return Math.max(84, label.length * 8.5 + 28)
 }
 </script>
 
@@ -55,12 +50,16 @@ function tickerWidth(label: string) {
         </text>
       </template>
     </template>
-
     <g
       v-if="activeIndex !== null && context.status.value === 'ready' && context.animatedTooltipX.value !== null"
       class="pointer-events-none"
       :transform="`translate(${context.animatedTooltipX.value}, 284)`"
     >
+      <defs>
+        <clipPath :id="tickerClipId">
+          <rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="30" rx="15" />
+        </clipPath>
+      </defs>
       <rect
         :x="-activeTickerWidth / 2"
         y="0"
@@ -69,14 +68,20 @@ function tickerWidth(label: string) {
         rx="15"
         fill="var(--chart-axis-badge-background, #f5f5f5)"
       />
-      <text
-        :y="20"
-        text-anchor="middle"
-        class="font-body text-[13px] font-semibold"
-        fill="var(--chart-axis-badge-foreground, #171717)"
-      >
-        {{ activeLabel }}
-      </text>
+      <g :clip-path="`url(#${tickerClipId})`">
+        <g :transform="`translate(0, ${tickerY})`">
+          <text
+            v-for="(item, index) in context.data"
+            :key="`${item[context.xDataKey]}-${index}`"
+            :y="20 + index * 24"
+            text-anchor="middle"
+            class="font-body text-[13px] font-semibold"
+            fill="var(--chart-axis-badge-foreground, #171717)"
+          >
+            {{ item[context.xDataKey] }}
+          </text>
+        </g>
+      </g>
     </g>
   </g>
 </template>
