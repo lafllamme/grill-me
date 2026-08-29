@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BklitRadarData, BklitRadarMetric } from './radar-context'
+import type { BklitRadarData, BklitRadarMetric, BklitRadarTransition } from './radar-context'
 import { computed, ref } from 'vue'
 import BklitRadarArea from './BklitRadarArea.vue'
 import BklitRadarAxis from './BklitRadarAxis.vue'
@@ -17,9 +17,11 @@ const props = withDefaults(defineProps<{
   animate?: boolean
   enterDurationMs?: number
   staggerScale?: number
+  enterTransition?: BklitRadarTransition
   motionReplayKey?: string
   hoveredIndex?: number | null
-}>(), { levels: 5, margin: 60, animate: true, enterDurationMs: 1100, staggerScale: 1, motionReplayKey: '', hoveredIndex: undefined })
+  className?: string
+}>(), { levels: 5, margin: 60, animate: true, enterDurationMs: 1100, staggerScale: 1, enterTransition: undefined, motionReplayKey: '', hoveredIndex: undefined, className: '' })
 const emit = defineEmits<{ 'update:hoveredIndex': [index: number | null] }>()
 const hoveredIndex = ref<number | null>(null)
 const viewBoxSize = computed(() => props.size ?? 400)
@@ -50,15 +52,17 @@ function setHoveredIndex(index: number | null) {
   emit('update:hoveredIndex', index)
 }
 
-provideBklitRadarContext({ data: props.data, metrics: props.metrics, levels: props.levels, animate: props.animate, enterDurationMs: props.enterDurationMs, staggerScale: props.staggerScale, motionReplayKey: props.motionReplayKey, radius: radius.value, center: center.value, hoveredIndex: currentHoveredIndex, setHoveredIndex, getPoint, pointsFor, colorFor })
+const enterTransition = computed(() => props.enterTransition ?? { type: 'tween' as const, durationSeconds: props.enterDurationMs / 1000, ease: [0.85, 0, 0.15, 1] as [number, number, number, number] })
+
+provideBklitRadarContext({ data: props.data, metrics: props.metrics, levels: props.levels, animate: props.animate, enterDurationMs: props.enterDurationMs, staggerScale: props.staggerScale, enterTransition: enterTransition.value, motionReplayKey: props.motionReplayKey, radius: radius.value, center: center.value, hoveredIndex: currentHoveredIndex, setHoveredIndex, getPoint, pointsFor, colorFor })
 const isReady = computed(() => props.data.length > 0 && props.metrics.length > 2)
 </script>
 
 <template>
-  <figure v-if="isReady" class="min-w-0" aria-label="Code profile radar chart">
+  <figure v-if="isReady" class="min-w-0" :class="props.className" aria-label="Code profile radar chart">
     <div class="flex flex-col gap-4 items-center md:flex-row md:items-center">
-      <div class="w-full max-w-[460px] md:w-[60%]">
-        <svg class="h-full w-full overflow-visible" :viewBox="`0 0 ${viewBoxSize} ${viewBoxSize}`" :width="viewBoxSize" :height="viewBoxSize" role="img" aria-label="Roast profile dimensions">
+      <div class="max-w-[460px] w-full aspect-square md:w-[60%]" :style="props.size ? { maxWidth: `${props.size}px` } : undefined">
+        <svg class="h-full w-full overflow-visible" :viewBox="`0 0 ${viewBoxSize} ${viewBoxSize}`" :width="props.size" :height="props.size" role="img" aria-label="Roast profile dimensions">
           <BklitRadarGrid />
           <BklitRadarAxis />
           <BklitRadarLabels />

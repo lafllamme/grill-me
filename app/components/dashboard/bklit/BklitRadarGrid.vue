@@ -22,9 +22,9 @@ function gridPoints(distance: number) {
 </script>
 
 <template>
-  <g class="bklit-radar-grid" :class="className" :style="{ stroke: 'var(--color-chart-grid)' }">
+  <g class="bklit-radar-grid" :class="className" :style="{ stroke: 'var(--border, var(--color-chart-grid))' }">
     <g v-for="index in context.levels" :key="`grid-${index}`" :transform="`translate(${context.center} ${context.center}) scale(${progressValue(index - 1)}) translate(${-context.center} ${-context.center})`" :opacity="progressValue(index - 1)">
-      <polygon class="bklit-radar-grid-level" :points="gridPoints(context.radius * (index / context.levels))" fill="none" :stroke="stroke || undefined" stroke-linecap="round" stroke-width="1" :stroke-opacity="strokeOpacity" />
+      <polygon class="bklit-radar-grid-level" :points="gridPoints(context.radius * (index / context.levels))" fill="none" :stroke="stroke || 'var(--border, var(--color-chart-grid))'" stroke-linecap="round" stroke-width="1" :stroke-opacity="strokeOpacity" />
     </g>
     <g v-if="showLabels">
       <g v-for="index in context.levels" :key="`level-${index}`" :opacity="labelProgressValue(index - 1)">

@@ -9,7 +9,7 @@ const progressValue = (index: number) => progress[index]?.value ?? 1
 </script>
 
 <template>
-  <g class="bklit-radar-axis stroke-divider" :class="props.className" :transform="`translate(${context.center} ${context.center})`">
-    <line v-for="(metric, index) in context.metrics" :key="metric.key" class="bklit-radar-axis-line" x1="0" :x2="(context.getPoint(index, 100).x - context.center) * progressValue(index)" y1="0" :y2="(context.getPoint(index, 100).y - context.center) * progressValue(index)" :stroke="props.stroke || undefined" stroke-width="1" :stroke-opacity="props.strokeOpacity" />
+  <g class="bklit-radar-axis" :class="props.className" :transform="`translate(${context.center} ${context.center})`">
+    <line v-for="(metric, index) in context.metrics" :key="metric.key" class="bklit-radar-axis-line" x1="0" :x2="(context.getPoint(index, 100).x - context.center) * progressValue(index)" y1="0" :y2="(context.getPoint(index, 100).y - context.center) * progressValue(index)" :stroke="props.stroke || 'var(--border, var(--color-chart-grid))'" stroke-width="1" :stroke-opacity="props.strokeOpacity" />
   </g>
 </template>

@@ -3,6 +3,14 @@ import { inject, provide } from 'vue'
 
 export interface BklitRadarMetric { key: string, label: string }
 export interface BklitRadarData { label: string, color?: string, values: Record<string, number> }
+export interface BklitRadarTransition {
+  type?: 'spring' | 'tween'
+  durationSeconds?: number
+  ease?: [number, number, number, number]
+  stiffness?: number
+  damping?: number
+  mass?: number
+}
 export interface BklitRadarContext {
   data: readonly BklitRadarData[]
   metrics: readonly BklitRadarMetric[]
@@ -10,6 +18,7 @@ export interface BklitRadarContext {
   animate: boolean
   enterDurationMs: number
   staggerScale: number
+  enterTransition: BklitRadarTransition
   motionReplayKey: string
   radius: number
   center: number
