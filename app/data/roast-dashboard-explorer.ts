@@ -34,6 +34,7 @@ function createTimeline(): RoastTimelineDatum[] {
 
     return {
       label: `${month} ${date.getUTCDate()}`,
+      date: date.getTime(),
       commits: interpolate('commits'),
       files: interpolate('files'),
       additions: interpolate('additions'),

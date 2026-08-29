@@ -15,6 +15,13 @@ export interface BklitLineSeries {
   color: string
 }
 
+export interface BklitLineMarker {
+  date: Date | string | number
+  icon: string
+  title: string
+  description?: string
+}
+
 interface ChartPoint {
   x: number
   y: number
@@ -23,6 +30,7 @@ interface ChartPoint {
 const props = withDefaults(defineProps<{
   data: readonly BklitLineDatum[]
   series: readonly BklitLineSeries[]
+  markers?: readonly BklitLineMarker[]
   xDataKey?: string
   status?: 'loading' | 'ready'
   loadingLabel?: string
@@ -33,6 +41,7 @@ const props = withDefaults(defineProps<{
   xDataKey: 'date',
   status: 'ready',
   loadingLabel: 'Loading',
+  markers: () => [],
   animationDuration: 1100,
   aspectRatio: '2 / 1',
   margin: () => ({ top: 40, right: 40, bottom: 40, left: 40 }),
@@ -82,15 +91,26 @@ const highlightWidth = useBklitSpring(highlightWidthTarget, { stiffness: 180, da
 const tooltipVisible = computed(() => hoveredIndex.value !== null && props.status === 'ready')
 const activeDatum = computed(() => hoveredIndex.value === null ? null : props.data[hoveredIndex.value] ?? null)
 const activeLabel = computed(() => activeDatum.value?.[props.xDataKey] ?? '')
+const markerTimestamp = (marker: BklitLineMarker) => marker.date instanceof Date ? marker.date.getTime() : typeof marker.date === 'number' ? marker.date : Date.parse(String(marker.date))
+const markerEntries = computed(() => props.markers.map(marker => ({
+  marker,
+  index: props.data.reduce((bestIndex, datum, index) => {
+    const timestamp = markerTimestamp(marker)
+    const bestDistance = Math.abs(datumTime(props.data[bestIndex] ?? props.data[0]!, bestIndex) - timestamp)
+    const distance = Math.abs(datumTime(datum, index) - timestamp)
+    return distance < bestDistance ? index : bestIndex
+  }, 0),
+})))
+const activeMarkers = computed(() => markerEntries.value.filter(entry => entry.index === hoveredIndex.value).map(entry => entry.marker))
 const tooltipSide = computed(() => (tooltipX.value ?? 50) > 64 ? 'left' : 'right')
 const tooltipStyle = computed(() => ({
   left: `${tooltipX.value ?? 50}%`,
-  top: '29%',
-  transform: tooltipSide.value === 'left' ? 'translate(-100%, -50%)' : 'translate(0, -50%)',
+  top: 'calc(29% - 40px)',
+  transform: tooltipSide.value === 'left' ? 'translateX(-100%)' : 'translateX(0)',
 }))
 
 function datumTime(datum: BklitLineDatum, index: number) {
-  const value = datum[props.xDataKey]
+  const value = datum.date ?? datum[props.xDataKey]
   if (typeof value === 'number') {
     return value
   }
@@ -330,7 +350,9 @@ function startLoadingAnimation() {
 }
 
 onMounted(() => {
-  if (isReducedMotion.value)
+  if (props.status === 'loading')
+    revealTarget.value = 0
+  else if (isReducedMotion.value)
     revealTarget.value = 1
   else replayReveal()
   startLoadingAnimation()
@@ -409,6 +431,9 @@ watch(isReducedMotion, () => {
         <clipPath id="bklit-line-highlight-clip" clipPathUnits="userSpaceOnUse">
           <rect :x="highlightStart" :y="margin.top" :width="highlightWidth" :height="plotHeight" />
         </clipPath>
+        <clipPath id="bklit-line-marker-clip" clipPathUnits="userSpaceOnUse">
+          <rect :x="margin.left" :y="margin.top" :width="plotWidth" :height="plotHeight" />
+        </clipPath>
       </defs>
 
       <g :stroke="status === 'loading' ? 'color-mix(in oklch, var(--color-chart-grid) 50%, transparent)' : 'var(--color-chart-grid)'" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
@@ -417,8 +442,13 @@ watch(isReducedMotion, () => {
       <g v-if="status === 'loading' && !isReducedMotion" stroke="url(#bklit-line-grid-shimmer)" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
         <line v-for="index in 5" :key="`loading-h-${index}`" :x1="margin.left" :x2="chartWidth - margin.right" :y1="margin.top + (index - 1) * plotHeight / 4" :y2="margin.top + (index - 1) * plotHeight / 4" />
       </g>
-      <g v-if="status === 'ready'" stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" opacity="0.65">
-        <line v-for="(item, index) in xLabels" :key="`v-${index}`" :x1="item.x" :x2="item.x" :y1="margin.top" :y2="chartHeight - margin.bottom" />
+      <g v-if="status === 'ready' && markerEntries.length" class="pointer-events-none">
+        <g v-for="entry in markerEntries" :key="`marker-${entry.marker.title}`">
+          <line :x1="xAt(entry.index)" :x2="xAt(entry.index)" :y1="margin.top" :y2="chartHeight - margin.bottom" stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 4" :opacity="hoveredIndex === entry.index ? 0 : 0.85" :style="{ transition: isReducedMotion ? 'none' : 'opacity 200ms ease-out' }" />
+          <g clip-path="url(#bklit-line-marker-clip)">
+            <circle :cx="xAt(entry.index)" :cy="margin.top" r="12" fill="var(--color-chart-tooltip)" stroke="var(--color-chart-grid)" stroke-width="2" />
+          </g>
+        </g>
       </g>
 
       <path v-if="status === 'loading' && !isReducedMotion" :d="skeletonPath" fill="none" stroke="url(#bklit-line-loading-fade)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" clip-path="url(#bklit-line-loading-pulse-clip)" />
@@ -486,6 +516,15 @@ watch(isReducedMotion, () => {
           <div v-for="series in props.series" :key="series.dataKey" class="text-sm flex gap-4 items-center justify-between">
             <span class="text-on-surface-variant/70 flex gap-2 min-w-0 items-center"><span class="rounded-full shrink-0 h-2.5 w-2.5" :style="{ backgroundColor: series.color }" />{{ series.label }}</span>
             <strong class="font-medium shrink-0 tabular-nums">{{ formatValue(activeDatum[series.dataKey]) }}</strong>
+          </div>
+        </div>
+        <div v-if="activeMarkers.length" class="border-chart-grid pt-2 mt-2 border-t-[1px] border-solid flex flex-col gap-2">
+          <div v-for="marker in activeMarkers" :key="marker.title" class="flex gap-2 items-start">
+            <span class="text-on-background flex shrink-0 items-center justify-center rounded-full h-5 w-5 bg-chart-tooltip border-[1px] border-chart-grid border-solid text-[10px] font-meta">{{ marker.icon }}</span>
+            <div class="min-w-0 flex-1">
+              <div class="text-on-background text-sm font-medium truncate">{{ marker.title }}</div>
+              <div v-if="marker.description" class="text-on-surface-variant/70 text-xs truncate">{{ marker.description }}</div>
+            </div>
           </div>
         </div>
       </div>
