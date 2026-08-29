@@ -28,6 +28,11 @@ export interface SunburstLayout {
   maxDepth: number
 }
 
+export interface SunburstHoverGeometry {
+  grow: number
+  offset: number
+}
+
 const fullCircle = Math.PI * 2
 const topAngle = -Math.PI / 2
 
@@ -84,6 +89,48 @@ export function isDescendant(id: string, ancestorId: string): boolean {
   return id === ancestorId || id.startsWith(`${ancestorId} / `)
 }
 
+function isOnHoverPath(arc: SunburstArc, hoveredId: string): boolean {
+  return arc.id === hoveredId || hoveredId.startsWith(`${arc.id} / `)
+}
+
+export function buildHoverGeometry(arcs: readonly SunburstArc[], hoveredId: string | null, radius: number, hoverPop = 8): Map<string, SunburstHoverGeometry> {
+  const targets = new Map<string, number>()
+  const geometry = new Map<string, SunburstHoverGeometry>()
+  if (!hoveredId) {
+    return geometry
+  }
+
+  const hoveredArc = arcs.find(arc => arc.id === hoveredId)
+  if (!hoveredArc) {
+    return geometry
+  }
+
+  const grow = Math.min(hoverPop, radius * 0.1, (radius * 0.28) / Math.max(1, hoveredArc.depth))
+  for (const arc of arcs) {
+    if (!isOnHoverPath(arc, hoveredId)) {
+      continue
+    }
+
+    targets.set(arc.id, grow)
+  }
+
+  const arcsById = new Map(arcs.map(arc => [arc.id, arc]))
+  for (const arc of arcs) {
+    const ownGrow = targets.get(arc.id) ?? 0
+    let offset = 0
+    let parentId = arc.parentId
+    while (parentId) {
+      offset += targets.get(parentId) ?? 0
+      parentId = arcsById.get(parentId)?.parentId ?? null
+    }
+    if (ownGrow || offset) {
+      geometry.set(arc.id, { grow: ownGrow, offset })
+    }
+  }
+
+  return geometry
+}
+
 export function getBreadcrumbIds(focusId: string, nodes: Map<string, SunburstNode>): string[] {
   const ids = [focusId]
   let current = focusId
@@ -97,7 +144,7 @@ export function getBreadcrumbIds(focusId: string, nodes: Map<string, SunburstNod
   return ids
 }
 
-export function createSunburstPath(arc: SunburstArc, radius: number, progress = 1, grow = 0, offset = 0): string {
+export function createSunburstPath(arc: SunburstArc, radius: number, progress = 1, grow = 0, offset = 0, radialOffset = 0): string {
   const span = arc.endAngle - arc.startAngle
   const visibleSpan = span * Math.min(1, Math.max(0, progress))
   // Do not stroke a zero-progress arc. A tiny forced wedge renders as a set of
@@ -106,8 +153,8 @@ export function createSunburstPath(arc: SunburstArc, radius: number, progress = 
     return ''
   }
   const endAngle = arc.startAngle + visibleSpan
-  const innerRadius = Math.max(0, (arc.depth - 1) * radius + 3)
-  const outerRadius = arc.depth * radius + grow
+  const innerRadius = Math.max(0, (arc.depth - 1) * radius + 3 + radialOffset)
+  const outerRadius = arc.depth * radius + grow + radialOffset
   return createArc<{
     innerRadius: number
     outerRadius: number

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSunburstLayout, createSunburstPath, getBreadcrumbIds, isDescendant } from '../../app/components/dashboard/bklit/sunburst'
+import { buildHoverGeometry, buildSunburstLayout, createSunburstPath, getBreadcrumbIds, isDescendant } from '../../app/components/dashboard/bklit/sunburst'
 
 describe('sunburst layout', () => {
   const data = {
@@ -33,5 +33,16 @@ describe('sunburst layout', () => {
     const layout = buildSunburstLayout(data)
 
     expect(createSunburstPath(layout.arcs[0]!, 80, 0)).toBe('')
+  })
+
+  it('grows the hovered path and offsets descendants without moving unrelated rings', () => {
+    const layout = buildSunburstLayout(data)
+    const hoveredId = layout.arcs[0]!.id
+    const geometry = buildHoverGeometry(layout.arcs, hoveredId, 80)
+
+    expect(geometry.get(layout.arcs[0]!.id)).toEqual({ grow: 8, offset: 0 })
+    expect(geometry.get(layout.arcs[1]!.id)).toEqual({ grow: 0, offset: 8 })
+    expect(geometry.get(layout.arcs[2]!.id)).toEqual({ grow: 0, offset: 8 })
+    expect(geometry.get(layout.arcs[3]!.id)).toBeUndefined()
   })
 })

@@ -3,7 +3,7 @@ import type { SunburstArc, SunburstNode } from './sunburst'
 import { usePreferredReducedMotion } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import BklitSunburstSegment from './BklitSunburstSegment.vue'
-import { buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant } from './sunburst'
+import { buildHoverGeometry, buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant } from './sunburst'
 import { useBklitEnter } from './use-bklit-enter'
 
 const props = withDefaults(defineProps<{
@@ -27,6 +27,8 @@ const visibleArcs = computed(() => layout.value.arcs.filter((arc) => {
   }
   return isDescendant(arc.id, focusId.value) && arc.id !== focusId.value
 }))
+const renderArcs = computed(() => [...visibleArcs.value].sort((a, b) => b.depth - a.depth || b.arcIndex - a.arcIndex))
+const hoverGeometries = computed(() => buildHoverGeometry(visibleArcs.value, hoveredId.value, radius.value))
 const breadcrumbIds = computed(() => getBreadcrumbIds(focusId.value, layout.value.nodes))
 const breadcrumbItems = computed(() => breadcrumbIds.value.map(id => ({ id, name: layout.value.nodes.get(id)?.name ?? id.split(' / ').at(-1) ?? id })))
 
@@ -77,8 +79,12 @@ const labelsDelay = computed(() => {
 // independent fade, which keeps the final settle relaxed and coordinated.
 const labelsProgress = useBklitEnter(true, labelsDelay.value, () => props.replayKey, { type: 'tween', durationSeconds: 1.1 })
 
-function segmentOpacity(arc: SunburstArc) {
-  return isRelated(arc) ? (1 - Math.max(0, arc.depth - 1) * 0.12) : 0.25
+function segmentFillOpacity(arc: SunburstArc) {
+  return Math.max(0.45, 1 - Math.max(0, arc.depth - 1) * 0.15)
+}
+
+function hoverGeometry(arc: SunburstArc) {
+  return hoverGeometries.value.get(arc.id) ?? { grow: 0, offset: 0 }
 }
 
 function labelVisible(arc: SunburstArc) {
@@ -139,19 +145,22 @@ function labelRotation(arc: SunburstArc) {
         :aria-label="`${props.data.name} hierarchy sunburst`"
       >
         <g :style="{ transformOrigin: '0 0' }">
-          <g
-            v-for="arc in visibleArcs"
+          <BklitSunburstSegment
+            v-for="arc in renderArcs"
             :key="`${props.replayKey}-${arc.id}-${focusId}`"
-            class="cursor-pointer"
-            :style="{ opacity: segmentOpacity(arc), transition: prefersReducedMotion === 'reduce' ? 'none' : 'opacity 160ms ease-out, transform 420ms cubic-bezier(0.22, 1, 0.36, 1)', transform: isRelated(arc) && hoveredId === arc.id ? `translate(${Math.sin((arc.startAngle + arc.endAngle) / 2) * 8}px, ${-Math.cos((arc.startAngle + arc.endAngle) / 2) * 8}px)` : undefined }"
-            @mouseenter="hoveredId = arc.id"
-            @mouseleave="hoveredId = null"
-            @focusin="hoveredId = arc.id"
-            @focusout="hoveredId = null"
-          >
-            <BklitSunburstSegment :arc="arc" :color="getSegmentColor(arc, arcIndex(arc))" :delay="segmentDelay(arc)" :hover-grow="hoveredId ? (isRelated(arc) ? 8 : 0) : 0" :reduced-motion="prefersReducedMotion === 'reduce'" :radius="radius" :replay-key="props.replayKey" @select="selectArc(arc)" />
-            <title>{{ arc.name }} · {{ arc.value }} changes</title>
-          </g>
+            :arc="arc"
+            :color="getSegmentColor(arc, arcIndex(arc))"
+            :delay="segmentDelay(arc)"
+            :fill-opacity="segmentFillOpacity(arc)"
+            :hover-grow="hoverGeometry(arc).grow"
+            :hover-offset="hoverGeometry(arc).offset"
+            :is-related="isRelated(arc)"
+            :reduced-motion="prefersReducedMotion === 'reduce'"
+            :radius="radius"
+            :replay-key="props.replayKey"
+            @hover="hoveredId = $event ? arc.id : null"
+            @select="selectArc(arc)"
+          />
           <g :style="{ opacity: labelsProgress }" pointer-events="none">
             <template v-for="arc in visibleArcs" :key="`${props.replayKey}-label-${arc.id}-${focusId}`">
               <text
