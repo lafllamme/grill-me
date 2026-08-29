@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSunburstLayout, getBreadcrumbIds, isDescendant } from '../../app/components/dashboard/bklit/sunburst'
+import { buildSunburstLayout, createSunburstPath, getBreadcrumbIds, isDescendant } from '../../app/components/dashboard/bklit/sunburst'
 
 describe('sunburst layout', () => {
   const data = {
@@ -27,5 +27,11 @@ describe('sunburst layout', () => {
     expect(isDescendant(componentsId, appId)).toBe(true)
     expect(isDescendant(appId, componentsId)).toBe(false)
     expect(getBreadcrumbIds(componentsId, layout.nodes)).toEqual(['Repository', appId, componentsId])
+  })
+
+  it('does not render a stroked hairline before an arc enters', () => {
+    const layout = buildSunburstLayout(data)
+
+    expect(createSunburstPath(layout.arcs[0]!, 80, 0)).toBe('')
   })
 })

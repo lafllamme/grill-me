@@ -98,8 +98,14 @@ export function getBreadcrumbIds(focusId: string, nodes: Map<string, SunburstNod
 }
 
 export function createSunburstPath(arc: SunburstArc, radius: number, progress = 1, grow = 0, offset = 0): string {
-  const span = Math.max(0.002, arc.endAngle - arc.startAngle)
-  const endAngle = arc.startAngle + span * Math.min(1, Math.max(0, progress))
+  const span = arc.endAngle - arc.startAngle
+  const visibleSpan = span * Math.min(1, Math.max(0, progress))
+  // Do not stroke a zero-progress arc. A tiny forced wedge renders as a set of
+  // radial hairlines before the segment body has entered.
+  if (visibleSpan <= 0.001) {
+    return ''
+  }
+  const endAngle = arc.startAngle + visibleSpan
   const innerRadius = Math.max(0, (arc.depth - 1) * radius + 3)
   const outerRadius = arc.depth * radius + grow
   return createArc<{
