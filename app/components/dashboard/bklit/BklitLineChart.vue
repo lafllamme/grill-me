@@ -51,6 +51,9 @@ const reducedMotion = usePreferredReducedMotion()
 const isReducedMotion = computed(() => reducedMotion.value === 'reduce')
 const hoveredIndex = ref<number | null>(null)
 const pointerFrame = ref<number | null>(null)
+const loadingFrame = ref<number | null>(null)
+const loadingStartedAt = ref<number | null>(null)
+const loadingProgress = ref(0)
 const pendingIndex = ref<number | null>(null)
 const revealTarget = ref(props.status === 'ready' ? 1 : 0)
 const revealProgress = useBklitSpring(revealTarget, { stiffness: 170, damping: 28 })
@@ -106,11 +109,31 @@ const yAt = (value: number) => margin.value.top + plotHeight.value - (value / ma
 const pointsFor = (series: BklitLineSeries) => props.data.map((datum, index) => ({ x: xAt(index), y: yAt(Number(datum[series.dataKey]) || 0) }))
 const pathFor = (points: ChartPoint[]) => d3Line<ChartPoint>().curve(curveNatural).x(point => point.x).y(point => point.y)(points) ?? ''
 const linePaths = computed(() => props.series.map(series => ({ ...series, points: pointsFor(series), path: pathFor(pointsFor(series)) })))
-const skeletonPoints = computed<ChartPoint[]>(() => Array.from({ length: Math.max(props.data.length, 8) }, (_, index) => ({
-  x: margin.value.left + index / Math.max(Math.max(props.data.length, 8) - 1, 1) * plotWidth.value,
-  y: margin.value.top + plotHeight.value * (0.45 + Math.sin(index * 1.7) * 0.18),
+// Bklit's loading pulse is intentionally independent from the chart dataset.
+// The reference uses a deterministic seven-point skeleton so the travelling
+// segment remains legible instead of reproducing every loaded data point.
+const skeletonPoints = computed<ChartPoint[]>(() => Array.from({ length: 7 }, (_, index) => ({
+  x: margin.value.left + index / 6 * plotWidth.value,
+  y: margin.value.top + plotHeight.value - (110 + Math.sin(index * 1.15) * 36 + index * 9) / 200 * plotHeight.value * 0.9,
 })))
 const skeletonPath = computed(() => pathFor(skeletonPoints.value))
+const loadingPulseProgress = computed(() => {
+  const elapsed = loadingProgress.value * 2480
+  return elapsed >= 2200 ? 1 : elapsed / 2200
+})
+const loadingClipX = computed(() => {
+  const progress = loadingPulseProgress.value
+  if (progress <= 0.5)
+    return margin.value.left - 10
+  return chartWidth - margin.value.right + 10 - (1 - (progress - 0.5) / 0.5) * (plotWidth.value + 20)
+})
+const loadingClipWidth = computed(() => {
+  const progress = loadingPulseProgress.value
+  if (progress <= 0.5)
+    return (progress / 0.5) * (plotWidth.value + 20)
+  return (1 - (progress - 0.5) / 0.5) * (plotWidth.value + 20)
+})
+const loadingGridX = computed(() => -140 + loadingPulseProgress.value * (plotWidth.value + 280))
 const dataLabels = computed(() => props.data.map((datum, index) => ({
   label: String(datum[props.xDataKey]),
   x: xAt(index),
@@ -209,18 +232,51 @@ function replayReveal() {
   }, 40)
 }
 
+function updateLoadingAnimation(timestamp: number) {
+  if (props.status !== 'loading' || isReducedMotion.value) {
+    loadingFrame.value = null
+    loadingStartedAt.value = null
+    loadingProgress.value = 0
+    return
+  }
+
+  loadingStartedAt.value ??= timestamp
+  const elapsed = (timestamp - loadingStartedAt.value) % 2480
+  loadingProgress.value = elapsed / 2480
+  loadingFrame.value = requestAnimationFrame(updateLoadingAnimation)
+}
+
+function startLoadingAnimation() {
+  if (typeof requestAnimationFrame === 'undefined' || isReducedMotion.value || props.status !== 'loading')
+    return
+  if (loadingFrame.value === null)
+    loadingFrame.value = requestAnimationFrame(updateLoadingAnimation)
+}
+
 onMounted(() => {
   if (isReducedMotion.value)
     revealTarget.value = 1
   else replayReveal()
+  startLoadingAnimation()
 })
 onBeforeUnmount(() => {
   if (pointerFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
     cancelAnimationFrame(pointerFrame.value)
+  if (loadingFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
+    cancelAnimationFrame(loadingFrame.value)
 })
 
 watch(() => props.status, (status) => {
   revealTarget.value = status === 'ready' ? 1 : 0
+  if (status === 'loading') {
+    loadingProgress.value = 0
+    loadingStartedAt.value = null
+    startLoadingAnimation()
+  }
+  else if (loadingFrame.value !== null && typeof cancelAnimationFrame !== 'undefined') {
+    cancelAnimationFrame(loadingFrame.value)
+    loadingFrame.value = null
+  }
 })
 </script>
 
@@ -237,11 +293,22 @@ watch(() => props.status, (status) => {
         <mask id="bklit-line-grid-mask" maskUnits="userSpaceOnUse">
           <rect :x="margin.left" :y="margin.top" :width="plotWidth" :height="plotHeight" fill="url(#bklit-line-grid-fade)" />
         </mask>
-        <linearGradient id="bklit-line-loading-shimmer" x1="0" x2="1" y1="0" y2="0">
+        <linearGradient id="bklit-line-grid-shimmer" gradientUnits="userSpaceOnUse" x1="0" x2="140" y1="0" y2="0" :gradientTransform="`translate(${loadingGridX} 0)`">
           <stop offset="0%" stop-color="var(--color-on-background)" stop-opacity="0" />
-          <stop offset="50%" stop-color="var(--color-on-background)" stop-opacity="0.55" />
+          <stop offset="35%" stop-color="var(--color-on-background)" stop-opacity="0.45" />
+          <stop offset="50%" stop-color="var(--color-on-background)" stop-opacity="1" />
+          <stop offset="65%" stop-color="var(--color-on-background)" stop-opacity="0.45" />
           <stop offset="100%" stop-color="var(--color-on-background)" stop-opacity="0" />
         </linearGradient>
+        <linearGradient id="bklit-line-loading-fade" gradientUnits="userSpaceOnUse" :x1="margin.left" :x2="chartWidth - margin.right" y1="0" y2="0">
+          <stop offset="0%" stop-color="var(--color-on-background)" stop-opacity="0" />
+          <stop offset="15%" stop-color="var(--color-on-background)" stop-opacity="1" />
+          <stop offset="85%" stop-color="var(--color-on-background)" stop-opacity="1" />
+          <stop offset="100%" stop-color="var(--color-on-background)" stop-opacity="0" />
+        </linearGradient>
+        <clipPath id="bklit-line-loading-pulse-clip" clipPathUnits="userSpaceOnUse">
+          <rect :x="loadingClipX" :y="margin.top - 10" :height="plotHeight + 20" :width="loadingClipWidth" />
+        </clipPath>
         <clipPath id="bklit-line-highlight-clip" clipPathUnits="userSpaceOnUse">
           <rect :x="highlightStart" :y="margin.top" :width="highlightWidth" :height="plotHeight" />
         </clipPath>
@@ -250,14 +317,15 @@ watch(() => props.status, (status) => {
       <g stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
         <line v-for="index in 5" :key="`h-${index}`" :x1="margin.left" :x2="chartWidth - margin.right" :y1="margin.top + (index - 1) * plotHeight / 4" :y2="margin.top + (index - 1) * plotHeight / 4" />
       </g>
+      <g v-if="status === 'loading' && !isReducedMotion" stroke="url(#bklit-line-grid-shimmer)" stroke-width="1">
+        <line v-for="index in 5" :key="`loading-h-${index}`" :x1="margin.left" :x2="chartWidth - margin.right" :y1="margin.top + (index - 1) * plotHeight / 4" :y2="margin.top + (index - 1) * plotHeight / 4" />
+      </g>
       <g v-if="status === 'ready'" stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" opacity="0.65">
         <line v-for="(item, index) in xLabels" :key="`v-${index}`" :x1="item.x" :x2="item.x" :y1="margin.top" :y2="chartHeight - margin.bottom" />
       </g>
 
-      <path v-if="status === 'loading'" :d="skeletonPath" fill="none" stroke="var(--color-on-background)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" class="animate-pulse" />
-      <rect v-if="status === 'loading' && !isReducedMotion" :x="margin.left - 160" :y="margin.top" width="160" :height="plotHeight" fill="url(#bklit-line-loading-shimmer)" opacity="0.22" pointer-events="none">
-        <animate attributeName="x" :from="margin.left - 160" :to="chartWidth - margin.right" dur="2.2s" repeatCount="indefinite" />
-      </rect>
+      <path v-if="status === 'loading' && !isReducedMotion" :d="skeletonPath" fill="none" stroke="url(#bklit-line-loading-fade)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" clip-path="url(#bklit-line-loading-pulse-clip)" />
+      <path v-else-if="status === 'loading'" :d="skeletonPath" fill="none" stroke="var(--color-on-background)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" />
       <template v-else>
         <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" :style="{ opacity: tooltipVisible ? 0.3 : 1, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
         <path v-for="series in linePaths" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
