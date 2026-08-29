@@ -66,7 +66,7 @@ unexplained scores.
 | Bar Chart | Show commit/change volume | additions and deletions per commit | Ported and visually checked | Keep as evidence card |
 | Line Chart | Show change or quality trend over time | chronological commits and one or two explicit measures | Planned | Port Bklit source and choose the final metric |
 | Composed Chart | Combine volume with a trend | bars for changes, line for cumulative or quality signal | Planned | Revisit after Line Chart |
-| Gauge | Make one conclusion legible at a glance | one clearly named metric, e.g. testability | Candidate | Use only when the metric has a defensible range |
+| Gauge | Make one conclusion legible at a glance | average files changed per commit, normalized to a 12-file review threshold | Ported and browser-checked | Replace the exploration fixture with API evidence later |
 | Sunburst Chart | Explore repository/file hierarchy | repositories → directories → files → change volume | Candidate | Validate that file-level evidence exists |
 | Choropleth Chart | Optional geographic context | coarse region derived from request metadata | Deferred | Do not make location central to the roast |
 | Scatter Chart | Compare two measurable signals | e.g. file churn versus test coverage | Deferred | Add only with a real two-axis question |
@@ -94,8 +94,9 @@ unexplained scores.
 1. Ring Chart — complete.
 2. Bar Chart — complete.
 3. Radar Chart — complete.
-4. Line Chart — next.
-5. Composed Chart — only after the Line Chart establishes a useful trend.
+4. Line Chart — complete.
+5. Gauge — complete as an evidence-backed exploration card.
+6. Composed Chart — only after the Line Chart establishes a useful trend.
 
 ## Data guardrails
 

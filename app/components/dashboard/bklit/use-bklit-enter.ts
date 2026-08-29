@@ -2,7 +2,7 @@ import type { MaybeRefOrGetter } from 'vue'
 import { animate, motionValue } from 'motion-v'
 import { onBeforeUnmount, onMounted, ref, toValue, watch } from 'vue'
 
-export function useBklitEnter(shouldAnimate: boolean, delaySeconds: number, replayKey: MaybeRefOrGetter<string> = '', options: { type?: 'spring' | 'tween', durationSeconds?: number } = {}) {
+export function useBklitEnter(shouldAnimate: boolean, delaySeconds: number, replayKey: MaybeRefOrGetter<string> = '', options: { type?: 'spring' | 'tween', durationSeconds?: number, stiffness?: number, damping?: number, mass?: number } = {}) {
   const progressMotion = motionValue(shouldAnimate ? 0 : 1)
   const progress = ref(progressMotion.get())
   let stop: (() => void) | undefined
@@ -13,7 +13,7 @@ export function useBklitEnter(shouldAnimate: boolean, delaySeconds: number, repl
     if (shouldAnimate) {
       const controls = animate(progressMotion, 1, options.type === 'tween'
         ? { type: 'tween', duration: options.durationSeconds ?? 1.1, ease: [0.85, 0, 0.15, 1], delay: delaySeconds }
-        : { type: 'spring', stiffness: 100, damping: 15, mass: 1, delay: delaySeconds })
+        : { type: 'spring', stiffness: options.stiffness ?? 100, damping: options.damping ?? 15, mass: options.mass ?? 1, delay: delaySeconds })
       stop = () => controls.stop()
     }
   }

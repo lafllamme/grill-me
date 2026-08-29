@@ -40,8 +40,8 @@ ersetzt werden.
 | [x] | Ring Chart | Kompakte Profil-Zusammenfassung | [Docs](https://bklit.com/docs/components/ring-chart) | [Source](https://github.com/bklit/bklit-ui/tree/main/packages/ui/src/charts) | Mit echten Profilwerten verbinden |
 | [x] | Radar Chart | Gesamtprofil über mehrere Dimensionen | [Docs](https://bklit.com/docs/components/radar-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/radar-chart.tsx) | Mit echten Profilwerten verbinden |
 | [x] | Bar Chart | Additions, Deletions und Commit-Volumen | [Docs](https://bklit.com/docs/components/bar-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/bar-chart.tsx) | Mit Commit-Evidence verbinden |
-| [ ] | Line Chart | Entwicklung eines Signals über Zeit | [Docs](https://bklit.com/docs/components/line-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/line-chart.tsx) | Als nächstes portieren |
-| [ ] | Gauge | Ein einzelnes Verdict, z. B. Testability | [Docs](https://bklit.com/docs/components/gauge) | [Source](https://github.com/bklit/bklit-ui/tree/main/packages/ui/src/charts) | Erst nach erklärbarem Score entscheiden |
+| [x] | Line Chart | Entwicklung eines Signals über Zeit | [Docs](https://bklit.com/docs/components/line-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/line-chart.tsx) | Mit echten Zeitreihendaten verbinden |
+| [x] | Gauge | Durchschnittlich geänderte Dateien pro Commit, auf 12 Dateien normalisiert | [Docs](https://bklit.com/docs/components/gauge-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/gauge.tsx) | Mit echter API-Evidence verbinden |
 | [ ] | Composed Chart | Volumen und Trend in einer Evidence-Ansicht | [Docs](https://bklit.com/docs/components/composed-chart) | [Source](https://github.com/bklit/bklit-ui/tree/main/packages/ui/src/charts) | Nach dem Line Chart evaluieren |
 
 ## Reihenfolge
@@ -49,9 +49,9 @@ ersetzt werden.
 1. Ring Chart — erledigt.
 2. Bar Chart — erledigt.
 3. Radar Chart — erledigt.
-4. Line Chart — als nächstes.
-5. Composed Chart — nur wenn Bar und Line gemeinsam einen echten Mehrwert liefern.
-6. Gauge — optional für ein einzelnes, erklärbares Verdict.
+4. Line Chart — erledigt.
+5. Gauge — erledigt als erklärbare Explorer-Karte.
+6. Composed Chart — nur wenn Bar und Line gemeinsam einen echten Mehrwert liefern.
 
 ## Aktueller Stand
 
@@ -62,10 +62,10 @@ ersetzt werden.
 
 ## Nächster Schritt
 
-**Line Chart** ist als Nächstes vorgesehen. Vor der Umsetzung:
+**Gauge** ist als Explorer-Karte umgesetzt. Für die nächste Iteration:
 
-- [ ] Dokumentation und Showcase vollständig prüfen.
-- [ ] Exakten GitHub-Entry-Point und alle Imports erfassen.
-- [ ] Passende Roast-Frage festlegen: Entwicklung eines klar benannten Signals über Zeit.
-- [ ] Mock-Dataset und spätere API-Felder getrennt dokumentieren.
-- [ ] Erst nach Browser-Abgleich in den Dashboard-Flow übernehmen.
+- [x] Dokumentation und Showcase vollständig prüfen.
+- [x] Exakten GitHub-Entry-Point und alle Imports erfassen.
+- [x] Passende Roast-Frage festlegen: Wie viel Commit-Scope erzeugt Review-Druck?
+- [x] Mock-Dataset und spätere API-Felder getrennt dokumentieren.
+- [x] Nach Browser-Abgleich in den Dashboard-Flow übernehmen.

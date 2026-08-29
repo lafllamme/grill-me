@@ -4,6 +4,7 @@ import { useHead, useSeoMeta } from '#imports'
 import BklitBar from '~/components/dashboard/bklit/BklitBar.vue'
 import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
 import BklitBarXAxis from '~/components/dashboard/bklit/BklitBarXAxis.vue'
+import BklitGaugeChart from '~/components/dashboard/bklit/BklitGaugeChart.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
 import BklitRadarChart from '~/components/dashboard/bklit/BklitRadarChart.vue'
@@ -115,6 +116,7 @@ const chartStyle = computed(() => ({
   '--chart-text': chartPalette.value.text,
 }))
 const profileRadarData = computed(() => fixture.radarProfile.data.map(item => ({ ...item })))
+const changePressureGauge = computed(() => Math.min(100, Math.round(fixture.commits.reduce((total, commit) => total + commit.files, 0) / fixture.commits.length / 12 * 100)))
 const lineMarkers = [
   { date: new Date('2026-08-09T00:00:00Z'), icon: '✦', title: 'Design update', description: 'New color system' },
   { date: new Date('2026-08-17T00:00:00Z'), icon: '↗', title: 'Docs updated', description: 'Added examples' },
@@ -220,7 +222,15 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
           <h3 class="max-w-[12ch] text-4xl tracking-[-0.06em] font-display leading-[0.94] mt-5 sm:text-5xl">{{ fixture.headline }}</h3>
           <p :class="currentColorProfile.mutedClass" class="max-w-[34rem] text-base leading-7 mt-6">{{ fixture.note }}</p>
         </article>
-        <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-12 transition-colors duration-300"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
+        <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-8 transition-colors duration-300"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
+        <article :class="currentColorProfile.panelClass" class="min-w-0 rounded-[28px] p-6 sm:p-8 lg:col-span-4 transition-colors duration-300">
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-2xl tracking-[-0.05em] font-display">Change pressure</h2>
+            <span :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">Mock</span>
+          </div>
+          <BklitGaugeChart class="mt-6" :value="changePressureGauge" :center-value="changePressureGauge" default-label="Files / commit" active-fill="var(--color-primary)" inactive-fill="var(--color-chart-track)" :replay-key="String(changePressureGauge)" />
+          <p :class="currentColorProfile.mutedClass" class="max-w-[26rem] text-sm leading-6 mt-2">Average changed files per commit, normalized against a 12-file review threshold.</p>
+        </article>
         <article :class="currentColorProfile.panelClass" class="min-w-0 rounded-[28px] p-6 sm:p-8 lg:col-span-6 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change volume</h2></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayBarLoading">Replay loading</button></div><BklitBarChart class="mt-8 min-w-0" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'"><template #grid><BklitGrid horizontal /></template><BklitBar data-key="additions" fill="var(--color-primary-strong)" /><BklitBar data-key="deletions" fill="var(--color-primary)" /><template #x-axis><BklitBarXAxis /></template></BklitBarChart></article>
         <article :class="currentColorProfile.panelClass" class="box-border min-w-0 w-full rounded-[28px] p-6 sm:p-8 lg:col-span-6 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change pressure</h2></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayLineLoading">Replay loading</button></div><BklitLineChart class="mt-8 min-w-0" :data="explorerFixture.timeline" x-data-key="label" :markers="lineMarkers" :series="[{ dataKey: 'additions', label: 'additions', color: 'var(--color-primary-strong)' }, { dataKey: 'files', label: 'files changed', color: 'var(--color-primary)' }]" :status="isLineLoading ? 'loading' : 'ready'" loading-label="" /></article>
       </div>
