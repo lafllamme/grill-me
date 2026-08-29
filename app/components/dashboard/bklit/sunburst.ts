@@ -13,6 +13,7 @@ export interface SunburstArc {
   name: string
   depth: number
   value: number
+  categoryIndex: number
   color?: string
   startAngle: number
   endAngle: number
@@ -42,7 +43,7 @@ export function buildSunburstLayout(root: SunburstNode): SunburstLayout {
   const nodes = new Map<string, SunburstNode>()
   let maxDepth = 0
 
-  const visit = (node: SunburstNode, id: string, parentId: string | null, depth: number, startAngle: number, endAngle: number) => {
+  const visit = (node: SunburstNode, id: string, parentId: string | null, depth: number, startAngle: number, endAngle: number, categoryIndex = 0) => {
     nodes.set(id, node)
     maxDepth = Math.max(maxDepth, depth)
     if (depth > 0) {
@@ -52,6 +53,7 @@ export function buildSunburstLayout(root: SunburstNode): SunburstLayout {
         name: node.name,
         depth,
         value: nodeValue(node),
+        categoryIndex,
         color: node.color,
         startAngle,
         endAngle,
@@ -67,8 +69,8 @@ export function buildSunburstLayout(root: SunburstNode): SunburstLayout {
     let cursor = startAngle
     children.forEach((child, index) => {
       const childSpan = (nodeValue(child) / total) * (endAngle - startAngle)
-      const childId = id ? `${id} / ${child.name}-${index}` : `${child.name}-${index}`
-      visit(child, childId, id || null, depth + 1, cursor, cursor + childSpan)
+      const childId = id ? `${id} / ${child.name}` : child.name
+      visit(child, childId, id || null, depth + 1, cursor, cursor + childSpan, depth === 0 ? index : categoryIndex)
       cursor += childSpan
     })
   }
@@ -116,6 +118,12 @@ export function createSunburstPath(arc: SunburstArc, radius: number, progress = 
 export function getSegmentColor(arc: SunburstArc, index: number): string {
   if (arc.color)
     return arc.color
-  const palette = ['var(--color-primary)', 'var(--color-primary-strong)', '#d8bfa8', '#8b7cf6', '#ef4444']
-  return palette[index % palette.length] ?? 'var(--color-primary)'
+  const palette = [
+    'var(--chart-1, var(--color-primary-strong))',
+    'var(--chart-2, var(--color-primary))',
+    'var(--chart-3, var(--color-primary-strong))',
+    'var(--chart-4, var(--color-primary))',
+    'var(--chart-5, var(--color-primary))',
+  ]
+  return palette[arc.categoryIndex % palette.length] ?? palette[index % palette.length] ?? 'var(--color-primary)'
 }

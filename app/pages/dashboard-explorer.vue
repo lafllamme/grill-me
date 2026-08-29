@@ -115,6 +115,11 @@ const chartStyle = computed(() => ({
   '--color-surface-variant': chartPalette.value.surfaceVariant,
   '--chart-label': chartPalette.value.label,
   '--chart-text': chartPalette.value.text,
+  '--chart-1': 'var(--color-primary-strong)',
+  '--chart-2': 'var(--color-primary)',
+  '--chart-3': 'color-mix(in srgb, var(--color-primary-strong) 78%, black)',
+  '--chart-4': 'color-mix(in srgb, var(--color-primary) 72%, white)',
+  '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
 const profileRadarData = computed(() => fixture.radarProfile.data.map(item => ({ ...item })))
 const changePressureGauge = computed(() => Math.min(100, Math.round(fixture.commits.reduce((total, commit) => total + commit.files, 0) / fixture.commits.length / 12 * 100)))
@@ -294,10 +299,10 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
           <div class="flex gap-4 items-start justify-between">
             <div>
               <h2 class="text-2xl tracking-[-0.05em] font-display">
-                Repository structure
+                Revenue
               </h2>
               <p :class="currentColorProfile.mutedClass" class="text-sm leading-6 mt-2">
-                Where the roast is concentrated across the codebase.
+                The same hierarchy as the Bklit reference, recolored with our roast red.
               </p>
             </div>
             <span class="text-[10px] text-primary-strong tracking-[0.12em] font-meta uppercase">Mock</span>

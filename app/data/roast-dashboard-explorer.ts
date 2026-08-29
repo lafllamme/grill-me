@@ -14,19 +14,20 @@ export interface RoastHotspotDatum {
 }
 
 export const roastSunburstData = {
-  name: 'Repository',
+  name: 'Revenue',
   children: [
-    { name: 'app', children: [
-      { name: 'components', children: [{ name: 'dashboard', value: 32 }, { name: 'roast-one', value: 18 }] },
-      { name: 'composables', children: [{ name: 'useRoast', value: 24 }, { name: 'useAuthSession', value: 10 }] },
-      { name: 'pages', children: [{ name: 'dashboard-explorer', value: 28 }, { name: 'index', value: 14 }] },
+    { name: 'Product', children: [
+      { name: 'Enterprise', children: [{ name: 'North America', children: [{ name: 'Direct', value: 52 }, { name: 'Channel', value: 38 }] }, { name: 'EMEA', value: 60 }, { name: 'APAC', value: 48 }] },
+      { name: 'Pro', children: [{ name: 'Teams', value: 90 }, { name: 'Solo', value: 55 }] },
+      { name: 'Starter', value: 95 },
     ] },
-    { name: 'server', children: [
-      { name: 'roast', children: [{ name: 'prompt', value: 16 }, { name: 'stream', value: 12 }] },
-      { name: 'api', value: 18 },
+    { name: 'Services', children: [
+      { name: 'Consulting', children: [{ name: 'Strategy', value: 72 }, { name: 'Implementation', value: 88 }] },
+      { name: 'Support', children: [{ name: 'Premium', value: 48 }, { name: 'Standard', value: 42 }] },
+      { name: 'Training', value: 55 },
     ] },
-    { name: 'docs', children: [{ name: 'design-system', value: 14 }, { name: 'dashboard-roadmap', value: 9 }, { name: 'test', value: 8 }] },
-    { name: 'tests', children: [{ name: 'unit', value: 12 }, { name: 'e2e', value: 10 }] },
+    { name: 'Partners', children: [{ name: 'Referrals', value: 120 }, { name: 'Affiliates', value: 75 }, { name: 'Resellers', children: [{ name: 'Regional', value: 64 }, { name: 'Global', value: 46 }] }] },
+    { name: 'Other', children: [{ name: 'Licensing', value: 85 }, { name: 'Events', value: 42 }] },
   ],
 } as const
 

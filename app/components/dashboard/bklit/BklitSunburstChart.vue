@@ -4,6 +4,7 @@ import { usePreferredReducedMotion } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import BklitSunburstSegment from './BklitSunburstSegment.vue'
 import { buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant } from './sunburst'
+import { useBklitEnter } from './use-bklit-enter'
 
 const props = withDefaults(defineProps<{
   data: SunburstNode
@@ -28,6 +29,7 @@ const visibleArcs = computed(() => layout.value.arcs.filter((arc) => {
 }))
 const breadcrumbIds = computed(() => getBreadcrumbIds(focusId.value, layout.value.nodes))
 const breadcrumbItems = computed(() => breadcrumbIds.value.map(id => ({ id, name: layout.value.nodes.get(id)?.name ?? id.split(' / ').at(-1) ?? id })))
+const labelsProgress = useBklitEnter(true, 1.15, () => props.replayKey, { type: 'tween', durationSeconds: 0.45 })
 
 function arcIndex(arc: SunburstArc) {
   return layout.value.arcs.findIndex(item => item.id === arc.id)
@@ -71,7 +73,14 @@ function segmentOpacity(arc: SunburstArc) {
 }
 
 function labelVisible(arc: SunburstArc) {
-  return (arc.endAngle - arc.startAngle) * arc.depth * radius.value > 34 && arc.depth <= 3
+  const ringWidth = radius.value
+  const labelRadius = (arc.depth - 0.5) * ringWidth + 3
+  const angularSpace = (arc.endAngle - arc.startAngle) * labelRadius
+  const radialSpace = ringWidth - 6
+
+  // Bklit uses the geometric label gate: every segment gets a label when the
+  // available arc length and ring width can hold it without collision.
+  return angularSpace >= 26 && radialSpace >= 16
 }
 
 function labelPosition(arc: SunburstArc) {
@@ -143,10 +152,11 @@ function labelRotation(arc: SunburstArc) {
               pointer-events="none"
               text-anchor="middle"
               paint-order="stroke"
-              stroke="var(--color-on-background)"
+              stroke="var(--chart-background)"
               stroke-linejoin="round"
               stroke-width="2.5"
               :transform="`rotate(${labelRotation(arc)} ${labelPosition(arc).x} ${labelPosition(arc).y})`"
+              :style="{ opacity: labelsProgress }"
             >{{ arc.name }}</text>
             <title>{{ arc.name }} · {{ arc.value }} changes</title>
           </g>
