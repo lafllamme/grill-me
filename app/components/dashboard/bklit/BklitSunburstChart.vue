@@ -63,6 +63,14 @@ function zoomOut() {
   zoomTo(parentId)
 }
 
+function handleChartFocusOut(event: FocusEvent) {
+  const chart = event.currentTarget
+  const nextTarget = event.relatedTarget
+  if (chart instanceof SVGSVGElement && !(nextTarget instanceof Node && chart.contains(nextTarget))) {
+    hoveredId.value = null
+  }
+}
+
 function segmentDelay(arc: SunburstArc) {
   const sameDepth = visibleArcs.value
     .filter(item => item.depth === arc.depth)
@@ -143,6 +151,8 @@ function labelRotation(arc: SunburstArc) {
         :style="{ width: `${props.size}px`, opacity: prefersReducedMotion === 'reduce' ? 1 : undefined }"
         :viewBox="`${-props.size / 2} ${-props.size / 2} ${props.size} ${props.size}`"
         :aria-label="`${props.data.name} hierarchy sunburst`"
+        @focusout="handleChartFocusOut"
+        @pointerleave="hoveredId = null"
       >
         <g :style="{ transformOrigin: '0 0' }">
           <BklitSunburstSegment

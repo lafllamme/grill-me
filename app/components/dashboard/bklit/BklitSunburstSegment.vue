@@ -64,10 +64,8 @@ const visualPath = computed(() => createSunburstPath(
     class="cursor-pointer"
     :style="{ opacity: props.isRelated ? 1 : 0.25, transition: props.reducedMotion ? 'none' : 'opacity 160ms ease-out', transformOrigin: '0 0' }"
     :transform="`scale(${progress})`"
-    @mouseenter="emit('hover', true)"
-    @mouseleave="emit('hover', false)"
+    @pointerenter="emit('hover', true)"
     @focusin="emit('hover', true)"
-    @focusout="emit('hover', false)"
   >
     <title>{{ props.arc.name }} · {{ props.arc.value }} changes</title>
     <path
