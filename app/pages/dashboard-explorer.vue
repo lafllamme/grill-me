@@ -5,6 +5,7 @@ import BklitBar from '~/components/dashboard/bklit/BklitBar.vue'
 import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
 import BklitBarXAxis from '~/components/dashboard/bklit/BklitBarXAxis.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
+import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
 import BklitRadarChart from '~/components/dashboard/bklit/BklitRadarChart.vue'
 import DashboardRingChart from '~/components/dashboard/DashboardRingChart.vue'
 import RoastOneGradeStar from '~/components/roast-one/RoastOneGradeStar.vue'
@@ -35,6 +36,7 @@ interface ChartPalette {
 const fixture = roastDashboardFixture
 const explorerFixture = roastDashboardExplorerFixture
 const isBarLoading = ref(true)
+const isLineLoading = ref(true)
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -114,6 +116,7 @@ const chartStyle = computed(() => ({
 }))
 const profileRadarData = computed(() => fixture.radarProfile.data.map(item => ({ ...item })))
 let barLoadingTimer: ReturnType<typeof setTimeout> | undefined
+let lineLoadingTimer: ReturnType<typeof setTimeout> | undefined
 
 function replayBarLoading() {
   isBarLoading.value = true
@@ -125,6 +128,16 @@ function replayBarLoading() {
   }, 1400)
 }
 
+function replayLineLoading() {
+  isLineLoading.value = true
+  if (lineLoadingTimer) {
+    clearTimeout(lineLoadingTimer)
+  }
+  lineLoadingTimer = setTimeout(() => {
+    isLineLoading.value = false
+  }, 1400)
+}
+
 function setColorMode(mode: ColorMode) {
   activeColorMode.value = mode
   activeColorProfile.value = mode === 'dark' ? 'voidWhisper' : 'slateCloud'
@@ -132,10 +145,14 @@ function setColorMode(mode: ColorMode) {
 
 onMounted(() => {
   replayBarLoading()
+  replayLineLoading()
 })
 onBeforeUnmount(() => {
   if (barLoadingTimer) {
     clearTimeout(barLoadingTimer)
+  }
+  if (lineLoadingTimer) {
+    clearTimeout(lineLoadingTimer)
   }
 })
 
@@ -185,7 +202,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
         </fieldset>
       </header>
 
-      <div id="profile-panel" class="grid gap-4 mt-8 lg:grid-cols-12">
+      <div id="profile-panel" class="grid grid-cols-[minmax(0,1fr)] gap-4 mt-8 lg:grid-cols-12">
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-8 lg:p-8 transition-colors duration-300">
           <h2 class="text-2xl tracking-[-0.04em] font-body">Profile</h2>
           <BklitRadarChart class="mt-4" :data="profileRadarData" :metrics="fixture.radarProfile.metrics" :size="400" />
@@ -201,6 +218,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
         </article>
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-12 transition-colors duration-300"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
         <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-12 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change volume</h2></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayBarLoading">Replay loading</button></div><BklitBarChart class="mt-8" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'"><template #grid><BklitGrid horizontal /></template><BklitBar data-key="additions" fill="var(--color-primary-strong)" /><BklitBar data-key="deletions" fill="var(--color-primary)" /><template #x-axis><BklitBarXAxis /></template></BklitBarChart></article>
+        <article :class="currentColorProfile.panelClass" class="box-border min-w-0 w-full rounded-[28px] p-6 sm:p-8 lg:col-span-12 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change pressure</h2><p :class="currentColorProfile.mutedClass" class="text-sm mt-2">How much code and surface area changed across the roast window.</p></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayLineLoading">Replay loading</button></div><BklitLineChart class="mt-8 min-w-0" :data="explorerFixture.timeline" x-data-key="label" :series="[{ dataKey: 'additions', label: 'additions', color: 'var(--color-primary-strong)' }, { dataKey: 'files', label: 'files changed', color: 'var(--color-primary)' }]" :status="isLineLoading ? 'loading' : 'ready'" loading-label="Loading change pressure…" /></article>
       </div>
 
       <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] mt-8 flex flex-wrap gap-4 justify-between font-meta uppercase"><span>Grillme</span><span>Profile view</span></footer>

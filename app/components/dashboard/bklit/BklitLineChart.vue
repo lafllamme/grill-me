@@ -1,0 +1,294 @@
+<script setup lang="ts">
+import { usePreferredReducedMotion } from '@vueuse/core'
+import { curveNatural, line as d3Line } from 'd3-shape'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useBklitSpring } from './use-bklit-spring'
+
+export interface BklitLineDatum {
+  [key: string]: string | number
+}
+
+export interface BklitLineSeries {
+  dataKey: string
+  label: string
+  color: string
+}
+
+interface ChartPoint {
+  x: number
+  y: number
+}
+
+const props = withDefaults(defineProps<{
+  data: readonly BklitLineDatum[]
+  series: readonly BklitLineSeries[]
+  xDataKey?: string
+  status?: 'loading' | 'ready'
+  loadingLabel?: string
+  animationDuration?: number
+  aspectRatio?: string
+  margin?: { top?: number, right?: number, bottom?: number, left?: number }
+}>(), {
+  xDataKey: 'date',
+  status: 'ready',
+  loadingLabel: 'Loading',
+  animationDuration: 1100,
+  aspectRatio: '2 / 1',
+  margin: () => ({ top: 40, right: 40, bottom: 40, left: 40 }),
+})
+
+const chartWidth = 640
+const chartHeight = 320
+const margin = computed(() => ({
+  top: props.margin?.top ?? 40,
+  right: props.margin?.right ?? 40,
+  bottom: props.margin?.bottom ?? 40,
+  left: props.margin?.left ?? 40,
+}))
+const plotWidth = computed(() => chartWidth - margin.value.left - margin.value.right)
+const plotHeight = computed(() => chartHeight - margin.value.top - margin.value.bottom)
+const reducedMotion = usePreferredReducedMotion()
+const isReducedMotion = computed(() => reducedMotion.value === 'reduce')
+const hoveredIndex = ref<number | null>(null)
+const pointerFrame = ref<number | null>(null)
+const pendingIndex = ref<number | null>(null)
+const revealTarget = ref(props.status === 'ready' ? 1 : 0)
+const revealProgress = useBklitSpring(revealTarget, { stiffness: 170, damping: 28 })
+const crosshairTarget = ref<number | null>(null)
+const crosshairX = useBklitSpring(crosshairTarget, { stiffness: 300, damping: 30 })
+const pillTarget = ref<number | null>(null)
+const pillX = useBklitSpring(pillTarget, { stiffness: 400, damping: 35 })
+const tooltipTarget = ref<number | null>(null)
+const tooltipX = useBklitSpring(tooltipTarget, { stiffness: 100, damping: 20 })
+const tooltipVisible = computed(() => hoveredIndex.value !== null && props.status === 'ready')
+const activeDatum = computed(() => hoveredIndex.value === null ? null : props.data[hoveredIndex.value] ?? null)
+const activeLabel = computed(() => activeDatum.value?.[props.xDataKey] ?? '')
+const tooltipSide = computed(() => (tooltipX.value ?? 50) > 64 ? 'left' : 'right')
+const tooltipStyle = computed(() => ({
+  left: `${tooltipX.value ?? 50}%`,
+  top: '29%',
+  transform: tooltipSide.value === 'left' ? 'translate(-100%, -50%)' : 'translate(0, -50%)',
+}))
+
+function datumTime(datum: BklitLineDatum, index: number) {
+  const value = datum[props.xDataKey]
+  if (typeof value === 'number') {
+    return value
+  }
+  const parsed = Date.parse(String(value))
+  return Number.isNaN(parsed) ? index : parsed
+}
+
+const domain = computed(() => {
+  const times = props.data.map(datumTime)
+  const min = Math.min(...times)
+  const max = Math.max(...times)
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return [0, 1]
+  }
+  return max === min ? [min, min + 1] : [min, max]
+})
+
+function xAt(index: number) {
+  const times = props.data.map(datumTime)
+  const domainStart = domain.value[0] ?? 0
+  const domainEnd = domain.value[1] ?? 1
+  const span = domainEnd - domainStart
+  return margin.value.left + (((times[index] ?? domainStart) - domainStart) / span) * plotWidth.value
+}
+
+const maxValue = computed(() => Math.max(1, ...props.data.flatMap(datum => props.series.map(series => Number(datum[series.dataKey]) || 0))))
+const yAt = (value: number) => margin.value.top + plotHeight.value - (value / maxValue.value) * plotHeight.value * 0.9
+const pointsFor = (series: BklitLineSeries) => props.data.map((datum, index) => ({ x: xAt(index), y: yAt(Number(datum[series.dataKey]) || 0) }))
+const pathFor = (points: ChartPoint[]) => d3Line<ChartPoint>().curve(curveNatural).x(point => point.x).y(point => point.y)(points) ?? ''
+const linePaths = computed(() => props.series.map(series => ({ ...series, points: pointsFor(series), path: pathFor(pointsFor(series)) })))
+const skeletonPoints = computed<ChartPoint[]>(() => Array.from({ length: Math.max(props.data.length, 8) }, (_, index) => ({
+  x: margin.value.left + index / Math.max(Math.max(props.data.length, 8) - 1, 1) * plotWidth.value,
+  y: margin.value.top + plotHeight.value * (0.45 + Math.sin(index * 1.7) * 0.18),
+})))
+const skeletonPath = computed(() => pathFor(skeletonPoints.value))
+const activeSegment = computed(() => {
+  if (hoveredIndex.value === null)
+    return []
+  const start = Math.max(0, hoveredIndex.value - 2)
+  const end = Math.min(props.data.length, hoveredIndex.value + 3)
+  return linePaths.value.map(series => ({ ...series, path: pathFor(series.points.slice(start, end)) }))
+})
+const xLabels = computed(() => props.data.map((datum, index) => ({
+  label: String(datum[props.xDataKey]),
+  x: xAt(index),
+})))
+
+function labelOpacity(x: number) {
+  if (crosshairX.value === null)
+    return 1
+  const distance = Math.abs(x - crosshairX.value)
+  if (distance < 28)
+    return 0
+  if (distance < 70)
+    return (distance - 28) / 42
+  return 1
+}
+
+function setHover(index: number) {
+  hoveredIndex.value = index
+  const x = xAt(index)
+  const xPercent = x / chartWidth * 100
+  crosshairTarget.value = x
+  pillTarget.value = xPercent
+  tooltipTarget.value = xPercent > 64 ? xPercent - 2.5 : xPercent + 2.5
+}
+
+function scheduleHover(index: number) {
+  pendingIndex.value = index
+  if (pointerFrame.value !== null || typeof requestAnimationFrame === 'undefined') {
+    if (typeof requestAnimationFrame === 'undefined')
+      setHover(index)
+    return
+  }
+  pointerFrame.value = requestAnimationFrame(() => {
+    if (pendingIndex.value !== null)
+      setHover(pendingIndex.value)
+    pointerFrame.value = null
+  })
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (props.status !== 'ready' || props.data.length === 0)
+    return
+  const svg = event.currentTarget as SVGSVGElement
+  const bounds = svg.getBoundingClientRect()
+  const localX = (event.clientX - bounds.left) / bounds.width * chartWidth
+  const nearest = props.data.reduce((best, _, index) => Math.abs(xAt(index) - localX) < Math.abs(xAt(best) - localX) ? index : best, 0)
+  scheduleHover(nearest)
+}
+
+function clearHover() {
+  if (pointerFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
+    cancelAnimationFrame(pointerFrame.value)
+  pointerFrame.value = null
+  pendingIndex.value = null
+  hoveredIndex.value = null
+  crosshairTarget.value = null
+  pillTarget.value = null
+  tooltipTarget.value = null
+}
+
+function formatValue(value: unknown) {
+  return Number(value ?? 0).toLocaleString()
+}
+
+function replayReveal() {
+  revealTarget.value = 0
+  window.setTimeout(() => {
+    revealTarget.value = 1
+  }, 40)
+}
+
+onMounted(() => {
+  if (isReducedMotion.value)
+    revealTarget.value = 1
+  else replayReveal()
+})
+onBeforeUnmount(() => {
+  if (pointerFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
+    cancelAnimationFrame(pointerFrame.value)
+})
+
+watch(() => props.status, (status) => {
+  revealTarget.value = status === 'ready' ? 1 : 0
+})
+</script>
+
+<template>
+  <div class="w-full relative touch-none" :style="{ aspectRatio: props.aspectRatio }">
+    <svg class="h-full w-full overflow-visible" viewBox="0 0 640 320" role="img" aria-label="Roast change trend line chart" @pointermove="handlePointerMove" @pointerleave="clearHover">
+      <defs>
+        <linearGradient id="bklit-line-grid-fade" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="white" stop-opacity="0" />
+          <stop offset="10%" stop-color="white" stop-opacity="1" />
+          <stop offset="90%" stop-color="white" stop-opacity="1" />
+          <stop offset="100%" stop-color="white" stop-opacity="0" />
+        </linearGradient>
+        <mask id="bklit-line-grid-mask" maskUnits="userSpaceOnUse">
+          <rect :x="margin.left" :y="margin.top" :width="plotWidth" :height="plotHeight" fill="url(#bklit-line-grid-fade)" />
+        </mask>
+        <linearGradient id="bklit-line-loading-shimmer" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="var(--color-on-background)" stop-opacity="0" />
+          <stop offset="50%" stop-color="var(--color-on-background)" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="var(--color-on-background)" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+
+      <g stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
+        <line v-for="index in 5" :key="`h-${index}`" :x1="margin.left" :x2="chartWidth - margin.right" :y1="margin.top + (index - 1) * plotHeight / 4" :y2="margin.top + (index - 1) * plotHeight / 4" />
+      </g>
+      <g v-if="status === 'ready'" stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" opacity="0.65">
+        <line v-for="(item, index) in xLabels" :key="`v-${index}`" :x1="item.x" :x2="item.x" :y1="margin.top" :y2="chartHeight - margin.bottom" />
+      </g>
+
+      <path v-if="status === 'loading'" :d="skeletonPath" fill="none" stroke="var(--color-on-background)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" class="animate-pulse" />
+      <rect v-if="status === 'loading' && !isReducedMotion" :x="margin.left - 160" :y="margin.top" width="160" :height="plotHeight" fill="url(#bklit-line-loading-shimmer)" opacity="0.22" pointer-events="none">
+        <animate attributeName="x" :from="margin.left - 160" :to="chartWidth - margin.right" dur="2.2s" repeatCount="indefinite" />
+      </rect>
+      <template v-else>
+        <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" :style="{ opacity: 0.32 }" />
+        <path v-for="series in activeSegment" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" :style="{ opacity: hoveredIndex === null ? 0 : 1 }" />
+      </template>
+
+      <line v-if="tooltipVisible" :x1="crosshairX" :x2="crosshairX" :y1="margin.top" :y2="chartHeight - margin.bottom" stroke="var(--color-on-background)" stroke-width="1" opacity="0.9" />
+      <template v-if="tooltipVisible">
+        <template v-for="series in linePaths" :key="`dot-${series.dataKey}`">
+          <circle :cx="series.points[hoveredIndex ?? 0]?.x" :cy="series.points[hoveredIndex ?? 0]?.y" r="7" :fill="series.color" stroke="var(--color-chart-track)" stroke-width="3" />
+        </template>
+      </template>
+
+      <g class="text-[12px] font-body" :style="{ fill: 'var(--chart-label)' }">
+        <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="299" text-anchor="middle" :opacity="labelOpacity(item.x)">{{ item.label }}</text>
+        <g v-if="pillX !== null && hoveredIndex !== null" :transform="`translate(${pillX / 100 * chartWidth}, 284)`" class="pointer-events-none">
+          <rect x="-50" y="0" width="100" height="30" rx="15" fill="var(--color-on-background)" class="shadow-lg" />
+          <clipPath id="bklit-line-pill-clip"><rect x="-50" y="0" width="100" height="30" rx="15" /></clipPath>
+          <g clip-path="url(#bklit-line-pill-clip)">
+            <g :style="{ transform: `translateY(${-(hoveredIndex * 24)}px)`, transition: isReducedMotion ? 'none' : 'transform 300ms cubic-bezier(.22,1,.36,1)' }">
+              <text v-for="(item, index) in xLabels" :key="`pill-${index}`" x="0" :y="20 + index * 24" text-anchor="middle" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.label }}</text>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 translate-y-1"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="status === 'loading'" class="flex pointer-events-none items-center inset-0 justify-center absolute" role="status" aria-live="polite">
+        <span class="text-sm text-on-surface-variant/70 tracking-wide animate-pulse">{{ loadingLabel }}</span>
+      </div>
+    </Transition>
+
+    <Transition
+      enter-active-class="transition duration-100 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="tooltipVisible && activeDatum" class="text-on-background px-3 py-2.5 bg-chart-tooltip min-w-[180px] pointer-events-none shadow-lg absolute z-30" :style="tooltipStyle">
+        <p class="text-sm font-medium mb-2">
+          {{ activeLabel }}
+        </p>
+        <div class="flex flex-col gap-1.5">
+          <div v-for="series in props.series" :key="series.dataKey" class="text-sm flex gap-4 items-center justify-between">
+            <span class="text-on-surface-variant/70 flex gap-2 min-w-0 items-center"><span class="rounded-full shrink-0 h-2.5 w-2.5" :style="{ backgroundColor: series.color }" />{{ series.label }}</span>
+            <strong class="font-medium shrink-0 tabular-nums">{{ formatValue(activeDatum[series.dataKey]) }}</strong>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</template>
