@@ -176,7 +176,7 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
 <template>
   <div class="w-full relative" :style="chartStyle" :data-animation-duration="props.animationDuration" :data-animation-easing="props.animationEasing" :data-reveal-signature="props.revealSignature" :data-stack-gap="props.stackGap">
     <svg :class="status === 'ready' ? 'cursor-crosshair' : 'cursor-default'" class="h-full w-full overflow-visible" viewBox="0 0 640 320" role="img" aria-label="Roast change volume bar chart" @pointermove="handlePointerMove" @pointerleave="clearHover">
-      <BklitBarChartLoading v-if="status === 'loading'" :bar-count="data.length || 12" />
+      <BklitBarChartLoading v-if="status === 'loading'" :bar-count="12" />
       <g v-else>
         <slot />
       </g>

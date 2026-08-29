@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { usePreferredReducedMotion } from '@vueuse/core'
-import { computed, inject, useId } from 'vue'
+import { computed, inject, ref, useId } from 'vue'
 import { bklitBarContextKey } from './bar-context'
 import BklitLoadingSweep from './BklitLoadingSweep.vue'
 
@@ -18,8 +18,9 @@ if (!context) {
   throw new Error('BklitBarChartLoading must be rendered inside BklitBarChart')
 }
 const isReducedMotion = usePreferredReducedMotion()
+const sweepSeed = ref(0)
 const skeletonHeights = computed(() => Array.from({ length: props.barCount }, (_, index) => {
-  const x = Math.sin((index + 1) * 12.9898) * 43758.5453
+  const x = Math.sin((index + 1) * 12.9898 + sweepSeed.value) * 43758.5453
   const fraction = x - Math.floor(x)
   return 20 + Math.floor(fraction * 60)
 }))
@@ -28,6 +29,11 @@ const plotWidth = computed(() => context.chartWidth - context.plotLeft - context
 const plotHeight = computed(() => context.chartHeight - context.plotTop - context.plotBottom)
 const barStep = computed(() => plotWidth.value / Math.max(props.barCount, 1))
 const barWidth = computed(() => barStep.value * 0.7)
+const barRadius = computed(() => Math.min(barWidth.value / 2, 8))
+
+function handleSweepRepeat() {
+  sweepSeed.value += 1
+}
 </script>
 
 <template>
@@ -36,25 +42,27 @@ const barWidth = computed(() => barStep.value * 0.7)
       <BklitLoadingSweep :id="`${chartId}-gradient`" />
       <pattern :id="`${chartId}-pattern`" width="3" height="1" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" patternTransform="rotate(25)">
         <rect x="-1" y="0" width="1" height="1" :fill="`url(#${chartId}-gradient)`">
-          <animate attributeName="x" from="-1" to="2" :dur="`${sweepDuration}s`" repeatCount="indefinite" />
+          <animate attributeName="x" from="-1" to="2" :dur="`${sweepDuration}s`" repeatCount="indefinite" @repeat="handleSweepRepeat" />
         </rect>
       </pattern>
       <mask :id="`${chartId}-mask`" maskUnits="userSpaceOnUse">
         <rect x="0" y="0" :width="plotWidth" :height="plotHeight" :fill="`url(#${chartId}-pattern)`" />
       </mask>
     </defs>
-    <g :transform="`translate(${context.plotLeft} ${context.plotTop})`" :mask="sweepDuration > 0 ? `url(#${chartId}-mask)` : undefined">
-      <rect
-        v-for="index in barCount"
-        :key="`bar-${index}`"
-        :x="(index - 1) * barStep + barStep * 0.15"
-        :y="plotHeight - (skeletonHeights[index - 1] ?? 20) / 100 * plotHeight"
-        :width="barWidth"
-        :height="(skeletonHeights[index - 1] ?? 20) / 100 * plotHeight"
-        rx="2"
-        fill="var(--color-on-background)"
-        fill-opacity="0.45"
-      />
+    <g :transform="`translate(${context.plotLeft} ${context.plotTop})`">
+      <g :mask="sweepDuration > 0 ? `url(#${chartId}-mask)` : undefined">
+        <rect
+          v-for="index in barCount"
+          :key="`bar-${index}`"
+          :x="(index - 1) * barStep + barStep * 0.15"
+          :y="plotHeight - (skeletonHeights[index - 1] ?? 20) / 100 * plotHeight"
+          :width="barWidth"
+          :height="(skeletonHeights[index - 1] ?? 20) / 100 * plotHeight"
+          :rx="barRadius"
+          fill="var(--color-on-background)"
+          fill-opacity="0.45"
+        />
+      </g>
     </g>
   </g>
 </template>
