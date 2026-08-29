@@ -95,6 +95,21 @@ const highlightWidth = useBklitSpring(highlightWidthTarget, { stiffness: 180, da
 const tooltipVisible = computed(() => hoveredIndex.value !== null && props.status === 'ready')
 const activeDatum = computed(() => hoveredIndex.value === null ? null : props.data[hoveredIndex.value] ?? null)
 const activeLabel = computed(() => activeDatum.value?.[props.xDataKey] ?? '')
+const activeTooltipLabel = computed(() => {
+  if (!activeDatum.value)
+    return ''
+
+  const dateValue = activeDatum.value.date ?? activeDatum.value[props.xDataKey]
+  const date = new Date(typeof dateValue === 'number' ? dateValue : String(dateValue))
+  if (Number.isNaN(date.getTime()))
+    return String(activeLabel.value)
+
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
+})
 const markerTimestamp = (marker: BklitLineMarker) => marker.date instanceof Date ? marker.date.getTime() : typeof marker.date === 'number' ? marker.date : Date.parse(String(marker.date))
 const markerEntries = computed(() => props.markers.map(marker => ({
   marker,
@@ -207,6 +222,22 @@ const monthSegments = computed(() => parsedLabels.value.reduce<{ month: string, 
 const currentMonthIndex = computed(() => {
   const currentIndex = hoveredIndex.value ?? 0
   return Math.max(0, monthSegments.value.findLastIndex(segment => segment.startIndex <= currentIndex))
+})
+const activeTickerWidth = computed(() => {
+  const item = parsedLabels.value[hoveredIndex.value ?? 0]
+  const labelWidth = ((item?.month.length ?? 0) + (item?.day.length ?? 0)) * 8
+  return Math.max(84, labelWidth + 36)
+})
+const pillTextPositions = computed(() => {
+  const item = parsedLabels.value[hoveredIndex.value ?? 0]
+  const monthWidth = (item?.month.length ?? 0) * 8
+  const dayWidth = (item?.day.length ?? 0) * 8
+  const gap = 4
+
+  return {
+    month: -(dayWidth + gap) / 2,
+    day: (monthWidth + gap) / 2,
+  }
 })
 
 function labelOpacity(x: number) {
@@ -492,17 +523,17 @@ watch(isReducedMotion, () => {
 
       <g class="text-[12px] font-body" :style="{ fill: 'var(--chart-label)' }">
         <template v-if="status === 'ready'">
-          <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="299" text-anchor="middle" :opacity="labelOpacity(item.x)" :style="{ transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }">{{ item.label }}</text>
+          <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="304" text-anchor="middle" :opacity="labelOpacity(item.x)" :style="{ transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }">{{ item.label }}</text>
         </template>
         <g v-if="pillX !== null && hoveredIndex !== null" :transform="`translate(${pillX / 100 * chartWidth}, 284)`" class="pointer-events-none">
-          <rect x="-50" y="0" width="100" height="30" rx="15" fill="var(--color-on-background)" class="shadow-lg" />
-          <clipPath id="bklit-line-pill-clip"><rect x="-50" y="0" width="100" height="30" rx="15" /></clipPath>
+          <rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="32" rx="16" fill="var(--color-on-background)" class="shadow-lg" />
+          <clipPath id="bklit-line-pill-clip"><rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="32" rx="16" /></clipPath>
           <g clip-path="url(#bklit-line-pill-clip)">
             <g :style="{ transform: `translateY(${-(isReducedMotion ? currentMonthIndex * 24 : pillMonthY)}px)` }">
-              <text v-for="segment in monthSegments" :key="`pill-month-${segment.startIndex}`" x="-2" :y="20 + monthSegments.indexOf(segment) * 24" text-anchor="end" class="text-background text-[13px] font-semibold" fill="currentColor">{{ segment.month }}</text>
+              <text v-for="segment in monthSegments" :key="`pill-month-${segment.startIndex}`" :x="pillTextPositions.month" :y="20 + monthSegments.indexOf(segment) * 24" text-anchor="middle" class="text-background text-sm font-medium" fill="currentColor">{{ segment.month }}</text>
             </g>
             <g :style="{ transform: `translateY(${-(isReducedMotion ? hoveredIndex * 24 : pillDayY)}px)` }">
-              <text v-for="item in parsedLabels" :key="`pill-day-${item.index}`" x="2" :y="20 + item.index * 24" text-anchor="start" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.day }}</text>
+              <text v-for="item in parsedLabels" :key="`pill-day-${item.index}`" :x="pillTextPositions.day" :y="20 + item.index * 24" text-anchor="middle" class="text-background text-sm font-medium" fill="currentColor">{{ item.day }}</text>
             </g>
           </g>
         </g>
@@ -535,7 +566,7 @@ watch(isReducedMotion, () => {
     >
       <div v-if="tooltipVisible && activeDatum" class="text-on-background px-3 py-2.5 bg-chart-tooltip min-w-[180px] pointer-events-none shadow-lg absolute z-30" :style="tooltipStyle">
         <p class="text-sm font-medium mb-2">
-          {{ activeLabel }}
+          {{ activeTooltipLabel }}
         </p>
         <div class="flex flex-col gap-1.5">
           <div v-for="series in props.series" :key="series.dataKey" class="text-sm flex gap-4 items-center justify-between">

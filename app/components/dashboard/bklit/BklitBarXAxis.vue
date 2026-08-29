@@ -16,7 +16,7 @@ const activeLabel = computed(() => {
   const index = activeIndex.value
   return index === null ? '' : String(context.data[index]?.[context.xDataKey] ?? '')
 })
-const activeTickerWidth = computed(() => Math.max(84, activeLabel.value.length * 8.5 + 28))
+const activeTickerWidth = computed(() => Math.max(84, activeLabel.value.length * 8 + 36))
 const tickerY = useBklitSpring(computed(() => activeIndex.value === null ? 0 : -(activeIndex.value * 24)), { stiffness: 400, damping: 35 })
 const tickerClipId = `bklit-bar-ticker-${useId()}`
 
@@ -45,7 +45,7 @@ function labelOpacity(index: number) {
   <g>
     <template v-for="(item, index) in context.data" :key="index">
       <template v-if="props.showAllLabels || context.data.length <= props.maxLabels || index === context.hoveredIndex.value || index % Math.max(1, Math.ceil(context.data.length / props.maxLabels)) === 0">
-        <text :x="context.xAt(index)" y="299" text-anchor="middle" :opacity="labelOpacity(index)" class="font-body text-[12px]" :style="{ fill: 'var(--chart-label)' }">
+        <text :x="context.xAt(index)" y="304" text-anchor="middle" :opacity="labelOpacity(index)" class="font-body text-[12px]" :style="{ fill: 'var(--chart-label)' }">
           {{ item[context.xDataKey] }}
         </text>
       </template>
@@ -57,15 +57,15 @@ function labelOpacity(index: number) {
     >
       <defs>
         <clipPath :id="tickerClipId">
-          <rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="30" rx="15" />
+          <rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="32" rx="16" />
         </clipPath>
       </defs>
       <rect
         :x="-activeTickerWidth / 2"
         y="0"
         :width="activeTickerWidth"
-        height="30"
-        rx="15"
+        height="32"
+        rx="16"
         fill="var(--chart-axis-badge-background, #f5f5f5)"
       />
       <g :clip-path="`url(#${tickerClipId})`">
@@ -75,7 +75,7 @@ function labelOpacity(index: number) {
             :key="`${item[context.xDataKey]}-${index}`"
             :y="20 + index * 24"
             text-anchor="middle"
-            class="font-body text-[13px] font-semibold"
+            class="font-body text-sm font-medium"
             fill="var(--chart-axis-badge-foreground, #171717)"
           >
             {{ item[context.xDataKey] }}
