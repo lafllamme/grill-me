@@ -29,7 +29,6 @@ const visibleArcs = computed(() => layout.value.arcs.filter((arc) => {
 }))
 const breadcrumbIds = computed(() => getBreadcrumbIds(focusId.value, layout.value.nodes))
 const breadcrumbItems = computed(() => breadcrumbIds.value.map(id => ({ id, name: layout.value.nodes.get(id)?.name ?? id.split(' / ').at(-1) ?? id })))
-const labelsProgress = useBklitEnter(true, 1.15, () => props.replayKey, { type: 'tween', durationSeconds: 0.45 })
 
 function arcIndex(arc: SunburstArc) {
   return layout.value.arcs.findIndex(item => item.id === arc.id)
@@ -63,10 +62,20 @@ function zoomOut() {
 }
 
 function segmentDelay(arc: SunburstArc) {
-  const sameDepth = visibleArcs.value.filter(item => item.depth === arc.depth)
+  const sameDepth = visibleArcs.value
+    .filter(item => item.depth === arc.depth)
+    .sort((a, b) => a.startAngle - b.startAngle)
   const index = sameDepth.findIndex(item => item.id === arc.id)
-  return (arc.depth * 0.12 + index * 0.035)
+  return ((arc.depth - 1) * 0.12 + index * 0.08)
 }
+
+const labelsDelay = computed(() => {
+  const maxSegmentDelay = visibleArcs.value.reduce((latest, arc) => Math.max(latest, segmentDelay(arc)), 0)
+  return maxSegmentDelay + 1.1 * 0.85
+})
+// Bklit reuses the chart entrance transition for labels instead of a short
+// independent fade, which keeps the final settle relaxed and coordinated.
+const labelsProgress = useBklitEnter(true, labelsDelay.value, () => props.replayKey, { type: 'tween', durationSeconds: 1.1 })
 
 function segmentOpacity(arc: SunburstArc) {
   return isRelated(arc) ? (1 - Math.max(0, arc.depth - 1) * 0.12) : 0.25
@@ -141,24 +150,26 @@ function labelRotation(arc: SunburstArc) {
             @focusout="hoveredId = null"
           >
             <BklitSunburstSegment :arc="arc" :color="getSegmentColor(arc, arcIndex(arc))" :delay="segmentDelay(arc)" :hover-grow="hoveredId ? (isRelated(arc) ? 8 : 0) : 0" :reduced-motion="prefersReducedMotion === 'reduce'" :radius="radius" :replay-key="props.replayKey" @select="selectArc(arc)" />
-            <text
-              v-if="labelVisible(arc) && isRelated(arc)"
-              :x="labelPosition(arc).x"
-              :y="labelPosition(arc).y"
-              dominant-baseline="middle"
-              fill="var(--chart-label)"
-              font-size="11"
-              font-weight="600"
-              pointer-events="none"
-              text-anchor="middle"
-              paint-order="stroke"
-              stroke="var(--chart-background)"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              :transform="`rotate(${labelRotation(arc)} ${labelPosition(arc).x} ${labelPosition(arc).y})`"
-              :style="{ opacity: labelsProgress }"
-            >{{ arc.name }}</text>
             <title>{{ arc.name }} · {{ arc.value }} changes</title>
+          </g>
+          <g :style="{ opacity: labelsProgress }" pointer-events="none">
+            <template v-for="arc in visibleArcs" :key="`${props.replayKey}-label-${arc.id}-${focusId}`">
+              <text
+                v-if="labelVisible(arc) && isRelated(arc)"
+                :x="labelPosition(arc).x"
+                :y="labelPosition(arc).y"
+                dominant-baseline="middle"
+                fill="var(--chart-label)"
+                font-size="11"
+                font-weight="600"
+                text-anchor="middle"
+                paint-order="stroke"
+                stroke="var(--chart-background)"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                :transform="`rotate(${labelRotation(arc)} ${labelPosition(arc).x} ${labelPosition(arc).y})`"
+              >{{ arc.name }}</text>
+            </template>
           </g>
           <circle v-if="focusId !== layout.rootId" class="cursor-pointer fill-current/8 stroke-current/20" :r="Math.max(radius * 0.9, 20)" stroke-width="1" @click="zoomOut" />
         </g>

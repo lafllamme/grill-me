@@ -14,23 +14,25 @@ const props = defineProps<{
   replayKey: string
 }>()
 const emit = defineEmits<{ select: [] }>()
-const progress = useBklitEnter(!props.reducedMotion, props.delay, `${props.replayKey}-${props.arc.id}`, { type: 'tween', durationSeconds: 0.62 })
+const progress = useBklitEnter(!props.reducedMotion, props.delay, `${props.replayKey}-${props.arc.id}`, { type: 'tween', durationSeconds: 1.1 })
 const path = computed(() => createSunburstPath(props.arc, props.radius, props.reducedMotion ? 1 : progress.value, props.hoverGrow))
 </script>
 
 <template>
-  <path
-    :d="path"
-    :fill="props.color"
-    fill-opacity="0.9"
-    stroke="var(--color-chart-track)"
-    stroke-width="1"
-    stroke-linejoin="round"
-    tabindex="0"
-    :aria-label="`${props.arc.name}, ${props.arc.value} changes`"
-    role="button"
-    @click="emit('select')"
-    @keydown.enter="emit('select')"
-    @keydown.space.prevent="emit('select')"
-  />
+  <g :transform="`scale(${progress})`" transform-origin="0 0">
+    <path
+      :d="path"
+      :fill="props.color"
+      fill-opacity="0.9"
+      stroke="var(--color-chart-track)"
+      stroke-width="1"
+      stroke-linejoin="round"
+      tabindex="0"
+      :aria-label="`${props.arc.name}, ${props.arc.value} changes`"
+      role="button"
+      @click="emit('select')"
+      @keydown.enter="emit('select')"
+      @keydown.space.prevent="emit('select')"
+    />
+  </g>
 </template>
