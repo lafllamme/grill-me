@@ -76,8 +76,6 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
   index,
   path: createNotchPath(index),
   isActive: index < activeNotches.value,
-  xCenter: centerX.value,
-  yCenter: centerY.value,
 })))
 </script>
 
@@ -91,8 +89,6 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
           :path="notch.path"
           :fill="inactiveFill"
           :opacity="inactiveFillOpacity"
-          :x-center="notch.xCenter"
-          :y-center="notch.yCenter"
           :delay="notch.index * 0.015"
           :replay-key="replayKey"
         />
@@ -104,8 +100,6 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
           :path="notch.path"
           :fill="activeFill"
           :opacity="activeFillOpacity"
-          :x-center="notch.xCenter"
-          :y-center="notch.yCenter"
           :delay="0.3 + notch.index * 0.02"
           :replay-key="replayKey"
         />

@@ -1,24 +1,31 @@
 <script setup lang="ts">
 import { usePreferredReducedMotion } from '@vueuse/core'
+import { motion } from 'motion-v'
 import { computed } from 'vue'
-import { useBklitEnter } from './use-bklit-enter'
 
 const props = defineProps<{
   path: string
   fill: string
   opacity: number
-  xCenter: number
-  yCenter: number
   delay: number
   replayKey?: string
 }>()
 
 const prefersReducedMotion = usePreferredReducedMotion()
-const revealProgress = useBklitEnter(prefersReducedMotion.value !== 'reduce', props.delay, () => props.replayKey ?? '', { type: 'spring', stiffness: 300, damping: 20 })
-const clampedProgress = computed(() => Math.min(1, Math.max(0, revealProgress.value)))
-const transform = computed(() => `translate(${props.xCenter} ${props.yCenter}) scale(${clampedProgress.value}) translate(${-props.xCenter} ${-props.yCenter})`)
+const transition = computed(() => prefersReducedMotion.value === 'reduce'
+  ? { duration: 0 }
+  : { type: 'spring' as const, stiffness: 300, damping: 20, delay: props.delay })
 </script>
 
 <template>
-  <path :d="path" :fill="fill" :fill-opacity="opacity" :style="{ opacity: revealProgress }" :transform="transform" />
+  <motion.path
+    :key="replayKey ?? 'default'"
+    :d="path"
+    :fill="fill"
+    :fill-opacity="opacity"
+    :initial="{ opacity: 0, scale: 0 }"
+    :animate="{ opacity: 1, scale: 1 }"
+    :transition="transition"
+    :style="{ transformOrigin: '50% 50%' }"
+  />
 </template>
