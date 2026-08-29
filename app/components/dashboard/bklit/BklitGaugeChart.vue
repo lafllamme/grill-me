@@ -34,32 +34,48 @@ const props = withDefaults(defineProps<{
   inactiveFillOpacity: 0.8,
 })
 
-const displayedCenterValue = ref(props.centerValue ?? 0)
+const displayedCenterValue = ref(0)
+let isMounted = false
+let hasScheduledCenterEntrance = false
 let hasStartedCenterEntrance = false
 let outerFrame = 0
 let innerFrame = 0
 
-onMounted(() => {
-  if (props.centerValue === undefined) {
+function scheduleCenterEntrance() {
+  if (!isMounted || hasScheduledCenterEntrance || props.centerValue === undefined) {
     return
   }
 
+  hasScheduledCenterEntrance = true
   displayedCenterValue.value = 0
   outerFrame = requestAnimationFrame(() => {
     innerFrame = requestAnimationFrame(() => {
-      displayedCenterValue.value = props.centerValue ?? 0
+      if (props.centerValue === undefined) {
+        return
+      }
+
+      displayedCenterValue.value = props.centerValue
       hasStartedCenterEntrance = true
     })
   })
+}
+
+onMounted(() => {
+  isMounted = true
+  scheduleCenterEntrance()
 })
 
 watch(() => props.centerValue, (value) => {
-  if (value !== undefined && hasStartedCenterEntrance) {
+  if (value !== undefined && !hasScheduledCenterEntrance) {
+    scheduleCenterEntrance()
+  }
+  else if (value !== undefined && hasStartedCenterEntrance) {
     displayedCenterValue.value = value
   }
 })
 
 onBeforeUnmount(() => {
+  isMounted = false
   cancelAnimationFrame(outerFrame)
   cancelAnimationFrame(innerFrame)
 })
@@ -71,6 +87,7 @@ const centerY = computed(() => props.height / 2)
 const size = computed(() => Math.min(props.width, props.height))
 const outerRadius = computed(() => size.value * 0.42)
 const innerRadius = computed(() => size.value * 0.28)
+const centerSize = computed(() => innerRadius.value * 2 - 16)
 const notchDepth = computed(() => outerRadius.value - innerRadius.value)
 const totalAngle = computed(() => props.endAngle - props.startAngle)
 const availableAngle = computed(() => totalAngle.value * (1 - props.spacing / 100))
@@ -135,9 +152,13 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
         />
       </g>
     </svg>
-    <div v-if="centerValue !== undefined" class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-[8%] text-center">
-      <NumberFlow :value="displayedCenterValue" class="text-[clamp(1.5rem,8vw,3rem)] font-bold tabular-nums leading-none" :style="{ color: 'var(--chart-text)' }" :will-change="true" :isolate="true" />
-      <span class="mt-0.5 text-[clamp(0.625rem,2.5vw,0.75rem)] leading-tight" :style="{ color: 'var(--chart-label)' }">{{ defaultLabel }}</span>
+    <div v-if="centerValue !== undefined" class="pointer-events-none absolute inset-0 flex items-center justify-center pt-[8%]">
+      <div class="@container/chart-center size-full min-w-0 text-center flex flex-col items-center justify-center" :style="{ width: `${centerSize}px`, height: `${centerSize}px` }">
+        <span class="font-bold tabular-nums leading-none text-[clamp(0.75rem,22cqw,1.875rem)]" :style="{ color: 'var(--chart-text)' }">
+          <NumberFlow :value="displayedCenterValue" :format="{ notation: 'standard', maximumFractionDigits: 0 }" :will-change="true" :isolate="true" />
+        </span>
+        <span class="max-w-full truncate leading-tight text-[clamp(0.625rem,9cqw,0.75rem)]" :style="{ color: 'var(--chart-label)' }">{{ defaultLabel }}</span>
+      </div>
     </div>
   </div>
 </template>
