@@ -1,4 +1,5 @@
 export interface RoastTimelineDatum {
+  [key: string]: string | number
   label: string
   commits: number
   files: number
@@ -12,16 +13,35 @@ export interface RoastHotspotDatum {
   tone: 'critical' | 'watch' | 'stable'
 }
 
+const timelineAnchors = [
+  { day: 4, commits: 2, files: 6, additions: 180 },
+  { day: 8, commits: 4, files: 11, additions: 340 },
+  { day: 12, commits: 1, files: 3, additions: 92 },
+  { day: 16, commits: 5, files: 14, additions: 410 },
+  { day: 20, commits: 3, files: 8, additions: 246 },
+  { day: 24, commits: 6, files: 18, additions: 522 },
+  { day: 28, commits: 2, files: 5, additions: 139 },
+] as const
+
+function createTimeline(): RoastTimelineDatum[] {
+  return Array.from({ length: 25 }, (_, index) => {
+    const day = index + 4
+    const rightAnchor = timelineAnchors.find(anchor => anchor.day >= day) ?? timelineAnchors.at(-1)!
+    const leftAnchor = timelineAnchors.findLast(anchor => anchor.day <= day) ?? timelineAnchors[0]
+    const progress = rightAnchor.day === leftAnchor.day ? 0 : (day - leftAnchor.day) / (rightAnchor.day - leftAnchor.day)
+    const interpolate = (key: 'commits' | 'files' | 'additions') => Math.round(leftAnchor[key] + (rightAnchor[key] - leftAnchor[key]) * progress)
+
+    return {
+      label: `Mar ${String(day).padStart(2, '0')}`,
+      commits: interpolate('commits'),
+      files: interpolate('files'),
+      additions: interpolate('additions'),
+    }
+  })
+}
+
 export const roastDashboardExplorerFixture = {
-  timeline: [
-    { label: 'Mar 04', commits: 2, files: 6, additions: 180 },
-    { label: 'Mar 08', commits: 4, files: 11, additions: 340 },
-    { label: 'Mar 12', commits: 1, files: 3, additions: 92 },
-    { label: 'Mar 16', commits: 5, files: 14, additions: 410 },
-    { label: 'Mar 20', commits: 3, files: 8, additions: 246 },
-    { label: 'Mar 24', commits: 6, files: 18, additions: 522 },
-    { label: 'Mar 28', commits: 2, files: 5, additions: 139 },
-  ] satisfies RoastTimelineDatum[],
+  timeline: createTimeline(),
   barChangeVolume: [
     { label: '1c83407', additions: 522, deletions: 101 },
     { label: '73e2475', additions: 249, deletions: 38 },

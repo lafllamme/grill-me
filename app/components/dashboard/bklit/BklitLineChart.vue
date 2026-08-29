@@ -60,6 +60,10 @@ const pillTarget = ref<number | null>(null)
 const pillX = useBklitSpring(pillTarget, { stiffness: 400, damping: 35 })
 const tooltipTarget = ref<number | null>(null)
 const tooltipX = useBklitSpring(tooltipTarget, { stiffness: 100, damping: 20 })
+const highlightStartTarget = ref<number | null>(null)
+const highlightStart = useBklitSpring(highlightStartTarget, { stiffness: 220, damping: 26 })
+const highlightWidthTarget = ref<number | null>(null)
+const highlightWidth = useBklitSpring(highlightWidthTarget, { stiffness: 220, damping: 26 })
 const tooltipVisible = computed(() => hoveredIndex.value !== null && props.status === 'ready')
 const activeDatum = computed(() => hoveredIndex.value === null ? null : props.data[hoveredIndex.value] ?? null)
 const activeLabel = computed(() => activeDatum.value?.[props.xDataKey] ?? '')
@@ -107,26 +111,27 @@ const skeletonPoints = computed<ChartPoint[]>(() => Array.from({ length: Math.ma
   y: margin.value.top + plotHeight.value * (0.45 + Math.sin(index * 1.7) * 0.18),
 })))
 const skeletonPath = computed(() => pathFor(skeletonPoints.value))
-const activeSegment = computed(() => {
-  if (hoveredIndex.value === null)
-    return []
-  const start = Math.max(0, hoveredIndex.value - 2)
-  const end = Math.min(props.data.length, hoveredIndex.value + 3)
-  return linePaths.value.map(series => ({ ...series, path: pathFor(series.points.slice(start, end)) }))
-})
-const xLabels = computed(() => props.data.map((datum, index) => ({
+const dataLabels = computed(() => props.data.map((datum, index) => ({
   label: String(datum[props.xDataKey]),
   x: xAt(index),
 })))
+const xLabels = computed(() => {
+  const targetCount = Math.min(5, props.data.length)
+  if (targetCount <= 1)
+    return dataLabels.value
+
+  const indices = Array.from({ length: targetCount }, (_, tickIndex) => Math.round(tickIndex * (props.data.length - 1) / (targetCount - 1)))
+  return indices.map(index => dataLabels.value[index]).filter((item): item is { label: string, x: number } => Boolean(item))
+})
 
 function labelOpacity(x: number) {
-  if (crosshairX.value === null)
+  if (!tooltipVisible.value || crosshairX.value === null)
     return 1
   const distance = Math.abs(x - crosshairX.value)
-  if (distance < 28)
+  if (distance < 50)
     return 0
   if (distance < 70)
-    return (distance - 28) / 42
+    return (distance - 50) / 20
   return 1
 }
 
@@ -137,6 +142,10 @@ function setHover(index: number) {
   crosshairTarget.value = x
   pillTarget.value = xPercent
   tooltipTarget.value = xPercent > 64 ? xPercent - 2.5 : xPercent + 2.5
+  const startIndex = Math.max(0, index - 1)
+  const endIndex = Math.min(props.data.length - 1, index + 1)
+  highlightStartTarget.value = xAt(startIndex)
+  highlightWidthTarget.value = Math.max(0, xAt(endIndex) - xAt(startIndex))
 }
 
 function scheduleHover(index: number) {
@@ -172,6 +181,8 @@ function clearHover() {
   crosshairTarget.value = null
   pillTarget.value = null
   tooltipTarget.value = null
+  highlightStartTarget.value = null
+  highlightWidthTarget.value = null
 }
 
 function formatValue(value: unknown) {
@@ -218,6 +229,9 @@ watch(() => props.status, (status) => {
           <stop offset="50%" stop-color="var(--color-on-background)" stop-opacity="0.55" />
           <stop offset="100%" stop-color="var(--color-on-background)" stop-opacity="0" />
         </linearGradient>
+        <clipPath id="bklit-line-highlight-clip" clipPathUnits="userSpaceOnUse">
+          <rect :x="highlightStart" :y="margin.top" :width="highlightWidth" :height="plotHeight" />
+        </clipPath>
       </defs>
 
       <g stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
@@ -233,7 +247,7 @@ watch(() => props.status, (status) => {
       </rect>
       <template v-else>
         <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" :style="{ opacity: 0.32 }" />
-        <path v-for="series in activeSegment" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" :style="{ opacity: hoveredIndex === null ? 0 : 1 }" />
+        <path v-for="series in linePaths" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
       </template>
 
       <line v-if="tooltipVisible" :x1="crosshairX" :x2="crosshairX" :y1="margin.top" :y2="chartHeight - margin.bottom" stroke="var(--color-on-background)" stroke-width="1" opacity="0.9" />
@@ -244,13 +258,13 @@ watch(() => props.status, (status) => {
       </template>
 
       <g class="text-[12px] font-body" :style="{ fill: 'var(--chart-label)' }">
-        <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="299" text-anchor="middle" :opacity="labelOpacity(item.x)">{{ item.label }}</text>
+        <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="299" text-anchor="middle" :opacity="labelOpacity(item.x)" :style="{ transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }">{{ item.label }}</text>
         <g v-if="pillX !== null && hoveredIndex !== null" :transform="`translate(${pillX / 100 * chartWidth}, 284)`" class="pointer-events-none">
           <rect x="-50" y="0" width="100" height="30" rx="15" fill="var(--color-on-background)" class="shadow-lg" />
           <clipPath id="bklit-line-pill-clip"><rect x="-50" y="0" width="100" height="30" rx="15" /></clipPath>
           <g clip-path="url(#bklit-line-pill-clip)">
             <g :style="{ transform: `translateY(${-(hoveredIndex * 24)}px)`, transition: isReducedMotion ? 'none' : 'transform 300ms cubic-bezier(.22,1,.36,1)' }">
-              <text v-for="(item, index) in xLabels" :key="`pill-${index}`" x="0" :y="20 + index * 24" text-anchor="middle" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.label }}</text>
+              <text v-for="(item, index) in dataLabels" :key="`pill-${index}`" x="0" :y="20 + index * 24" text-anchor="middle" class="text-background text-[13px] font-semibold" fill="currentColor">{{ item.label }}</text>
             </g>
           </g>
         </g>
