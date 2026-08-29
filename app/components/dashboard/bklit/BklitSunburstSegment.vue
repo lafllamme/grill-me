@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { SunburstArc } from './sunburst'
+import type { SunburstArc, SunburstGeometry } from './sunburst'
 import { animate, motionValue } from 'motion-v'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { createSunburstPath } from './sunburst'
+import { createSunburstGeometryPath } from './sunburst'
 import { useBklitEnter } from './use-bklit-enter'
 
 const props = defineProps<{
@@ -10,10 +10,10 @@ const props = defineProps<{
   color: string
   delay: number
   fillOpacity: number
+  geometry: SunburstGeometry | null
   hoverGrow: number
   hoverOffset: number
   isRelated: boolean
-  radius: number
   reducedMotion: boolean
   replayKey: string
 }>()
@@ -44,19 +44,12 @@ onMounted(() => {
 watch(() => [props.hoverGrow, props.hoverOffset, props.reducedMotion], animateHover)
 onBeforeUnmount(() => stopHoverAnimation?.())
 
-const hitPath = computed(() => createSunburstPath(
-  props.arc,
-  props.radius,
-  props.reducedMotion ? 1 : progress.value,
-))
-const visualPath = computed(() => createSunburstPath(
-  props.arc,
-  props.radius,
-  props.reducedMotion ? 1 : progress.value,
-  props.hoverGrow * hoverProgress.value,
-  0,
-  props.hoverOffset * hoverProgress.value,
-))
+const hitPath = computed(() => props.geometry
+  ? createSunburstGeometryPath(props.geometry, props.reducedMotion ? 1 : progress.value)
+  : '')
+const visualPath = computed(() => props.geometry
+  ? createSunburstGeometryPath(props.geometry, props.reducedMotion ? 1 : progress.value, props.hoverGrow * hoverProgress.value, props.hoverOffset * hoverProgress.value)
+  : '')
 </script>
 
 <template>

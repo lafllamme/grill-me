@@ -33,6 +33,13 @@ export interface SunburstHoverGeometry {
   offset: number
 }
 
+export interface SunburstGeometry {
+  startAngle: number
+  endAngle: number
+  innerRadius: number
+  outerRadius: number
+}
+
 const fullCircle = Math.PI * 2
 const topAngle = -Math.PI / 2
 
@@ -142,6 +149,85 @@ export function getBreadcrumbIds(focusId: string, nodes: Map<string, SunburstNod
     ids.unshift(focusId)
   }
   return ids
+}
+
+function interpolateAngle(from: number, to: number, progress: number) {
+  let delta = to - from
+  while (delta > Math.PI) delta -= fullCircle
+  while (delta < -Math.PI) delta += fullCircle
+  return from + delta * progress
+}
+
+function interpolateGeometry(from: SunburstGeometry, to: SunburstGeometry, progress: number): SunburstGeometry {
+  const t = Math.max(0, Math.min(1, progress))
+  const fromMid = (from.startAngle + from.endAngle) / 2
+  const toMid = (to.startAngle + to.endAngle) / 2
+  const fromHalf = (from.endAngle - from.startAngle) / 2
+  const toHalf = (to.endAngle - to.startAngle) / 2
+  const mid = interpolateAngle(fromMid, toMid, t)
+  const half = fromHalf + (toHalf - fromHalf) * t
+  return {
+    startAngle: mid - half,
+    endAngle: mid + half,
+    innerRadius: from.innerRadius + (to.innerRadius - from.innerRadius) * t,
+    outerRadius: from.outerRadius + (to.outerRadius - from.outerRadius) * t,
+  }
+}
+
+function pointGeometry(geometry: SunburstGeometry): SunburstGeometry {
+  const mid = (geometry.startAngle + geometry.endAngle) / 2
+  const pointRadius = Math.max(0, Math.min((geometry.innerRadius + geometry.outerRadius) / 2 * 0.12, geometry.innerRadius))
+  return { startAngle: mid, endAngle: mid, innerRadius: pointRadius, outerRadius: pointRadius }
+}
+
+export function getSunburstGeometry(arc: SunburstArc, focusArc: SunburstArc | null, maxDepth: number, radius: number): SunburstGeometry | null {
+  const focusDepth = focusArc?.depth ?? 0
+  if (arc.depth <= focusDepth || (focusArc && !isDescendant(arc.id, focusArc.id))) {
+    return null
+  }
+  const totalRadius = maxDepth * radius
+  const centerRadius = focusDepth === 0 ? 0 : radius * 0.65
+  const ringCount = Math.max(1, maxDepth - focusDepth)
+  const ringWidth = (totalRadius - centerRadius) / ringCount
+  const focusStart = focusArc?.startAngle ?? topAngle
+  const focusSpan = (focusArc?.endAngle ?? (topAngle + fullCircle)) - focusStart
+  const mapAngle = (angle: number) => topAngle + ((angle - focusStart) / Math.max(focusSpan, 1e-9)) * fullCircle
+  const relativeDepth = arc.depth - focusDepth
+  return {
+    startAngle: mapAngle(arc.startAngle),
+    endAngle: mapAngle(arc.endAngle),
+    innerRadius: centerRadius + (relativeDepth - 1) * ringWidth,
+    outerRadius: centerRadius + relativeDepth * ringWidth,
+  }
+}
+
+export function transitionSunburstGeometry(arc: SunburstArc, fromFocusArc: SunburstArc | null, toFocusArc: SunburstArc | null, maxDepth: number, radius: number, progress: number): SunburstGeometry | null {
+  const from = getSunburstGeometry(arc, fromFocusArc, maxDepth, radius)
+  const to = getSunburstGeometry(arc, toFocusArc, maxDepth, radius)
+  if (from && to) {
+    return interpolateGeometry(from, to, progress)
+  }
+  if (from) {
+    return interpolateGeometry(from, pointGeometry(from), progress)
+  }
+  if (to) {
+    return interpolateGeometry(pointGeometry(to), to, progress)
+  }
+  return null
+}
+
+export function createSunburstGeometryPath(geometry: SunburstGeometry, progress = 1, grow = 0, radialOffset = 0): string {
+  const span = geometry.endAngle - geometry.startAngle
+  const visibleSpan = span * Math.min(1, Math.max(0, progress))
+  if (visibleSpan <= 0.001) {
+    return ''
+  }
+  return createArc<{ innerRadius: number, outerRadius: number, startAngle: number, endAngle: number }>()({
+    innerRadius: Math.max(0, geometry.innerRadius + radialOffset),
+    outerRadius: geometry.outerRadius + grow + radialOffset,
+    startAngle: geometry.startAngle,
+    endAngle: geometry.startAngle + visibleSpan,
+  }) ?? ''
 }
 
 export function createSunburstPath(arc: SunburstArc, radius: number, progress = 1, grow = 0, offset = 0, radialOffset = 0): string {
