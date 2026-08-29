@@ -118,11 +118,7 @@ function handlePointerMove(event: PointerEvent) {
   const svg = event.currentTarget as SVGSVGElement
   const bounds = svg.getBoundingClientRect()
   const localX = (event.clientX - bounds.left) / bounds.width * chartWidth
-  const position = localX - plotLeft
-  if (position < 0 || position > plotWidth) {
-    clearHover()
-    return
-  }
+  const position = Math.max(0, Math.min(plotWidth - Number.EPSILON, localX - plotLeft))
   const columnWidth = plotWidth / props.data.length
   const index = Math.max(0, Math.min(props.data.length - 1, Math.floor(position / columnWidth)))
   scheduleHover(index)
@@ -179,7 +175,7 @@ const chartStyle = computed(() => ({ aspectRatio: props.aspectRatio }))
 
 <template>
   <div class="w-full relative" :style="chartStyle" :data-animation-duration="props.animationDuration" :data-animation-easing="props.animationEasing" :data-reveal-signature="props.revealSignature" :data-stack-gap="props.stackGap">
-    <svg class="h-full w-full overflow-visible" viewBox="0 0 640 320" role="img" aria-label="Roast change volume bar chart" @pointermove="handlePointerMove" @pointerleave="clearHover">
+    <svg :class="status === 'ready' ? 'cursor-crosshair' : 'cursor-default'" class="h-full w-full overflow-visible" viewBox="0 0 640 320" role="img" aria-label="Roast change volume bar chart" @pointermove="handlePointerMove" @pointerleave="clearHover">
       <BklitBarChartLoading v-if="status === 'loading'" :bar-count="data.length || 12" />
       <g v-else>
         <slot />

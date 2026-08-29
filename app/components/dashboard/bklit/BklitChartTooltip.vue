@@ -28,9 +28,16 @@ const targetLeft = computed(() => isFlipped.value ? targetX.value - 16 - tooltip
 const targetTop = computed(() => Math.max(16, Math.min(targetY.value - tooltipHeight.value / 2, containerHeight.value - tooltipHeight.value - 16)))
 const tooltipX = useBklitSpring(targetLeft, { stiffness: 100, damping: 20 })
 const tooltipY = useBklitSpring(targetTop, { stiffness: 100, damping: 20 })
+const entranceScaleTarget = ref(0.85)
+const entranceOpacityTarget = ref(0)
+const entranceScale = useBklitSpring(entranceScaleTarget, { stiffness: 300, damping: 25 }, 0.85)
+const entranceOpacity = useBklitSpring(entranceOpacityTarget, { stiffness: 300, damping: 25 })
 const tooltipStyle = computed(() => ({
   left: `${tooltipX.value}px`,
   top: `${tooltipY.value}px`,
+  opacity: entranceOpacity.value,
+  transform: `scale(${entranceScale.value})`,
+  transformOrigin: isFlipped.value ? 'right top' : 'left top',
 }))
 
 function measureTooltip() {
@@ -48,6 +55,10 @@ function measureTooltip() {
 
 onMounted(() => {
   nextTick(measureTooltip)
+  nextTick(() => {
+    entranceScaleTarget.value = 1
+    entranceOpacityTarget.value = 1
+  })
 })
 
 watch(() => context.hoveredIndex.value, () => {
@@ -65,7 +76,7 @@ onBeforeUnmount(() => {
     <svg v-if="props.showDots" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
       <BklitTooltipDot v-for="key in seriesKeys" :key="key" :data-key="key" :color="context.seriesColors[key]" />
     </svg>
-    <div ref="tooltipRef" class="pointer-events-none absolute z-30 min-w-[140px] overflow-hidden rounded-lg bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="tooltipStyle">
+    <div ref="tooltipRef" class="pointer-events-none absolute z-50 min-w-[140px] overflow-hidden rounded-[8px] bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="tooltipStyle">
       <div class="px-3 py-2.5">
         <p class="mb-2 text-xs font-medium">{{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}</p>
         <div class="space-y-1.5">
