@@ -80,12 +80,13 @@ const revealTarget = ref(props.status === 'ready' ? 1 : 0)
 const revealProgress = useBklitSpring(revealTarget, { stiffness: 170, damping: 28 })
 const crosshairTarget = ref<number | null>(null)
 const crosshairX = useBklitSpring(crosshairTarget, { stiffness: 300, damping: 30 })
-const pillTarget = ref<number | null>(null)
-const pillX = useBklitSpring(pillTarget, { stiffness: 400, damping: 35 })
 const pillMonthTarget = ref(0)
 const pillMonthY = useBklitSpring(pillMonthTarget, { stiffness: 400, damping: 35 })
 const pillDayTarget = ref(0)
 const pillDayY = useBklitSpring(pillDayTarget, { stiffness: 400, damping: 35 })
+const dotYTargets = props.series.map(() => ref<number | null>(null))
+const dotYSprings = dotYTargets.map(target => useBklitSpring(target, { stiffness: 300, damping: 30 }))
+const dotYValues = computed(() => dotYSprings.map(spring => spring.value))
 const tooltipTarget = ref<number | null>(null)
 const tooltipX = useBklitSpring(tooltipTarget, { stiffness: 100, damping: 20 })
 const highlightStartTarget = ref<number | null>(null)
@@ -258,7 +259,9 @@ function setHover(index: number) {
   const x = xAt(index)
   const xPercent = x / chartWidth * 100
   crosshairTarget.value = x
-  pillTarget.value = xPercent
+  linePaths.value.forEach((series, seriesIndex) => {
+    dotYTargets[seriesIndex]!.value = series.points[index]?.y ?? null
+  })
   tooltipTarget.value = xPercent > 64 ? xPercent - 2.5 : xPercent + 2.5
   const startIndex = Math.max(0, index - 1)
   const endIndex = Math.min(props.data.length - 1, index + 1)
@@ -299,7 +302,7 @@ function clearHover() {
   pillMonthTarget.value = 0
   pillDayTarget.value = 0
   crosshairTarget.value = null
-  pillTarget.value = null
+  dotYTargets.forEach(target => target.value = null)
   tooltipTarget.value = null
   highlightStartTarget.value = null
   highlightWidthTarget.value = null
@@ -516,8 +519,8 @@ watch(isReducedMotion, () => {
 
       <line v-if="tooltipVisible" :x1="crosshairX" :x2="crosshairX" :y1="margin.top" :y2="chartHeight - margin.bottom" stroke="var(--color-on-background)" stroke-width="1" opacity="0.9" />
       <template v-if="tooltipVisible">
-        <template v-for="series in linePaths" :key="`dot-${series.dataKey}`">
-          <circle :cx="series.points[hoveredIndex ?? 0]?.x" :cy="series.points[hoveredIndex ?? 0]?.y" r="7" :fill="series.color" stroke="var(--color-chart-track)" stroke-width="3" />
+        <template v-for="(series, seriesIndex) in linePaths" :key="`dot-${series.dataKey}`">
+          <circle :cx="crosshairX" :cy="dotYValues[seriesIndex]" r="7" :fill="series.color" stroke="var(--color-chart-track)" stroke-width="3" />
         </template>
       </template>
 
@@ -525,7 +528,7 @@ watch(isReducedMotion, () => {
         <template v-if="status === 'ready'">
           <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="304" text-anchor="middle" :opacity="labelOpacity(item.x)" :style="{ transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }">{{ item.label }}</text>
         </template>
-        <g v-if="pillX !== null && hoveredIndex !== null" :transform="`translate(${pillX / 100 * chartWidth}, 284)`" class="pointer-events-none">
+        <g v-if="crosshairX !== null && hoveredIndex !== null" :transform="`translate(${crosshairX}, 284)`" class="pointer-events-none">
           <rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="32" rx="16" fill="var(--color-on-background)" class="shadow-lg" />
           <clipPath id="bklit-line-pill-clip"><rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="32" rx="16" /></clipPath>
           <g clip-path="url(#bklit-line-pill-clip)">
