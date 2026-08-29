@@ -8,10 +8,11 @@ import BklitGaugeChart from '~/components/dashboard/bklit/BklitGaugeChart.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
 import BklitRadarChart from '~/components/dashboard/bklit/BklitRadarChart.vue'
+import BklitSunburstChart from '~/components/dashboard/bklit/BklitSunburstChart.vue'
 import DashboardRingChart from '~/components/dashboard/DashboardRingChart.vue'
 import RoastOneGradeStar from '~/components/roast-one/RoastOneGradeStar.vue'
 import { roastDashboardFixture } from '~/data/roast-dashboard'
-import { roastDashboardExplorerFixture } from '~/data/roast-dashboard-explorer'
+import { roastDashboardExplorerFixture, roastSunburstData } from '~/data/roast-dashboard-explorer'
 
 interface DashboardColorProfile {
   label: string
@@ -167,20 +168,26 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
 </script>
 
 <template>
-  <div :class="[currentColorProfile.stageClass, currentColorProfile.copyClass]" :style="chartStyle" class="min-h-[100dvh] overflow-x-hidden transition-colors duration-300">
-    <div class="mx-auto px-5 pb-24 max-w-[1440px] sm:px-8 lg:px-12">
-      <header class="py-6 flex flex-col gap-6 border-b-[1px] border-divider border-solid sm:flex-row sm:items-start sm:justify-between">
+  <div :class="[currentColorProfile.stageClass, currentColorProfile.copyClass]" :style="chartStyle" class="min-h-[100dvh] transition-colors duration-300 overflow-x-hidden">
+    <div class="mx-auto px-5 pb-24 max-w-[1440px] lg:px-12 sm:px-8">
+      <header class="py-6 border-b-[1px] border-divider border-solid flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 class="max-w-[10ch] text-5xl tracking-[-0.08em] font-display leading-[0.88] mt-4 sm:text-7xl">Read the roast.</h1>
-          <p :class="currentColorProfile.mutedClass" class="max-w-[42rem] text-base leading-7 mt-6">A profile read built from the commits, changes, and patterns that shape this repository.</p>
+          <h1 class="text-5xl leading-[0.88] tracking-[-0.08em] font-display mt-4 max-w-[10ch] sm:text-7xl">
+            Read the roast.
+          </h1>
+          <p :class="currentColorProfile.mutedClass" class="text-base leading-7 mt-6 max-w-[42rem]">
+            A profile read built from the commits, changes, and patterns that shape this repository.
+          </p>
         </div>
-        <fieldset class="border-0 p-0 m-0 sm:pt-4">
-          <legend :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.14em] font-meta uppercase mb-2">Color profile</legend>
+        <fieldset class="m-0 p-0 border-0 sm:pt-4">
+          <legend :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.14em] font-meta mb-2 uppercase">
+            Color profile
+          </legend>
           <div class="flex gap-2 items-center">
-            <div class="bg-black/20 p-1 rounded-[10px] flex gap-1 items-center border-[1px] border-white/10 border-solid">
+            <div class="p-1 border-[1px] border-white/10 rounded-[10px] border-solid bg-black/20 flex gap-1 items-center">
               <button
                 :class="activeColorMode === 'dark' ? 'bg-white/15 text-current' : currentColorProfile.mutedClass"
-                class="text-[10px] tracking-[0.08em] rounded-[6px] h-8 px-3 transition-colors font-meta uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                class="text-[10px] tracking-[0.08em] font-meta px-3 rounded-[6px] h-8 uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 type="button"
                 :aria-pressed="activeColorMode === 'dark'"
                 aria-label="Use dark color profiles"
@@ -190,7 +197,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               </button>
               <button
                 :class="activeColorMode === 'light' ? 'bg-white/15 text-current' : currentColorProfile.mutedClass"
-                class="text-[10px] tracking-[0.08em] rounded-[6px] h-8 px-3 transition-colors font-meta uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                class="text-[10px] tracking-[0.08em] font-meta px-3 rounded-[6px] h-8 uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 type="button"
                 :aria-pressed="activeColorMode === 'light'"
                 aria-label="Use light color profiles"
@@ -198,44 +205,110 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               >
                 Light
               </button>
-              <div :class="currentColorProfile.copyClass" class="px-2 min-w-36 text-center">
-                <p class="text-[10px] tracking-[0.08em] font-meta uppercase"><Icon name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}</p>
-                <p v-if="currentColorProfile.surfaceContrast" :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">stage ↔ card {{ currentColorProfile.surfaceContrast }}</p>
+              <div :class="currentColorProfile.copyClass" class="px-2 text-center min-w-36">
+                <p class="text-[10px] tracking-[0.08em] font-meta uppercase">
+                  <Icon name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}
+                </p>
+                <p v-if="currentColorProfile.surfaceContrast" :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">
+                  stage ↔ card {{ currentColorProfile.surfaceContrast }}
+                </p>
               </div>
             </div>
           </div>
-          <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2 sm:text-right">{{ currentColorProfile.description }}</p>
+          <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2 sm:text-right">
+            {{ currentColorProfile.description }}
+          </p>
         </fieldset>
       </header>
 
-      <div id="profile-panel" class="grid grid-cols-[minmax(0,1fr)] gap-4 mt-8 lg:grid-cols-12">
-        <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-8 lg:p-8 transition-colors duration-300">
-          <h2 class="text-2xl tracking-[-0.04em] font-body">Profile</h2>
+      <div id="profile-panel" class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12">
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-8">
+          <h2 class="text-2xl tracking-[-0.04em] font-body">
+            Profile
+          </h2>
           <BklitRadarChart class="mt-4" :data="profileRadarData" :metrics="fixture.radarProfile.metrics" :size="400" />
         </article>
-        <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-4 lg:p-8 transition-colors duration-300">
-          <div class="flex items-start justify-between gap-4">
-            <h2 class="text-2xl tracking-[-0.04em] font-body">Verdict</h2>
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-4">
+          <div class="flex gap-4 items-start justify-between">
+            <h2 class="text-2xl tracking-[-0.04em] font-body">
+              Verdict
+            </h2>
             <RoastOneGradeStar :grade="fixture.grade" grade-size="xs" size="sm" />
           </div>
-          <span class="text-[11px] text-primary tracking-[0.08em] rounded-full px-3 py-1.5 border-[1px] border-primary/30 border-solid inline-flex font-meta uppercase mt-6">{{ fixture.growthLevel }}</span>
-          <h3 class="max-w-[12ch] text-4xl tracking-[-0.06em] font-display leading-[0.94] mt-5 sm:text-5xl">{{ fixture.headline }}</h3>
-          <p :class="currentColorProfile.mutedClass" class="max-w-[34rem] text-base leading-7 mt-6">{{ fixture.note }}</p>
+          <span class="text-[11px] text-primary tracking-[0.08em] font-meta mt-6 px-3 py-1.5 border-[1px] border-primary/30 rounded-full border-solid inline-flex uppercase">{{ fixture.growthLevel }}</span>
+          <h3 class="text-4xl leading-[0.94] tracking-[-0.06em] font-display mt-5 max-w-[12ch] sm:text-5xl">
+            {{ fixture.headline }}
+          </h3>
+          <p :class="currentColorProfile.mutedClass" class="text-base leading-7 mt-6 max-w-[34rem]">
+            {{ fixture.note }}
+          </p>
         </article>
-        <article :class="currentColorProfile.panelClass" class="rounded-[28px] p-6 sm:p-8 lg:col-span-8 transition-colors duration-300"><div class="flex items-center justify-between"><h2 class="text-2xl tracking-[-0.04em] font-body">Evidence</h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span></div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" /></article>
-        <article :class="currentColorProfile.panelClass" class="min-w-0 rounded-[28px] p-6 sm:p-8 lg:col-span-4 transition-colors duration-300">
-          <div class="flex items-center justify-between gap-4">
-            <h2 class="text-2xl tracking-[-0.05em] font-display">Change pressure</h2>
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 sm:p-8 lg:col-span-8">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl tracking-[-0.04em] font-body">
+              Evidence
+            </h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span>
+          </div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" />
+        </article>
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-4">
+          <div class="flex gap-4 items-center justify-between">
+            <h2 class="text-2xl tracking-[-0.05em] font-display">
+              Change pressure
+            </h2>
             <span :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">Mock</span>
           </div>
           <BklitGaugeChart class="mt-6" :value="changePressureGauge" :center-value="changePressureGauge" default-label="Commit" active-fill="var(--color-primary)" inactive-fill="var(--color-chart-track)" :replay-key="String(changePressureGauge)" />
-          <p :class="currentColorProfile.mutedClass" class="max-w-[26rem] text-sm leading-6 mt-2">Average changed files per commit, normalized against a 12-file review threshold.</p>
+          <p :class="currentColorProfile.mutedClass" class="text-sm leading-6 mt-2 max-w-[26rem]">
+            Average changed files per commit, normalized against a 12-file review threshold.
+          </p>
         </article>
-        <article :class="currentColorProfile.panelClass" class="min-w-0 rounded-[28px] p-6 sm:p-8 lg:col-span-6 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change volume</h2></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayBarLoading">Replay loading</button></div><BklitBarChart class="mt-8 min-w-0" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'"><template #grid><BklitGrid horizontal /></template><BklitBar data-key="additions" fill="var(--color-primary-strong)" /><BklitBar data-key="deletions" fill="var(--color-primary)" /><template #x-axis><BklitBarXAxis /></template></BklitBarChart></article>
-        <article :class="currentColorProfile.panelClass" class="box-border min-w-0 w-full rounded-[28px] p-6 sm:p-8 lg:col-span-6 transition-colors duration-300"><div class="flex flex-wrap gap-4 items-end justify-between"><div><h2 class="text-2xl tracking-[-0.05em] font-display">Change pressure</h2></div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] rounded-[8px] px-3 py-2 border-[1px] border-current/30 border-solid font-meta uppercase hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" @click="replayLineLoading">Replay loading</button></div><BklitLineChart class="mt-8 min-w-0" :data="explorerFixture.timeline" x-data-key="label" :markers="lineMarkers" :series="[{ dataKey: 'additions', label: 'additions', color: 'var(--color-primary-strong)' }, { dataKey: 'files', label: 'files changed', color: 'var(--color-primary)' }]" :status="isLineLoading ? 'loading' : 'ready'" loading-label="" /></article>
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-6">
+          <div class="flex flex-wrap gap-4 items-end justify-between">
+            <div>
+              <h2 class="text-2xl tracking-[-0.05em] font-display">
+                Change volume
+              </h2>
+            </div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-current/30 rounded-[8px] border-solid uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:opacity-80" type="button" @click="replayBarLoading">
+              Replay loading
+            </button>
+          </div><BklitBarChart class="mt-8 min-w-0" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'">
+            <template #grid>
+              <BklitGrid horizontal />
+            </template><BklitBar data-key="additions" fill="var(--color-primary-strong)" /><BklitBar data-key="deletions" fill="var(--color-primary)" /><template #x-axis>
+              <BklitBarXAxis />
+            </template>
+          </BklitBarChart>
+        </article>
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 w-full transition-colors duration-300 box-border sm:p-8 lg:col-span-6">
+          <div class="flex flex-wrap gap-4 items-end justify-between">
+            <div>
+              <h2 class="text-2xl tracking-[-0.05em] font-display">
+                Change pressure
+              </h2>
+            </div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-current/30 rounded-[8px] border-solid uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:opacity-80" type="button" @click="replayLineLoading">
+              Replay loading
+            </button>
+          </div><BklitLineChart class="mt-8 min-w-0" :data="explorerFixture.timeline" x-data-key="label" :markers="lineMarkers" :series="[{ dataKey: 'additions', label: 'additions', color: 'var(--color-primary-strong)' }, { dataKey: 'files', label: 'files changed', color: 'var(--color-primary)' }]" :status="isLineLoading ? 'loading' : 'ready'" loading-label="" />
+        </article>
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-12">
+          <div class="flex gap-4 items-start justify-between">
+            <div>
+              <h2 class="text-2xl tracking-[-0.05em] font-display">
+                Repository structure
+              </h2>
+              <p :class="currentColorProfile.mutedClass" class="text-sm leading-6 mt-2">
+                Where the roast is concentrated across the codebase.
+              </p>
+            </div>
+            <span class="text-[10px] text-primary-strong tracking-[0.12em] font-meta uppercase">Mock</span>
+          </div>
+          <BklitSunburstChart class="mt-6" :data="roastSunburstData" :size="560" />
+        </article>
       </div>
 
-      <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] mt-8 flex flex-wrap gap-4 justify-between font-meta uppercase"><span>Grillme</span><span>Profile view</span></footer>
+      <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] font-meta mt-8 flex flex-wrap gap-4 uppercase justify-between">
+        <span>Grillme</span><span>Profile view</span>
+      </footer>
     </div>
   </div>
 </template>

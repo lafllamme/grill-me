@@ -42,6 +42,7 @@ ersetzt werden.
 | [x] | Bar Chart | Additions, Deletions und Commit-Volumen | [Docs](https://bklit.com/docs/components/bar-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/bar-chart.tsx) | Mit Commit-Evidence verbinden |
 | [x] | Line Chart | Entwicklung eines Signals über Zeit | [Docs](https://bklit.com/docs/components/line-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/line-chart.tsx) | Mit echten Zeitreihendaten verbinden |
 | [x] | Gauge | Durchschnittlich geänderte Dateien pro Commit, auf 12 Dateien normalisiert | [Docs](https://bklit.com/docs/components/gauge-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/gauge.tsx) | Mit echter API-Evidence verbinden |
+| [x] | Sunburst Chart | Repository-Struktur und Churn nach Verzeichnis/File-Hierarchie | [Docs](https://bklit.com/docs/components/sunburst-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/sunburst-chart.tsx) | Mit echter API-Evidence verbinden |
 | [ ] | Composed Chart | Volumen und Trend in einer Evidence-Ansicht | [Docs](https://bklit.com/docs/components/composed-chart) | [Source](https://github.com/bklit/bklit-ui/tree/main/packages/ui/src/charts) | Nach dem Line Chart evaluieren |
 
 ## Reihenfolge
@@ -51,7 +52,8 @@ ersetzt werden.
 3. Radar Chart — erledigt.
 4. Line Chart — erledigt.
 5. Gauge — erledigt als erklärbare Explorer-Karte.
-6. Composed Chart — nur wenn Bar und Line gemeinsam einen echten Mehrwert liefern.
+6. Sunburst — erledigt als erklärbare Explorer-Karte.
+7. Composed Chart — nur wenn Bar und Line gemeinsam einen echten Mehrwert liefern.
 
 ## Aktueller Stand
 
@@ -62,10 +64,11 @@ ersetzt werden.
 
 ## Nächster Schritt
 
-**Gauge** ist als Explorer-Karte umgesetzt. Für die nächste Iteration:
+**Sunburst** ist als Explorer-Karte umgesetzt. Für die nächste Iteration:
 
 - [x] Dokumentation und Showcase vollständig prüfen.
 - [x] Exakten GitHub-Entry-Point und alle Imports erfassen.
 - [x] Passende Roast-Frage festlegen: Wie viel Commit-Scope erzeugt Review-Druck?
 - [x] Mock-Dataset und spätere API-Felder getrennt dokumentieren.
 - [x] Nach Browser-Abgleich in den Dashboard-Flow übernehmen.
+- [x] Repository-Hierarchie, Hover-Dimming, Hover-Grow und Drill-down im Browser prüfen.

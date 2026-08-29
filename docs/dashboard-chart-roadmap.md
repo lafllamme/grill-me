@@ -67,7 +67,7 @@ unexplained scores.
 | Line Chart | Show change or quality trend over time | chronological commits and one or two explicit measures | Planned | Port Bklit source and choose the final metric |
 | Composed Chart | Combine volume with a trend | bars for changes, line for cumulative or quality signal | Planned | Revisit after Line Chart |
 | Gauge | Make one conclusion legible at a glance | average files changed per commit, normalized to a 12-file review threshold | Ported and browser-checked | Replace the exploration fixture with API evidence later |
-| Sunburst Chart | Explore repository/file hierarchy | repositories → directories → files → change volume | Candidate | Validate that file-level evidence exists |
+| Sunburst Chart | Explore repository/file hierarchy | repository → directories → files → change volume | Ported and browser-checked | Replace the exploration fixture with API evidence later |
 | Choropleth Chart | Optional geographic context | coarse region derived from request metadata | Deferred | Do not make location central to the roast |
 | Scatter Chart | Compare two measurable signals | e.g. file churn versus test coverage | Deferred | Add only with a real two-axis question |
 | Area Chart | Show a broad trend with emphasis | change volume or cumulative additions over time | Deferred | Compare against Line Chart first |
@@ -96,7 +96,8 @@ unexplained scores.
 3. Radar Chart — complete.
 4. Line Chart — complete.
 5. Gauge — complete as an evidence-backed exploration card.
-6. Composed Chart — only after the Line Chart establishes a useful trend.
+6. Sunburst Chart — complete as a repository evidence card.
+7. Composed Chart — only after the Line Chart establishes a useful trend.
 
 ## Data guardrails
 
