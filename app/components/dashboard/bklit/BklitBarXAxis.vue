@@ -42,7 +42,7 @@ function labelOpacity(index: number) {
 }
 
 function tickerWidth(label: string) {
-  return Math.max(72, label.length * 8 + 24)
+  return Math.max(84, label.length * 8.5 + 28)
 }
 </script>
 
@@ -59,20 +59,20 @@ function tickerWidth(label: string) {
     <g
       v-if="activeIndex !== null && context.status.value === 'ready' && context.animatedTooltipX.value !== null"
       class="pointer-events-none"
-      :transform="`translate(${context.animatedTooltipX.value}, 288)`"
+      :transform="`translate(${context.animatedTooltipX.value}, 284)`"
     >
       <rect
         :x="-activeTickerWidth / 2"
         y="0"
         :width="activeTickerWidth"
-        height="22"
-        rx="11"
+        height="30"
+        rx="15"
         fill="var(--chart-axis-badge-background, #f5f5f5)"
       />
       <text
-        :y="16"
+        :y="20"
         text-anchor="middle"
-        class="font-body text-[12px] font-medium"
+        class="font-body text-[13px] font-semibold"
         fill="var(--chart-axis-badge-foreground, #171717)"
       >
         {{ activeLabel }}

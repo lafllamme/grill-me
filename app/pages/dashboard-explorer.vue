@@ -77,19 +77,10 @@ const colorProfiles = {
   slateCloudRich: { label: 'Slate Cloud Rich', description: 'deeper slate stage, crisp card', stageClass: 'bg-[#dde2e3]', panelClass: 'bg-[#f8faf9]', copyClass: 'text-[#1a211e]', mutedClass: 'text-[#4e4e4e]', surfaceContrast: '1.25:1' },
 } satisfies Record<string, DashboardColorProfile>
 type ColorProfile = keyof typeof colorProfiles
-const activeColorProfile = ref<ColorProfile>('basalt')
+const activeColorProfile = ref<ColorProfile>('voidWhisper')
 type ColorMode = 'dark' | 'light'
 const activeColorMode = ref<ColorMode>('dark')
-const colorProfileRows: ColorProfile[][] = [
-  ['void', 'graphite', 'basalt', 'mauve', 'redline', 'charcoal', 'carbon', 'explorer'],
-  ['voidWhisper', 'graphiteHush', 'basaltQuiet', 'explorerSoft'],
-  ['paperSnow', 'cloudSlate', 'whiteStone', 'silverCloud', 'chalkGraphite', 'boneGraphite', 'fogWhite', 'taupeWhite', 'stoneCloud', 'paperLift', 'slateCloud', 'slateCloudSoft', 'slateCloudRich'],
-]
-const darkColorProfileKeys = colorProfileRows.slice(0, 2).flat()
-const lightColorProfileKeys = colorProfileRows[2]!
-const visibleColorProfileKeys = computed(() => activeColorMode.value === 'dark' ? darkColorProfileKeys : lightColorProfileKeys)
 const currentColorProfile = computed<DashboardColorProfile>(() => colorProfiles[activeColorProfile.value])
-const currentColorProfileIndex = computed(() => visibleColorProfileKeys.value.indexOf(activeColorProfile.value))
 const chartPalette = computed<ChartPalette>(() => activeColorMode.value === 'dark'
   ? {
       grid: 'rgba(92, 93, 101, 0.28)',
@@ -134,40 +125,18 @@ function replayBarLoading() {
   }, 1400)
 }
 
-function cycleColorProfile(direction: -1 | 1) {
-  const profileKeys = visibleColorProfileKeys.value
-  const nextIndex = (currentColorProfileIndex.value + direction + profileKeys.length) % profileKeys.length
-  activeColorProfile.value = profileKeys[nextIndex]!
-}
-
 function setColorMode(mode: ColorMode) {
   activeColorMode.value = mode
-  if (!visibleColorProfileKeys.value.includes(activeColorProfile.value)) {
-    activeColorProfile.value = visibleColorProfileKeys.value[0]!
-  }
-}
-
-function handleColorProfileKeydown(event: KeyboardEvent) {
-  const target = event.target as HTMLElement | null
-  if (target?.matches('input, textarea, select, [contenteditable="true"]')) {
-    return
-  }
-
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-    event.preventDefault()
-    cycleColorProfile(event.key === 'ArrowLeft' ? -1 : 1)
-  }
+  activeColorProfile.value = mode === 'dark' ? 'voidWhisper' : 'slateCloud'
 }
 
 onMounted(() => {
   replayBarLoading()
-  window.addEventListener('keydown', handleColorProfileKeydown)
 })
 onBeforeUnmount(() => {
   if (barLoadingTimer) {
     clearTimeout(barLoadingTimer)
   }
-  window.removeEventListener('keydown', handleColorProfileKeydown)
 })
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
@@ -206,29 +175,10 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               >
                 Light
               </button>
-              <button
-                :class="currentColorProfile.mutedClass"
-                class="text-lg leading-none rounded-[6px] h-8 w-8 transition-colors hover:opacity-70 font-body focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                type="button"
-                aria-label="Previous color profile"
-                @click="cycleColorProfile(-1)"
-              >
-                ←
-              </button>
               <div :class="currentColorProfile.copyClass" class="px-2 min-w-36 text-center">
-                <p class="text-[10px] tracking-[0.08em] font-meta uppercase"><Icon v-if="['voidWhisper', 'slateCloud'].includes(activeColorProfile)" name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}</p>
-                <p :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">{{ currentColorProfileIndex + 1 }} / {{ visibleColorProfileKeys.length }}</p>
+                <p class="text-[10px] tracking-[0.08em] font-meta uppercase"><Icon name="ph:crown-simple" class="text-primary mr-1 align-[-0.12em]" />{{ currentColorProfile.label }}</p>
                 <p v-if="currentColorProfile.surfaceContrast" :class="currentColorProfile.mutedClass" class="text-[9px] font-meta mt-0.5">stage ↔ card {{ currentColorProfile.surfaceContrast }}</p>
               </div>
-              <button
-                :class="currentColorProfile.mutedClass"
-                class="text-lg leading-none rounded-[6px] h-8 w-8 transition-colors hover:opacity-70 font-body focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                type="button"
-                aria-label="Next color profile"
-                @click="cycleColorProfile(1)"
-              >
-                →
-              </button>
             </div>
           </div>
           <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2 sm:text-right">{{ currentColorProfile.description }}</p>

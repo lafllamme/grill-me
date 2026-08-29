@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useHead, useSeoMeta } from '#imports'
 
 interface ScaleSwatch {
@@ -12,6 +13,7 @@ interface TypographySample {
   label: string
   role: string
   className: string
+  sampleClass: string
   sample: string
 }
 
@@ -42,6 +44,7 @@ function getSurfaceContrast(pattern: DarkPattern) {
 }
 
 interface PatternSection {
+  id: 'dark' | 'light'
   label: string
   title: string
   description: string
@@ -98,10 +101,10 @@ const paletteFamilies = [
 ]
 
 const typographySamples: TypographySample[] = [
-  { label: 'Display', role: 'General Sans · expressive UI', className: 'font-display', sample: 'Make the hierarchy obvious.' },
-  { label: 'Body', role: 'General Sans · readable copy', className: 'font-body', sample: 'Clear structure gives every color a job.' },
-  { label: 'Meta', role: 'Azeret Mono · data and status', className: 'font-meta', sample: 'state=ready · score=78 · v1.0' },
-  { label: 'Accent', role: 'Bricolage Grotesque · rare quotes', className: 'font-accent italic', sample: 'Taste is a constraint.' },
+  { label: 'Display', role: 'General Sans · expressive UI', className: 'font-display', sampleClass: 'text-4xl tracking-[-0.06em] md:text-6xl', sample: 'Make the hierarchy obvious.' },
+  { label: 'Body', role: 'General Sans · readable copy', className: 'font-body', sampleClass: 'text-xl leading-tight tracking-[-0.03em] md:text-3xl', sample: 'Clear structure gives every color a job.' },
+  { label: 'Meta', role: 'Azeret Mono · data and status', className: 'font-meta', sampleClass: 'text-lg tracking-[-0.04em] md:text-3xl', sample: 'state=ready · score=78 · v1.0' },
+  { label: 'Accent', role: 'Bricolage Grotesque · rare quotes', className: 'font-accent italic', sampleClass: 'text-3xl tracking-[-0.04em] md:text-5xl', sample: 'Taste is a constraint.' },
 ]
 
 const allPatterns: DarkPattern[] = [
@@ -134,29 +137,78 @@ const allPatterns: DarkPattern[] = [
 ]
 
 const lightPatternNames = ['Paper Snow', 'Cloud Slate', 'White Stone', 'Silver Cloud', 'Chalk Graphite', 'Bone Graphite', 'Fog White', 'Taupe White', 'Stone Cloud', 'Paper Lift', 'Slate Cloud', 'Slate Cloud Soft', 'Slate Cloud Rich']
-const darkPatterns = allPatterns.filter(pattern => !['Black Bone Focus', 'Redline Deep', ...lightPatternNames].includes(pattern.name))
-const colorPatterns = allPatterns.filter(pattern => pattern.name === 'Redline Deep')
-const lightPatterns = allPatterns.filter(pattern => lightPatternNames.includes(pattern.name))
+function movePatternToFront(patterns: DarkPattern[], winnerName: string) {
+  const winner = patterns.find(pattern => pattern.name === winnerName)
+  return winner ? [winner, ...patterns.filter(pattern => pattern.name !== winnerName)] : patterns
+}
+const darkPatterns = movePatternToFront(allPatterns.filter(pattern => !['Black Bone Focus', 'Redline Deep', ...lightPatternNames].includes(pattern.name)), 'Void Whisper')
+const lightPatterns = movePatternToFront(allPatterns.filter(pattern => lightPatternNames.includes(pattern.name)), 'Slate Cloud')
 const patternSections: PatternSection[] = [
   {
+    id: 'dark',
     label: 'Dark · 11 patterns',
     title: 'Find the right black.',
     description: 'The dark set is the first decision: Void Whisper is the current front-runner.',
     patterns: darkPatterns,
   },
   {
-    label: 'Color · 1 pattern',
-    title: 'Use color with intent.',
-    description: 'Red stays a signal, not a second background system.',
-    patterns: colorPatterns,
-  },
-  {
+    id: 'light',
     label: 'Light · 13 patterns',
     title: 'Find the right light.',
     description: 'The same stage, context, and surface logic — rebuilt entirely with light neutrals. Slate Cloud is the current winner.',
     patterns: lightPatterns,
   },
 ]
+
+const carouselIndexes = ref<Record<PatternSection['id'], number>>({ dark: 0, light: 0 })
+
+function getCarouselOffsets(section: PatternSection) {
+  if (section.patterns.length === 1)
+    return [0]
+
+  if (section.patterns.length === 2)
+    return [0, 1]
+
+  return [0, 1, 2]
+}
+
+function getCarouselPattern(section: PatternSection, offset: number) {
+  const index = carouselIndexes.value[section.id]
+  const wrappedIndex = (index + offset + section.patterns.length) % section.patterns.length
+  return section.patterns[wrappedIndex]!
+}
+
+function getCarouselPosition(section: PatternSection) {
+  return `${carouselIndexes.value[section.id] + 1} / ${section.patterns.length}`
+}
+
+function getCarouselPatternNumber(section: PatternSection, offset: number) {
+  const index = (carouselIndexes.value[section.id] + offset + section.patterns.length) % section.patterns.length
+  return String(index + 1).padStart(2, '0')
+}
+
+function moveCarousel(sectionId: PatternSection['id'], direction: -1 | 1) {
+  const section = patternSections.find(item => item.id === sectionId)
+  if (!section)
+    return
+
+  carouselIndexes.value[sectionId] = (carouselIndexes.value[sectionId] + direction + section.patterns.length) % section.patterns.length
+}
+
+function handleCarouselKeydown(event: KeyboardEvent) {
+  const target = event.target as HTMLElement | null
+  if (target?.matches('input, textarea, select, [contenteditable="true"]'))
+    return
+
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    event.preventDefault()
+    const sectionId = document.activeElement?.closest<HTMLElement>('[data-carousel-section]')?.dataset.carouselSection as PatternSection['id'] | undefined
+    moveCarousel(sectionId ?? 'dark', event.key === 'ArrowLeft' ? -1 : 1)
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handleCarouselKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleCarouselKeydown))
 
 useHead({ title: 'Design System' })
 
@@ -192,9 +244,14 @@ useSeoMeta({
       <section class="mt-10">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
-            <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
-              01 · palette
-            </p>
+            <div class="flex gap-3 flex-wrap items-center">
+              <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
+                01 · palette
+              </p>
+              <span class="text-[10px] text-signal-red-100 tracking-[0.12em] font-meta px-2 py-1 rounded-full bg-signal-red-950 uppercase">
+                Redline Deep · accent
+              </span>
+            </div>
             <h2 class="text-3xl tracking-[-0.04em] font-display mt-3 md:text-5xl">
               Color has three jobs.
             </h2>
@@ -202,6 +259,46 @@ useSeoMeta({
           <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[34ch]">
             Red calls attention. Basalt builds the frame. Bone keeps the page human.
           </p>
+        </div>
+
+        <div class="mt-8">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase mb-3">
+            Core roles
+          </p>
+          <div class="gap-2 grid sm:grid-cols-2 lg:grid-cols-4">
+            <div class="p-4 rounded-lg bg-black">
+              <p class="text-sm text-bone-50 font-body">
+                Stage
+              </p>
+              <p class="text-[10px] text-bone-300 font-meta mt-1">
+                black · full bleed
+              </p>
+            </div>
+            <div class="p-4 rounded-lg bg-bone-50">
+              <p class="text-sm text-basalt-950 font-body">
+                Focus
+              </p>
+              <p class="text-[10px] text-basalt-600 font-meta mt-1">
+                bone · primary read
+              </p>
+            </div>
+            <div class="p-4 rounded-lg bg-surface-container-high">
+              <p class="text-sm text-on-surface font-body">
+                Structure
+              </p>
+              <p class="text-[10px] text-on-surface-variant font-meta mt-1">
+                warm graphite · cards
+              </p>
+            </div>
+            <div class="p-4 rounded-lg bg-signal-red-700">
+              <p class="text-sm text-bone-50 font-body">
+                Action
+              </p>
+              <p class="text-[10px] text-bone-100 font-meta mt-1">
+                cherry red · one decision
+              </p>
+            </div>
+          </div>
         </div>
 
         <div class="mt-8 space-y-6">
@@ -286,7 +383,7 @@ useSeoMeta({
         </div>
       </section> -->
 
-      <section v-for="patternSection in patternSections" :key="patternSection.label" class="mt-10">
+      <section v-for="patternSection in patternSections" :key="patternSection.label" :data-carousel-section="patternSection.id" class="mt-10">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
             <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
@@ -296,55 +393,70 @@ useSeoMeta({
               {{ patternSection.title }}
             </h2>
           </div>
-          <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[40ch]">
-            {{ patternSection.description }}
-          </p>
+          <div class="flex gap-5 items-end justify-between md:max-w-[40ch]">
+            <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[40ch]">
+              {{ patternSection.description }}
+            </p>
+            <div class="flex gap-1 shrink-0 items-center">
+              <button class="text-lg text-on-surface-variant border border-outline rounded-lg h-8 w-8 leading-none transition-colors border-solid hover:text-on-background hover:border-on-surface-variant focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" :aria-label="`Previous ${patternSection.label} pattern`" @click="moveCarousel(patternSection.id, -1)">
+                ←
+              </button>
+              <span class="text-[10px] text-on-surface-variant tracking-[0.08em] font-meta min-w-12 text-center" aria-live="polite">
+                {{ getCarouselPosition(patternSection) }}
+              </span>
+              <button class="text-lg text-on-surface-variant border border-outline rounded-lg h-8 w-8 leading-none transition-colors border-solid hover:text-on-background hover:border-on-surface-variant focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" :aria-label="`Next ${patternSection.label} pattern`" @click="moveCarousel(patternSection.id, 1)">
+                →
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div v-if="patternSection.patterns.length" class="mt-8 gap-3 grid lg:grid-cols-4 sm:grid-cols-2">
-          <article v-for="(pattern, index) in patternSection.patterns" :key="pattern.name" :class="pattern.stageClass" class="p-3 rounded-2xl flex flex-col min-h-56">
-            <div class="flex gap-3 items-start justify-between">
-              <div>
-                <p :class="pattern.copyClass" class="text-sm leading-tight font-body">
-                  <Icon v-if="['Void Whisper', 'Slate Cloud'].includes(pattern.name)" name="ph:crown-simple" class="text-primary-strong mr-1 align-[-0.12em]" />{{ pattern.name }}
-                </p>
-                <p :class="pattern.mutedClass" class="text-[10px] leading-tight font-meta mt-1">
-                  {{ pattern.mood }}
-                </p>
-                <p :class="pattern.mutedClass" class="text-[9px] tracking-[0.08em] font-meta uppercase mt-2">
-                  stage ↔ card {{ getSurfaceContrast(pattern) }}
-                </p>
-              </div>
-              <span :class="pattern.mutedClass" class="text-[10px] font-meta">{{ String(index + 1).padStart(2, '0') }}</span>
-            </div>
-
-            <div class="mt-5 flex-1">
-              <div :class="pattern.cardClass" class="p-4 rounded-lg flex flex-col h-full justify-between">
+        <div v-if="patternSection.patterns.length" class="mt-8 gap-3 grid grid-cols-1 lg:grid-cols-3">
+          <article v-for="offset in getCarouselOffsets(patternSection)" :key="`${patternSection.id}-${getCarouselPattern(patternSection, offset).name}`" :class="[getCarouselPattern(patternSection, offset).stageClass, offset === 0 ? 'flex' : 'hidden lg:flex']" class="p-3 rounded-2xl flex-col min-h-56 transition-[opacity,transform] duration-300 lg:min-h-[30rem]">
+            <template v-if="getCarouselPattern(patternSection, offset)">
+              <div class="flex gap-3 items-start justify-between">
                 <div>
-                  <p :class="pattern.mutedClass" class="text-[9px] tracking-[0.12em] font-meta uppercase">
-                    bento context
+                  <p :class="getCarouselPattern(patternSection, offset).copyClass" class="text-sm leading-tight font-body">
+                    <Icon v-if="['Void Whisper', 'Slate Cloud'].includes(getCarouselPattern(patternSection, offset).name)" name="ph:crown-simple" class="text-primary-strong mr-1 align-[-0.12em]" />{{ getCarouselPattern(patternSection, offset).name }}
                   </p>
-                  <p :class="pattern.copyClass" class="text-xl leading-none tracking-[-0.05em] font-display mt-4">
-                    Receipts found.
+                  <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[10px] leading-tight font-meta mt-1">
+                    {{ getCarouselPattern(patternSection, offset).mood }}
+                  </p>
+                  <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[9px] tracking-[0.08em] font-meta uppercase mt-2">
+                    stage ↔ card {{ getSurfaceContrast(getCarouselPattern(patternSection, offset)) }}
                   </p>
                 </div>
-                <div class="mt-6 flex gap-3 items-center justify-between">
-                  <span :class="pattern.mutedClass" class="text-[9px] font-meta">C- / 12</span>
-                  <button :class="pattern.buttonClass" class="text-[9px] tracking-[0.1em] font-meta px-2 py-1 rounded uppercase" type="button">
-                    Open
-                  </button>
+                <span :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[10px] font-meta">{{ getCarouselPatternNumber(patternSection, offset) }}</span>
+              </div>
+
+              <div class="mt-5 flex-1">
+                <div :class="getCarouselPattern(patternSection, offset).cardClass" class="p-4 rounded-lg flex flex-col h-full justify-between">
+                  <div>
+                    <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[9px] tracking-[0.12em] font-meta uppercase">
+                      bento context
+                    </p>
+                    <p :class="getCarouselPattern(patternSection, offset).copyClass" class="text-xl leading-none tracking-[-0.05em] font-display mt-4">
+                      Receipts found.
+                    </p>
+                  </div>
+                  <div class="mt-6 flex gap-3 items-center justify-between">
+                    <span :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[9px] font-meta">C- / 12</span>
+                    <button :class="getCarouselPattern(patternSection, offset).buttonClass" class="text-[9px] tracking-[0.1em] font-meta px-2 py-1 rounded uppercase" type="button">
+                      Open
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="mt-3 flex gap-1.5">
-              <span :class="pattern.stageClass" class="border border-white/10 rounded-sm flex-1 h-3" />
-              <span :class="pattern.contextClass" class="border border-white/10 rounded-sm flex-1 h-3" />
-              <span :class="pattern.cardClass" class="border border-white/10 rounded-sm flex-1 h-3" />
-            </div>
-            <p :class="pattern.mutedClass" class="text-[9px] tracking-[-0.02em] font-meta mt-2">
-              {{ pattern.stageHex }} · {{ pattern.contextHex }} · {{ pattern.cardHex }}
-            </p>
+              <div class="mt-3 flex gap-1.5">
+                <span :class="getCarouselPattern(patternSection, offset).stageClass" class="border border-white/10 rounded-sm flex-1 h-3" />
+                <span :class="getCarouselPattern(patternSection, offset).contextClass" class="border border-white/10 rounded-sm flex-1 h-3" />
+                <span :class="getCarouselPattern(patternSection, offset).cardClass" class="border border-white/10 rounded-sm flex-1 h-3" />
+              </div>
+              <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[9px] tracking-[-0.02em] font-meta mt-2">
+                {{ getCarouselPattern(patternSection, offset).stageHex }} · {{ getCarouselPattern(patternSection, offset).contextHex }} · {{ getCarouselPattern(patternSection, offset).cardHex }}
+              </p>
+            </template>
           </article>
         </div>
         <div v-else class="p-6 border border-dashed border-outline rounded-xl mt-8">
@@ -354,94 +466,34 @@ useSeoMeta({
         </div>
       </section>
 
-      <div class="mt-6">
-        <div class="gap-2 grid lg:grid-cols-4 sm:grid-cols-2">
-          <div class="p-3 rounded-lg bg-black">
-            <p class="text-xs text-bone-50 font-body">
-              Stage
-            </p>
-            <p class="text-[10px] text-bone-300 font-meta mt-1">
-              black · full bleed
-            </p>
-          </div>
-          <div class="p-3 rounded-lg bg-bone-50">
-            <p class="text-xs text-basalt-950 font-body">
-              Focus
-            </p>
-            <p class="text-[10px] text-basalt-600 font-meta mt-1">
-              bone · primary read
-            </p>
-          </div>
-          <div class="p-3 rounded-lg bg-surface-container-high">
-            <p class="text-xs text-on-surface font-body">
-              Structure
-            </p>
-            <p class="text-[10px] text-on-surface-variant font-meta mt-1">
-              warm graphite · cards
-            </p>
-          </div>
-          <div class="p-3 rounded-lg bg-signal-red-700">
-            <p class="text-xs text-bone-50 font-body">
-              Action
-            </p>
-            <p class="text-[10px] text-bone-100 font-meta mt-1">
-              cherry red · one decision
-            </p>
-          </div>
-        </div>
-      </div>
-
       <section class="mt-6">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
             <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
-              03 · type and UI
+              Type roles
             </p>
             <h2 class="text-3xl tracking-[-0.04em] font-display mt-3 md:text-5xl">
               Four voices. No costume.
             </h2>
           </div>
           <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[38ch]">
-            Fonts are shown in their actual roles, then tested in one small interface slice.
+            One voice per job. The specimen below shows how the system sounds before it ships.
           </p>
         </div>
 
-        <div class="mt-8 gap-3 grid md:grid-cols-2">
-          <div v-for="sample in typographySamples" :key="sample.label" class="p-5 border border-outline rounded-xl bg-surface-container-high">
+        <div class="mt-8 border-y border-outline">
+          <div v-for="sample in typographySamples" :key="sample.label" class="py-5 md:py-7">
             <div class="flex gap-4 items-baseline justify-between">
               <p class="text-[10px] text-primary-strong tracking-[0.16em] font-meta uppercase">
                 {{ sample.label }}
               </p>
-              <p class="text-[10px] text-on-surface-variant font-meta">
+              <p class="text-[10px] text-on-surface-variant leading-relaxed font-meta text-right">
                 {{ sample.role }}
               </p>
             </div>
-            <p :class="sample.className" class="text-2xl text-on-surface leading-tight mt-6 md:text-3xl">
+            <p :class="[sample.className, sample.sampleClass]" class="text-on-surface leading-none mt-4 md:mt-5">
               {{ sample.sample }}
             </p>
-          </div>
-        </div>
-
-        <div class="mt-5 p-5 border border-outline rounded-xl bg-surface-container-highest md:p-6">
-          <div class="gap-6 grid md:grid-cols-[1fr_0.8fr] md:items-end">
-            <div>
-              <p class="text-[10px] text-primary-strong tracking-[0.16em] font-meta uppercase">
-                component slice
-              </p>
-              <p class="text-3xl tracking-[-0.04em] font-display mt-4">
-                Start with a username.
-              </p>
-              <p class="text-sm text-on-surface-variant leading-relaxed font-body mt-3 max-w-[42ch]">
-                Controls stay neutral until the action is ready. Focus remains visible through outline and color.
-              </p>
-            </div>
-            <form class="space-y-3" @submit.prevent>
-              <label class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta block uppercase" for="design-system-username">GitHub username</label>
-              <input id="design-system-username" class="text-sm text-on-surface font-body px-4 py-3 outline-none border border-outline rounded-lg bg-surface-container w-full focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30" value="@torvalds" readonly>
-              <button class="text-[11px] text-bone-50 tracking-[0.16em] font-meta px-4 py-3 rounded-lg bg-primary w-full uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary-strong focus-visible:outline-offset-2 active:bg-primary-container hover:bg-primary-strong" type="submit">
-                Start roast
-              </button>
-            </form>
           </div>
         </div>
       </section>

@@ -74,7 +74,18 @@ onBeforeUnmount(() => {
               <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-surface-variant)' }" />
               <span>{{ key }}</span>
             </span>
-            <strong class="shrink-0 tabular-nums text-on-background font-medium">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
+            <Transition
+              :key="`${key}-${context.hoveredIndex.value}`"
+              mode="out-in"
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="translate-y-2 opacity-0"
+              enter-to-class="translate-y-0 opacity-100"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="translate-y-0 opacity-100"
+              leave-to-class="-translate-y-2 opacity-0"
+            >
+              <strong class="shrink-0 tabular-nums text-on-background font-medium" :key="Number(context.data[context.hoveredIndex.value]?.[key] ?? 0)">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
+            </Transition>
           </div>
         </div>
       </div>
