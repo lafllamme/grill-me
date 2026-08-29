@@ -51,9 +51,13 @@ const reducedMotion = usePreferredReducedMotion()
 const isReducedMotion = computed(() => reducedMotion.value === 'reduce')
 const hoveredIndex = ref<number | null>(null)
 const pointerFrame = ref<number | null>(null)
-const loadingFrame = ref<number | null>(null)
-const loadingStartedAt = ref<number | null>(null)
-const loadingProgress = ref(0)
+const loadingLineFrame = ref<number | null>(null)
+const loadingGridFrame = ref<number | null>(null)
+const loadingLineStartedAt = ref<number | null>(null)
+const loadingLineDelayStartedAt = ref<number | null>(null)
+const loadingGridStartedAt = ref<number | null>(null)
+const loadingLineProgress = ref(0)
+const loadingGridProgress = ref(0)
 const pendingIndex = ref<number | null>(null)
 const revealTarget = ref(props.status === 'ready' ? 1 : 0)
 const revealProgress = useBklitSpring(revealTarget, { stiffness: 170, damping: 28 })
@@ -118,7 +122,7 @@ const skeletonPoints = computed<ChartPoint[]>(() => Array.from({ length: 7 }, (_
 })))
 const skeletonPath = computed(() => pathFor(skeletonPoints.value))
 const loadingPulseProgress = computed(() => {
-  const elapsed = loadingProgress.value * 2480
+  const elapsed = loadingLineProgress.value * 2480
   return elapsed >= 2200 ? 1 : elapsed / 2200
 })
 const loadingClipX = computed(() => {
@@ -133,7 +137,11 @@ const loadingClipWidth = computed(() => {
     return (progress / 0.5) * (plotWidth.value + 20)
   return (1 - (progress - 0.5) / 0.5) * (plotWidth.value + 20)
 })
-const loadingGridX = computed(() => -140 + loadingPulseProgress.value * (plotWidth.value + 280))
+const loadingGridX = computed(() => {
+  const elapsed = loadingGridProgress.value * 2480
+  const progress = elapsed >= 2200 ? 1 : elapsed / 2200
+  return -140 + progress * (plotWidth.value + 280)
+})
 const dataLabels = computed(() => props.data.map((datum, index) => ({
   label: String(datum[props.xDataKey]),
   x: xAt(index),
@@ -232,25 +240,41 @@ function replayReveal() {
   }, 40)
 }
 
-function updateLoadingAnimation(timestamp: number) {
+function updateLoadingLine(timestamp: number) {
   if (props.status !== 'loading' || isReducedMotion.value) {
-    loadingFrame.value = null
-    loadingStartedAt.value = null
-    loadingProgress.value = 0
+    loadingLineFrame.value = null
     return
   }
 
-  loadingStartedAt.value ??= timestamp
-  const elapsed = (timestamp - loadingStartedAt.value) % 2480
-  loadingProgress.value = elapsed / 2480
-  loadingFrame.value = requestAnimationFrame(updateLoadingAnimation)
+  loadingLineDelayStartedAt.value ??= timestamp
+  if (timestamp - loadingLineDelayStartedAt.value < 280) {
+    loadingLineProgress.value = 0
+    loadingLineFrame.value = requestAnimationFrame(updateLoadingLine)
+    return
+  }
+  loadingLineStartedAt.value ??= timestamp
+  loadingLineProgress.value = ((timestamp - loadingLineStartedAt.value) % 2480) / 2480
+  loadingLineFrame.value = requestAnimationFrame(updateLoadingLine)
+}
+
+function updateLoadingGrid(timestamp: number) {
+  if (props.status !== 'loading' || isReducedMotion.value) {
+    loadingGridFrame.value = null
+    return
+  }
+
+  loadingGridStartedAt.value ??= timestamp
+  loadingGridProgress.value = ((timestamp - loadingGridStartedAt.value) % 2480) / 2480
+  loadingGridFrame.value = requestAnimationFrame(updateLoadingGrid)
 }
 
 function startLoadingAnimation() {
   if (typeof requestAnimationFrame === 'undefined' || isReducedMotion.value || props.status !== 'loading')
     return
-  if (loadingFrame.value === null)
-    loadingFrame.value = requestAnimationFrame(updateLoadingAnimation)
+  if (loadingLineFrame.value === null)
+    loadingLineFrame.value = requestAnimationFrame(updateLoadingLine)
+  if (loadingGridFrame.value === null)
+    loadingGridFrame.value = requestAnimationFrame(updateLoadingGrid)
 }
 
 onMounted(() => {
@@ -262,20 +286,31 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (pointerFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
     cancelAnimationFrame(pointerFrame.value)
-  if (loadingFrame.value !== null && typeof cancelAnimationFrame !== 'undefined')
-    cancelAnimationFrame(loadingFrame.value)
+  if (typeof cancelAnimationFrame !== 'undefined') {
+    if (loadingLineFrame.value !== null)
+      cancelAnimationFrame(loadingLineFrame.value)
+    if (loadingGridFrame.value !== null)
+      cancelAnimationFrame(loadingGridFrame.value)
+  }
 })
 
 watch(() => props.status, (status) => {
   revealTarget.value = status === 'ready' ? 1 : 0
   if (status === 'loading') {
-    loadingProgress.value = 0
-    loadingStartedAt.value = null
+    loadingLineProgress.value = 0
+    loadingGridProgress.value = 0
+    loadingLineStartedAt.value = null
+    loadingLineDelayStartedAt.value = null
+    loadingGridStartedAt.value = null
     startLoadingAnimation()
   }
-  else if (loadingFrame.value !== null && typeof cancelAnimationFrame !== 'undefined') {
-    cancelAnimationFrame(loadingFrame.value)
-    loadingFrame.value = null
+  else if (typeof cancelAnimationFrame !== 'undefined') {
+    if (loadingLineFrame.value !== null)
+      cancelAnimationFrame(loadingLineFrame.value)
+    if (loadingGridFrame.value !== null)
+      cancelAnimationFrame(loadingGridFrame.value)
+    loadingLineFrame.value = null
+    loadingGridFrame.value = null
   }
 })
 </script>
@@ -314,10 +349,10 @@ watch(() => props.status, (status) => {
         </clipPath>
       </defs>
 
-      <g stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
+      <g :stroke="status === 'loading' ? 'color-mix(in oklch, var(--color-chart-grid) 50%, transparent)' : 'var(--color-chart-grid)'" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
         <line v-for="index in 5" :key="`h-${index}`" :x1="margin.left" :x2="chartWidth - margin.right" :y1="margin.top + (index - 1) * plotHeight / 4" :y2="margin.top + (index - 1) * plotHeight / 4" />
       </g>
-      <g v-if="status === 'loading' && !isReducedMotion" stroke="url(#bklit-line-grid-shimmer)" stroke-width="1">
+      <g v-if="status === 'loading' && !isReducedMotion" stroke="url(#bklit-line-grid-shimmer)" stroke-width="1" stroke-dasharray="4 6" mask="url(#bklit-line-grid-mask)">
         <line v-for="index in 5" :key="`loading-h-${index}`" :x1="margin.left" :x2="chartWidth - margin.right" :y1="margin.top + (index - 1) * plotHeight / 4" :y2="margin.top + (index - 1) * plotHeight / 4" />
       </g>
       <g v-if="status === 'ready'" stroke="var(--color-chart-grid)" stroke-width="1" stroke-dasharray="4 6" opacity="0.65">
@@ -339,7 +374,9 @@ watch(() => props.status, (status) => {
       </template>
 
       <g class="text-[12px] font-body" :style="{ fill: 'var(--chart-label)' }">
-        <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="299" text-anchor="middle" :opacity="labelOpacity(item.x)" :style="{ transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }">{{ item.label }}</text>
+        <template v-if="status === 'ready'">
+          <text v-for="(item, index) in xLabels" :key="`label-${index}`" :x="item.x" y="299" text-anchor="middle" :opacity="labelOpacity(item.x)" :style="{ transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }">{{ item.label }}</text>
+        </template>
         <g v-if="pillX !== null && hoveredIndex !== null" :transform="`translate(${pillX / 100 * chartWidth}, 284)`" class="pointer-events-none">
           <rect x="-50" y="0" width="100" height="30" rx="15" fill="var(--color-on-background)" class="shadow-lg" />
           <clipPath id="bklit-line-pill-clip"><rect x="-50" y="0" width="100" height="30" rx="15" /></clipPath>
