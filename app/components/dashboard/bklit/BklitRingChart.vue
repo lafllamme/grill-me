@@ -92,16 +92,18 @@ provide(bklitRingContextKey, context)
 
 <template>
   <div class="flex shrink-0 flex-col max-w-full aspect-auto items-center justify-center relative sm:flex-row sm:aspect-square" :style="{ width: `${props.size}px` }">
-    <svg class="h-auto w-full aspect-square overflow-visible" :viewBox="`0 0 ${props.size} ${props.size}`" role="img" aria-label="Code quality profile">
-      <g :transform="`translate(${props.size / 2} ${props.size / 2})`">
-        <slot />
-      </g>
-    </svg>
-    <div
-      class="flex pointer-events-none items-center left-1/2 top-1/2 justify-center absolute -translate-x-1/2 -translate-y-1/2"
-      :style="{ width: `${Math.max(scaledBaseInnerRadius * 2 - 16, 0)}px`, height: `${Math.max(scaledBaseInnerRadius * 2 - 16, 0)}px` }"
-    >
-      <slot name="center" />
+    <div class="w-full aspect-square relative">
+      <svg class="h-auto w-full aspect-square overflow-visible" :viewBox="`0 0 ${props.size} ${props.size}`" role="img" aria-label="Code quality profile">
+        <g :transform="`translate(${props.size / 2} ${props.size / 2})`">
+          <slot />
+        </g>
+      </svg>
+      <div
+        class="flex pointer-events-none items-center left-1/2 top-1/2 justify-center absolute -translate-x-1/2 -translate-y-1/2"
+        :style="{ width: `${Math.max(scaledBaseInnerRadius * 2 - 16, 0)}px`, height: `${Math.max(scaledBaseInnerRadius * 2 - 16, 0)}px` }"
+      >
+        <slot name="center" />
+      </div>
     </div>
     <slot name="legend" />
   </div>
