@@ -5,7 +5,7 @@ import { animate, motionValue } from 'motion-v'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BklitSunburstLabel from './BklitSunburstLabel.vue'
 import BklitSunburstSegment from './BklitSunburstSegment.vue'
-import { buildHoverGeometry, buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant, transitionSunburstGeometry } from './sunburst'
+import { buildHoverGeometry, buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant, maxHoverSegmentThickness, transitionSunburstGeometry } from './sunburst'
 import { useBklitEnter } from './use-bklit-enter'
 
 const props = withDefaults(defineProps<{
@@ -37,7 +37,7 @@ const renderArcs = computed(() => [...layout.value.arcs].sort((a, b) => b.depth 
 const previousFocusArc = computed(() => layout.value.arcs.find(arc => arc.id === previousFocusId.value) ?? null)
 const currentFocusArc = computed(() => layout.value.arcs.find(arc => arc.id === focusId.value) ?? null)
 const arcGeometries = computed(() => new Map(renderArcs.value.map(arc => [arc.id, transitionSunburstGeometry(arc, previousFocusArc.value, currentFocusArc.value, layout.value.maxDepth, radius.value, zoomProgress.value)])))
-const targetHoverGeometries = computed(() => buildHoverGeometry(renderArcs.value, hoveredId.value, radius.value))
+const targetHoverGeometries = computed(() => buildHoverGeometry(renderArcs.value, hoveredId.value, radius.value, layout.value.maxDepth, focusId.value === layout.value.rootId ? null : focusId.value))
 const animatedHoverGeometries = ref(new Map<string, { grow: number, offset: number }>())
 let stopHoverAnimation: (() => void) | undefined
 const breadcrumbIds = computed(() => getBreadcrumbIds(focusId.value, layout.value.nodes))
@@ -124,13 +124,27 @@ const labelsDelay = computed(() => {
 // Bklit reuses the chart entrance transition for labels instead of a short
 // independent fade, which keeps the final settle relaxed and coordinated.
 const labelsProgress = useBklitEnter(true, labelsDelay.value, () => props.replayKey, { type: 'tween', durationSeconds: 1.1 })
+const chartOpacity = useBklitEnter(prefersReducedMotion.value !== 'reduce', 0, () => props.replayKey, { type: 'tween', durationSeconds: 0.35 })
 
 function segmentFillOpacity(arc: SunburstArc) {
   return Math.max(0.45, 1 - Math.max(0, arc.depth - 1) * 0.15)
 }
 
 function hoverGeometry(arc: SunburstArc) {
-  return animatedHoverGeometries.value.get(arc.id) ?? { grow: 0, offset: 0 }
+  const hover = animatedHoverGeometries.value.get(arc.id) ?? { grow: 0, offset: 0 }
+  const geometry = arcGeometries.value.get(arc.id)
+  if (!geometry || (!hover.grow && !hover.offset)) {
+    return hover
+  }
+  const maxExpandedThickness = maxHoverSegmentThickness(layout.value.maxDepth, radius.value)
+  const baseThickness = geometry.outerRadius - geometry.innerRadius
+  if (baseThickness >= maxExpandedThickness) {
+    return { grow: 0, offset: hover.offset }
+  }
+  return {
+    grow: Math.min(hover.grow, maxExpandedThickness - baseThickness),
+    offset: hover.offset,
+  }
 }
 
 function startHoverTransition() {
@@ -168,9 +182,10 @@ function labelVisible(arc: SunburstArc) {
   if (!geometry) {
     return false
   }
-  const labelRadius = (geometry.innerRadius + geometry.outerRadius) / 2
+  const hover = hoverGeometry(arc)
+  const labelRadius = (geometry.innerRadius + geometry.outerRadius) / 2 + hover.offset + hover.grow / 2
   const angularSpace = (geometry.endAngle - geometry.startAngle) * labelRadius
-  const radialSpace = geometry.outerRadius - geometry.innerRadius - 6
+  const radialSpace = geometry.outerRadius - geometry.innerRadius + hover.grow - 6
 
   // Bklit uses the geometric label gate: every segment gets a label when the
   // available arc length and ring width can hold it without collision.
@@ -198,7 +213,7 @@ function labelVisible(arc: SunburstArc) {
     <div class="mx-auto flex w-full justify-center relative overflow-visible" :style="{ minHeight: `${props.size + 44}px` }">
       <svg
         class="h-auto max-w-full overflow-visible"
-        :style="{ width: `${props.size}px`, opacity: prefersReducedMotion === 'reduce' ? 1 : undefined }"
+        :style="{ width: `${props.size}px`, opacity: prefersReducedMotion === 'reduce' ? 1 : chartOpacity }"
         :viewBox="`${-props.size / 2} ${-props.size / 2} ${props.size} ${props.size}`"
         :aria-label="`${props.data.name} hierarchy sunburst`"
         @focusout="handleChartFocusOut"

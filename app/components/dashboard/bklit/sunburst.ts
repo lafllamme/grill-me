@@ -40,6 +40,9 @@ export interface SunburstGeometry {
   outerRadius: number
 }
 
+const hoverGrowRingBudget = 0.28
+const hoverGrowSegmentCap = 0.1
+
 const fullCircle = Math.PI * 2
 const topAngle = -Math.PI / 2
 
@@ -100,8 +103,18 @@ function isOnHoverPath(arc: SunburstArc, hoveredId: string): boolean {
   return arc.id === hoveredId || hoveredId.startsWith(`${arc.id} / `)
 }
 
-export function buildHoverGeometry(arcs: readonly SunburstArc[], hoveredId: string | null, radius: number, hoverPop = 8): Map<string, SunburstHoverGeometry> {
-  const targets = new Map<string, number>()
+export function maxHoverSegmentThickness(maxDepth: number, radius: number, hoverPop = 8): number {
+  const totalRadius = maxDepth * radius
+  const referenceRingWidth = (totalRadius - radius * 0.65) / Math.max(1, maxDepth - 1)
+  const grow = Math.min(
+    hoverPop,
+    referenceRingWidth * hoverGrowSegmentCap,
+    referenceRingWidth * hoverGrowRingBudget,
+  )
+  return referenceRingWidth + grow
+}
+
+export function buildHoverGeometry(arcs: readonly SunburstArc[], hoveredId: string | null, radius: number, maxDepth = Math.max(1, ...arcs.map(arc => arc.depth)), focusId: string | null = null, hoverPop = 8): Map<string, SunburstHoverGeometry> {
   const geometry = new Map<string, SunburstHoverGeometry>()
   if (!hoveredId) {
     return geometry
@@ -112,13 +125,30 @@ export function buildHoverGeometry(arcs: readonly SunburstArc[], hoveredId: stri
     return geometry
   }
 
-  const grow = Math.min(hoverPop, radius * 0.1, (radius * 0.28) / Math.max(1, hoveredArc.depth))
+  const focusDepth = focusId ? (arcs.find(arc => arc.id === focusId)?.depth ?? 0) : 0
+  const visibleRingCount = Math.max(1, maxDepth - focusDepth)
+  const totalRadius = maxDepth * radius
+  const centerRadius = focusDepth === 0 ? 0 : radius * 0.65
+  const ringWidth = (totalRadius - centerRadius) / visibleRingCount
+  const pathLength = Math.max(1, hoveredArc.depth - focusDepth)
+  const grow = Math.min(
+    hoverPop,
+    ringWidth * hoverGrowSegmentCap,
+    (ringWidth * hoverGrowRingBudget) / pathLength,
+  )
+  const maxExpandedThickness = maxHoverSegmentThickness(maxDepth, radius, hoverPop)
+  const isVisible = (arc: SunburstArc) => arc.depth > focusDepth && (!focusId || isDescendant(arc.id, focusId))
+  const targets = new Map<string, number>()
+
   for (const arc of arcs) {
-    if (!isOnHoverPath(arc, hoveredId)) {
+    if (!isOnHoverPath(arc, hoveredId) || !isVisible(arc)) {
       continue
     }
-
-    targets.set(arc.id, grow)
+    const baseThickness = ringWidth
+    const allowedGrow = baseThickness >= maxExpandedThickness
+      ? 0
+      : Math.min(grow, maxExpandedThickness - baseThickness)
+    targets.set(arc.id, allowedGrow)
   }
 
   const arcsById = new Map(arcs.map(arc => [arc.id, arc]))

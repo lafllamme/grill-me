@@ -10,7 +10,7 @@ const props = defineProps<{
   reducedMotion: boolean
 }>()
 
-const angle = computed(() => (props.arc.startAngle + props.arc.endAngle) / 2)
+const angle = computed(() => (props.geometry.startAngle + props.geometry.endAngle) / 2)
 const labelRadius = computed(() =>
   (props.geometry.innerRadius + props.geometry.outerRadius) / 2
   + props.hoverOffset
