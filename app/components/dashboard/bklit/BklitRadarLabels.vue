@@ -5,7 +5,7 @@ import { useBklitEnter } from './use-bklit-enter'
 const props = withDefaults(defineProps<{ offset?: number, fontSize?: number, interactive?: boolean, className?: string }>(), { offset: 24, fontSize: 11, interactive: false, className: '' })
 const context = useBklitRadarContext()
 const labelDelay = context.levels * 0.08 * 0.5
-const progress = context.metrics.map((_, index) => useBklitEnter(context.animate, labelDelay + index * 0.08, `${context.motionReplayKey}-label-${index}`, { type: 'spring', stiffness: 80, damping: 15, mass: 1 }))
+const progress = context.metrics.map((_, index) => useBklitEnter(context.animate, 0, `${context.motionReplayKey}-label-${index}`, { type: 'spring', stiffness: 80, damping: 15, mass: 1 }))
 const opacityProgress = context.metrics.map((_, index) => useBklitEnter(context.animate, labelDelay + index * 0.08, `${context.motionReplayKey}-label-opacity-${index}`, { type: 'tween', durationSeconds: 0.5 }))
 const progressValue = (index: number) => progress[index]?.value ?? 1
 const opacityValue = (index: number) => opacityProgress[index]?.value ?? 1

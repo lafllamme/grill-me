@@ -18,6 +18,7 @@ const enterProgress = useBklitEnter(context.animate, campaignBaseDelay + props.i
 const areaOpacity = useBklitEnter(context.animate, 0, `${context.motionReplayKey}-${props.index}-opacity`, { type: 'tween', durationSeconds: 0.15 })
 const hoverScaleTarget = computed(() => isHovered.value ? 1.05 : 1)
 const hoverScale = useBklitSpring(hoverScaleTarget, { stiffness: 400, damping: 25 }, 1)
+const pointRadii = context.metrics.map(() => useBklitSpring(computed(() => isHovered.value ? 6 : 4), { stiffness: 300, damping: 20 }, 4))
 const points = computed(() => {
   if (!series.value) {
     return ''
@@ -33,7 +34,7 @@ const points = computed(() => {
   <g v-if="series" class="bklit-radar-area cursor-pointer" :class="[props.className, { 'is-hovered': isHovered, 'is-dimmed': isDimmed }]" :opacity="isDimmed ? 0.3 : areaOpacity" :style="{ transition: 'opacity 150ms ease-out' }" :transform="`translate(${context.center} ${context.center}) scale(${hoverScale}) translate(${-context.center} ${-context.center})`" @pointerenter="context.setHoveredIndex(props.index)" @pointerleave="context.setHoveredIndex(null)">
     <path :d="`M ${points.replaceAll(' ', ' L ')} Z`" :fill="color" :fill-opacity="isHovered ? 0.35 : 0.15" :stroke="showStroke ? color : 'none'" :stroke-width="isHovered ? 3 : 2" stroke-linejoin="round" :style="{ filter: showGlow && isHovered ? `drop-shadow(0 0 12px ${color})` : 'none', transition: 'fill-opacity 200ms ease, stroke-width 200ms ease' }" />
     <g v-if="showPoints">
-      <circle v-for="(metric, metricIndex) in context.metrics" :key="metric.key" :cx="context.center + (context.getPoint(metricIndex, series.values[metric.key] ?? 0).x - context.center) * enterProgress" :cy="context.center + (context.getPoint(metricIndex, series.values[metric.key] ?? 0).y - context.center) * enterProgress" :r="isHovered ? 6 : 4" :fill="color" class="stroke-background" stroke-width="2" />
+      <circle v-for="(metric, metricIndex) in context.metrics" :key="metric.key" :cx="context.center + (context.getPoint(metricIndex, series.values[metric.key] ?? 0).x - context.center) * enterProgress" :cy="context.center + (context.getPoint(metricIndex, series.values[metric.key] ?? 0).y - context.center) * enterProgress" :r="pointRadii[metricIndex]?.value ?? 4" :fill="color" class="stroke-background" stroke-width="2" />
     </g>
   </g>
 </template>
