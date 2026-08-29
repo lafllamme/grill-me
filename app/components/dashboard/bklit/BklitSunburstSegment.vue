@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { SunburstArc, SunburstGeometry } from './sunburst'
-import { animate, motionValue } from 'motion-v'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { createSunburstGeometryPath } from './sunburst'
 import { useBklitEnter } from './use-bklit-enter'
 
@@ -19,36 +18,11 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ hover: [active: boolean], select: [] }>()
 const progress = useBklitEnter(!props.reducedMotion, props.delay, `${props.replayKey}-${props.arc.id}`, { type: 'tween', durationSeconds: 1.1 })
-const hoverProgressMotion = motionValue(props.reducedMotion ? 1 : 0)
-const hoverProgress = ref(hoverProgressMotion.get())
-let stopHoverAnimation: (() => void) | undefined
-
-function animateHover() {
-  stopHoverAnimation?.()
-  if (props.reducedMotion) {
-    hoverProgressMotion.set(1)
-    return
-  }
-  const target = props.hoverGrow || props.hoverOffset ? 1 : 0
-  const controls = animate(hoverProgressMotion, target, { type: 'tween', duration: 0.42, ease: [0.22, 1, 0.36, 1] })
-  stopHoverAnimation = () => controls.stop()
-}
-
-onMounted(() => {
-  const unsubscribe = hoverProgressMotion.on('change', (value) => {
-    hoverProgress.value = value
-  })
-  animateHover()
-  onBeforeUnmount(unsubscribe)
-})
-watch(() => [props.hoverGrow, props.hoverOffset, props.reducedMotion], animateHover)
-onBeforeUnmount(() => stopHoverAnimation?.())
-
 const hitPath = computed(() => props.geometry
   ? createSunburstGeometryPath(props.geometry, props.reducedMotion ? 1 : progress.value)
   : '')
 const visualPath = computed(() => props.geometry
-  ? createSunburstGeometryPath(props.geometry, props.reducedMotion ? 1 : progress.value, props.hoverGrow * hoverProgress.value, props.hoverOffset * hoverProgress.value)
+  ? createSunburstGeometryPath(props.geometry, props.reducedMotion ? 1 : progress.value, props.hoverGrow, props.hoverOffset)
   : '')
 </script>
 

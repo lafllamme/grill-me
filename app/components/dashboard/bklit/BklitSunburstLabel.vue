@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { SunburstArc, SunburstGeometry } from './sunburst'
-import { animate, motionValue } from 'motion-v'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps<{
   arc: SunburstArc
@@ -11,36 +10,11 @@ const props = defineProps<{
   reducedMotion: boolean
 }>()
 
-const hoverProgressMotion = motionValue(props.reducedMotion ? 1 : 0)
-const hoverProgress = ref(hoverProgressMotion.get())
-let stopHoverAnimation: (() => void) | undefined
-
-function animateHover() {
-  stopHoverAnimation?.()
-  if (props.reducedMotion) {
-    hoverProgressMotion.set(1)
-    return
-  }
-  const target = props.hoverGrow || props.hoverOffset ? 1 : 0
-  const controls = animate(hoverProgressMotion, target, { type: 'tween', duration: 0.42, ease: [0.22, 1, 0.36, 1] })
-  stopHoverAnimation = () => controls.stop()
-}
-
-onMounted(() => {
-  const unsubscribe = hoverProgressMotion.on('change', (value) => {
-    hoverProgress.value = value
-  })
-  animateHover()
-  onBeforeUnmount(unsubscribe)
-})
-watch(() => [props.hoverGrow, props.hoverOffset, props.reducedMotion], animateHover)
-onBeforeUnmount(() => stopHoverAnimation?.())
-
 const angle = computed(() => (props.arc.startAngle + props.arc.endAngle) / 2)
 const labelRadius = computed(() =>
   (props.geometry.innerRadius + props.geometry.outerRadius) / 2
-  + props.hoverOffset * hoverProgress.value
-  + (props.hoverGrow * hoverProgress.value) / 2,
+  + props.hoverOffset
+  + props.hoverGrow / 2,
 )
 const position = computed(() => ({
   x: Number((Math.sin(angle.value) * labelRadius.value).toFixed(3)),

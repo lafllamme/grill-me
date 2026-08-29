@@ -2,7 +2,7 @@
 import type { SunburstArc, SunburstNode } from './sunburst'
 import { usePreferredReducedMotion } from '@vueuse/core'
 import { animate, motionValue } from 'motion-v'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BklitSunburstLabel from './BklitSunburstLabel.vue'
 import BklitSunburstSegment from './BklitSunburstSegment.vue'
 import { buildHoverGeometry, buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant, transitionSunburstGeometry } from './sunburst'
@@ -37,7 +37,9 @@ const renderArcs = computed(() => [...layout.value.arcs].sort((a, b) => b.depth 
 const previousFocusArc = computed(() => layout.value.arcs.find(arc => arc.id === previousFocusId.value) ?? null)
 const currentFocusArc = computed(() => layout.value.arcs.find(arc => arc.id === focusId.value) ?? null)
 const arcGeometries = computed(() => new Map(renderArcs.value.map(arc => [arc.id, transitionSunburstGeometry(arc, previousFocusArc.value, currentFocusArc.value, layout.value.maxDepth, radius.value, zoomProgress.value)])))
-const hoverGeometries = computed(() => buildHoverGeometry(renderArcs.value, hoveredId.value, radius.value))
+const targetHoverGeometries = computed(() => buildHoverGeometry(renderArcs.value, hoveredId.value, radius.value))
+const animatedHoverGeometries = ref(new Map<string, { grow: number, offset: number }>())
+let stopHoverAnimation: (() => void) | undefined
 const breadcrumbIds = computed(() => getBreadcrumbIds(focusId.value, layout.value.nodes))
 const breadcrumbItems = computed(() => breadcrumbIds.value.map(id => ({ id, name: layout.value.nodes.get(id)?.name ?? id.split(' / ').at(-1) ?? id })))
 
@@ -99,8 +101,13 @@ onMounted(() => {
     zoomProgress.value = value
   })
   onBeforeUnmount(unsubscribe)
+  const stopWatchingHover = watch([hoveredId, targetHoverGeometries], startHoverTransition, { flush: 'post' })
+  onBeforeUnmount(stopWatchingHover)
 })
-onBeforeUnmount(() => stopZoomAnimation?.())
+onBeforeUnmount(() => {
+  stopZoomAnimation?.()
+  stopHoverAnimation?.()
+})
 
 function segmentDelay(arc: SunburstArc) {
   const sameDepth = visibleArcs.value
@@ -123,7 +130,37 @@ function segmentFillOpacity(arc: SunburstArc) {
 }
 
 function hoverGeometry(arc: SunburstArc) {
-  return hoverGeometries.value.get(arc.id) ?? { grow: 0, offset: 0 }
+  return animatedHoverGeometries.value.get(arc.id) ?? { grow: 0, offset: 0 }
+}
+
+function startHoverTransition() {
+  stopHoverAnimation?.()
+  const starts = new Map(animatedHoverGeometries.value)
+  const targets = targetHoverGeometries.value
+  const ids = new Set([...starts.keys(), ...targets.keys()])
+  if (prefersReducedMotion.value === 'reduce') {
+    animatedHoverGeometries.value = new Map(targets)
+    return
+  }
+  const controls = animate(0, 1, {
+    type: 'tween',
+    duration: 0.42,
+    ease: [0.22, 1, 0.36, 1],
+    onUpdate: (progress) => {
+      const next = new Map<string, { grow: number, offset: number }>()
+      for (const id of ids) {
+        const start = starts.get(id) ?? { grow: 0, offset: 0 }
+        const target = targets.get(id) ?? { grow: 0, offset: 0 }
+        const grow = start.grow + (target.grow - start.grow) * progress
+        const offset = start.offset + (target.offset - start.offset) * progress
+        if (grow > 0.01 || offset > 0.01) {
+          next.set(id, { grow, offset })
+        }
+      }
+      animatedHoverGeometries.value = next
+    },
+  })
+  stopHoverAnimation = () => controls.stop()
 }
 
 function labelVisible(arc: SunburstArc) {
