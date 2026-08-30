@@ -121,7 +121,15 @@ const chartStyle = computed(() => ({
   '--chart-4': 'color-mix(in srgb, var(--color-primary) 72%, white)',
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
-const profileRadarData = computed(() => fixture.radarProfile.data.map(item => ({ ...item })))
+const profileRadarData = computed(() => fixture.radarProfile.data.map((item, index) => ({
+  ...item,
+  color: [
+    'var(--color-primary-strong)',
+    'color-mix(in srgb, var(--color-primary-strong) 78%, white)',
+    'var(--color-primary)',
+    'color-mix(in srgb, var(--color-primary-strong) 58%, black)',
+  ][index % 4],
+})))
 const changePressureGauge = computed(() => Math.min(100, Math.round(fixture.commits.reduce((total, commit) => total + commit.files, 0) / fixture.commits.length / 12 * 100)))
 const lineMarkers = [
   { date: new Date('2026-08-09T00:00:00Z'), icon: '✦', title: 'Design update', description: 'New color system' },
