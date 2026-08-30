@@ -180,6 +180,13 @@ evidence model.
 Persistence is deliberately deferred. The assessment must first be correct,
 inspectable, and versioned in memory and in the response contract.
 
+When persistence is enabled, migration `003_dashboard_profile_assessments.sql`
+adds an optional 1:1 table keyed by `roast_runs.id`. It does not alter
+`roast_run_metrics`, the existing grade vocabulary, receipt payloads, or
+leaderboard projections. Historical dashboard assessments remain tied to their
+`assessment_version` and `scoring_version` so a later formula change does not
+silently rewrite an earlier result.
+
 ## Current known migration gaps
 
 - The existing roast scoring model still uses the older roast metrics and grade
