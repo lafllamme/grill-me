@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useHead, useSeoMeta } from '#imports'
-import BklitBar from '~/components/dashboard/bklit/BklitBar.vue'
-import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
-import BklitBarXAxis from '~/components/dashboard/bklit/BklitBarXAxis.vue'
-import BklitGaugeChart from '~/components/dashboard/bklit/BklitGaugeChart.vue'
-import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
-import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
-import BklitRadarChart from '~/components/dashboard/bklit/BklitRadarChart.vue'
-import BklitSunburstChart from '~/components/dashboard/bklit/BklitSunburstChart.vue'
-import DashboardRingChart from '~/components/dashboard/DashboardRingChart.vue'
-import RoastOneGradeStar from '~/components/roast-one/RoastOneGradeStar.vue'
+import ChangeGaugePanel from '~/components/dashboard-explorer/change-gauge/ChangeGaugePanel.vue'
+import ChangeVolumePanel from '~/components/dashboard-explorer/change-volume/ChangeVolumePanel.vue'
+import CommitTimelinePanel from '~/components/dashboard-explorer/commit-timeline/CommitTimelinePanel.vue'
+import EvidenceRingPanel from '~/components/dashboard-explorer/evidence-ring/EvidenceRingPanel.vue'
+import ProfileRadarPanel from '~/components/dashboard-explorer/profile-radar/ProfileRadarPanel.vue'
+import RepositorySunburstPanel from '~/components/dashboard-explorer/repository-sunburst/RepositorySunburstPanel.vue'
+import VerdictPanel from '~/components/dashboard-explorer/verdict/VerdictPanel.vue'
 import { roastDashboardFixture } from '~/data/roast-dashboard'
 import { roastDashboardExplorerFixture, roastSunburstData } from '~/data/roast-dashboard-explorer'
 
@@ -37,8 +34,6 @@ interface ChartPalette {
 
 const fixture = roastDashboardFixture
 const explorerFixture = roastDashboardExplorerFixture
-const isBarLoading = ref(true)
-const isLineLoading = ref(true)
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -121,60 +116,12 @@ const chartStyle = computed(() => ({
   '--chart-4': 'color-mix(in srgb, var(--color-primary) 72%, white)',
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
-const profileRadarData = computed(() => fixture.radarProfile.data.map((item, index) => ({
-  ...item,
-  color: [
-    'var(--color-primary-strong)',
-    'color-mix(in srgb, var(--color-primary-strong) 78%, white)',
-    'var(--color-primary)',
-    'color-mix(in srgb, var(--color-primary-strong) 58%, black)',
-  ][index % 4],
-})))
 const changePressureGauge = computed(() => Math.min(100, Math.round(fixture.commits.reduce((total, commit) => total + commit.files, 0) / fixture.commits.length / 12 * 100)))
-const lineMarkers = [
-  { date: new Date('2026-08-09T00:00:00Z'), icon: '✦', title: 'Design update', description: 'New color system' },
-  { date: new Date('2026-08-17T00:00:00Z'), icon: '↗', title: 'Docs updated', description: 'Added examples' },
-] as const
-let barLoadingTimer: ReturnType<typeof setTimeout> | undefined
-let lineLoadingTimer: ReturnType<typeof setTimeout> | undefined
-
-function replayBarLoading() {
-  isBarLoading.value = true
-  if (barLoadingTimer) {
-    clearTimeout(barLoadingTimer)
-  }
-  barLoadingTimer = setTimeout(() => {
-    isBarLoading.value = false
-  }, 2800)
-}
-
-function replayLineLoading() {
-  isLineLoading.value = true
-  if (lineLoadingTimer) {
-    clearTimeout(lineLoadingTimer)
-  }
-  lineLoadingTimer = setTimeout(() => {
-    isLineLoading.value = false
-  }, 2800)
-}
 
 function setColorMode(mode: ColorMode) {
   activeColorMode.value = mode
   activeColorProfile.value = mode === 'dark' ? 'voidWhisper' : 'slateCloud'
 }
-
-onMounted(() => {
-  replayBarLoading()
-  replayLineLoading()
-})
-onBeforeUnmount(() => {
-  if (barLoadingTimer) {
-    clearTimeout(barLoadingTimer)
-  }
-  if (lineLoadingTimer) {
-    clearTimeout(lineLoadingTimer)
-  }
-})
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
 useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked profile view for the roast dashboard.' })
@@ -235,88 +182,13 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       </header>
 
       <div id="profile-panel" class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12">
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-6">
-          <h2 class="text-2xl tracking-[-0.04em] font-body">
-            Profile
-          </h2>
-          <BklitRadarChart class="mt-4" :data="profileRadarData" :metrics="fixture.radarProfile.metrics" :size="400" />
-        </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-6">
-          <div class="flex gap-4 items-start justify-between">
-            <h2 class="text-2xl tracking-[-0.04em] font-body">
-              Verdict
-            </h2>
-            <RoastOneGradeStar :grade="fixture.grade" grade-size="xs" size="sm" />
-          </div>
-          <span class="text-[11px] text-primary tracking-[0.08em] font-meta mt-6 px-3 py-1.5 border-[1px] border-primary/30 rounded-full border-solid inline-flex uppercase">{{ fixture.growthLevel }}</span>
-          <h3 class="text-4xl leading-[0.94] tracking-[-0.06em] font-display mt-5 max-w-[12ch] sm:text-5xl">
-            {{ fixture.headline }}
-          </h3>
-          <p :class="currentColorProfile.mutedClass" class="text-base leading-7 mt-6 max-w-[34rem]">
-            {{ fixture.note }}
-          </p>
-        </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 sm:p-8 lg:col-span-8">
-          <div class="flex items-center justify-between">
-            <h2 class="text-2xl tracking-[-0.04em] font-body">
-              Evidence
-            </h2><span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span>
-          </div><DashboardRingChart class="mt-8" :data="fixture.ringProfile" />
-        </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-4">
-          <div class="flex gap-4 items-center justify-between">
-            <h2 class="text-2xl tracking-[-0.05em] font-display">
-              Change pressure
-            </h2>
-            <span :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">Mock</span>
-          </div>
-          <BklitGaugeChart class="mt-6" :value="changePressureGauge" :center-value="changePressureGauge" default-label="Commit" active-fill="var(--color-primary)" inactive-fill="var(--color-chart-track)" :replay-key="String(changePressureGauge)" />
-          <p :class="currentColorProfile.mutedClass" class="text-sm leading-6 mt-2 max-w-[26rem]">
-            Average changed files per commit, normalized against a 12-file review threshold.
-          </p>
-        </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-6">
-          <div class="flex flex-wrap gap-4 items-end justify-between">
-            <div>
-              <h2 class="text-2xl tracking-[-0.05em] font-display">
-                Change volume
-              </h2>
-            </div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-current/30 rounded-[8px] border-solid uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:opacity-80" type="button" @click="replayBarLoading">
-              Replay loading
-            </button>
-          </div><BklitBarChart class="mt-8 min-w-0" :data="explorerFixture.barChangeVolume" x-data-key="label" :series-count="2" :status="isBarLoading ? 'loading' : 'ready'">
-            <template #grid>
-              <BklitGrid horizontal />
-            </template><BklitBar data-key="additions" fill="var(--color-primary-strong)" /><BklitBar data-key="deletions" fill="var(--color-primary)" /><template #x-axis>
-              <BklitBarXAxis />
-            </template>
-          </BklitBarChart>
-        </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 w-full transition-colors duration-300 box-border sm:p-8 lg:col-span-6">
-          <div class="flex flex-wrap gap-4 items-end justify-between">
-            <div>
-              <h2 class="text-2xl tracking-[-0.05em] font-display">
-                Change pressure
-              </h2>
-            </div><button :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.12em] font-meta px-3 py-2 border-[1px] border-current/30 rounded-[8px] border-solid uppercase focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:opacity-80" type="button" @click="replayLineLoading">
-              Replay loading
-            </button>
-          </div><BklitLineChart class="mt-8 min-w-0" :data="explorerFixture.timeline" x-data-key="label" :markers="lineMarkers" :series="[{ dataKey: 'additions', label: 'additions', color: 'var(--color-primary-strong)' }, { dataKey: 'files', label: 'files changed', color: 'var(--color-primary)' }]" :status="isLineLoading ? 'loading' : 'ready'" loading-label="" />
-        </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-12">
-          <div class="flex gap-4 items-start justify-between">
-            <div>
-              <h2 class="text-2xl tracking-[-0.05em] font-display">
-                Revenue
-              </h2>
-              <p :class="currentColorProfile.mutedClass" class="text-sm leading-6 mt-2">
-                The same hierarchy as the Bklit reference, recolored with our roast red.
-              </p>
-            </div>
-            <span class="text-[10px] text-primary-strong tracking-[0.12em] font-meta uppercase">Mock</span>
-          </div>
-          <BklitSunburstChart class="mt-6" :data="roastSunburstData" :size="560" />
-        </article>
+        <ProfileRadarPanel class="lg:col-span-6" :data="fixture.radarProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <VerdictPanel class="lg:col-span-6" :grade="fixture.grade" :growth-level="fixture.growthLevel" :headline="fixture.headline" :note="fixture.note" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <EvidenceRingPanel :data="fixture.ringProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ChangeGaugePanel :value="changePressureGauge" description="Average changed files per commit, normalized against a 12-file review threshold." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ChangeVolumePanel :data="explorerFixture.barChangeVolume" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <CommitTimelinePanel :data="explorerFixture.timeline" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <RepositorySunburstPanel :data="roastSunburstData" description="The same hierarchy as the Bklit reference, recolored with our roast red." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
       </div>
 
       <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] font-meta mt-8 flex flex-wrap gap-4 uppercase justify-between">
