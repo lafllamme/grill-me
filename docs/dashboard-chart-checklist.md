@@ -33,6 +33,31 @@ Springs, Grid und Areas den offiziellen 1100ms-Reveal-Tween. Diese Reihenfolge
 ist Teil der Portierung und darf nicht durch eine gemeinsame CSS-Animation
 ersetzt werden.
 
+### Profilachsen-Konzept
+
+Für das Radar sind vier Achsen fachlich bestätigt:
+
+- **Clarity** — Wie schnell lässt sich der Code verstehen? Dazu gehören
+  Benennung, lokale Lesbarkeit, Struktur und konsistente Patterns.
+- **Safety** — Wie robust und sicher geht der Code mit Fehlern, Daten und
+  Vertrauensgrenzen um?
+- **Workflow** — Wie sauber, granular und nachvollziehbar wird Arbeit geliefert
+  und in Git festgehalten?
+- **Complexity** — Wie gut wird strukturelle und architektonische Komplexität
+  kontrolliert?
+
+Als fünfte Achse ist **Context** aktuell der stärkste Kandidat. Sie bewertet
+nicht die Anzahl von Dokumentationsdateien, sondern ob das Repository seine
+Absichten, Entscheidungen und den Weg zur nächsten sicheren Änderung erklärt.
+Mögliche Evidence sind README-/Setup-Qualität, Architekturhinweise, relevante
+Kommentare, API-Kontext, Aktualität und Auffindbarkeit. „Context“ ist damit
+bewusst etwas anderes als „Clarity“: Clarity erklärt den Code selbst, Context
+erklärt, warum und wie das Projekt als Ganzes funktioniert.
+
+Die Alternativen **Docs**, **Guidance** und **Orientation** bleiben bis zur
+finalen Mock-Story offen. `Docs` soll nicht als bloße Dokumentationsquote
+interpretiert werden.
+
 ## Chart-Auswahl und Quellen
 
 | Status | Chart | Dashboard-Rolle | Dokumentation | GitHub-Code | Nächster Schritt |
@@ -70,6 +95,8 @@ ersetzt werden.
 - Der API-Vertrag bleibt unverändert.
 - Keine weiteren Charts hinzufügen, nur weil eine freie Fläche existiert.
 - Kein Chart gilt als portiert, bevor Verhalten und Darstellung im Browser geprüft wurden.
+- Die vorläufigen Roast-Rollen und ihre Score-/Evidence-Muster stehen in
+  [dashboard-profile-roles.md](./dashboard-profile-roles.md).
 
 ## Nächster Schritt
 

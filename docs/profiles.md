@@ -50,6 +50,21 @@ Rolle mit einem kritischen Gesamtprofil falsch positiv wird.
 Die gemischten Rollen sind keine lineare Qualitätsstufe. Sie beschreiben ein
 insgesamt brauchbares Profil mit genau einer auffälligen Schwäche.
 
+### Negative Rollen
+
+| Rolle | Clarity | Safety | Workflow | Complexity | Context |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Brain Dumper](./profiles/brain-dumper.md) | `≤35` | `≥55` | `≥55` | `≥55` | `≥55` |
+| [Finger Crosser](./profiles/finger-crosser.md) | `≥55` | `≤35` | `≥55` | `≥55` | `≥55` |
+| [Big-Bang Committer](./profiles/big-bang-committer.md) | `≥55` | `≥55` | `≤35` | `≥55` | `≥55` |
+| [Merge Conflict Magician](./profiles/merge-conflict-magician.md) | `≥55` | `≥55` | `≥55` | `≤35` | `≥55` |
+| [README Houdini](./profiles/readme-houdini.md) | `≥55` | `≥55` | `≥55` | `≥55` | `≤35` |
+
+Die negative Gruppe beschreibt jeweils eine dominante Schwäche. Sie ist nicht
+mit dem übergreifenden [Vibe Coder](./profiles/vibe-code.md)-Profil identisch:
+`Vibe Coder` wird vergeben, wenn mindestens drei Achsen gleichzeitig sehr
+schwach sind.
+
 ## Auswahlmodell
 
 Die Matrix ist kein `else-if`-Block, bei dem jede spätere Rolle von einer
@@ -64,6 +79,7 @@ flowchart TD
     C -- Ja --> U["Ungrillable als Gesamtprofil"]
     C -- Nein --> P["Positive Spezialprofile prüfen"]
     C -- Nein --> M["Gemischte Profile prüfen"]
+    C -- Nein --> N["Negative Spezialprofile prüfen"]
 
     P --> P1["Human Compiler"]
     P --> P2["Edge-Case Sheriff"]
@@ -76,6 +92,12 @@ flowchart TD
     M --> M4["Wrapper Addict"]
     M --> M5["Docs Dodger"]
 
+    N --> N1["Brain Dumper"]
+    N --> N2["Finger Crosser"]
+    N --> N3["Big-Bang Committer"]
+    N --> N4["Merge Conflict Magician"]
+    N --> N5["README Houdini"]
+
     P1 --> K["Alle passenden Kandidaten sammeln"]
     P2 --> K
     P3 --> K
@@ -85,6 +107,11 @@ flowchart TD
     M3 --> K
     M4 --> K
     M5 --> K
+    N1 --> K
+    N2 --> K
+    N3 --> K
+    N4 --> K
+    N5 --> K
 
     K --> R{"Mindestens ein Treffer?"}
     R -- Ja --> S["Primärrolle nach stärkstem Signal bestimmen; weitere Treffer als Sekundärsignale behalten"]
@@ -110,6 +137,17 @@ gegen die Matrix geprüft:
    verworfen.
 6. Die Verteilung der Rollen wird beobachtet, aber nicht künstlich erzwungen.
 
+Die Score-Bänder sind absichtlich nicht so breit, dass jeder beliebige Wert
+eine Rolle erzwingt:
+
+- `0–35`: klare negative Ausprägung
+- `36–60`: gemischte Ausprägung, wenn die übrigen Achsen stabil sind
+- `61–84`: neutrale bis gute Zone ohne automatische Spezialrolle
+- `85–100`: klare positive Ausprägung
+
+Die neutrale Zone ist kein fehlender Matrixeintrag. Sie verhindert, dass ein
+leicht unterdurchschnittlicher Wert automatisch als Roast interpretiert wird.
+
 Wenn eine Rolle in echten Daten unverhältnismäßig häufig vorkommt, werden zuerst
 Evidence und Schwellwerte geprüft. Eine künstliche Gleichverteilung würde die
 Analyse verfälschen.
@@ -129,6 +167,12 @@ Roast-Richtung und konstruktiver Empfehlung:
 - [Careful Squasher](./profiles/careful-squasher.md)
 - [Wrapper Addict](./profiles/wrapper-addict.md)
 - [Docs Dodger](./profiles/docs-dodger.md)
+- [Brain Dumper](./profiles/brain-dumper.md)
+- [Finger Crosser](./profiles/finger-crosser.md)
+- [Big-Bang Committer](./profiles/big-bang-committer.md)
+- [Merge Conflict Magician](./profiles/merge-conflict-magician.md)
+- [README Houdini](./profiles/readme-houdini.md)
+- [Vibe Coder](./profiles/vibe-code.md)
 
 Die Negativgruppe ist absichtlich noch nicht enthalten. Sie wird nach den
 positiven und gemischten Profilen anhand derselben Matrixregeln ergänzt.

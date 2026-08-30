@@ -145,3 +145,31 @@ hotspots.
 
 Do not add scores simply because a chart has an empty slot. A metric must be
 traceable to GitHub evidence or labelled as an exploration-only mock.
+
+## Profile scoring concept
+
+The visible profile radar currently has four agreed dimensions:
+
+1. **Clarity** — code readability, naming, local structure, and predictable
+   patterns.
+2. **Safety** — validation, error handling, data boundaries, secure defaults,
+   and coverage of critical paths.
+3. **Workflow** — commit granularity, message quality, sequencing, and whether
+   changes are delivered as understandable units.
+4. **Complexity** — nesting, oversized units, dependency spread, cycles,
+   duplication, indirection, and change scope.
+
+The fifth dimension is still being explored. **Context** is the current
+recommendation because it captures whether a repository communicates intent and
+helps a newcomer make the next change safely. It should not become a count of
+README files or comments. Candidate labels remain `Context`, `Guidance`, and
+`Orientation`; the final choice requires one complete mock profile story.
+
+All visible scores use the same direction: `100` is a strong signal. The score
+must be based on explicit evidence and a documented scoring rule; the AI may
+explain and roast the result, but must not invent an unsupported number.
+
+The current role-name workshop is tracked separately in
+[dashboard-profile-roles.md](./dashboard-profile-roles.md). Role names remain
+provisional until each one has a reproducible score/evidence pattern and a
+complete mock story.

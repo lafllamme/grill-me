@@ -13,7 +13,7 @@ const props = defineProps<VerdictPanelProps>()
       </h2>
       <RoastOneGradeStar :grade="props.grade" grade-size="xs" size="sm" />
     </div>
-    <span class="text-[11px] text-primary tracking-[0.08em] font-meta mt-6 px-3 py-1.5 border-[1px] border-primary/30 rounded-full border-solid inline-flex uppercase">{{ props.growthLevel }}</span>
+    <span class="text-[11px] text-primary-strong tracking-[0.08em] font-meta mt-6 px-3 py-1.5 border-[1px] border-primary/30 rounded-full border-solid inline-flex uppercase">{{ props.growthLevel }}</span>
     <h3 class="text-4xl leading-[0.94] tracking-[-0.06em] font-display mt-5 max-w-[12ch] sm:text-5xl">
       {{ props.headline }}
     </h3>

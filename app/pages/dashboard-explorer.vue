@@ -33,6 +33,7 @@ interface ChartPalette {
 
 const activeMockProfileIndex = ref(0)
 const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
+const mockProfileCount = dashboardMockProfiles.length
 const fixture = computed(() => activeMockProfile.value.dashboard)
 const explorerFixture = computed(() => activeMockProfile.value.explorer)
 const colorProfiles = {
@@ -119,8 +120,8 @@ const chartStyle = computed(() => ({
 }))
 const commitFrequencyGauge = computed(() => Math.min(100, fixture.value.evidence.commits))
 
-function selectMockProfile(index: number) {
-  activeMockProfileIndex.value = index
+function shiftMockProfile(direction: -1 | 1) {
+  activeMockProfileIndex.value = (activeMockProfileIndex.value + direction + mockProfileCount) % mockProfileCount
 }
 
 function setColorMode(mode: ColorMode) {
@@ -180,27 +181,36 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               </div>
             </div>
           </div>
-          <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2 sm:text-right">
-            Mock profile: {{ activeMockProfile.label }}
-          </p>
-          <div class="mt-4 flex flex-col gap-3 sm:items-end">
-            <span :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.08em] font-meta uppercase">
-              {{ activeMockProfile.description }}
-            </span>
-            <div class="flex flex-wrap gap-2" role="group" aria-label="Choose a mock dashboard profile">
-              <button
-                v-for="(profile, index) in dashboardMockProfiles"
-                :key="profile.id"
-                :class="activeMockProfileIndex === index ? 'bg-primary text-on-primary' : currentColorProfile.mutedClass"
-                class="text-[10px] tracking-[0.1em] font-meta px-3 py-2 border-[1px] border-current/30 rounded-[8px] border-solid uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:opacity-80"
-                type="button"
-                :aria-pressed="activeMockProfileIndex === index"
-                :aria-label="`Use ${profile.label} mock profile`"
-                @click="selectMockProfile(index)"
-              >
-                {{ String(index + 1).padStart(2, '0') }}
-              </button>
+          <div class="mt-4 flex gap-3 items-center sm:justify-end" role="group" aria-label="Browse mock dashboard profiles">
+            <button
+              :class="currentColorProfile.mutedClass"
+              class="border-[1px] border-current/30 rounded-[8px] border-solid w-9 h-9 inline-flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
+              type="button"
+              aria-label="Previous mock dashboard profile"
+              @click="shiftMockProfile(-1)"
+            >
+              <Icon name="ph:caret-left" aria-hidden="true" />
+            </button>
+            <div class="text-right min-w-48">
+              <p :class="currentColorProfile.copyClass" class="text-xs font-body">
+                {{ activeMockProfile.label }}
+              </p>
+              <p :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.08em] font-meta mt-1 uppercase">
+                {{ activeMockProfile.group }} · {{ String(activeMockProfileIndex + 1).padStart(2, '0') }} / {{ String(mockProfileCount).padStart(2, '0') }}
+              </p>
+              <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-1">
+                {{ activeMockProfile.description }}
+              </p>
             </div>
+            <button
+              :class="currentColorProfile.mutedClass"
+              class="border-[1px] border-current/30 rounded-[8px] border-solid w-9 h-9 inline-flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
+              type="button"
+              aria-label="Next mock dashboard profile"
+              @click="shiftMockProfile(1)"
+            >
+              <Icon name="ph:caret-right" aria-hidden="true" />
+            </button>
           </div>
         </fieldset>
       </header>
