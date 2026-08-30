@@ -20,12 +20,12 @@ this contract.
 | Workflow | v1 implemented and first-pass validated | deterministic server formula | optional explanation, no numeric score |
 | Clarity | v1 implemented and first-pass validated | deterministic server formula | optional patch-level explanation later |
 | Complexity | provisional | existing heuristic | not wired into the final contract |
-| Context | provisional | existing heuristic | not wired into the final contract |
+| Context | v1 implemented and first-pass validated | deterministic server formula | optional content explanation later |
 
-Safety, Workflow, and Clarity now have documented scoring rules in the current
-live slice. The overall grade and role matrix remain exploratory until the
-remaining two axes have passed the same formula, synthetic-case, and
-real-profile checks.
+Safety, Workflow, Clarity, and Context now have documented scoring rules in the
+current live slice. The overall grade and role matrix remain exploratory until
+Complexity has passed the same formula, synthetic-case, and real-profile
+checks.
 
 ## Source-of-truth pipeline
 
@@ -130,6 +130,7 @@ The first deterministic feature set should include:
 | workflow conventional message ratio | Clarity, Workflow evidence | Share of personal commits with an explicit conventional subject |
 | workflow outlier ratio | Workflow | Relative size/scope outliers within the non-merge sample |
 | clarity scope signal | Clarity | Reviewable change breadth from personal commits |
+| context documentation signal | Context | Small positive signal when documentation files are visibly changed |
 | additions/deletions ratio | Safety, Complexity | Churn and rework pressure |
 | message structure | Workflow, Context | Specificity and information density of commit messages |
 | file-type distribution | Context, Clarity | Presence of tests, docs, configuration, and source |
@@ -405,6 +406,42 @@ remain separate.
 | one or two personal commits only | neutral, insufficient sample | `50` |
 | merge-only or integration-heavy sample | neutral, not a personal failure | `50` |
 
+### Context v1: implemented rule
+
+Context v1 measures whether the sampled work explains itself and leaves enough
+orientation for the next person. It uses only evidence present in the public
+payload: personal commit intent, visible documentation changes, and pull-request
+coverage. It does not claim that a repository has no README or comments merely
+because those files did not change in the sampled window.
+
+```text
+Context = workflowMessageQuality * 0.50
+        + contextDocumentationSignal * 0.30
+        + contextReviewSignal * 0.20
+
+contextDocumentationSignal = 50, when no documentation file is visible
+                           = 50 + min(documentationFileRatio * 2, 30), otherwise
+contextReviewSignal = pullRequestCoverage, when PR evidence exists
+                    = 50, otherwise
+```
+
+The same minimum evidence gate applies as for Clarity: at least three sampled
+commits and three non-merge commits. Documentation and PR absence are neutral,
+not penalties. A visible documentation change can raise the result only within
+the deliberately capped `50–80` documentation signal range. The deterministic
+score is the source of truth; a future unified AI request may explain the
+content of bounded README, Markdown, or patch excerpts but must not override
+the number.
+
+#### Context validation cases
+
+| Scenario | Expected result | Current result |
+| --- | --- | ---: |
+| explicit personal commits, visible docs, and PR evidence | clearly good | `>75` |
+| explicit personal commits without visible docs or PRs | above neutral, not penalized | `>50` |
+| vague personal messages without docs or PRs | clearly weak | `<45` |
+| fewer than three personal commits | neutral, insufficient sample | `50` |
+
 ### Supporting Safety evidence metrics
 
 The supporting Safety metrics report observable safeguards. They feed the weak
@@ -550,8 +587,9 @@ evidence model.
 The first live slice is available at `POST /api/dashboard-profile` with a
 body of `{ "username": "lafllamme" }`. It calls the existing GitHub collector,
 derives the metrics above, runs the bounded Safety signal review, and returns
-a versioned assessment in memory. Workflow v1 is calculated in the same pass
-from the collected commit metadata; it does not make an additional AI request.
+a versioned assessment in memory. Workflow v1, Clarity v1, and Context v1 are
+calculated in the same pass from the collected commit metadata; they do not
+make additional AI requests.
 The dashboard page exposes this through its
 `Analyze live` control while keeping the mock profile selector available for
 comparison. Safety v1 lives in `server/roast/dashboard-profile-scoring.ts`,
@@ -591,6 +629,26 @@ The role matrix must remain provisional until the other axes and evidence
 statuses can prevent such sample-local signals from becoming a full profile
 verdict.
 
+#### Live Context calibration
+
+The same six profiles were run through the endpoint after Context v1 was
+implemented. These are deterministic results from the current public activity
+sample, not hand-tuned expectations:
+
+| Profile | Commits | Personal commits | Message quality | Docs ratio | Docs signal | PR coverage | Context v1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `lafllamme` | 12 | 11 | 88 | 3% | 56 | 0% | **71** |
+| `danielroe` | 12 | 12 | 90 | 10% | 70 | 50% | **76** |
+| `torvalds` | 12 | 1 | 76 | 0% | 50 | 0% | **50** |
+| `sindresorhus` | 12 | 12 | 59 | 13% | 76 | 50% | **62** |
+| `antfu` | 12 | 12 | 89 | 41% | 80 | 50% | **79** |
+| `kentcdodds` | 4 | 4 | 74 | 8% | 66 | 100% | **77** |
+
+The spread is intentionally modest because documentation and PR signals are
+weak evidence in a public commit sample. `torvalds` remains neutral under the
+same three-personal-commit gate. The result is a context-of-the-sample signal,
+not proof that a repository has or lacks complete documentation.
+
 #### Live Workflow calibration
 
 The agreed comparison profiles were run through the same live endpoint after
@@ -618,7 +676,7 @@ Workflow measures the shape of the sampled delivery history. The collector's
 4. Add the constrained Safety signal step with evidence-grounded penalties. **Done**
 5. Add the role resolver and grade resolver using the documented matrix. **Done**
 6. Map the assessment to the existing dashboard fixture shape. **Done**
-7. Run the pipeline against the six-profile calibration set without persistence. **Safety, Workflow, and Clarity done; remaining axes in progress**
+7. Run the pipeline against the six-profile calibration set without persistence. **Safety, Workflow, Clarity, and Context done; Complexity in progress**
 8. Compare the real result with the mock stories and only then design database
    storage and caching.
 

@@ -34,6 +34,7 @@ export interface DashboardDerivedMetrics {
   workflowConventionalMessageRatio: number
   workflowLargeCommitRatio: number
   clarityScopeSignal: number
+  contextDocumentationSignal: number
   messageQuality: number
   conventionalMessageRatio: number
   genericMessageRatio: number
@@ -184,6 +185,24 @@ export function scoreDashboardClarity(metrics: DashboardDerivedMetrics): number 
   )
 }
 
+/**
+ * Scores project context from personal intent, observed documentation work,
+ * and review evidence. Missing documentation or PRs stay neutral because the
+ * public commit sample cannot prove that either is absent from the repository.
+ */
+export function scoreDashboardContext(metrics: DashboardDerivedMetrics): number {
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
+    return 50
+
+  const reviewSignal = metrics.pullRequestCoverage > 0 ? metrics.pullRequestCoverage : 50
+
+  return clamp(
+    metrics.workflowMessageQuality * 0.50
+    + metrics.contextDocumentationSignal * 0.30
+    + reviewSignal * 0.20,
+  )
+}
+
 export function scoreCommitMessage(message: string): number {
   const subject = message.split('\n')[0]?.trim() ?? ''
   if (!subject)
@@ -245,6 +264,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const conventionalMessages = commits.filter(commit => /^(?:feat|fix|refactor|docs|test|chore|perf|build|ci|style)(?:\(.+\))?:\s+\S+/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const genericMessages = commits.filter(commit => /^(?:fix|changes?|stuff|update|wip|misc|asdf|test)$/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const emptyMessages = commits.filter(commit => !commit.message.split('\n')[0]?.trim()).length
+  const documentationFileRatio = Math.round(fileSignal(commits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100)
 
   return {
     commitCount: commits.length,
@@ -266,11 +286,12 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     workflowConventionalMessageRatio: Math.round(ratio(workflowConventionalMessages, workflowCommits.length) * 100),
     workflowLargeCommitRatio: workflowCommits.length ? Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50,
     clarityScopeSignal: workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 1) * 7) : 50,
+    contextDocumentationSignal: documentationFileRatio > 0 ? clamp(50 + Math.min(documentationFileRatio * 2, 30)) : 50,
     messageQuality: Math.round(average(commits.map(commit => scoreCommitMessage(commit.message)))),
     conventionalMessageRatio: Math.round(ratio(conventionalMessages, commits.length) * 100),
     genericMessageRatio: Math.round(ratio(genericMessages, commits.length) * 100),
     emptyMessageRatio: Math.round(ratio(emptyMessages, commits.length) * 100),
-    documentationFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100),
+    documentationFileRatio,
     testFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i) * 100),
     ciFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:\.github\/workflows|\.circleci|\.buildkite)(?:\/|$)|(?:^|\/)(?:Jenkinsfile|azure-pipelines\.ya?ml)$/i) * 100),
     validationFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:schemas?|validators?|validation|middleware|guards?)(?:\/|$)|(?:schema|validator|validation|guard)[^/]*\.[^.]+$/i) * 100),
@@ -332,13 +353,12 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
   const empty = metrics.commitCount === 0
   const normalizedCommitSize = Math.min(metrics.averageCommitSize / 700, 1)
   const normalizedFiles = Math.min(metrics.averageFilesPerCommit / 12, 1)
-  const prSignal = Math.min(metrics.pullRequestCount / 6, 1)
   const scores: DashboardProfileScores = {
     clarity: scoreDashboardClarity(metrics),
     safety: scoreDashboardSafety(metrics, context.commits, aiSafety),
     workflow: scoreDashboardWorkflow(metrics),
     complexity: scoreFromAverage(90 - normalizedFiles * 34 - normalizedCommitSize * 24 - metrics.largeCommitRatio * 0.18),
-    context: scoreFromAverage(metrics.messageQuality * 0.45 + metrics.documentationFileRatio * 0.45 + prSignal * 10),
+    context: scoreDashboardContext(metrics),
   }
 
   if (empty) {

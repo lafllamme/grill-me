@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
@@ -55,7 +55,7 @@ describe('dashboard profile scoring', () => {
     })), 0))
     expect(assessment.scores.workflow).toBeLessThan(50)
     expect(assessment.scores.complexity).toBeLessThan(50)
-    expect(assessment.scores.context).toBeLessThan(50)
+    expect(assessment.scores.context).toBe(50)
     expect(assessment.derivedMetrics.mergeCommitRatio).toBe(50)
     expect(assessment.derivedMetrics.largeCommitRatio).toBe(100)
   })
@@ -145,6 +145,39 @@ describe('dashboard profile scoring', () => {
 
     expect(deriveDashboardMetrics(integrationHeavyHistory).workflowCommitCount).toBe(1)
     expect(scoreDashboardClarity(deriveDashboardMetrics(integrationHeavyHistory))).toBe(50)
+  })
+
+  it('scores Context from intent, visible documentation work, and review evidence', () => {
+    const orientedHistory = context([
+      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1 }),
+      commit({ sha: 'two', message: 'docs: explain profile scoring contract', changedFiles: 2, files: [{ filename: 'docs/scoring.md', status: 'added', additions: 20, deletions: 0 }] }),
+      commit({ sha: 'three', message: 'fix: handle missing profile data', changedFiles: 1 }),
+    ], 3)
+    const undocumentedHistory = context([
+      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1 }),
+      commit({ sha: 'two', message: 'fix: handle missing profile data', changedFiles: 1 }),
+      commit({ sha: 'three', message: 'refactor: extract profile mapper', changedFiles: 1 }),
+    ], 0)
+    const vagueHistory = context(Array.from({ length: 3 }, (_, index) => commit({
+      sha: `vague-${index}`,
+      message: 'update',
+      changedFiles: 2,
+      files: [{ filename: `app/file-${index}.ts`, status: 'modified', additions: 4, deletions: 1 }],
+    })), 0)
+
+    expect(scoreDashboardContext(deriveDashboardMetrics(orientedHistory))).toBeGreaterThan(75)
+    expect(scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory))).toBeGreaterThan(50)
+    expect(scoreDashboardContext(deriveDashboardMetrics(orientedHistory))).toBeGreaterThan(scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory)))
+    expect(scoreDashboardContext(deriveDashboardMetrics(vagueHistory))).toBeLessThan(45)
+  })
+
+  it('keeps Context neutral when there are fewer than three personal commits', () => {
+    const thinHistory = context([
+      commit({ sha: 'one', message: 'feat: add one thing', changedFiles: 1 }),
+      commit({ sha: 'two', message: 'fix: handle one thing', changedFiles: 1 }),
+    ], 3)
+
+    expect(scoreDashboardContext(deriveDashboardMetrics(thinHistory))).toBe(50)
   })
 
   it('scores Workflow from delivery hygiene instead of raw commit volume', () => {

@@ -43,6 +43,12 @@ kann, bleibt sie bei `50` als neutralem **Nicht-genug-Evidenz**-Wert. Das ist
 keine Durchschnittsnote. Fehlende Signale werden nicht automatisch bestraft,
 und ein Profil ohne ausreichende Evidenz bleibt `Unclassified`.
 
+Für **Context** zählt die serverseitige v1-Regel: persönliche Message-Qualität
+ist das Hauptsignal; sichtbare Änderungen an README/Markdown und PR-Abdeckung
+sind nur begrenzte Zusatzsignale. Wenn diese Dateien oder PRs im öffentlichen
+Sample nicht auftauchen, ist das kein Beweis für schlechte Dokumentation und
+wird neutral behandelt.
+
 ## Rollenmatrix
 
 `—` bedeutet: Für die Rolle gibt es auf dieser Achse keinen eigenen
