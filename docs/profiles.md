@@ -148,6 +148,40 @@ eine Rolle erzwingt:
 Die neutrale Zone ist kein fehlender Matrixeintrag. Sie verhindert, dass ein
 leicht unterdurchschnittlicher Wert automatisch als Roast interpretiert wird.
 
+### Gesamtbewertung
+
+Die Dashboard-Note wird nicht pro Rolle manuell vergeben. Sie ist der
+arithmetische Mittelwert der fünf Achsen und wird anschließend in diese
+reproduzierbaren Notenbänder übersetzt:
+
+| Durchschnitt | Note |
+| ---: | :--- |
+| `90–100` | A |
+| `85–89` | A- |
+| `80–84` | B+ |
+| `75–79` | B |
+| `70–74` | B- |
+| `65–69` | C+ |
+| `60–64` | C |
+| `55–59` | C- |
+| `50–54` | D+ |
+| `45–49` | D |
+| `40–44` | D- |
+| `30–39` | E |
+| `20–29` | E- |
+| `0–19` | F |
+
+Eine Spezialrolle beschreibt weiterhin die auffällige Achse. Die Note bleibt
+aber das Gesamturteil: Ein `Edge-Case Sheriff` kann deshalb ein B sein, wenn
+Safety stark ist, die übrigen Dimensionen aber nur solide ausfallen. Nur ein
+Profil mit mehreren gleichzeitig sehr niedrigen Achsen erhält eine wirklich
+schlechte Gesamtnote wie E oder F.
+
+Die Mock-Profile verwenden exakt diese Funktion. Später muss die AI dieselbe
+Regel mit normalisierten GitHub-Evidence-Werten beliefern; sie darf weder die
+Note unabhängig vom Score setzen noch eine Rolle als Ersatz für die
+Gesamtbewertung verwenden.
+
 Wenn eine Rolle in echten Daten unverhältnismäßig häufig vorkommt, werden zuerst
 Evidence und Schwellwerte geprüft. Eine künstliche Gleichverteilung würde die
 Analyse verfälschen.

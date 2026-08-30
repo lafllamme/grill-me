@@ -13,6 +13,9 @@ Additional dashboard fields may be mocked during exploration. A chart is not
 ready for product use until its data has a clear explanation and its behaviour
 has been checked against the Bklit reference in a real browser.
 
+The scoring and evidence pipeline for those fields is documented in
+[Dashboard Profile Scoring](./dashboard-profile-scoring.md).
+
 ## Porting rule
 
 The source of truth for component behaviour is:
@@ -114,21 +117,21 @@ Prefer a small number of explainable signals:
 
 ## Mock profile contract
 
-The dashboard explorer currently uses four explicit mock profiles. Each profile
-is selected with a dedicated `01`, `02`, `03`, or `04` button and supplies the
-data for every chart card, so switching profiles changes the complete dashboard
-read rather than only the headline.
+The dashboard explorer currently uses sixteen explicit mock profiles. Each
+profile is selected with previous/next controls and supplies the data for every
+chart card, so switching profiles changes the complete dashboard read rather
+than only the headline.
 
 The radar profile is intentionally modeled as one series with five category
 values, each normalized to `0–100`:
 
 ```ts
 {
-  readability: number
-  testability: number
-  maintainability: number
-  discipline: number
-  documentation: number
+  clarity: number
+  safety: number
+  workflow: number
+  complexity: number
+  context: number
 }
 ```
 
@@ -141,7 +144,15 @@ The remaining cards consume the same selected profile contract: ring values
 represent profile signals, the gauge represents commit frequency, the timeline
 contains commits and additions over time, the bar chart contains additions and
 deletions per commit, and the sunburst contains repository folders and file
-hotspots.
+hotspots. These values are not independently random: workflow shapes commit
+frequency and burstiness, safety shapes deletion/churn pressure, clarity and
+complexity shape change volume and touched-file spread, and context shapes the
+documentation share in the repository anatomy.
+
+The evidence ring intentionally shows both the score and its percentage
+equivalent because every profile signal is normalized to a `0–100` scale. Raw
+GitHub totals stay in the evidence and frequency cards, where they answer a
+different question from the quality scores.
 
 Do not add scores simply because a chart has an empty slot. A metric must be
 traceable to GitHub evidence or labelled as an exploration-only mock.
