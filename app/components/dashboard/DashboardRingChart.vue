@@ -25,7 +25,7 @@ const brandedData = computed(() => props.data.map((item, index) => ({
 
 <template>
   <div class="p-6 rounded-none flex flex-col gap-8 items-center sm:flex-row sm:items-center">
-    <BklitRingChart :data="brandedData" :size="300">
+    <BklitRingChart :data="brandedData" :size="320">
       <BklitRing v-for="(_, index) in brandedData" :key="index" :index="index" :show-glow="false" />
       <template #center>
         <BklitRingCenter default-label="Total Sessions" />
