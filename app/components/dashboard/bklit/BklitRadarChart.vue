@@ -69,7 +69,7 @@ const isReady = computed(() => props.data.length > 0 && props.metrics.length > 2
           <BklitRadarArea v-for="(_, index) in data" :key="`area-${index}`" :index="index" />
         </svg>
       </div>
-      <BklitRadarLegend v-if="data.length > 1" :data="data" :hovered-index="currentHoveredIndex" @update:hovered-index="setHoveredIndex" />
+      <BklitRadarLegend :data="data" title="Profile score" :hovered-index="currentHoveredIndex" @update:hovered-index="setHoveredIndex" />
     </div>
   </figure>
 </template>

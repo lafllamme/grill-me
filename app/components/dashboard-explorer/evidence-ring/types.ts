@@ -3,4 +3,6 @@ import type { RoastDashboardRingDatum } from '~/data/roast-dashboard'
 
 export type EvidenceRingPanelProps = DashboardExplorerPanelProps & {
   data: readonly RoastDashboardRingDatum[]
+  heading?: string
+  centerLabel?: string
 }

@@ -1,6 +1,6 @@
 import type { DashboardExplorerPanelProps } from '../types'
-import type { roastDashboardExplorerFixture } from '~/data/roast-dashboard-explorer'
+import type { BklitBarDatum } from '~/components/dashboard/bklit/bar-context'
 
 export type ChangeVolumePanelProps = DashboardExplorerPanelProps & {
-  data: typeof roastDashboardExplorerFixture.barChangeVolume
+  data: readonly BklitBarDatum[]
 }

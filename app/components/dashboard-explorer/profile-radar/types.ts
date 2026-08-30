@@ -1,6 +1,9 @@
 import type { DashboardExplorerPanelProps } from '../types'
-import type { roastDashboardFixture } from '~/data/roast-dashboard'
+import type { BklitRadarData, BklitRadarMetric } from '~/components/dashboard/bklit/radar-context'
 
 export type ProfileRadarPanelProps = DashboardExplorerPanelProps & {
-  data: typeof roastDashboardFixture.radarProfile
+  data: {
+    metrics: readonly BklitRadarMetric[]
+    data: readonly BklitRadarData[]
+  }
 }

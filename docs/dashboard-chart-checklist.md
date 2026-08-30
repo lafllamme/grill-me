@@ -41,9 +41,9 @@ ersetzt werden.
 | [x] | Radar Chart | Gesamtprofil über mehrere Dimensionen | [Docs](https://bklit.com/docs/components/radar-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/radar-chart.tsx) | Mit echten Profilwerten verbinden |
 | [x] | Bar Chart | Additions, Deletions und Commit-Volumen | [Docs](https://bklit.com/docs/components/bar-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/bar-chart.tsx) | Mit Commit-Evidence verbinden |
 | [x] | Line Chart | Entwicklung eines Signals über Zeit | [Docs](https://bklit.com/docs/components/line-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/line-chart.tsx) | Mit echten Zeitreihendaten verbinden |
-| [x] | Gauge | Durchschnittlich geänderte Dateien pro Commit, auf 12 Dateien normalisiert | [Docs](https://bklit.com/docs/components/gauge-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/gauge.tsx) | Mit echter API-Evidence verbinden |
+| [x] | Gauge | Commitfrequenz im Analysezeitraum, auf eine 100-Commit-Skala normalisiert | [Docs](https://bklit.com/docs/components/gauge-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/gauge.tsx) | Mit echter API-Evidence verbinden |
 | [x] | Sunburst Chart | Repository-Struktur und Churn nach Verzeichnis/File-Hierarchie | [Docs](https://bklit.com/docs/components/sunburst-chart) | [Source](https://github.com/bklit/bklit-ui/blob/main/packages/ui/src/charts/sunburst-chart.tsx) | Mit echter API-Evidence verbinden |
-| [ ] | Composed Chart | Volumen und Trend in einer Evidence-Ansicht | [Docs](https://bklit.com/docs/components/composed-chart) | [Source](https://github.com/bklit/bklit-ui/tree/main/packages/ui/src/charts) | Nach dem Line Chart evaluieren |
+| [-] | Composed Chart | Nicht erforderlich: Bar und Line decken die Evidence-Fragen bereits getrennt ab | [Docs](https://bklit.com/docs/components/composed-chart) | [Source](https://github.com/bklit/bklit-ui/tree/main/packages/ui/src/charts) | Aus dem Dashboard-Scope entfernt |
 
 ## Reihenfolge
 
@@ -53,11 +53,20 @@ ersetzt werden.
 4. Line Chart — erledigt.
 5. Gauge — erledigt als erklärbare Explorer-Karte.
 6. Sunburst — erledigt als erklärbare Explorer-Karte.
-7. Composed Chart — nur wenn Bar und Line gemeinsam einen echten Mehrwert liefern.
+7. Composed Chart — gestrichen; Bar und Line bleiben getrennte Evidence-Ansichten.
 
 ## Aktueller Stand
 
 - Daten sind zunächst explizit als Mock-Daten markiert.
+- Die vier Mock-Profile sind direkt über `01` bis `04` auswählbar und befüllen
+  alle Dashboard-Karten aus demselben Profil-Datensatz.
+- Das Radar verwendet fünf nachvollziehbare Kategorien mit je einem Wert von
+  `0–100`. Jeder Wert ist ein Punkt auf einer Kategorieachse; die verbundenen
+  Punkte bilden die eine Profilfläche. Eine zusätzliche Fläche wird nicht
+  künstlich ergänzt, nur damit das Diagramm voller wirkt.
+- Die Radar-Legende zeigt den Namen des aktiven Profils und dessen errechneten
+  Durchschnitt. Ring, Gauge, Timeline, Change Volume und Sunburst wechseln mit
+  dem ausgewählten Mock-Profil.
 - Der API-Vertrag bleibt unverändert.
 - Keine weiteren Charts hinzufügen, nur weil eine freie Fläche existiert.
 - Kein Chart gilt als portiert, bevor Verhalten und Darstellung im Browser geprüft wurden.

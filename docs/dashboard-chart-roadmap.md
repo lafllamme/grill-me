@@ -65,8 +65,8 @@ unexplained scores.
 | Radar Chart | Show the overall code profile | five normalized profile dimensions, 0–100 | Ported and browser-checked | Keep as the profile anchor; replace fixture values with API data later |
 | Bar Chart | Show commit/change volume | additions and deletions per commit | Ported and visually checked | Keep as evidence card |
 | Line Chart | Show change or quality trend over time | chronological commits and one or two explicit measures | Planned | Port Bklit source and choose the final metric |
-| Composed Chart | Combine volume with a trend | bars for changes, line for cumulative or quality signal | Planned | Revisit after Line Chart |
-| Gauge | Make one conclusion legible at a glance | average files changed per commit, normalized to a 12-file review threshold | Ported and browser-checked | Replace the exploration fixture with API evidence later |
+| Composed Chart | Not required; Bar and Line remain separate evidence views | — | Skipped | Keep out of the dashboard scope |
+| Gauge | Make one conclusion legible at a glance | commit frequency in the selected analysis window, normalized to 0–100 | Ported and browser-checked | Replace the exploration fixture with API evidence later |
 | Sunburst Chart | Explore repository/file hierarchy | repository → directories → files → change volume | Ported and browser-checked | Replace the exploration fixture with API evidence later |
 | Choropleth Chart | Optional geographic context | coarse region derived from request metadata | Deferred | Do not make location central to the roast |
 | Scatter Chart | Compare two measurable signals | e.g. file churn versus test coverage | Deferred | Add only with a real two-axis question |
@@ -97,7 +97,7 @@ unexplained scores.
 4. Line Chart — complete.
 5. Gauge — complete as an evidence-backed exploration card.
 6. Sunburst Chart — complete as a repository evidence card.
-7. Composed Chart — only after the Line Chart establishes a useful trend.
+7. Composed Chart — skipped; Bar and Line remain separate evidence views.
 
 ## Data guardrails
 
@@ -111,6 +111,37 @@ Prefer a small number of explainable signals:
 - documentation coverage
 - additions/deletions per commit
 - files touched per commit
+
+## Mock profile contract
+
+The dashboard explorer currently uses four explicit mock profiles. Each profile
+is selected with a dedicated `01`, `02`, `03`, or `04` button and supplies the
+data for every chart card, so switching profiles changes the complete dashboard
+read rather than only the headline.
+
+The radar profile is intentionally modeled as one series with five category
+values, each normalized to `0–100`:
+
+```ts
+{
+  readability: number
+  testability: number
+  maintainability: number
+  discipline: number
+  documentation: number
+}
+```
+
+The points are connected into one profile layer. The legend displays the active
+profile name and the average of those five values. Low scores remain visually
+small because the size is evidence of the score; no decorative second series is
+added to fill the radar.
+
+The remaining cards consume the same selected profile contract: ring values
+represent profile signals, the gauge represents commit frequency, the timeline
+contains commits and additions over time, the bar chart contains additions and
+deletions per commit, and the sunburst contains repository folders and file
+hotspots.
 
 Do not add scores simply because a chart has an empty slot. A metric must be
 traceable to GitHub evidence or labelled as an exploration-only mock.

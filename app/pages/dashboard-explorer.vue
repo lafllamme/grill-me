@@ -8,8 +8,7 @@ import EvidenceRingPanel from '~/components/dashboard-explorer/evidence-ring/Evi
 import ProfileRadarPanel from '~/components/dashboard-explorer/profile-radar/ProfileRadarPanel.vue'
 import RepositorySunburstPanel from '~/components/dashboard-explorer/repository-sunburst/RepositorySunburstPanel.vue'
 import VerdictPanel from '~/components/dashboard-explorer/verdict/VerdictPanel.vue'
-import { roastDashboardFixture } from '~/data/roast-dashboard'
-import { roastDashboardExplorerFixture, roastSunburstData } from '~/data/roast-dashboard-explorer'
+import { dashboardMockProfiles } from '~/data/dashboard-mock-profiles'
 
 interface DashboardColorProfile {
   label: string
@@ -32,8 +31,10 @@ interface ChartPalette {
   surfaceVariant: string
 }
 
-const fixture = roastDashboardFixture
-const explorerFixture = roastDashboardExplorerFixture
+const activeMockProfileIndex = ref(0)
+const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
+const fixture = computed(() => activeMockProfile.value.dashboard)
+const explorerFixture = computed(() => activeMockProfile.value.explorer)
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -116,7 +117,11 @@ const chartStyle = computed(() => ({
   '--chart-4': 'color-mix(in srgb, var(--color-primary) 72%, white)',
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
-const changePressureGauge = computed(() => Math.min(100, Math.round(fixture.commits.reduce((total, commit) => total + commit.files, 0) / fixture.commits.length / 12 * 100)))
+const commitFrequencyGauge = computed(() => Math.min(100, fixture.value.evidence.commits))
+
+function selectMockProfile(index: number) {
+  activeMockProfileIndex.value = index
+}
 
 function setColorMode(mode: ColorMode) {
   activeColorMode.value = mode
@@ -176,19 +181,38 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
             </div>
           </div>
           <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2 sm:text-right">
-            {{ currentColorProfile.description }}
+            Mock profile: {{ activeMockProfile.label }}
           </p>
+          <div class="mt-4 flex flex-col gap-3 sm:items-end">
+            <span :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.08em] font-meta uppercase">
+              {{ activeMockProfile.description }}
+            </span>
+            <div class="flex flex-wrap gap-2" role="group" aria-label="Choose a mock dashboard profile">
+              <button
+                v-for="(profile, index) in dashboardMockProfiles"
+                :key="profile.id"
+                :class="activeMockProfileIndex === index ? 'bg-primary text-on-primary' : currentColorProfile.mutedClass"
+                class="text-[10px] tracking-[0.1em] font-meta px-3 py-2 border-[1px] border-current/30 rounded-[8px] border-solid uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:opacity-80"
+                type="button"
+                :aria-pressed="activeMockProfileIndex === index"
+                :aria-label="`Use ${profile.label} mock profile`"
+                @click="selectMockProfile(index)"
+              >
+                {{ String(index + 1).padStart(2, '0') }}
+              </button>
+            </div>
+          </div>
         </fieldset>
       </header>
 
       <div id="profile-panel" class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12">
-        <ProfileRadarPanel class="lg:col-span-6" :data="fixture.radarProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <VerdictPanel class="lg:col-span-6" :grade="fixture.grade" :growth-level="fixture.growthLevel" :headline="fixture.headline" :note="fixture.note" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <EvidenceRingPanel :data="fixture.ringProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <ChangeGaugePanel :value="changePressureGauge" description="Average changed files per commit, normalized against a 12-file review threshold." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <ChangeVolumePanel :data="explorerFixture.barChangeVolume" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <CommitTimelinePanel :data="explorerFixture.timeline" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <RepositorySunburstPanel :data="roastSunburstData" description="The same hierarchy as the Bklit reference, recolored with our roast red." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ProfileRadarPanel :key="`${activeMockProfile.id}-radar`" class="lg:col-span-6" :data="fixture.radarProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <VerdictPanel :key="`${activeMockProfile.id}-verdict`" class="lg:col-span-6" :grade="fixture.grade" :growth-level="fixture.growthLevel" :headline="fixture.headline" :note="fixture.note" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <EvidenceRingPanel :key="`${activeMockProfile.id}-ring`" :data="fixture.ringProfile" heading="Profile signals" center-label="Profile score" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ChangeGaugePanel :key="`${activeMockProfile.id}-gauge`" :value="commitFrequencyGauge" :center-value="fixture.evidence.commits" label="Commits" description="Commits recorded in the selected analysis window, normalized to a 100-commit scale." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ChangeVolumePanel :key="`${activeMockProfile.id}-volume`" :data="explorerFixture.barChangeVolume" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <CommitTimelinePanel :key="`${activeMockProfile.id}-timeline`" :data="explorerFixture.timeline" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <RepositorySunburstPanel :key="`${activeMockProfile.id}-sunburst`" :data="explorerFixture.sunburstData" description="Repository folders and file hotspots derived from the selected mock profile." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
       </div>
 
       <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] font-meta mt-8 flex flex-wrap gap-4 uppercase justify-between">
