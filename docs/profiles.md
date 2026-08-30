@@ -49,6 +49,17 @@ sind nur begrenzte Zusatzsignale. Wenn diese Dateien oder PRs im öffentlichen
 Sample nicht auftauchen, ist das kein Beweis für schlechte Dokumentation und
 wird neutral behandelt.
 
+Für **Complexity** zählt v1 zunächst die beobachtbare Change Surface: persönliche
+Dateibreite, relative Größen-/Scope-Ausreißer und ein schwaches Churn-Signal.
+Merge-Commits werden vor der Berechnung herausgefiltert. Das ist bewusst ein
+Proxy für Komplexitätskontrolle und keine Behauptung über AST-Komplexität,
+Zyklen oder Duplikation. Unter drei persönlichen Commits bleibt auch diese
+Achse neutral bei `50`.
+
+Merge- und Integrations-Commits werden grundsätzlich gesammelt, aber nicht als
+persönliche Arbeit gewertet. Die vollständige Regel steht in der
+[Merge-Commit-Entscheidung](../decisions/active/merge-commits-as-integration-evidence.md).
+
 ## Rollenmatrix
 
 `—` bedeutet: Für die Rolle gibt es auf dieser Achse keinen eigenen

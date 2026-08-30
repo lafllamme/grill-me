@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
@@ -54,7 +54,7 @@ describe('dashboard profile scoring', () => {
       files: [{ filename: `app/generated-${index}.ts`, status: 'modified', additions: 900, deletions: 700 }],
     })), 0))
     expect(assessment.scores.workflow).toBeLessThan(50)
-    expect(assessment.scores.complexity).toBeLessThan(50)
+    expect(assessment.scores.complexity).toBe(50)
     expect(assessment.scores.context).toBe(50)
     expect(assessment.derivedMetrics.mergeCommitRatio).toBe(50)
     expect(assessment.derivedMetrics.largeCommitRatio).toBe(100)
@@ -145,6 +145,41 @@ describe('dashboard profile scoring', () => {
 
     expect(deriveDashboardMetrics(integrationHeavyHistory).workflowCommitCount).toBe(1)
     expect(scoreDashboardClarity(deriveDashboardMetrics(integrationHeavyHistory))).toBe(50)
+  })
+
+  it('scores Complexity from personal change surface and ignores merge breadth', () => {
+    const focusedHistory = context([
+      commit({ sha: 'focused-one', additions: 20, deletions: 4, changedFiles: 1 }),
+      commit({ sha: 'focused-two', additions: 30, deletions: 6, changedFiles: 2 }),
+      commit({ sha: 'focused-three', additions: 18, deletions: 3, changedFiles: 1 }),
+      commit({ sha: 'focused-four', additions: 28, deletions: 5, changedFiles: 2 }),
+    ], 0)
+    const broadHistory = context(Array.from({ length: 4 }, (_, index) => commit({
+      sha: `broad-${index}`,
+      additions: 900,
+      deletions: 700,
+      changedFiles: 22,
+      files: [{ filename: `app/area-${index}.ts`, status: 'modified', additions: 900, deletions: 700 }],
+    })), 0)
+    const mergeHeavyHistory = context([
+      ...focusedHistory.commits,
+      commit({ sha: 'merge', message: 'Merge branch feature into main', additions: 12_000, deletions: 8_000, changedFiles: 80, files: [{ filename: 'vendor/merged.ts', status: 'modified', additions: 12_000, deletions: 8_000 }] }),
+    ], 0)
+
+    const focusedScore = scoreDashboardComplexity(deriveDashboardMetrics(focusedHistory))
+
+    expect(focusedScore).toBeGreaterThan(80)
+    expect(scoreDashboardComplexity(deriveDashboardMetrics(broadHistory))).toBeLessThanOrEqual(45)
+    expect(scoreDashboardComplexity(deriveDashboardMetrics(mergeHeavyHistory))).toBe(focusedScore)
+  })
+
+  it('keeps Complexity neutral when personal evidence is insufficient', () => {
+    const thinHistory = context([
+      commit({ sha: 'one', changedFiles: 1 }),
+      commit({ sha: 'two', changedFiles: 1 }),
+    ], 0)
+
+    expect(scoreDashboardComplexity(deriveDashboardMetrics(thinHistory))).toBe(50)
   })
 
   it('scores Context from intent, visible documentation work, and review evidence', () => {

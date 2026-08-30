@@ -19,13 +19,13 @@ this contract.
 | Safety | v1 implemented and validated | deterministic server formula | classify grounded introduced risks only |
 | Workflow | v1 implemented and first-pass validated | deterministic server formula | optional explanation, no numeric score |
 | Clarity | v1 implemented and first-pass validated | deterministic server formula | optional patch-level explanation later |
-| Complexity | provisional | existing heuristic | not wired into the final contract |
+| Complexity | v1 implemented and first-pass validated | deterministic server formula | GitHub-observable change-surface proxy |
 | Context | v1 implemented and first-pass validated | deterministic server formula | optional content explanation later |
 
-Safety, Workflow, Clarity, and Context now have documented scoring rules in the
-current live slice. The overall grade and role matrix remain exploratory until
-Complexity has passed the same formula, synthetic-case, and real-profile
-checks.
+Safety, Workflow, Clarity, Context, and Complexity now have documented scoring
+rules in the current live slice. The overall grade and role matrix remain
+exploratory until the category rules have been calibrated against a larger,
+repository-aware evidence window.
 
 ## Source-of-truth pipeline
 
@@ -131,6 +131,9 @@ The first deterministic feature set should include:
 | workflow outlier ratio | Workflow | Relative size/scope outliers within the non-merge sample |
 | clarity scope signal | Clarity | Reviewable change breadth from personal commits |
 | context documentation signal | Context | Small positive signal when documentation files are visibly changed |
+| complexity scope signal | Complexity | Control of the average personal files-per-commit surface |
+| complexity outlier signal | Complexity | Share of personal commits that are not relative size/scope outliers |
+| complexity churn signal | Complexity | Weak signal for unusually deletion-heavy personal changes |
 | additions/deletions ratio | Safety, Complexity | Churn and rework pressure |
 | message structure | Workflow, Context | Specificity and information density of commit messages |
 | file-type distribution | Context, Clarity | Presence of tests, docs, configuration, and source |
@@ -140,8 +143,8 @@ The first deterministic feature set should include:
 
 ### Validated rule: commit size
 
-Commit size is currently a factual metric and is not yet a final score input.
-It is calculated per enriched commit as:
+Commit size remains a factual metric and enters Complexity only indirectly
+through the relative outlier signal. It is calculated per enriched commit as:
 
 ```text
 commitSize = additions + deletions
@@ -158,13 +161,24 @@ The scorer exposes four views of the observed sizes:
 
 This separation is intentional. A single large release or merge commit must
 not automatically define a developer's entire Workflow or Complexity score.
-Before these values become score inputs, they must be checked against real
-profiles and synthetic counterexamples. The current unit scenarios cover a
-small, medium, and large commit and assert that the median remains distinct
-from the average and maximum.
+The current unit scenarios cover a small, medium, and large commit and assert
+that the median remains distinct from the average and maximum. Complexity does
+not use the raw average or maximum as a direct quality penalty, because one
+release commit must not define the developer's whole profile.
 
 Every future metric should follow the same record: definition, formula, score
 ownership, validation examples, and known limitations.
+
+### Merge and integration policy
+
+Merge commits are collected but treated as `integration` evidence, not as
+personal work. They can remain visible in raw repository activity and merge
+volume, but they are excluded from Clarity, Workflow, Complexity, Context, and
+Safety scoring. This protects merge-heavy maintainer profiles from being ranked
+on changes that are not attributable to them. The pull-request denominator
+must likewise use personal commits. See the active
+[merge-commit decision](../decisions/active/merge-commits-as-integration-evidence.md)
+for the rationale and the current implementation gap in Safety.
 
 ## Cross-profile validation log
 
@@ -442,6 +456,49 @@ the number.
 | vague personal messages without docs or PRs | clearly weak | `<45` |
 | fewer than three personal commits | neutral, insufficient sample | `50` |
 
+### Complexity v1: implemented rule
+
+Complexity v1 measures **complexity control of the observed change surface**.
+GitHub's public payload does not expose an AST, call graph, cyclomatic
+complexity, or reliable duplication count, so this version does not pretend to
+measure those things. It evaluates only personal, non-merge commits and keeps
+the three signals explicit:
+
+```text
+Complexity = complexityScopeSignal * 0.55
+           + complexityOutlierSignal * 0.30
+           + complexityChurnSignal * 0.15
+
+complexityScopeSignal = clamp(100 - max(0, averagePersonalFiles - 2) * 6)
+complexityOutlierSignal = 100 - personalRelativeOutlierRatio
+complexityChurnSignal = clamp(100 - max(0, personalDeletionRatio - 50) * 0.5)
+```
+
+`complexityScopeSignal` is the main signal: a typical personal change that
+touches one or two files stays strong, while broad change surfaces reduce the
+score gradually. `complexityOutlierSignal` uses the existing relative
+size/scope outlier rule rather than a global line-count threshold. The churn
+signal is deliberately weak; a deletion-heavy refactor is not automatically a
+complexity failure. Merge commits are excluded before all three signals are
+calculated, so integration breadth cannot lower the score.
+
+The same evidence gate as Clarity and Context applies: fewer than three total
+commits or fewer than three personal non-merge commits returns neutral `50`.
+That is an insufficient-evidence result, not a claim that the developer has
+poor complexity control. AI may later explain bounded patch evidence such as
+deep nesting, duplicated branches, or unnecessary indirection in the unified
+request, but it must not replace this deterministic number.
+
+#### Complexity validation cases
+
+| Scenario | Expected result | Current result |
+| --- | --- | ---: |
+| four focused personal commits touching one or two files | clearly good | `>80` |
+| four broad personal commits touching many files | clearly weak | `≤45` |
+| focused personal history plus huge merge commits | same as personal history | equal |
+| fewer than three personal commits | neutral, insufficient sample | `50` |
+| deletion-heavy refactor without broad scope | not automatically bad | weak influence only |
+
 ### Supporting Safety evidence metrics
 
 The supporting Safety metrics report observable safeguards. They feed the weak
@@ -587,9 +644,9 @@ evidence model.
 The first live slice is available at `POST /api/dashboard-profile` with a
 body of `{ "username": "lafllamme" }`. It calls the existing GitHub collector,
 derives the metrics above, runs the bounded Safety signal review, and returns
-a versioned assessment in memory. Workflow v1, Clarity v1, and Context v1 are
-calculated in the same pass from the collected commit metadata; they do not
-make additional AI requests.
+a versioned assessment in memory. Workflow v1, Clarity v1, Context v1, and
+Complexity v1 are calculated in the same pass from the collected commit
+metadata; they do not make additional AI requests.
 The dashboard page exposes this through its
 `Analyze live` control while keeping the mock profile selector available for
 comparison. Safety v1 lives in `server/roast/dashboard-profile-scoring.ts`,
@@ -649,6 +706,28 @@ weak evidence in a public commit sample. `torvalds` remains neutral under the
 same three-personal-commit gate. The result is a context-of-the-sample signal,
 not proof that a repository has or lacks complete documentation.
 
+#### Live Complexity calibration
+
+The same six profiles were run through the endpoint after Complexity v1 was
+implemented. These values measure the observed personal change surface, not
+the intrinsic difficulty of the projects or the total skill of their authors:
+
+| Profile | Commits | Personal commits | Avg. personal files | Outlier signal | Churn signal | Complexity v1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `lafllamme` | 12 | 11 | 8.3 | 91 | 100 | **76** |
+| `danielroe` | 12 | 12 | 4.8 | 83 | 100 | **86** |
+| `torvalds` | 12 | 1 | 4.0 | 100 | 99 | **50** |
+| `sindresorhus` | 12 | 12 | 28.6 | 75 | 100 | **38** |
+| `antfu` | 12 | 12 | 14.0 | 58 | 100 | **48** |
+| `kentcdodds` | 4 | 4 | 5.8 | 100 | 100 | **88** |
+
+The direction is plausible for this bounded sample: focused personal changes
+score higher, broad sampled changes score lower, and `torvalds` is neutral
+because only one personal commit is available. `sindresorhus` and `antfu` are
+not being declared poor developers; their sampled change surface is simply
+broad under this proxy. This is the point at which a future repository-aware
+AST/dependency analysis could add evidence without changing the v1 contract.
+
 #### Live Workflow calibration
 
 The agreed comparison profiles were run through the same live endpoint after
@@ -676,7 +755,7 @@ Workflow measures the shape of the sampled delivery history. The collector's
 4. Add the constrained Safety signal step with evidence-grounded penalties. **Done**
 5. Add the role resolver and grade resolver using the documented matrix. **Done**
 6. Map the assessment to the existing dashboard fixture shape. **Done**
-7. Run the pipeline against the six-profile calibration set without persistence. **Safety, Workflow, Clarity, and Context done; Complexity in progress**
+7. Run the pipeline against the six-profile calibration set without persistence. **Safety, Workflow, Clarity, Context, and Complexity done**
 8. Compare the real result with the mock stories and only then design database
    storage and caching.
 

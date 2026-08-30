@@ -35,6 +35,9 @@ export interface DashboardDerivedMetrics {
   workflowLargeCommitRatio: number
   clarityScopeSignal: number
   contextDocumentationSignal: number
+  complexityScopeSignal: number
+  complexityOutlierSignal: number
+  complexityChurnSignal: number
   messageQuality: number
   conventionalMessageRatio: number
   genericMessageRatio: number
@@ -45,6 +48,7 @@ export interface DashboardDerivedMetrics {
   validationFileRatio: number
   pullRequestCoverage: number
   deletionRatio: number
+  workflowDeletionRatio: number
   riskyFileRatio: number
   defensivePatchRatio: number
   riskyPatchRatio: number
@@ -92,10 +96,6 @@ function percentile(values: readonly number[], percentileValue: number): number 
   const sorted = [...values].sort((left, right) => left - right)
   const index = Math.min(sorted.length - 1, Math.ceil((percentileValue / 100) * sorted.length) - 1)
   return sorted[index] ?? 0
-}
-
-function scoreFromAverage(value: number, emptyFallback = 50): number {
-  return clamp(value || emptyFallback)
 }
 
 const safetySeverityPenalty: Record<DashboardAiSafetyAssessment['signals'][number]['severity'], number> = {
@@ -186,6 +186,22 @@ export function scoreDashboardClarity(metrics: DashboardDerivedMetrics): number 
 }
 
 /**
+ * Scores complexity control from the personal change surface. This is a
+ * GitHub-observable proxy, not a claim about cyclomatic complexity or AST
+ * structure. Merge commits are excluded before all three signals are derived.
+ */
+export function scoreDashboardComplexity(metrics: DashboardDerivedMetrics): number {
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
+    return 50
+
+  return clamp(
+    metrics.complexityScopeSignal * 0.55
+    + metrics.complexityOutlierSignal * 0.30
+    + metrics.complexityChurnSignal * 0.15,
+  )
+}
+
+/**
  * Scores project context from personal intent, observed documentation work,
  * and review evidence. Missing documentation or PRs stay neutral because the
  * public commit sample cannot prove that either is absent from the repository.
@@ -255,6 +271,8 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const workflowSizeThreshold = Math.max(500, typicalWorkflowSize * 4)
   const workflowFileThreshold = Math.max(15, typicalWorkflowFiles * 4)
   const workflowLargeCommitCount = workflowCommits.filter(commit => commit.additions + commit.deletions >= workflowSizeThreshold || commit.changedFiles >= workflowFileThreshold).length
+  const workflowAdditions = workflowCommits.reduce((sum, commit) => sum + commit.additions, 0)
+  const workflowDeletions = workflowCommits.reduce((sum, commit) => sum + commit.deletions, 0)
   const commitDates = commits.map(commit => commit.committedAt ? new Date(commit.committedAt) : null).filter((date): date is Date => Boolean(date && !Number.isNaN(date.getTime())))
   const dayKeys = new Set(commitDates.map(date => date.toISOString().slice(0, 10)))
   const sortedDayKeys = [...dayKeys].sort()
@@ -265,6 +283,10 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const genericMessages = commits.filter(commit => /^(?:fix|changes?|stuff|update|wip|misc|asdf|test)$/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const emptyMessages = commits.filter(commit => !commit.message.split('\n')[0]?.trim()).length
   const documentationFileRatio = Math.round(fileSignal(commits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100)
+  const workflowDeletionRatio = Math.round(ratio(workflowDeletions, workflowAdditions + workflowDeletions) * 100)
+  const complexityScopeSignal = workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 2) * 6) : 50
+  const complexityOutlierSignal = workflowCommits.length ? 100 - Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50
+  const complexityChurnSignal = clamp(100 - Math.max(0, workflowDeletionRatio - 50) * 0.5)
 
   return {
     commitCount: commits.length,
@@ -287,6 +309,9 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     workflowLargeCommitRatio: workflowCommits.length ? Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50,
     clarityScopeSignal: workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 1) * 7) : 50,
     contextDocumentationSignal: documentationFileRatio > 0 ? clamp(50 + Math.min(documentationFileRatio * 2, 30)) : 50,
+    complexityScopeSignal,
+    complexityOutlierSignal,
+    complexityChurnSignal,
     messageQuality: Math.round(average(commits.map(commit => scoreCommitMessage(commit.message)))),
     conventionalMessageRatio: Math.round(ratio(conventionalMessages, commits.length) * 100),
     genericMessageRatio: Math.round(ratio(genericMessages, commits.length) * 100),
@@ -297,6 +322,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     validationFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:schemas?|validators?|validation|middleware|guards?)(?:\/|$)|(?:schema|validator|validation|guard)[^/]*\.[^.]+$/i) * 100),
     pullRequestCoverage: Math.round(Math.min(1, ratio(context.prs.length, commits.length)) * 100),
     deletionRatio: Math.round(ratio(deletions, additions + deletions) * 100),
+    workflowDeletionRatio,
     riskyFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:auth|security|permissions?|secrets?|database|db|payments?)(?:\/|$)|(?:auth|security|permission|secret|database|payment)[^/]*\.[^.]+$/i) * 100),
     defensivePatchRatio: Math.round(patchSignal(commits, /\b(?:try\s*\{|catch\s*\(|validate|sanitize|escape|authorize|permission|fallback|throw new)\b/i) * 100),
     riskyPatchRatio: Math.round(patchSignal(commits, /\b(?:eval\s*\(|innerHTML\s*=|dangerouslySetInnerHTML|child_process|exec\s*\(|spawn\s*\(|SELECT[^;\n]{0,120}(?:\+|\$\{|format\s*\()|(?:api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{16,}['"])/i) * 100),
@@ -351,13 +377,11 @@ export function gradeForDashboardScore(score: number): string {
 export function scoreDashboardProfile(context: GithubContext, aiSafety?: DashboardAiSafetyAssessment): DashboardProfileAssessment {
   const metrics = deriveDashboardMetrics(context)
   const empty = metrics.commitCount === 0
-  const normalizedCommitSize = Math.min(metrics.averageCommitSize / 700, 1)
-  const normalizedFiles = Math.min(metrics.averageFilesPerCommit / 12, 1)
   const scores: DashboardProfileScores = {
     clarity: scoreDashboardClarity(metrics),
     safety: scoreDashboardSafety(metrics, context.commits, aiSafety),
     workflow: scoreDashboardWorkflow(metrics),
-    complexity: scoreFromAverage(90 - normalizedFiles * 34 - normalizedCommitSize * 24 - metrics.largeCommitRatio * 0.18),
+    complexity: scoreDashboardComplexity(metrics),
     context: scoreDashboardContext(metrics),
   }
 
