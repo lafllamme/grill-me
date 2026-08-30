@@ -18,14 +18,14 @@ this contract.
 | --- | --- | --- | --- |
 | Safety | v1 implemented and validated | deterministic server formula | classify grounded introduced risks only |
 | Workflow | v1 implemented and first-pass validated | deterministic server formula | optional explanation, no numeric score |
-| Clarity | provisional | existing heuristic | not wired into the final contract |
+| Clarity | v1 implemented and first-pass validated | deterministic server formula | optional patch-level explanation later |
 | Complexity | provisional | existing heuristic | not wired into the final contract |
 | Context | provisional | existing heuristic | not wired into the final contract |
 
-Only Safety and Workflow have a documented scoring rule in the current live
-slice. The overall grade and role matrix remain exploratory until the other
-three axes have passed the same formula, synthetic-case, and real-profile
-checks.
+Safety, Workflow, and Clarity now have documented scoring rules in the current
+live slice. The overall grade and role matrix remain exploratory until the
+remaining two axes have passed the same formula, synthetic-case, and
+real-profile checks.
 
 ## Source-of-truth pipeline
 
@@ -97,6 +97,23 @@ Any evidence reference in a future axis contract must point to collected
 commits, files, pull requests, or derived metric identifiers. The AI may
 explain a score, but it must not cite evidence that was not fetched.
 
+## Evidence policy: neutral fallback
+
+The general rule for incomplete or misleading public samples is recorded in
+[Neutral score for insufficient evidence](../decisions/active/neutral-score-for-insufficient-evidence.md).
+If a category does not have enough category-specific evidence for a reliable
+judgment, the deterministic score is `50`. This is a neutral **not enough
+evidence** value, not an average-quality claim. Missing tests, CI, PRs,
+documentation, or patch excerpts do not become negative evidence by
+themselves; confirmed risks can still lower a score where that category's
+contract permits it.
+
+The eventual dashboard response should expose an evidence status alongside the
+number, for example `scored` versus `insufficient-evidence`. Until that status
+is part of the API, the score and the sample limitation must remain visible in
+the surrounding UI/copy. Role resolution must keep profiles without minimum
+evidence `Unclassified` rather than assigning a role from a neutral fallback.
+
 ## Derived metrics
 
 The first deterministic feature set should include:
@@ -104,10 +121,15 @@ The first deterministic feature set should include:
 | Metric | Main axes | Meaning |
 | --- | --- | --- |
 | commit frequency | Workflow | Commits per selected time window |
-| commit size average | Workflow, Complexity | Typical additions/deletions per commit |
-| commit size median / p90 / max | Workflow, Complexity | Typical size, upper-tail size, and largest observed change |
-| commit size variance | Workflow, Complexity | Whether work arrives steadily or in bursts |
+| commit size average | Complexity, Workflow evidence | Typical additions/deletions per commit |
+| commit size median / p90 / max | Complexity, Workflow evidence | Typical size, upper-tail size, and largest observed change |
+| commit size variance | Workflow evidence, Complexity | Whether work arrives steadily or in bursts |
 | files per commit | Complexity, Clarity | Breadth of each change set |
+| non-merge workflow commits | Workflow | Personal delivery sample after merge commits are excluded |
+| workflow average files per commit | Workflow | Primary reviewability/granularity signal |
+| workflow conventional message ratio | Clarity, Workflow evidence | Share of personal commits with an explicit conventional subject |
+| workflow outlier ratio | Workflow | Relative size/scope outliers within the non-merge sample |
+| clarity scope signal | Clarity | Reviewable change breadth from personal commits |
 | additions/deletions ratio | Safety, Complexity | Churn and rework pressure |
 | message structure | Workflow, Context | Specificity and information density of commit messages |
 | file-type distribution | Context, Clarity | Presence of tests, docs, configuration, and source |
@@ -340,17 +362,48 @@ The metric is currently displayed as evidence and is not yet a Workflow score
 input. A short GitHub sample can make the normalized rate look high, so the
 analysis window and sample limit must remain visible while validating it.
 
-### Validation in progress: commit message quality
+### Clarity v1: implemented rule
 
-The first message heuristic scores the first line of each commit message. It
-rewards an informative subject, conventional prefixes such as `fix:` or
-`refactor:`, and action words. Empty or generic subjects such as `update` or
-`stuff` score low. The scorer also reports the ratio of conventional, generic,
-and empty subjects so the dashboard can show what drove the result.
+Clarity v1 measures whether the sampled personal work communicates intent in
+understandable, reviewable slices. It deliberately does not claim to measure
+variable naming or the readability of code internals; those require patch-level
+evidence and can be added as a later AI explanation layer.
+
+```text
+Clarity = workflowMessageQuality * 0.55
+        + workflowConventionalMessageRatio * 0.15
+        + clarityScopeSignal * 0.30
+
+clarityScopeSignal = 100 - max(0, workflowAverageFilesPerCommit - 1) * 7
+```
+
+`workflowMessageQuality` scores the first line of non-merge commit messages by
+specificity, action language, and conventional prefixes. Generic subjects such
+as `update` or `stuff` score low. `workflowConventionalMessageRatio` reports
+the explicit prefix share separately so the dashboard can explain the result.
+`clarityScopeSignal` uses the average changed-file count from the same personal
+sample; it is a proxy for how easy a change is to understand, not a code-quality
+verdict.
+
+Clarity requires at least three sampled commits and three non-merge commits.
+Merge-only or integration-heavy samples return the neutral `50` fallback under
+the [evidence policy](../decisions/active/neutral-score-for-insufficient-evidence.md).
+The score is deterministic. A future unified AI request may inspect bounded
+patch excerpts to explain or qualify the result, but it must not replace or
+override the number.
 
 This is a clarity/context signal, not proof of code quality. A well-written
 message can describe a bad change, so patch-level and repository signals must
 remain separate.
+
+#### Clarity validation cases
+
+| Scenario | Expected result | Current result |
+| --- | --- | ---: |
+| three small, explicit, conventional personal commits | clearly good | `>85` |
+| three generic messages across broad changes | clearly weak | `<35` |
+| one or two personal commits only | neutral, insufficient sample | `50` |
+| merge-only or integration-heavy sample | neutral, not a personal failure | `50` |
 
 ### Supporting Safety evidence metrics
 
@@ -375,31 +428,45 @@ signal contract and its introduced-risk rules above.
 
 Workflow measures delivery hygiene: whether changes arrive in understandable,
 reviewable slices with traceable intent. It does not reward raw output volume,
-and it does not treat a high commit frequency as proof of quality.
+and it does not treat a high commit frequency or maintainer merge stream as
+proof of quality.
 
 ```text
-Workflow = messageQuality * 0.35
-         + (100 - largeCommitRatio) * 0.35
-         + (100 - mergeCommitRatio) * 0.20
-         + pullRequestCoverage * 0.10
+Workflow = workflowMessageQuality * 0.45
+         + workflowGranularityScore * 0.40
+         + workflowReviewSignal * 0.15
+
+workflowGranularityScore = fileScopeSignal * 0.75
+                         + outlierSignal * 0.25
+fileScopeSignal = 100 - max(0, workflowAverageFilesPerCommit - 1) * 7
+outlierSignal = 100 - workflowLargeCommitRatio
 ```
 
 All inputs are percentages from `0` to `100` and the result is clamped to the
 same range. The terms mean:
 
-- `messageQuality`: first-line specificity, action language, and conventional
-  prefixes such as `fix:` or `refactor:`;
-- `largeCommitRatio`: commits with at least `500` changed lines or `15`
-  changed files;
-- `mergeCommitRatio`: commits whose subject identifies a merge operation;
-- `pullRequestCoverage`: `min(1, pullRequests / commits) * 100` in the observed
-  public event window.
+- `workflowMessageQuality`: the existing first-line score, but calculated
+  only across non-merge commits;
+- `workflowAverageFilesPerCommit`: average changed-file count across those
+  non-merge commits; this is the primary granularity signal and is independent
+  of repository line-count scale;
+- `workflowLargeCommitRatio`: the share of non-merge commits that are outliers
+  against the profile's own typical size (`4x` median size or at least `500`
+  changed lines, or `4x` median file count or at least `15` files);
+- `workflowReviewSignal`: `pullRequestCoverage` when any PR evidence exists,
+  otherwise neutral `50` because public activity can omit review events.
 
-With no commits, Workflow falls back to `50`. Pull-request coverage is only a
-small positive term because public activity can omit review events. Commit
-frequency, active days, and span days remain factual chart evidence and are
-not score inputs: this prevents a compressed burst from outranking a steadier
-history solely because it contains more commits per 30-day normalization.
+Merge commits are excluded from the personal workflow signals. If the sample
+contains only merge commits, Workflow falls back to neutral `50` and the merge
+ratio remains available as chart/context evidence. With no commits, Workflow
+also falls back to `50`. Commit frequency, active days, and span days remain
+factual chart evidence and are not score inputs: this prevents a compressed
+burst from outranking a steadier history solely because it contains more
+commits per 30-day normalization.
+
+This is an evidence fallback, not a quality claim. The merge-only case is
+evidence-limited and must not be interpreted as an average Workflow result for
+the person behind the repository.
 
 AI is not required to calculate Workflow v1. The inputs are observable in the
 GitHub payload and the deterministic result is reproducible. A future unified
@@ -412,6 +479,7 @@ commit, but it must not replace or override this formula.
 | --- | --- | ---: |
 | small, explicit, non-merge commits with PR coverage | clearly good | `>90` |
 | large, merge-heavy commits with generic messages | clearly weak | `<40` |
+| merge-only maintainer/integration history | neutral, not a personal failure | `50` |
 | same history compressed onto one day vs spread over three days | identical Workflow score | identical |
 
 These cases validate the direction of the formula. They do not claim that a
@@ -498,17 +566,42 @@ large merge-heavy commits, and an empty GitHub result. These scenarios are
 deliberately assertions about direction and bounds, not snapshots of a user's
 grade, so the model can be tuned without hiding regressions.
 
+#### Live Clarity calibration
+
+The six agreed comparison profiles were run through the same live endpoint
+after Clarity v1 was implemented. These are deterministic results from the
+current public activity sample, not hand-tuned expectations:
+
+| Profile | Commits | Personal commits | Message quality | Conventional | Avg. files | Scope signal | Clarity v1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `lafllamme` | 12 | 11 | 88 | 82% | 8.3 | 49 | **75** |
+| `danielroe` | 12 | 12 | 92 | 92% | 3.7 | 81 | **89** |
+| `torvalds` | 12 | 1 | 76 | 0% | 4.0 | 79 | **50** |
+| `sindresorhus` | 12 | 12 | 59 | 0% | 28.6 | 0 | **32** |
+| `antfu` | 12 | 12 | 89 | 100% | 14.0 | 9 | **67** |
+| `kentcdodds` | 4 | 4 | 74 | 25% | 5.8 | 67 | **65** |
+
+The result is directionally useful but deliberately narrow. `danielroe` has a
+strong sampled intent signal, `lafllamme` lands in the middle, and `torvalds`
+is correctly neutral because only one personal commit survived merge filtering.
+`sindresorhus` is pulled down by several vague maintenance subjects and a
+300-file dependency update; that is a warning about this sampled delivery
+window, not a claim that the developer's complete codebase lacks clarity.
+The role matrix must remain provisional until the other axes and evidence
+statuses can prevent such sample-local signals from becoming a full profile
+verdict.
+
 #### Live Workflow calibration
 
 The agreed comparison profiles were run through the same live endpoint after
 Workflow v1 was implemented. The values below are the deterministic result of
 the current public activity sample, not hand-tuned expectations:
 
-| Profile | Commits | Message quality | Large commits | Merge commits | PR coverage | Workflow v1 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `lafllamme` | 12 | 87 | 8% | 8% | 0% | **81** |
-| `danielroe` | 12 | 93 | 0% | 0% | 50% | **93** |
-| `torvalds` | 12 | 68 | 58% | 100% | 0% | **39** |
+| Profile | Commits | Workflow commits | Message quality | Avg. files | Workflow outliers | Merge commits | PR coverage | Workflow v1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `lafllamme` | 12 | 11 | 88 | 8.3 | 9% | 8% | 0% | **71** |
+| `danielroe` | 12 | 12 | 94 | 1.9 | 0% | 0% | 50% | **88** |
+| `torvalds` | 12 | 0 | 50 | 0.0 | 50% neutral | 100% | 0% | **50** |
 
 The result is directionally useful: `danielroe` shows the cleanest sampled
 delivery pattern, `lafllamme` lands in a solid middle-high range, and the
@@ -521,11 +614,11 @@ Workflow measures the shape of the sampled delivery history. The collector's
 
 1. Define and test the shared `DashboardProfileAssessment` contract. **Done**
 2. Build a pure feature-extraction layer over `GithubContext`. **Done**
-3. Add deterministic normalization and score calculation. **Done for Safety v1 and Workflow v1**
+3. Add deterministic normalization and score calculation. **Done for Safety v1, Workflow v1, and Clarity v1**
 4. Add the constrained Safety signal step with evidence-grounded penalties. **Done**
 5. Add the role resolver and grade resolver using the documented matrix. **Done**
 6. Map the assessment to the existing dashboard fixture shape. **Done**
-7. Run the pipeline against the six-profile calibration set without persistence. **Safety done; Workflow calibration in progress**
+7. Run the pipeline against the six-profile calibration set without persistence. **Safety, Workflow, and Clarity done; remaining axes in progress**
 8. Compare the real result with the mock stories and only then design database
    storage and caching.
 

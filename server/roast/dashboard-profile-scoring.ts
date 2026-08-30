@@ -28,6 +28,12 @@ export interface DashboardDerivedMetrics {
   spanDays: number
   commitsPer30Days: number
   averageFilesPerCommit: number
+  workflowCommitCount: number
+  workflowAverageFilesPerCommit: number
+  workflowMessageQuality: number
+  workflowConventionalMessageRatio: number
+  workflowLargeCommitRatio: number
+  clarityScopeSignal: number
   messageQuality: number
   conventionalMessageRatio: number
   genericMessageRatio: number
@@ -138,23 +144,43 @@ export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: 
 }
 
 /**
- * Scores observable delivery hygiene without treating output volume as quality.
- * Commit frequency stays a dashboard fact; it is intentionally not a bonus.
+ * Scores observable delivery hygiene without treating output volume or
+ * maintainer merge work as personal workflow quality. Commit frequency and
+ * merge ratio stay dashboard facts; they are intentionally not penalties.
  */
 export function scoreDashboardWorkflow(metrics: DashboardDerivedMetrics): number {
   if (metrics.commitCount === 0)
     return 50
 
-  const messageSignal = metrics.messageQuality
-  const granularitySignal = 100 - metrics.largeCommitRatio
-  const integrationSignal = 100 - metrics.mergeCommitRatio
-  const reviewSignal = metrics.pullRequestCoverage
+  if (metrics.workflowCommitCount === 0)
+    return 50
+
+  const messageSignal = metrics.workflowMessageQuality
+  const fileScopeSignal = clamp(100 - Math.max(0, metrics.workflowAverageFilesPerCommit - 1) * 7)
+  const outlierSignal = 100 - metrics.workflowLargeCommitRatio
+  const granularitySignal = fileScopeSignal * 0.75 + outlierSignal * 0.25
+  const reviewSignal = metrics.pullRequestCoverage > 0 ? metrics.pullRequestCoverage : 50
 
   return clamp(
-    messageSignal * 0.35
-    + granularitySignal * 0.35
-    + integrationSignal * 0.20
-    + reviewSignal * 0.10,
+    messageSignal * 0.45
+    + granularitySignal * 0.40
+    + reviewSignal * 0.15,
+  )
+}
+
+/**
+ * Scores clarity from the personal, non-merge commit sample. Merge messages
+ * describe repository integration rather than the author's change intent, so
+ * merge-only samples use the neutral evidence fallback.
+ */
+export function scoreDashboardClarity(metrics: DashboardDerivedMetrics): number {
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
+    return 50
+
+  return clamp(
+    metrics.workflowMessageQuality * 0.55
+    + metrics.workflowConventionalMessageRatio * 0.15
+    + metrics.clarityScopeSignal * 0.30,
   )
 }
 
@@ -200,7 +226,16 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const deletions = commits.reduce((sum, commit) => sum + commit.deletions, 0)
   const changedFiles = commits.reduce((sum, commit) => sum + commit.changedFiles, 0)
   const commitSizes = commits.map(commit => commit.additions + commit.deletions)
+  const workflowCommits = commits.filter(commit => !isMergeCommit(commit))
+  const workflowCommitSizes = workflowCommits.map(commit => commit.additions + commit.deletions)
+  const workflowFileCounts = workflowCommits.map(commit => commit.changedFiles)
+  const workflowConventionalMessages = workflowCommits.filter(commit => /^(?:feat|fix|refactor|docs|test|chore|perf|build|ci|style)(?:\(.+\))?:\s+\S+/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const largeCommitCount = commits.filter(commit => commit.additions + commit.deletions >= 500 || commit.changedFiles >= 15).length
+  const typicalWorkflowSize = percentile(workflowCommitSizes, 50)
+  const typicalWorkflowFiles = percentile(workflowFileCounts, 50)
+  const workflowSizeThreshold = Math.max(500, typicalWorkflowSize * 4)
+  const workflowFileThreshold = Math.max(15, typicalWorkflowFiles * 4)
+  const workflowLargeCommitCount = workflowCommits.filter(commit => commit.additions + commit.deletions >= workflowSizeThreshold || commit.changedFiles >= workflowFileThreshold).length
   const commitDates = commits.map(commit => commit.committedAt ? new Date(commit.committedAt) : null).filter((date): date is Date => Boolean(date && !Number.isNaN(date.getTime())))
   const dayKeys = new Set(commitDates.map(date => date.toISOString().slice(0, 10)))
   const sortedDayKeys = [...dayKeys].sort()
@@ -225,6 +260,12 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     spanDays,
     commitsPer30Days: spanDays ? Number((commits.length / spanDays * 30).toFixed(1)) : 0,
     averageFilesPerCommit: Number(average(commits.map(commit => commit.changedFiles)).toFixed(1)),
+    workflowCommitCount: workflowCommits.length,
+    workflowAverageFilesPerCommit: workflowCommits.length ? Number(average(workflowFileCounts).toFixed(1)) : 0,
+    workflowMessageQuality: workflowCommits.length ? Math.round(average(workflowCommits.map(commit => scoreCommitMessage(commit.message)))) : 50,
+    workflowConventionalMessageRatio: Math.round(ratio(workflowConventionalMessages, workflowCommits.length) * 100),
+    workflowLargeCommitRatio: workflowCommits.length ? Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50,
+    clarityScopeSignal: workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 1) * 7) : 50,
     messageQuality: Math.round(average(commits.map(commit => scoreCommitMessage(commit.message)))),
     conventionalMessageRatio: Math.round(ratio(conventionalMessages, commits.length) * 100),
     genericMessageRatio: Math.round(ratio(genericMessages, commits.length) * 100),
@@ -293,7 +334,7 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
   const normalizedFiles = Math.min(metrics.averageFilesPerCommit / 12, 1)
   const prSignal = Math.min(metrics.pullRequestCount / 6, 1)
   const scores: DashboardProfileScores = {
-    clarity: scoreFromAverage(metrics.messageQuality * 0.7 + (100 - normalizedFiles * 30) * 0.3),
+    clarity: scoreDashboardClarity(metrics),
     safety: scoreDashboardSafety(metrics, context.commits, aiSafety),
     workflow: scoreDashboardWorkflow(metrics),
     complexity: scoreFromAverage(90 - normalizedFiles * 34 - normalizedCommitSize * 24 - metrics.largeCommitRatio * 0.18),

@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
@@ -103,6 +103,50 @@ describe('dashboard profile scoring', () => {
     expect(scoreCommitMessage('feat(auth): rotate session tokens')).toBeGreaterThan(70)
   })
 
+  it('scores Clarity from personal intent, conventional messages, and reviewable scope', () => {
+    const clearHistory = context([
+      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1 }),
+      commit({ sha: 'two', message: 'fix: handle missing profile data', changedFiles: 2 }),
+      commit({ sha: 'three', message: 'refactor: extract profile score mapper', changedFiles: 1 }),
+    ], 0)
+    const unclearHistory = context(Array.from({ length: 3 }, (_, index) => commit({
+      sha: `unclear-${index}`,
+      message: 'update',
+      changedFiles: 20,
+      files: [{ filename: `app/file-${index}.ts`, status: 'modified', additions: 800, deletions: 200 }],
+    })), 0)
+
+    expect(scoreDashboardClarity(deriveDashboardMetrics(clearHistory))).toBeGreaterThan(85)
+    expect(scoreDashboardClarity(deriveDashboardMetrics(unclearHistory))).toBeLessThan(35)
+  })
+
+  it('keeps Clarity neutral when the sample has no personal evidence', () => {
+    const mergeOnlyHistory = context([
+      commit({ sha: 'merge-one', message: 'Merge branch feature into main', changedFiles: 20 }),
+      commit({ sha: 'merge-two', message: 'Merge branch release into main', changedFiles: 20 }),
+      commit({ sha: 'merge-three', message: 'Merge pull request #3 from feature', changedFiles: 20 }),
+    ], 0)
+    const thinHistory = context([
+      commit({ sha: 'one', message: 'feat: add one thing', changedFiles: 1 }),
+      commit({ sha: 'two', message: 'fix: handle one thing', changedFiles: 1 }),
+    ], 0)
+
+    expect(scoreDashboardClarity(deriveDashboardMetrics(mergeOnlyHistory))).toBe(50)
+    expect(scoreDashboardClarity(deriveDashboardMetrics(thinHistory))).toBe(50)
+  })
+
+  it('keeps Clarity neutral when only one personal commit survives merge filtering', () => {
+    const integrationHeavyHistory = context([
+      commit({ sha: 'personal', message: 'feat: add board state', changedFiles: 1 }),
+      commit({ sha: 'merge-one', message: 'Merge branch feature into main', changedFiles: 18 }),
+      commit({ sha: 'merge-two', message: 'Merge branch release into main', changedFiles: 18 }),
+      commit({ sha: 'merge-three', message: 'Merge pull request #3 from feature', changedFiles: 18 }),
+    ], 0)
+
+    expect(deriveDashboardMetrics(integrationHeavyHistory).workflowCommitCount).toBe(1)
+    expect(scoreDashboardClarity(deriveDashboardMetrics(integrationHeavyHistory))).toBe(50)
+  })
+
   it('scores Workflow from delivery hygiene instead of raw commit volume', () => {
     const cleanHistory = context([
       commit({ sha: 'one', message: 'feat: add profile summary', additions: 24, deletions: 4, changedFiles: 2 }),
@@ -117,6 +161,19 @@ describe('dashboard profile scoring', () => {
 
     expect(scoreDashboardWorkflow(deriveDashboardMetrics(cleanHistory))).toBeGreaterThan(90)
     expect(scoreDashboardWorkflow(deriveDashboardMetrics(mergeHeavyHistory))).toBeLessThan(40)
+  })
+
+  it('keeps merge-only maintainer history neutral instead of calling it bad workflow', () => {
+    const mergeOnlyHistory = context([
+      commit({ sha: 'merge-one', message: 'Merge branch feature into main', additions: 2_000, deletions: 1_500, changedFiles: 40 }),
+      commit({ sha: 'merge-two', message: 'Merge branch release into main', additions: 1_800, deletions: 1_200, changedFiles: 35 }),
+      commit({ sha: 'merge-three', message: 'Merge pull request #3 from feature', additions: 1_600, deletions: 1_000, changedFiles: 30 }),
+    ], 0)
+    const metrics = deriveDashboardMetrics(mergeOnlyHistory)
+
+    expect(metrics.workflowCommitCount).toBe(0)
+    expect(metrics.workflowLargeCommitRatio).toBe(50)
+    expect(scoreDashboardWorkflow(metrics)).toBe(50)
   })
 
   it('does not reward a compressed burst merely because it has a higher frequency', () => {

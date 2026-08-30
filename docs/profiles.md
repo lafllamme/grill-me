@@ -31,10 +31,17 @@ und einen verwertbaren Patch.
 
 Für **Workflow** gilt ebenfalls die serverseitige Regel aus
 [dashboard-profile-scoring.md](./dashboard-profile-scoring.md): Messages,
-reviewbare Commit-Größe, Merge-Anteil und sichtbare PR-Abdeckung werden
-gewichtet. Commit-Frequenz ist nur Kontext für das Dashboard und erhöht den
-Workflow-Score nicht automatisch. Die Zahl wird deterministisch berechnet;
-AI darf später nur die Begründung liefern.
+reviewbare Dateibreite, relative Ausreißer und sichtbare PR-Abdeckung werden
+gewichtet. Merge-Commits werden aus der persönlichen Bewertung herausgenommen
+und bleiben Kontext für das Dashboard. Commit-Frequenz ist ebenfalls nur
+Kontext und erhöht den Workflow-Score nicht automatisch. Die Zahl wird
+deterministisch berechnet; AI darf später nur die Begründung liefern.
+
+Übergreifend gilt die [Evidenz-Regel für neutrale Scores](../decisions/active/neutral-score-for-insufficient-evidence.md):
+Wenn eine Kategorie aus dem begrenzten Sample nicht belastbar beurteilt werden
+kann, bleibt sie bei `50` als neutralem **Nicht-genug-Evidenz**-Wert. Das ist
+keine Durchschnittsnote. Fehlende Signale werden nicht automatisch bestraft,
+und ein Profil ohne ausreichende Evidenz bleibt `Unclassified`.
 
 ## Rollenmatrix
 
