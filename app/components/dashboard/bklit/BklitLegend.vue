@@ -30,12 +30,14 @@ function ringToneClass(index: number) {
 </script>
 
 <template>
-  <div class="legend-container w-full flex flex-col gap-2 sm:min-w-[18rem]">
-    <h3 class="text-base font-display mb-1" :style="{ color: 'var(--chart-text)' }">{{ props.heading }}</h3>
+  <div class="legend-container flex flex-col gap-2 w-full sm:min-w-[18rem]">
+    <h3 class="text-sm font-semibold mb-1" :style="{ color: 'var(--chart-text)' }">
+      {{ props.heading }}
+    </h3>
     <div
       v-for="(item, index) in context.data"
       :key="item.label"
-      class="cursor-pointer rounded-none px-2 py-1.5 transition-all duration-150 ease-out gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto] items-center"
+      class="px-2 py-1.5 rounded-lg gap-x-3 gap-y-1 grid grid-cols-[auto_1fr_auto] cursor-pointer transition-all duration-150 ease-out items-center"
       :class="[
         context.hoveredIndex.value === index ? 'bg-chart-hover' : '',
         context.hoveredIndex.value !== null && context.hoveredIndex.value !== index ? 'opacity-40' : '',
@@ -45,12 +47,12 @@ function ringToneClass(index: number) {
     >
       <span class="rounded-full shrink-0 h-2.5 w-2.5" :class="!item.color ? ringToneClass(index) : ''" :style="item.color ? { backgroundColor: item.color } : undefined" aria-hidden="true" />
       <span class="text-sm font-body font-medium" :style="{ color: 'var(--chart-text)' }">{{ item.label }}</span>
-      <span class="text-sm flex items-center gap-2 font-meta tabular-nums" :style="{ color: 'var(--chart-label)' }">
-        <strong :style="{ color: 'var(--chart-text)' }">{{ item.value.toLocaleString() }}</strong>
+      <span class="text-sm font-meta flex gap-2 items-center tabular-nums" :style="{ color: 'var(--chart-label)' }">
+        <span>{{ item.value.toLocaleString() }}</span>
         <span>{{ Math.round((item.value / item.maxValue) * 100) }}%</span>
       </span>
-      <div class="rounded-full bg-surface-container-highest h-1.5 col-span-full w-full overflow-hidden">
-        <div class="rounded-full h-full" :class="!item.color ? ringToneClass(index) : ''" :style="{ width: `${Math.min((item.value / item.maxValue) * 100, 100)}%`, backgroundColor: item.color }" />
+      <div class="rounded-full bg-surface-container-highest col-span-full h-1.5 w-full overflow-hidden">
+        <div class="rounded-full h-full transition-all duration-500" :class="!item.color ? ringToneClass(index) : ''" :style="{ width: `${Math.min((item.value / item.maxValue) * 100, 100)}%`, backgroundColor: item.color }" />
       </div>
     </div>
   </div>
