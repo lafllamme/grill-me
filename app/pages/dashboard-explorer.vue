@@ -235,13 +235,13 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       </header>
 
       <div id="profile-panel" class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12">
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-8">
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-6">
           <h2 class="text-2xl tracking-[-0.04em] font-body">
             Profile
           </h2>
           <BklitRadarChart class="mt-4" :data="profileRadarData" :metrics="fixture.radarProfile.metrics" :size="400" />
         </article>
-        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-4">
+        <article :class="currentColorProfile.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8 lg:col-span-6">
           <div class="flex gap-4 items-start justify-between">
             <h2 class="text-2xl tracking-[-0.04em] font-body">
               Verdict
