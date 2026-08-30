@@ -10,6 +10,7 @@ export interface AiRequestInput {
   maxTokens: number
   temperature: number
   topP: number
+  reasoningEffort?: 'none' | 'low' | 'medium' | 'high'
   systemPrompt: string
   userPrompt: string
   debug?: RoastDebug
@@ -110,7 +111,7 @@ export async function runAiSync(input: AiRequestInput): Promise<any> {
         max_tokens: input.maxTokens,
         temperature: input.temperature,
         top_p: input.topP,
-        reasoning_effort: 'low',
+        reasoning_effort: input.reasoningEffort ?? 'low',
       }),
       signal: controller.signal,
     })

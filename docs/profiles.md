@@ -21,6 +21,21 @@ Dokumentation trennt dabei bewusst zwischen Score, Rolle und Note:
 Ein hoher Wert ist immer gut. Bei **Complexity** bedeutet ein hoher Wert also
 gute Komplexitätskontrolle, nicht mehr Komplexität.
 
+Für **Safety** gilt die serverseitige Regel aus
+[dashboard-profile-scoring.md](./dashboard-profile-scoring.md): fehlende Tests,
+CI, PRs oder Patch-Ausschnitte sind keine Risiken. Ohne verwertbare Patch-
+Evidence bleibt Safety bei `50` und das Profil wird bei der späteren
+Rollenauflösung als `Unclassified` behandelt, statt künstlich gerankt zu
+werden. Für eine Rollenauflösung braucht der Server mindestens drei Commits
+und einen verwertbaren Patch.
+
+Für **Workflow** gilt ebenfalls die serverseitige Regel aus
+[dashboard-profile-scoring.md](./dashboard-profile-scoring.md): Messages,
+reviewbare Commit-Größe, Merge-Anteil und sichtbare PR-Abdeckung werden
+gewichtet. Commit-Frequenz ist nur Kontext für das Dashboard und erhöht den
+Workflow-Score nicht automatisch. Die Zahl wird deterministisch berechnet;
+AI darf später nur die Begründung liefern.
+
 ## Rollenmatrix
 
 `—` bedeutet: Für die Rolle gibt es auf dieser Achse keinen eigenen

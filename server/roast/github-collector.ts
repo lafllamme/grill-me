@@ -19,6 +19,7 @@ export interface GithubCommit {
   deletions: number
   changedFiles: number
   files: GithubCommitFile[]
+  committedAt?: string
 }
 
 export interface GithubPullRequest {
@@ -262,6 +263,9 @@ export async function collectGithubContext(username: string, githubToken: string
           deletions: asNumber(file.deletions),
           patch: trimPatch(typeof file.patch === 'string' ? file.patch : undefined),
         })),
+        committedAt: typeof details.commit?.author?.date === 'string'
+          ? details.commit.author.date
+          : typeof details.commit?.committer?.date === 'string' ? details.commit.committer.date : undefined,
       }
 
       return commit

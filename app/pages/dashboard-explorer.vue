@@ -31,11 +31,77 @@ interface ChartPalette {
   surfaceVariant: string
 }
 
+interface RealSafetySignal {
+  category: 'validation' | 'auth' | 'error-handling' | 'secrets' | 'dependency'
+  verdict: 'safe' | 'risk' | 'unclear'
+  impact: 'introduced' | 'fixed' | 'unclear'
+  severity: 'low' | 'medium' | 'high'
+  commitSha: string
+  evidence: string
+}
+
+interface RealProfileAssessment {
+  username: string
+  scores: Record<'clarity' | 'safety' | 'workflow' | 'complexity' | 'context', number>
+  overallScore: number
+  grade: string
+  role: string
+  roleStatus: 'classified' | 'unclassified'
+  confidence: number
+  derivedMetrics: {
+    commitCount: number
+    pullRequestCount: number
+    additions: number
+    deletions: number
+    changedFiles: number
+    averageCommitSize: number
+    medianCommitSize: number
+    largestCommitSize: number
+    p90CommitSize: number
+    activeDays: number
+    spanDays: number
+    commitsPer30Days: number
+    averageFilesPerCommit: number
+    documentationFileRatio: number
+    testFileRatio: number
+    ciFileRatio: number
+    validationFileRatio: number
+    pullRequestCoverage: number
+    deletionRatio: number
+    riskyFileRatio: number
+    defensivePatchRatio: number
+    riskyPatchRatio: number
+    mergeCommitRatio: number
+    largeCommitRatio: number
+    messageQuality: number
+    conventionalMessageRatio: number
+    genericMessageRatio: number
+    emptyMessageRatio: number
+  }
+  evidenceWindow: { from?: string, to?: string }
+  aiSafety?: { confidence: number, status: string, signals: RealSafetySignal[] }
+}
+
 const activeMockProfileIndex = ref(0)
+const githubUsername = ref('lafllamme')
+const realAssessment = ref<RealProfileAssessment | null>(null)
+const isLoadingRealAssessment = ref(false)
+const realAssessmentError = ref('')
 const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
 const mockProfileCount = dashboardMockProfiles.length
 const fixture = computed(() => activeMockProfile.value.dashboard)
 const explorerFixture = computed(() => activeMockProfile.value.explorer)
+const confirmedAiSignals = computed(() => realAssessment.value?.aiSafety?.signals.filter(signal => signal.verdict === 'risk' && signal.impact === 'introduced').slice(0, 2) ?? [])
+const commitFrequencyGauge = computed(() => Math.min(100, fixture.value.evidence.commits))
+const displayedRadarProfile = computed(() => realAssessment.value
+  ? { metrics: fixture.value.radarProfile.metrics, data: [{ label: realAssessment.value.username, color: 'var(--color-primary-strong)', values: realAssessment.value.scores }] }
+  : fixture.value.radarProfile)
+const displayedRingProfile = computed(() => realAssessment.value
+  ? fixture.value.ringProfile.map(ring => ({ ...ring, value: realAssessment.value!.scores[ring.label.toLowerCase() as keyof RealProfileAssessment['scores']] ?? ring.value }))
+  : fixture.value.ringProfile)
+const displayedGrade = computed(() => realAssessment.value?.grade ?? fixture.value.grade)
+const displayedGaugeValue = computed(() => realAssessment.value ? Math.min(100, realAssessment.value.derivedMetrics.commitCount) : commitFrequencyGauge.value)
+const displayedGaugeCenterValue = computed(() => realAssessment.value?.derivedMetrics.commitCount ?? fixture.value.evidence.commits)
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -118,8 +184,6 @@ const chartStyle = computed(() => ({
   '--chart-4': 'color-mix(in srgb, var(--color-primary) 72%, white)',
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
-const commitFrequencyGauge = computed(() => Math.min(100, fixture.value.evidence.commits))
-
 function shiftMockProfile(direction: -1 | 1) {
   activeMockProfileIndex.value = (activeMockProfileIndex.value + direction + mockProfileCount) % mockProfileCount
 }
@@ -127,6 +191,24 @@ function shiftMockProfile(direction: -1 | 1) {
 function setColorMode(mode: ColorMode) {
   activeColorMode.value = mode
   activeColorProfile.value = mode === 'dark' ? 'voidWhisper' : 'slateCloud'
+}
+
+async function analyzeGithubProfile() {
+  realAssessmentError.value = ''
+  isLoadingRealAssessment.value = true
+  try {
+    const response = await $fetch<{ assessment: RealProfileAssessment }>('/api/dashboard-profile', {
+      method: 'POST',
+      body: { username: githubUsername.value },
+    })
+    realAssessment.value = response.assessment
+  }
+  catch (error: any) {
+    realAssessmentError.value = error?.data?.message || error?.statusMessage || 'GitHub profile could not be analyzed.'
+  }
+  finally {
+    isLoadingRealAssessment.value = false
+  }
 }
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
@@ -184,7 +266,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
           <div class="mt-4 flex gap-3 items-center sm:justify-end" role="group" aria-label="Browse mock dashboard profiles">
             <button
               :class="currentColorProfile.mutedClass"
-              class="border-[1px] border-current/30 rounded-[8px] border-solid w-9 h-9 inline-flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
+              class="border-[1px] border-current/30 rounded-[8px] border-solid inline-flex h-9 w-9 transition-colors items-center justify-center focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
               type="button"
               aria-label="Previous mock dashboard profile"
               @click="shiftMockProfile(-1)"
@@ -204,7 +286,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
             </div>
             <button
               :class="currentColorProfile.mutedClass"
-              class="border-[1px] border-current/30 rounded-[8px] border-solid w-9 h-9 inline-flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
+              class="border-[1px] border-current/30 rounded-[8px] border-solid inline-flex h-9 w-9 transition-colors items-center justify-center focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
               type="button"
               aria-label="Next mock dashboard profile"
               @click="shiftMockProfile(1)"
@@ -212,14 +294,107 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               <Icon name="ph:caret-right" aria-hidden="true" />
             </button>
           </div>
+          <form class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end" @submit.prevent="analyzeGithubProfile">
+            <label :class="currentColorProfile.mutedClass" class="sr-only" for="github-profile">Analyze GitHub profile</label>
+            <div class="px-3 border-[1px] border-current/20 rounded-[8px] bg-black/10 flex h-9 min-w-56 items-center">
+              <span :class="currentColorProfile.mutedClass" class="text-xs font-meta mr-1">github.com/</span>
+              <input
+                id="github-profile"
+                v-model="githubUsername"
+                :class="currentColorProfile.copyClass"
+                class="text-xs outline-none bg-transparent min-w-0 w-full"
+                autocomplete="off"
+                spellcheck="false"
+              >
+            </div>
+            <button
+              :disabled="isLoadingRealAssessment"
+              :class="isLoadingRealAssessment ? 'opacity-60 cursor-wait' : ''"
+              class="text-xs text-primary font-meta px-3 border-[1px] border-primary rounded-[8px] h-9 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-primary"
+              type="submit"
+            >
+              {{ isLoadingRealAssessment ? 'Analyzing…' : 'Analyze live' }}
+            </button>
+          </form>
+          <p v-if="realAssessmentError" class="text-xs text-primary mt-2 sm:text-right" role="alert">
+            {{ realAssessmentError }}
+          </p>
         </fieldset>
       </header>
 
+      <section v-if="realAssessment" :class="currentColorProfile.panelClass" class="mt-8 p-5 border-[1px] border-white/10 rounded-[18px]" aria-live="polite">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.14em] font-meta uppercase">
+              Live scoring preview
+            </p>
+            <h2 class="text-xl font-display mt-2">
+              {{ realAssessment.username }} · {{ realAssessment.grade }} · {{ realAssessment.role }}
+            </h2>
+            <p :class="currentColorProfile.mutedClass" class="text-sm mt-1">
+              Deterministic v1 score from {{ realAssessment.derivedMetrics.commitCount }} enriched commits and {{ realAssessment.derivedMetrics.pullRequestCount }} PR signals.
+            </p>
+            <p v-if="realAssessment.roleStatus === 'unclassified'" :class="currentColorProfile.mutedClass" class="text-xs font-meta mt-2">
+              Role withheld until the evidence sample is strong enough.
+            </p>
+            <p :class="currentColorProfile.mutedClass" class="text-[10px] font-meta mt-2">
+              Window: {{ realAssessment.evidenceWindow.from ? new Date(realAssessment.evidenceWindow.from).toLocaleDateString() : 'unknown' }} → {{ realAssessment.evidenceWindow.to ? new Date(realAssessment.evidenceWindow.to).toLocaleDateString() : 'unknown' }}
+            </p>
+          </div>
+          <p :class="currentColorProfile.mutedClass" class="text-xs font-meta">
+            {{ realAssessment.overallScore }}/100 · {{ realAssessment.confidence }}% confidence
+          </p>
+        </div>
+        <div :class="currentColorProfile.mutedClass" class="text-xs font-meta mt-4 gap-x-5 gap-y-2 grid grid-cols-2 sm:grid-cols-4">
+          <span>+{{ realAssessment.derivedMetrics.additions }} additions</span>
+          <span>-{{ realAssessment.derivedMetrics.deletions }} deletions</span>
+          <span>{{ realAssessment.derivedMetrics.changedFiles }} changed files</span>
+          <span>{{ realAssessment.derivedMetrics.testFileRatio }}% test files</span>
+          <span>{{ realAssessment.derivedMetrics.documentationFileRatio }}% docs files</span>
+          <span>{{ realAssessment.derivedMetrics.averageFilesPerCommit }} files / commit</span>
+          <span>{{ realAssessment.derivedMetrics.medianCommitSize }} median changes / commit</span>
+          <span>{{ realAssessment.derivedMetrics.largestCommitSize }} largest commit</span>
+          <span>{{ realAssessment.derivedMetrics.p90CommitSize }} p90 commit size</span>
+          <span>{{ realAssessment.derivedMetrics.activeDays }} active days</span>
+          <span>{{ realAssessment.derivedMetrics.spanDays }} day window</span>
+          <span>{{ realAssessment.derivedMetrics.commitsPer30Days }} commits / 30d</span>
+          <span>{{ realAssessment.derivedMetrics.largeCommitRatio }}% large commits</span>
+          <span>{{ realAssessment.derivedMetrics.mergeCommitRatio }}% merge commits</span>
+          <span>{{ realAssessment.derivedMetrics.messageQuality }} message quality</span>
+          <span>{{ realAssessment.derivedMetrics.conventionalMessageRatio }}% conventional messages</span>
+          <span>{{ realAssessment.derivedMetrics.genericMessageRatio }}% generic messages</span>
+          <span>{{ realAssessment.derivedMetrics.ciFileRatio }}% CI files</span>
+          <span>{{ realAssessment.derivedMetrics.validationFileRatio }}% validation files</span>
+          <span>{{ realAssessment.derivedMetrics.pullRequestCoverage }}% PR coverage</span>
+          <span>{{ realAssessment.derivedMetrics.deletionRatio }}% deletions</span>
+          <span>{{ realAssessment.derivedMetrics.riskyFileRatio }}% risky files</span>
+          <span>{{ realAssessment.derivedMetrics.defensivePatchRatio }}% defensive patches</span>
+          <span>{{ realAssessment.derivedMetrics.riskyPatchRatio }}% risky patches</span>
+        </div>
+        <div v-if="realAssessment.aiSafety" :class="currentColorProfile.mutedClass" class="text-xs mt-4 p-3 border-[1px] border-current/15 rounded-[10px]">
+          <span class="tracking-[0.1em] font-meta uppercase">AI safety signal:</span>
+          <span class="ml-2">server-scored · {{ realAssessment.aiSafety.confidence }}% confidence · {{ realAssessment.aiSafety.status }}</span>
+          <p v-for="signal in confirmedAiSignals" :key="`${signal.category}-${signal.commitSha}-${signal.evidence}`" class="mt-2">
+            {{ signal.category }} · {{ signal.severity }} · {{ signal.evidence }}
+          </p>
+        </div>
+        <div class="mt-5 gap-3 grid grid-cols-2 lg:grid-cols-5">
+          <div v-for="(score, axis) in realAssessment.scores" :key="axis" class="p-3 border-[1px] border-white/10 rounded-[10px]">
+            <p :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.1em] font-meta uppercase">
+              {{ axis }}
+            </p>
+            <p class="text-2xl font-display mt-2">
+              {{ score }}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <div id="profile-panel" class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12">
-        <ProfileRadarPanel :key="`${activeMockProfile.id}-radar`" class="lg:col-span-6" :data="fixture.radarProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <VerdictPanel :key="`${activeMockProfile.id}-verdict`" class="lg:col-span-6" :grade="fixture.grade" :growth-level="fixture.growthLevel" :headline="fixture.headline" :note="fixture.note" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <EvidenceRingPanel :key="`${activeMockProfile.id}-ring`" :data="fixture.ringProfile" heading="Profile signals" center-label="Profile score" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <ChangeGaugePanel :key="`${activeMockProfile.id}-gauge`" :value="commitFrequencyGauge" :center-value="fixture.evidence.commits" label="Commits" description="Commits recorded in the selected analysis window, normalized to a 100-commit scale." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ProfileRadarPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-radar`" class="lg:col-span-6" :data="displayedRadarProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <VerdictPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-verdict`" class="lg:col-span-6" :grade="displayedGrade" :growth-level="fixture.growthLevel" :headline="fixture.headline" :note="fixture.note" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <EvidenceRingPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-ring`" :data="displayedRingProfile" heading="Profile signals" center-label="Profile score" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
+        <ChangeGaugePanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-gauge`" :value="displayedGaugeValue" :center-value="displayedGaugeCenterValue" label="Commits" description="Commits recorded in the selected analysis window, normalized to a 100-commit scale." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
         <ChangeVolumePanel :key="`${activeMockProfile.id}-volume`" :data="explorerFixture.barChangeVolume" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
         <CommitTimelinePanel :key="`${activeMockProfile.id}-timeline`" :data="explorerFixture.timeline" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
         <RepositorySunburstPanel :key="`${activeMockProfile.id}-sunburst`" :data="explorerFixture.sunburstData" description="Repository folders and file hotspots derived from the selected mock profile." :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />

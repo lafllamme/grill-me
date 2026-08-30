@@ -1,4 +1,4 @@
-# Roast Database (v1.4)
+# Roast Database (v1.3)
 
 Neon/Postgres schema for receipt-backed sharing and verified official leaderboard submissions.
 
@@ -9,7 +9,6 @@ erDiagram
   roast_users ||--o{ roast_runs : owns
   roast_runs ||--|| roast_run_content : has
   roast_runs ||--|| roast_run_metrics : has
-  roast_runs ||--o| dashboard_profile_assessments : has
   roast_users ||--|| roast_user_stats : aggregates
   roast_runs o|--o| roast_user_stats : latest_run_id
 
@@ -29,10 +28,6 @@ erDiagram
   - 1:1 with `roast_runs`, text content fields
 - `roast_run_metrics`
   - 1:1 with `roast_runs`, deterministic score fields
-- `dashboard_profile_assessments`
-  - optional 1:1 with `roast_runs`, versioned five-axis dashboard assessment
-  - stores derived metrics, evidence window, role, grade, confidence, and
-    optional AI semantic signals
 - `roast_user_stats`
   - aggregated per-user stats
 - `roast_scoring_profiles`
@@ -51,9 +46,6 @@ erDiagram
 - Canonical API/share payloads expose an `intensity` object with `{ level, label }`, derived from the stored numeric value.
 - Score fields constrained to `0..100`.
 - `grade` constrained to `F- | F | D- | D | C- | C | B | A`.
-- Dashboard profile grades are stored separately and use the dashboard grade
-  vocabulary (`F` through `A` with documented +/- bands); they must not be
-  written into `roast_run_metrics.grade`.
 - FK chains use `ON DELETE CASCADE` on dependent run/share/official rows.
 
 ## Indexes
@@ -63,9 +55,6 @@ Core performance indexes include:
 - `roast_runs(created_at DESC)`
 - `roast_runs(user_id, created_at DESC)`
 - `roast_run_metrics(stink_score DESC, ego_damage DESC)`
-- `dashboard_profile_assessments(username, created_at DESC)`
-- `dashboard_profile_assessments(primary_role, created_at DESC)`
-- `dashboard_profile_assessments(overall_score DESC)`
 - `roast_user_stats(worst_grade, avg_stink_score DESC)`
 - `auth_github_users(username)`
 - `roast_shares(expires_at)`
@@ -84,12 +73,6 @@ Core performance indexes include:
   - requires verified session,
   - enforces self-ownership,
   - upserts official projection in `leaderboard_entries`.
-- Dashboard assessment:
-  - is written only after a canonical roast run exists,
-  - references the run by `run_id`,
-  - can be recomputed under a new `scoring_version` without mutating historical
-    roast metrics,
-  - is not required for existing share or leaderboard flows during migration.
 
 ## TTL Cleanup Strategy
 
@@ -101,7 +84,6 @@ Core performance indexes include:
 
 - `/Users/flame/Developer/Projects/grill-me/server/db/migrations/001_roast_leaderboard.sql`
 - `/Users/flame/Developer/Projects/grill-me/server/db/migrations/002_roast_share_and_official_entries.sql`
-- `/Users/flame/Developer/Projects/grill-me/server/db/migrations/003_dashboard_profile_assessments.sql`
 
 Operational setup and runbook:
 - `operations.md`
