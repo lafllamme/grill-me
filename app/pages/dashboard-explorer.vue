@@ -28,7 +28,7 @@ interface ChartPalette {
 }
 
 const activeMockProfileIndex = ref(0)
-const { githubUsername, assessment: realAssessment, evidence: realEvidence, phase: analysisPhase, errorMessage: realAssessmentError, isLoading: isLoadingRealAssessment, analyze: analyzeGithubProfile, reset: resetAnalysis } = useDashboardAnalysis()
+const { githubUsername, assessment: realAssessment, evidence: realEvidence, phase: analysisPhase, githubProgress, errorMessage: realAssessmentError, isLoading: isLoadingRealAssessment, analyze: analyzeGithubProfile, reset: resetAnalysis } = useDashboardAnalysis()
 const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
 const mockProfileCount = dashboardMockProfiles.length
 const dashboardModel = computed(() => realAssessment.value && realEvidence.value
@@ -244,6 +244,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       <DashboardExplorer
         :model="dashboardModel"
         :phase="analysisPhase"
+        :progress="githubProgress"
         :username="githubUsername"
         :error-message="realAssessmentError"
         :panel-class="currentColorProfile.panelClass"

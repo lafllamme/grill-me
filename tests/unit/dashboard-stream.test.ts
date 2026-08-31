@@ -8,6 +8,7 @@ describe('dashboard profile stream contract', () => {
     const encoder = new TextEncoder()
     const chunks = [
       'event: meta\ndata: {"type":"meta","requestId":"abc123","username":"lafllamme"}\n\n',
+      'event: github_progress\ndata: {"type":"github_progress","phase":"commits","message":"Commit evidence is ready for scoring.","counts":{"repositories":1,"candidateCommits":12,"enrichedCommits":12,"usablePatches":4,"associatedPullRequests":0,"checkSummaries":0}}\n\n',
       'event: status\ndata: {"type":"status","phase":"scoring","message":"Scoring"}\n\n',
       'event: done\ndata: {"type":"done","data":{"assessment":{},"evidence":{"commits":[],"pullRequests":[]}}}\n\n',
     ]
@@ -16,6 +17,7 @@ describe('dashboard profile stream contract', () => {
         controller.enqueue(encoder.encode(chunks[0]!.slice(0, 48)))
         controller.enqueue(encoder.encode(`${chunks[0]!.slice(48)}${chunks[1]}`))
         controller.enqueue(encoder.encode(chunks[2]!))
+        controller.enqueue(encoder.encode(chunks[3]!))
         controller.close()
       },
     })
@@ -23,7 +25,7 @@ describe('dashboard profile stream contract', () => {
 
     await consumeDashboardProfileSse(new Response(stream), event => events.push(event.type))
 
-    expect(events).toEqual(['meta', 'status', 'done'])
+    expect(events).toEqual(['meta', 'github_progress', 'status', 'done'])
   })
 
   it('keeps patch content server-side when shaping client evidence', () => {

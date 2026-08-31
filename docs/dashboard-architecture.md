@@ -134,6 +134,10 @@ Transport status:
   callers that do not need progressive updates;
 - the client switches from `collecting-github` to `scoring` and then
   `reviewing-ai` only when the server emits those stages;
+- while GitHub is collecting, the stream emits small `github_progress` events
+  for identity, repositories, history, enriched commits, pull requests, and
+  checks. These events contain counters only; patch content never travels in
+  a progress event;
 - no timer is allowed to pretend that a score or roast already exists.
 
 The typed stream events update the same model without changing the panels:
@@ -151,6 +155,17 @@ error
 The existing roast SSE contract remains separate. Dashboard streaming may
 reuse its event discipline, but must not silently change the public roast
 contract.
+
+### Loading and reveal behaviour
+
+The Explorer uses a stable Bento shell while no live model exists. Each future
+panel keeps its final grid position and shows a small, labelled loading surface
+instead of one large empty card. Real GitHub counters update the collection
+surface as they arrive. Once deterministic scores and evidence are available,
+the same panel composition enters with a short opacity/transform stagger; the
+AI review then updates the existing model in place. This is visual staging, not
+synthetic backend latency, and reduced-motion users receive the same states
+without the transitions.
 
 ## Request and quota policy
 
@@ -212,9 +227,10 @@ Cloudflare requests.
   for the shared response contract so it does not create a duplicate GitHub/AI
   request.
 - Phase C is in progress: the Explorer uses one SSE request and receives
-  evidence, deterministic scores, and the final AI-reviewed response in order.
-  The landing host still needs to consume this same combined response before it
-  mounts the dashboard there.
+  GitHub progress counters, evidence, deterministic scores, and the final
+  AI-reviewed response in order. Its loading shell now mirrors the final Bento
+  layout and the ready panels reveal in sequence. The landing host still needs
+  to consume this same combined response before it mounts the dashboard there.
 - This work does not change scoring formulas or introduce persistence.
 
 ## Non-goals for this refactor

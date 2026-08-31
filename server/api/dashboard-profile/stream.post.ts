@@ -6,6 +6,15 @@ import { runDashboardProfileAnalysis } from '../../roast/dashboard-profile-servi
 import { toErrorBody, toHandledError } from '../../roast/orchestrator'
 import { checkRateLimit } from '../../roast/rate-limit'
 
+const githubProgressMessages = {
+  'profile': 'GitHub identity confirmed.',
+  'repositories': 'Repository scope mapped.',
+  'history': 'Personal commit history collected.',
+  'commits': 'Commit evidence is ready for scoring.',
+  'pull-requests': 'Review context attached.',
+  'checks': 'GitHub evidence pass complete.',
+} as const
+
 export default defineEventHandler(async (event) => {
   const requestId = randomUUID().slice(0, 8)
   const body = await readBody<{ username?: unknown }>(event)
@@ -49,6 +58,22 @@ export default defineEventHandler(async (event) => {
           aiMaxTokens: Number(config.cfAiMaxTokens) || 2200,
         }, {
           onStatus: (phase, message) => writeEvent({ type: 'status', phase, message }),
+          onGithubProgress: (progress) => {
+            const collection = progress.context.collection
+            writeEvent({
+              type: 'github_progress',
+              phase: progress.phase,
+              message: githubProgressMessages[progress.phase],
+              counts: {
+                repositories: collection?.repositories ?? progress.context.repositories?.length ?? 0,
+                candidateCommits: collection?.candidateCommits ?? 0,
+                enrichedCommits: collection?.enrichedCommits ?? progress.context.commits.length,
+                usablePatches: collection?.usablePatches ?? 0,
+                associatedPullRequests: collection?.associatedPullRequests ?? progress.context.prs.length,
+                checkSummaries: collection?.checkSummaries ?? progress.context.checks?.length ?? 0,
+              },
+            })
+          },
           onEvidence: evidence => writeEvent({ type: 'evidence', evidence }),
           onDeterministicScores: assessment => writeEvent({ type: 'deterministic_scores', assessment }),
         })

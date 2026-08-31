@@ -1,4 +1,4 @@
-import type { DashboardProfileStreamEvent } from '~~/shared/dashboard/contracts'
+import type { DashboardProfileStreamEvent, DashboardProfileStreamGithubProgressEvent } from '~~/shared/dashboard/contracts'
 import type { DashboardAnalysisPhase, DashboardApiResponse } from '~/components/dashboard-explorer/types'
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { requestDashboardProfileStream } from '~/utils/dashboard-api'
@@ -21,6 +21,7 @@ export function useDashboardAnalysis() {
   const githubUsername = ref('lafllamme')
   const assessment = ref<DashboardApiResponse['assessment'] | null>(null)
   const evidence = ref<DashboardApiResponse['evidence'] | null>(null)
+  const githubProgress = ref<DashboardProfileStreamGithubProgressEvent | null>(null)
   const phase = ref<DashboardAnalysisPhase>('idle')
   const errorMessage = ref('')
   const isLoading = computed(() => phase.value === 'collecting-github' || phase.value === 'scoring' || phase.value === 'reviewing-ai' || phase.value === 'finalizing')
@@ -31,6 +32,7 @@ export function useDashboardAnalysis() {
     requestController = undefined
     assessment.value = null
     evidence.value = null
+    githubProgress.value = null
     errorMessage.value = ''
     phase.value = 'idle'
   }
@@ -46,6 +48,7 @@ export function useDashboardAnalysis() {
     githubUsername.value = normalizedUsername
     assessment.value = null
     evidence.value = null
+    githubProgress.value = null
     errorMessage.value = ''
     phase.value = 'collecting-github'
 
@@ -59,6 +62,11 @@ export function useDashboardAnalysis() {
 
         if (event.type === 'evidence') {
           evidence.value = event.evidence
+          return
+        }
+
+        if (event.type === 'github_progress') {
+          githubProgress.value = event
           return
         }
 
@@ -102,6 +110,7 @@ export function useDashboardAnalysis() {
     githubUsername,
     assessment,
     evidence,
+    githubProgress,
     phase,
     errorMessage,
     isLoading,

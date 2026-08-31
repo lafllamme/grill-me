@@ -156,6 +156,22 @@ export interface DashboardProfileStreamStatusEvent {
   message: string
 }
 
+export type DashboardProfileGithubProgressPhase = 'profile' | 'repositories' | 'history' | 'commits' | 'pull-requests' | 'checks'
+
+export interface DashboardProfileStreamGithubProgressEvent {
+  type: 'github_progress'
+  phase: DashboardProfileGithubProgressPhase
+  message: string
+  counts: {
+    repositories: number
+    candidateCommits: number
+    enrichedCommits: number
+    usablePatches: number
+    associatedPullRequests: number
+    checkSummaries: number
+  }
+}
+
 export interface DashboardProfileStreamEvidenceEvent {
   type: 'evidence'
   evidence: DashboardEvidence
@@ -182,6 +198,7 @@ export interface DashboardProfileStreamErrorEvent {
 export type DashboardProfileStreamEvent
   = | DashboardProfileStreamMetaEvent
     | DashboardProfileStreamStatusEvent
+    | DashboardProfileStreamGithubProgressEvent
     | DashboardProfileStreamEvidenceEvent
     | DashboardProfileStreamScoresEvent
     | DashboardProfileStreamDoneEvent

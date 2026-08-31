@@ -31,6 +31,7 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
       v-if="shouldShowState"
       class="lg:col-span-12"
       :phase="phase"
+      :progress="progress"
       :panel-class="panelClass"
       :muted-class="mutedClass"
       :username="username"
@@ -38,65 +39,84 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
       @retry="emit('retry')"
     />
     <template v-else-if="renderModel">
-      <ProfileRadarPanel
-        :key="`${renderModel.key}-radar`"
-        class="lg:col-span-6"
-        :data="renderModel.charts.radar"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
-      <VerdictPanel
-        :key="`${renderModel.key}-verdict`"
-        class="lg:col-span-6"
-        :grade="renderModel.verdict.grade"
-        :growth-level="renderModel.verdict.growthLevel"
-        :headline="renderModel.verdict.headline"
-        :note="renderModel.verdict.note"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
-      <EvidenceRingPanel
-        :key="`${renderModel.key}-ring`"
-        :data="renderModel.charts.ring"
-        heading="Profile signals"
-        center-label="Profile score"
-        :is-live="renderModel.source === 'live'"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
-      <ChangeGaugePanel
-        :key="`${renderModel.key}-gauge`"
-        :value="renderModel.charts.gauge.value"
-        :center-value="renderModel.charts.gauge.centerValue"
-        :label="renderModel.charts.gauge.label"
-        :description="renderModel.charts.gauge.description"
-        :is-live="renderModel.source === 'live'"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
-      <ChangeVolumePanel
-        :key="`${renderModel.key}-volume`"
-        :data="renderModel.charts.changeVolume"
-        :chart-status="chartStatus"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
-      <CommitTimelinePanel
-        :key="`${renderModel.key}-timeline`"
-        :data="renderModel.charts.commitRhythm"
-        :markers="renderModel.source === 'live' ? [] : undefined"
-        :chart-status="chartStatus"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
-      <RepositorySunburstPanel
-        :key="`${renderModel.key}-sunburst`"
-        :data="renderModel.charts.repositoryAnatomy"
-        :description="renderModel.source === 'live' ? 'Files and folders are sized by changed lines in the enriched GitHub sample.' : 'Repository folders and file hotspots derived from the selected mock profile.'"
-        :is-live="renderModel.source === 'live'"
-        :panel-class="panelClass"
-        :muted-class="mutedClass"
-      />
+      <TransitionGroup
+        tag="div"
+        class="contents"
+        appear
+        enter-active-class="transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+        enter-from-class="opacity-0 translate-y-4 blur-sm"
+        enter-to-class="opacity-100 translate-y-0 blur-0"
+        leave-active-class="transition-[opacity,transform,filter] duration-300 ease-in motion-reduce:transition-none"
+        leave-from-class="opacity-100 translate-y-0 blur-0"
+        leave-to-class="opacity-0 translate-y-2 blur-sm"
+      >
+        <ProfileRadarPanel
+          :key="`${renderModel.key}-radar`"
+          :style="{ transitionDelay: '0ms' }"
+          class="lg:col-span-6"
+          :data="renderModel.charts.radar"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <VerdictPanel
+          :key="`${renderModel.key}-verdict`"
+          :style="{ transitionDelay: '70ms' }"
+          class="lg:col-span-6"
+          :grade="renderModel.verdict.grade"
+          :growth-level="renderModel.verdict.growthLevel"
+          :headline="renderModel.verdict.headline"
+          :note="renderModel.verdict.note"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <EvidenceRingPanel
+          :key="`${renderModel.key}-ring`"
+          :style="{ transitionDelay: '140ms' }"
+          :data="renderModel.charts.ring"
+          heading="Profile signals"
+          center-label="Profile score"
+          :is-live="renderModel.source === 'live'"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <ChangeGaugePanel
+          :key="`${renderModel.key}-gauge`"
+          :style="{ transitionDelay: '210ms' }"
+          :value="renderModel.charts.gauge.value"
+          :center-value="renderModel.charts.gauge.centerValue"
+          :label="renderModel.charts.gauge.label"
+          :description="renderModel.charts.gauge.description"
+          :is-live="renderModel.source === 'live'"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <ChangeVolumePanel
+          :key="`${renderModel.key}-volume`"
+          :style="{ transitionDelay: '280ms' }"
+          :data="renderModel.charts.changeVolume"
+          :chart-status="chartStatus"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <CommitTimelinePanel
+          :key="`${renderModel.key}-timeline`"
+          :style="{ transitionDelay: '350ms' }"
+          :data="renderModel.charts.commitRhythm"
+          :markers="renderModel.source === 'live' ? [] : undefined"
+          :chart-status="chartStatus"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <RepositorySunburstPanel
+          :key="`${renderModel.key}-sunburst`"
+          :style="{ transitionDelay: '420ms' }"
+          :data="renderModel.charts.repositoryAnatomy"
+          :description="renderModel.source === 'live' ? 'Files and folders are sized by changed lines in the enriched GitHub sample.' : 'Repository folders and file hotspots derived from the selected mock profile.'"
+          :is-live="renderModel.source === 'live'"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+      </TransitionGroup>
     </template>
   </div>
 </template>

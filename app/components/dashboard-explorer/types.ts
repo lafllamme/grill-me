@@ -1,4 +1,4 @@
-import type { DashboardEvidenceCommit, DashboardProfileAssessment, DashboardProfileResponse } from '~~/shared/dashboard/contracts'
+import type { DashboardEvidenceCommit, DashboardProfileAssessment, DashboardProfileResponse, DashboardProfileStreamGithubProgressEvent } from '~~/shared/dashboard/contracts'
 import type { BklitBarDatum } from '~/components/dashboard/bklit/bar-context'
 import type { BklitRadarData, BklitRadarMetric } from '~/components/dashboard/bklit/radar-context'
 import type { SunburstNode } from '~/components/dashboard/bklit/sunburst'
@@ -61,6 +61,7 @@ export interface DashboardExplorerModel {
 export interface DashboardExplorerProps {
   model?: DashboardExplorerModel | null
   phase: DashboardAnalysisPhase
+  progress?: DashboardProfileStreamGithubProgressEvent | null
   panelClass: string
   mutedClass: string
   username?: string

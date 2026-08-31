@@ -81,6 +81,13 @@ export interface GithubContext {
   collection?: GithubCollectionSummary
 }
 
+export type GithubCollectionProgressPhase = 'profile' | 'repositories' | 'history' | 'commits' | 'pull-requests' | 'checks'
+
+export interface GithubCollectionProgress {
+  phase: GithubCollectionProgressPhase
+  context: GithubContext
+}
+
 interface GithubCommitRef {
   repo: string
   sha: string
@@ -545,6 +552,7 @@ function commitTimestamp(value?: string): number {
 export async function collectDashboardGithubContext(username: string, githubToken: string | undefined, options?: {
   githubTimeoutMs?: number
   debug?: RoastDebug
+  onProgress?: (progress: GithubCollectionProgress) => void | Promise<void>
 }): Promise<GithubContext> {
   const githubTimeoutMs = options?.githubTimeoutMs ?? ROAST_DEFAULTS.githubTimeoutMs
   const debug = options?.debug
@@ -556,6 +564,25 @@ export async function collectDashboardGithubContext(username: string, githubToke
     'github_profile',
   )
   const canonicalLogin = typeof profile?.login === 'string' ? profile.login : username
+  await options?.onProgress?.({
+    phase: 'profile',
+    context: {
+      username: canonicalLogin,
+      commits: [],
+      prs: [],
+      repositories: [],
+      checks: [],
+      collection: {
+        mode: 'dashboard',
+        repositories: 0,
+        candidateCommits: 0,
+        enrichedCommits: 0,
+        usablePatches: 0,
+        associatedPullRequests: 0,
+        checkSummaries: 0,
+      },
+    },
+  })
   const repositoryResponse = await getGithubJson(
     `https://api.github.com/users/${encodeURIComponent(canonicalLogin)}/repos?type=owner&sort=pushed&direction=desc&per_page=${DASHBOARD_GITHUB_LIMITS.maxRepositoryCandidates}`,
     githubToken,
@@ -570,6 +597,25 @@ export async function collectDashboardGithubContext(username: string, githubToke
   const repositories = selectedRawRepositories
     .map(parseRepositoryEvidence)
     .filter((repository): repository is GithubRepositoryEvidence => Boolean(repository))
+  await options?.onProgress?.({
+    phase: 'repositories',
+    context: {
+      username: canonicalLogin,
+      commits: [],
+      prs: [],
+      repositories,
+      checks: [],
+      collection: {
+        mode: 'dashboard',
+        repositories: repositories.length,
+        candidateCommits: 0,
+        enrichedCommits: 0,
+        usablePatches: 0,
+        associatedPullRequests: 0,
+        checkSummaries: 0,
+      },
+    },
+  })
 
   const commitRefs = new Map<string, GithubCommitRef>()
   for (const repository of repositories) {
@@ -605,6 +651,26 @@ export async function collectDashboardGithubContext(username: string, githubToke
     }
   }
 
+  await options?.onProgress?.({
+    phase: 'history',
+    context: {
+      username: canonicalLogin,
+      commits: [],
+      prs: [],
+      repositories,
+      checks: [],
+      collection: {
+        mode: 'dashboard',
+        repositories: repositories.length,
+        candidateCommits: commitRefs.size,
+        enrichedCommits: 0,
+        usablePatches: 0,
+        associatedPullRequests: 0,
+        checkSummaries: 0,
+      },
+    },
+  })
+
   const candidateRefs = Array.from(commitRefs.values())
     .sort((left, right) => commitTimestamp(right.committedAt) - commitTimestamp(left.committedAt) || right.sha.localeCompare(left.sha))
     .slice(0, DASHBOARD_GITHUB_LIMITS.maxCandidateCommits)
@@ -626,6 +692,26 @@ export async function collectDashboardGithubContext(username: string, githubToke
       continue
     }
   }
+
+  await options?.onProgress?.({
+    phase: 'commits',
+    context: {
+      username: canonicalLogin,
+      commits,
+      prs: [],
+      repositories,
+      checks: [],
+      collection: {
+        mode: 'dashboard',
+        repositories: repositories.length,
+        candidateCommits: candidateRefs.length,
+        enrichedCommits: commits.length,
+        usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
+        associatedPullRequests: 0,
+        checkSummaries: 0,
+      },
+    },
+  })
 
   const prsByKey = new Map<string, GithubPullRequest>()
   const checks: GithubCheckSummary[] = []
@@ -666,6 +752,26 @@ export async function collectDashboardGithubContext(username: string, githubToke
     }
   }
 
+  await options?.onProgress?.({
+    phase: 'pull-requests',
+    context: {
+      username: canonicalLogin,
+      commits,
+      prs,
+      repositories,
+      checks: [],
+      collection: {
+        mode: 'dashboard',
+        repositories: repositories.length,
+        candidateCommits: candidateRefs.length,
+        enrichedCommits: commits.length,
+        usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
+        associatedPullRequests: prs.length,
+        checkSummaries: 0,
+      },
+    },
+  })
+
   for (const commit of commits.slice(0, DASHBOARD_GITHUB_LIMITS.maxCheckRequests)) {
     try {
       const checkResponse = await getGithubJson(
@@ -681,6 +787,26 @@ export async function collectDashboardGithubContext(username: string, githubToke
       continue
     }
   }
+
+  await options?.onProgress?.({
+    phase: 'checks',
+    context: {
+      username: canonicalLogin,
+      commits,
+      prs,
+      repositories,
+      checks,
+      collection: {
+        mode: 'dashboard',
+        repositories: repositories.length,
+        candidateCommits: candidateRefs.length,
+        enrichedCommits: commits.length,
+        usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
+        associatedPullRequests: prs.length,
+        checkSummaries: checks.length,
+      },
+    },
+  })
 
   return {
     username: canonicalLogin,

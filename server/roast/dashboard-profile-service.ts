@@ -1,6 +1,6 @@
 import type { DashboardEvidence, DashboardProfileAssessment, DashboardProfileResponse, DashboardProfileStreamPhase } from '~~/shared/dashboard/contracts'
 import type { DashboardAiReviewAssessment } from './dashboard-ai-scoring'
-import type { GithubContext } from './github-collector'
+import type { GithubCollectionProgress, GithubContext } from './github-collector'
 import { assessDashboardProfileWithAi, toDashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import { toDashboardEvidence } from './dashboard-profile-evidence'
 import { scoreDashboardProfile } from './dashboard-profile-scoring'
@@ -19,6 +19,7 @@ export interface DashboardProfileAnalysisInput {
 
 export interface DashboardProfileAnalysisHooks {
   onStatus?: (phase: DashboardProfileStreamPhase, message: string) => void | Promise<void>
+  onGithubProgress?: (progress: GithubCollectionProgress) => void | Promise<void>
   onEvidence?: (evidence: DashboardEvidence) => void | Promise<void>
   onDeterministicScores?: (assessment: DashboardProfileAssessment) => void | Promise<void>
 }
@@ -44,6 +45,7 @@ export async function runDashboardProfileAnalysis(
   const githubStartedAt = Date.now()
   const context = await collectDashboardGithubContext(input.username, input.githubToken, {
     githubTimeoutMs: input.githubTimeoutMs,
+    onProgress: progress => hooks?.onGithubProgress?.(progress),
   })
   const githubDurationMs = Date.now() - githubStartedAt
   const evidence = toDashboardEvidence(context)

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { DashboardProfileStreamGithubProgressEvent } from '~~/shared/dashboard/contracts'
 import type { DashboardAnalysisPhase } from './types'
 import { computed } from 'vue'
+import DashboardExplorerLoadingGrid from './DashboardExplorerLoadingGrid.vue'
 
 const props = withDefaults(defineProps<{
   phase: DashboardAnalysisPhase
@@ -8,9 +10,11 @@ const props = withDefaults(defineProps<{
   mutedClass: string
   username?: string
   errorMessage?: string | null
+  progress?: DashboardProfileStreamGithubProgressEvent | null
 }>(), {
   username: '',
   errorMessage: null,
+  progress: null,
 })
 
 const emit = defineEmits<{
@@ -55,40 +59,45 @@ const statusLabel = computed(() => {
 </script>
 
 <template>
-  <section
-    :class="props.panelClass"
-    :data-state="stateKind"
-    data-testid="dashboard-analysis-state"
-    class="p-6 border-[1px] border-current/12 rounded-[28px] flex flex-col min-h-[22rem] justify-between sm:p-8"
-    aria-live="polite"
-  >
-    <div class="flex gap-4 items-start justify-between">
-      <p :class="props.mutedClass" class="text-[10px] tracking-[0.15em] font-meta uppercase">
-        {{ stateCopy.eyebrow }}
-      </p>
-      <span :class="stateKind === 'error' ? 'text-primary' : props.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">
-        {{ statusLabel }}
-      </span>
-    </div>
-
-    <div>
-      <div v-if="stateKind === 'loading'" aria-hidden="true" class="mb-8 opacity-55 gap-3 grid grid-cols-2 sm:grid-cols-4">
-        <span v-for="index in 8" :key="index" :class="props.mutedClass" class="rounded-[6px] bg-current/12 h-2 animate-pulse" />
+  <div :data-state="stateKind" data-testid="dashboard-analysis-state" class="lg:col-span-12">
+    <DashboardExplorerLoadingGrid
+      v-if="stateKind === 'loading'"
+      :panel-class="props.panelClass"
+      :muted-class="props.mutedClass"
+      :username="props.username"
+      :progress="props.progress"
+    />
+    <section
+      v-else
+      :class="props.panelClass"
+      class="p-6 border-[1px] border-current/12 rounded-[28px] flex flex-col min-h-[22rem] justify-between sm:p-8"
+      aria-live="polite"
+    >
+      <div class="flex gap-4 items-start justify-between">
+        <p :class="props.mutedClass" class="text-[10px] tracking-[0.15em] font-meta uppercase">
+          {{ stateCopy.eyebrow }}
+        </p>
+        <span :class="stateKind === 'error' ? 'text-primary' : props.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">
+          {{ statusLabel }}
+        </span>
       </div>
-      <h2 class="text-3xl leading-[0.98] tracking-[-0.055em] font-display max-w-[16ch] sm:text-5xl">
-        {{ stateCopy.title }}
-      </h2>
-      <p :class="props.mutedClass" class="text-sm leading-6 mt-5 max-w-[38rem]">
-        {{ stateCopy.description }}
-      </p>
-      <button
-        v-if="stateKind === 'error'"
-        class="text-xs text-primary-strong tracking-[0.1em] font-meta mt-8 px-4 border-[1px] border-primary rounded-[8px] h-10 uppercase transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-primary"
-        type="button"
-        @click="emit('retry')"
-      >
-        Retry analysis
-      </button>
-    </div>
-  </section>
+
+      <div>
+        <h2 class="text-3xl leading-[0.98] tracking-[-0.055em] font-display max-w-[16ch] sm:text-5xl">
+          {{ stateCopy.title }}
+        </h2>
+        <p :class="props.mutedClass" class="text-sm leading-6 mt-5 max-w-[38rem]">
+          {{ stateCopy.description }}
+        </p>
+        <button
+          v-if="stateKind === 'error'"
+          class="text-xs text-primary-strong tracking-[0.1em] font-meta mt-8 px-4 border-[1px] border-primary rounded-[8px] h-10 uppercase transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-primary"
+          type="button"
+          @click="emit('retry')"
+        >
+          Retry analysis
+        </button>
+      </div>
+    </section>
+  </div>
 </template>
