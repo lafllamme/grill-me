@@ -229,7 +229,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
             <button
               :disabled="isLoadingRealAssessment"
               :class="isLoadingRealAssessment ? 'opacity-60 cursor-wait' : ''"
-              class="text-xs text-primary font-meta px-3 border-[1px] border-primary rounded-[8px] h-9 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-primary"
+              class="text-xs text-primary-strong font-meta px-3 border-[1px] border-primary rounded-[8px] h-9 transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-primary"
               type="submit"
             >
               {{ isLoadingRealAssessment ? 'Analyzing…' : 'Analyze live' }}
@@ -244,8 +244,11 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       <DashboardExplorer
         :model="dashboardModel"
         :phase="analysisPhase"
+        :username="githubUsername"
+        :error-message="realAssessmentError"
         :panel-class="currentColorProfile.panelClass"
         :muted-class="currentColorProfile.mutedClass"
+        @retry="submitAnalysis"
       />
 
       <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] font-meta mt-8 flex flex-wrap gap-4 uppercase justify-between">

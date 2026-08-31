@@ -152,6 +152,12 @@ frequency and burstiness, safety shapes deletion/churn pressure, clarity and
 complexity shape change volume and touched-file spread, and context shapes the
 documentation share in the repository anatomy.
 
+Loading belongs to the dashboard analysis lifecycle, not to individual chart
+timers. The root renders the honest `idle`, `loading`, `empty`, `error`, or
+`ready` state, and charts receive `loading` only when the shared model is being
+progressively populated. This prevents a ready response from appearing empty
+for an unrelated fixed delay.
+
 The evidence ring intentionally shows both the score and its percentage
 equivalent because every profile signal is normalized to a `0–100` scale. Raw
 GitHub totals stay in the evidence and frequency cards, where they answer a

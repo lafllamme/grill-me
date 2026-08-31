@@ -9,6 +9,7 @@ export interface DashboardExplorerPanelProps {
   panelClass: string
   mutedClass: string
   isLive?: boolean
+  chartStatus?: 'loading' | 'ready'
 }
 
 export type DashboardAnalysisPhase = 'idle' | 'collecting-github' | 'scoring' | 'reviewing-ai' | 'ready' | 'error'
@@ -58,10 +59,12 @@ export interface DashboardExplorerModel {
 }
 
 export interface DashboardExplorerProps {
-  model: DashboardExplorerModel
+  model?: DashboardExplorerModel | null
   phase: DashboardAnalysisPhase
   panelClass: string
   mutedClass: string
+  username?: string
+  errorMessage?: string | null
 }
 
 export type DashboardApiResponse = DashboardProfileResponse

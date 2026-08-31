@@ -180,9 +180,14 @@ Cloudflare requests.
 ### Phase B — host integration
 
 - Reduce `dashboard-explorer.vue` to route shell, controls, and theme state.
-- Mount the same `DashboardExplorer` from the landing result surface.
+- Make `DashboardExplorer` embeddable with a nullable model and an explicit
+  retry event. The landing result surface can mount it once the shared roast
+  response contains the dashboard model.
 - Keep landing-specific roast copy and actions outside the dashboard component.
 - Add explicit idle, loading, empty, error, and ready states to the shared root.
+- Keep the current landing roast request separate for now. Starting a second
+  dashboard request from the landing page would fetch the same GitHub trail and
+  AI review twice, which is the wrong quota and latency trade-off.
 
 ### Phase C — progressive transport
 
@@ -198,11 +203,13 @@ Cloudflare requests.
 - Mock profiles already populate every chart from one profile definition.
 - `POST /api/dashboard-profile` already performs bounded GitHub collection,
   deterministic scoring, and one combined AI review.
-- The remaining structural problem is that the Explorer page still owns the
-  response types, live-data transformations, request lifecycle, and panel
-  composition in one file.
-- This refactor addresses that boundary first; it does not change scoring
-  formulas or introduce persistence.
+- Phase A is complete: the response contract, normalized model, request
+  composable, and composition root are reusable and independently testable.
+- Phase B is in progress: the root now owns honest idle/loading/empty/error
+  rendering, retry dispatch, and chart status. The landing host is deliberately
+  waiting for the shared response contract so it does not create a duplicate
+  GitHub/AI request.
+- This work does not change scoring formulas or introduce persistence.
 
 ## Non-goals for this refactor
 
