@@ -16,6 +16,9 @@ has been checked against the Bklit reference in a real browser.
 The scoring and evidence pipeline for those fields is documented in
 [Dashboard Profile Scoring](./dashboard-profile-scoring.md).
 
+The reusable dashboard composition, model boundaries, and input → GitHub → AI
+flow are documented in [Dashboard Architecture](./dashboard-architecture.md).
+
 ## Porting rule
 
 The source of truth for component behaviour is:

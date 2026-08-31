@@ -68,6 +68,11 @@ That model remains compatible for existing roast and leaderboard consumers. The
 dashboard requires a separate `DashboardProfileAssessment` contract rather
 than reusing those values.
 
+The assessment is consumed by the reusable dashboard data flow documented in
+[Dashboard Architecture](./dashboard-architecture.md). This scoring document
+owns the numbers and evidence rules; it does not own page layout or request
+lifecycle.
+
 ## Dashboard evidence model
 
 The current server-owned core assessment shape is intentionally separate from

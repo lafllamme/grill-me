@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import type { BklitBarDatum } from '~/components/dashboard/bklit/bar-context'
-import type { SunburstNode } from '~/components/dashboard/bklit/sunburst'
-import type { RoastTimelineDatum } from '~/data/roast-dashboard-explorer'
 import { computed, ref } from 'vue'
 import { useHead, useSeoMeta } from '#imports'
-import ChangeGaugePanel from '~/components/dashboard-explorer/change-gauge/ChangeGaugePanel.vue'
-import ChangeVolumePanel from '~/components/dashboard-explorer/change-volume/ChangeVolumePanel.vue'
-import CommitTimelinePanel from '~/components/dashboard-explorer/commit-timeline/CommitTimelinePanel.vue'
-import EvidenceRingPanel from '~/components/dashboard-explorer/evidence-ring/EvidenceRingPanel.vue'
-import ProfileRadarPanel from '~/components/dashboard-explorer/profile-radar/ProfileRadarPanel.vue'
-import RepositorySunburstPanel from '~/components/dashboard-explorer/repository-sunburst/RepositorySunburstPanel.vue'
-import VerdictPanel from '~/components/dashboard-explorer/verdict/VerdictPanel.vue'
+import { buildLiveDashboardModel, buildMockDashboardModel } from '~/components/dashboard-explorer/dashboard-model'
+import DashboardExplorer from '~/components/dashboard-explorer/DashboardExplorer.vue'
+import { useDashboardAnalysis } from '~/composables/useDashboardAnalysis'
 import { dashboardMockProfiles } from '~/data/dashboard-mock-profiles'
 
 interface DashboardColorProfile {
@@ -34,224 +27,13 @@ interface ChartPalette {
   surfaceVariant: string
 }
 
-interface RealSafetySignal {
-  category: 'validation' | 'auth' | 'error-handling' | 'secrets' | 'dependency'
-  verdict: 'safe' | 'risk' | 'unclear'
-  impact: 'introduced' | 'fixed' | 'unclear'
-  severity: 'low' | 'medium' | 'high'
-  commitSha: string
-  evidence: string
-}
-
-interface RealAiFinding {
-  axis: 'clarity' | 'safety' | 'workflow' | 'complexity' | 'context'
-  verdict: 'positive' | 'mixed' | 'negative' | 'unclear'
-  impact: 'introduced' | 'fixed' | 'unclear'
-  severity: 'low' | 'medium' | 'high'
-  commitSha: string
-  filename: string
-  evidence: string
-  category?: string
-}
-
-interface RealAiReview {
-  confidence: number
-  status: string
-  selectedCommitCount: number
-  patchCount: number
-  patchChars: number
-  findings: RealAiFinding[]
-}
-
-interface RealCommitFile {
-  filename: string
-  status: string
-  additions: number
-  deletions: number
-}
-
-interface RealCommitEvidence {
-  repo: string
-  sha: string
-  message: string
-  additions: number
-  deletions: number
-  changedFiles: number
-  committedAt?: string
-  files: RealCommitFile[]
-}
-
-interface RealDashboardEvidence {
-  commits: RealCommitEvidence[]
-  pullRequests: unknown[]
-}
-
-interface RealProfileAssessment {
-  username: string
-  scores: Record<'clarity' | 'safety' | 'workflow' | 'complexity' | 'context', number>
-  overallScore: number
-  grade: string
-  role: string
-  roleStatus: 'classified' | 'unclassified'
-  confidence: number
-  derivedMetrics: {
-    commitCount: number
-    pullRequestCount: number
-    additions: number
-    deletions: number
-    changedFiles: number
-    averageCommitSize: number
-    medianCommitSize: number
-    largestCommitSize: number
-    p90CommitSize: number
-    activeDays: number
-    spanDays: number
-    commitsPer30Days: number
-    averageFilesPerCommit: number
-    documentationFileRatio: number
-    testFileRatio: number
-    ciFileRatio: number
-    validationFileRatio: number
-    pullRequestCoverage: number
-    deletionRatio: number
-    riskyFileRatio: number
-    defensivePatchRatio: number
-    riskyPatchRatio: number
-    mergeCommitRatio: number
-    largeCommitRatio: number
-    messageQuality: number
-    conventionalMessageRatio: number
-    genericMessageRatio: number
-    emptyMessageRatio: number
-  }
-  evidenceWindow: { from?: string, to?: string }
-  aiSafety?: { confidence: number, status: string, signals: RealSafetySignal[] }
-  aiReview?: RealAiReview
-}
-
-interface RealDashboardResponse {
-  assessment: RealProfileAssessment
-  evidence: RealDashboardEvidence
-}
-
-interface MutableSunburstNode {
-  name: string
-  value?: number
-  children: Map<string, MutableSunburstNode>
-}
-
 const activeMockProfileIndex = ref(0)
-const githubUsername = ref('lafllamme')
-const realAssessment = ref<RealProfileAssessment | null>(null)
-const realEvidence = ref<RealDashboardEvidence | null>(null)
-const isLoadingRealAssessment = ref(false)
-const realAssessmentError = ref('')
+const { githubUsername, assessment: realAssessment, evidence: realEvidence, phase: analysisPhase, errorMessage: realAssessmentError, isLoading: isLoadingRealAssessment, analyze: analyzeGithubProfile, reset: resetAnalysis } = useDashboardAnalysis()
 const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
 const mockProfileCount = dashboardMockProfiles.length
-const fixture = computed(() => activeMockProfile.value.dashboard)
-const explorerFixture = computed(() => activeMockProfile.value.explorer)
-const commitFrequencyGauge = computed(() => Math.min(100, fixture.value.evidence.commits))
-const displayedRadarProfile = computed(() => realAssessment.value
-  ? { metrics: fixture.value.radarProfile.metrics, data: [{ label: realAssessment.value.username, color: 'var(--color-primary-strong)', values: realAssessment.value.scores }] }
-  : fixture.value.radarProfile)
-const displayedRingProfile = computed(() => realAssessment.value
-  ? fixture.value.ringProfile.map(ring => ({ ...ring, value: realAssessment.value!.scores[ring.label.toLowerCase() as keyof RealProfileAssessment['scores']] ?? ring.value }))
-  : fixture.value.ringProfile)
-const displayedGrade = computed(() => realAssessment.value?.grade ?? fixture.value.grade)
-const displayedGaugeValue = computed(() => realAssessment.value ? Math.min(100, realAssessment.value.derivedMetrics.commitCount) : commitFrequencyGauge.value)
-const displayedGaugeCenterValue = computed(() => realAssessment.value?.derivedMetrics.commitCount ?? fixture.value.evidence.commits)
-const displayedVerdictGrowthLevel = computed(() => realAssessment.value ? 'Live profile' : fixture.value.growthLevel)
-const displayedVerdictHeadline = computed(() => realAssessment.value ? `${realAssessment.value.role} under review.` : fixture.value.headline)
-const displayedVerdictNote = computed(() => realAssessment.value
-  ? 'A bounded repository sample now connects the profile scores to the same commits, files, and review signals shown below.'
-  : fixture.value.note)
-
-const liveEvidenceCommits = computed(() => realEvidence.value?.commits ?? [])
-const displayedBarChangeVolume = computed<readonly BklitBarDatum[]>(() => {
-  if (!realAssessment.value || !liveEvidenceCommits.value.length)
-    return explorerFixture.value.barChangeVolume
-
-  return [...liveEvidenceCommits.value]
-    .sort((left, right) => Date.parse(left.committedAt ?? '') - Date.parse(right.committedAt ?? ''))
-    .slice(-8)
-    .map(commit => ({
-      label: commit.sha.slice(0, 7),
-      additions: commit.additions,
-      deletions: commit.deletions,
-    }))
-})
-
-const displayedTimeline = computed<readonly RoastTimelineDatum[]>(() => {
-  if (!realAssessment.value || !liveEvidenceCommits.value.length)
-    return explorerFixture.value.timeline
-
-  const grouped = new Map<string, RoastTimelineDatum>()
-  liveEvidenceCommits.value.forEach((commit, index) => {
-    const timestamp = commit.committedAt ? Date.parse(commit.committedAt) : Number.NaN
-    const date = Number.isFinite(timestamp) ? new Date(timestamp) : new Date(Date.UTC(2026, 0, index + 1))
-    const key = date.toISOString().slice(0, 10)
-    const current = grouped.get(key)
-    if (current) {
-      current.commits += 1
-      current.files += commit.changedFiles
-      current.additions += commit.additions
-      return
-    }
-
-    grouped.set(key, {
-      label: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date),
-      date: date.getTime(),
-      commits: 1,
-      files: commit.changedFiles,
-      additions: commit.additions,
-    })
-  })
-
-  return [...grouped.values()].sort((left, right) => Number(left.date) - Number(right.date))
-})
-
-function toSunburstNode(node: MutableSunburstNode): SunburstNode {
-  const children = [...node.children.values()].map(toSunburstNode)
-  return {
-    name: node.name,
-    ...(node.value !== undefined && !children.length ? { value: node.value } : {}),
-    ...(children.length ? { children } : {}),
-  }
-}
-
-const displayedSunburst = computed<SunburstNode>(() => {
-  if (!realAssessment.value || !liveEvidenceCommits.value.length)
-    return explorerFixture.value.sunburstData
-
-  const fileChanges = new Map<string, number>()
-  liveEvidenceCommits.value.forEach((commit) => {
-    commit.files.forEach((file) => {
-      fileChanges.set(file.filename, (fileChanges.get(file.filename) ?? 0) + Math.max(1, file.additions + file.deletions))
-    })
-  })
-
-  const root: MutableSunburstNode = { name: 'Repository', children: new Map() }
-  const rankedFiles = [...fileChanges.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, 80)
-  rankedFiles.forEach(([filename, value]) => {
-    const segments = filename.split('/').filter(Boolean)
-    let current = root
-    segments.forEach((segment, index) => {
-      const child = current.children.get(segment) ?? { name: segment, children: new Map<string, MutableSunburstNode>() }
-      current.children.set(segment, child)
-      if (index === segments.length - 1)
-        child.value = value
-      current = child
-    })
-  })
-
-  return toSunburstNode(root)
-})
-
-const displayedSunburstDescription = computed(() => realAssessment.value
-  ? 'Files and folders are sized by changed lines in the enriched GitHub sample.'
-  : 'Repository folders and file hotspots derived from the selected mock profile.')
+const dashboardModel = computed(() => realAssessment.value && realEvidence.value
+  ? buildLiveDashboardModel({ assessment: realAssessment.value, evidence: realEvidence.value }, activeMockProfile.value)
+  : buildMockDashboardModel(activeMockProfile.value))
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -335,6 +117,7 @@ const chartStyle = computed(() => ({
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
 function shiftMockProfile(direction: -1 | 1) {
+  resetAnalysis()
   activeMockProfileIndex.value = (activeMockProfileIndex.value + direction + mockProfileCount) % mockProfileCount
 }
 
@@ -343,23 +126,8 @@ function setColorMode(mode: ColorMode) {
   activeColorProfile.value = mode === 'dark' ? 'voidWhisper' : 'slateCloud'
 }
 
-async function analyzeGithubProfile() {
-  realAssessmentError.value = ''
-  isLoadingRealAssessment.value = true
-  try {
-    const response = await $fetch<RealDashboardResponse>('/api/dashboard-profile', {
-      method: 'POST',
-      body: { username: githubUsername.value },
-    })
-    realAssessment.value = response.assessment
-    realEvidence.value = response.evidence
-  }
-  catch (error: any) {
-    realAssessmentError.value = error?.data?.message || error?.statusMessage || 'GitHub profile could not be analyzed.'
-  }
-  finally {
-    isLoadingRealAssessment.value = false
-  }
+function submitAnalysis() {
+  void analyzeGithubProfile()
 }
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
@@ -445,7 +213,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               <Icon name="ph:caret-right" aria-hidden="true" />
             </button>
           </div>
-          <form class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end" @submit.prevent="analyzeGithubProfile">
+          <form class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end" @submit.prevent="submitAnalysis">
             <label :class="currentColorProfile.mutedClass" class="sr-only" for="github-profile">Analyze GitHub profile</label>
             <div class="px-3 border-[1px] border-current/20 rounded-[8px] bg-black/10 flex h-9 min-w-56 items-center">
               <span :class="currentColorProfile.mutedClass" class="text-xs font-meta mr-1">github.com/</span>
@@ -473,15 +241,12 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
         </fieldset>
       </header>
 
-      <div id="profile-panel" class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12">
-        <ProfileRadarPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-radar`" class="lg:col-span-6" :data="displayedRadarProfile" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <VerdictPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-verdict`" class="lg:col-span-6" :grade="displayedGrade" :growth-level="displayedVerdictGrowthLevel" :headline="displayedVerdictHeadline" :note="displayedVerdictNote" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <EvidenceRingPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-ring`" :data="displayedRingProfile" heading="Profile signals" center-label="Profile score" :is-live="Boolean(realAssessment)" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <ChangeGaugePanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-gauge`" :value="displayedGaugeValue" :center-value="displayedGaugeCenterValue" label="Commits" description="Commits recorded in the selected analysis window, normalized to a 100-commit scale." :is-live="Boolean(realAssessment)" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <ChangeVolumePanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-volume`" :data="displayedBarChangeVolume" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <CommitTimelinePanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-timeline`" :data="displayedTimeline" :markers="realAssessment ? [] : undefined" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-        <RepositorySunburstPanel :key="`${activeMockProfile.id}-${realAssessment?.username ?? 'mock'}-sunburst`" :data="displayedSunburst" :description="displayedSunburstDescription" :is-live="Boolean(realAssessment)" :panel-class="currentColorProfile.panelClass" :muted-class="currentColorProfile.mutedClass" />
-      </div>
+      <DashboardExplorer
+        :model="dashboardModel"
+        :phase="analysisPhase"
+        :panel-class="currentColorProfile.panelClass"
+        :muted-class="currentColorProfile.mutedClass"
+      />
 
       <footer :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.16em] font-meta mt-8 flex flex-wrap gap-4 uppercase justify-between">
         <span>Grillme</span><span>Profile view</span>

@@ -7,6 +7,10 @@ deterministic profile scorer. The AI does not produce category scores. The
 server owns the numbers so that the same GitHub evidence produces the same
 result on every request.
 
+The client-side orchestration and future progressive delivery are defined in
+[Dashboard Architecture](./dashboard-architecture.md). This document remains
+the source of truth for the AI payload and evidence contract.
+
 ## Evidence flow
 
 ```mermaid
