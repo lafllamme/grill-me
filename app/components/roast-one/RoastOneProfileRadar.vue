@@ -13,7 +13,7 @@ const profile = computed(() => props.dimensions.map((dimension, index) => point(
 
 <template>
   <div class="flex gap-5 items-center">
-    <svg class="h-44 w-44 shrink-0" viewBox="0 0 220 220" role="img" aria-label="Code profile radar">
+    <svg class="shrink-0 h-44 w-44" viewBox="0 0 220 220" role="img" aria-label="Code profile radar">
       <polygon v-for="value in [25, 50, 75, 100]" :key="value" :points="ring(value)" fill="none" class="stroke-divider" stroke-width="1" />
       <line v-for="(_, index) in dimensions" :key="`axis-${index}`" :x1="center" :y1="center" :x2="point(index, 100).split(',')[0]" :y2="point(index, 100).split(',')[1]" class="stroke-divider" stroke-width="1" />
       <polygon :points="profile" class="fill-primary/20 stroke-primary" stroke-width="2" />
@@ -21,8 +21,12 @@ const profile = computed(() => props.dimensions.map((dimension, index) => point(
     </svg>
     <div class="min-w-0 space-y-2">
       <div v-for="dimension in dimensions.slice(0, 3)" :key="dimension.key" class="text-[10px] font-meta">
-        <div class="text-on-surface-variant tracking-[0.1em] uppercase">{{ dimension.label }}</div>
-        <div class="text-on-background mt-0.5 flex gap-2 items-baseline"><span class="text-lg">{{ dimension.value }}</span><span class="truncate">{{ dimension.signal }}</span></div>
+        <div class="text-on-surface-variant tracking-[0.1em] uppercase">
+          {{ dimension.label }}
+        </div>
+        <div class="text-on-background mt-0.5 flex gap-2 items-baseline">
+          <span class="text-lg">{{ dimension.value }}</span><span class="truncate">{{ dimension.signal }}</span>
+        </div>
       </div>
     </div>
   </div>

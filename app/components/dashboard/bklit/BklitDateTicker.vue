@@ -13,9 +13,9 @@ const tickerY = useBklitSpring(computed(() => context.hoveredIndex.value === nul
 
 <template>
   <div v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'" class="pointer-events-none absolute z-20" :style="{ left: tickerLeft, bottom: '12px', transform: 'translateX(-50%)' }">
-    <div class="relative h-6 overflow-hidden rounded-full bg-on-background px-4 py-1 text-sm font-medium text-background shadow-lg">
+    <div class="text-sm text-background font-medium px-4 py-1 rounded-full bg-on-background h-6 shadow-lg relative overflow-hidden">
       <div class="flex flex-col transition-none" :style="{ transform: `translateY(${tickerY}px)` }">
-        <span v-for="(item, index) in context.data" :key="`${item[context.xDataKey]}-${index}`" class="flex h-6 shrink-0 items-center justify-center whitespace-nowrap">
+        <span v-for="(item, index) in context.data" :key="`${item[context.xDataKey]}-${index}`" class="flex shrink-0 h-6 whitespace-nowrap items-center justify-center">
           {{ item[context.xDataKey] }}
         </span>
       </div>

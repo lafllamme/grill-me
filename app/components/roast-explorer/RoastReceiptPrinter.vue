@@ -49,7 +49,7 @@ const tornEdgeClipPath = 'polygon(0 0, 100% 0, 100% 98%, 97% 100%, 94% 98%, 91% 
     <div class="rounded-[2rem] bg-bone-50 h-full relative overflow-visible">
       <div
         data-testid="roast-printer-stage"
-        class="mx-auto mt-8 max-w-[18.75rem] h-[47rem] w-[calc(100%-2rem)] relative"
+        class="mx-auto mt-8 h-[47rem] max-w-[18.75rem] w-[calc(100%-2rem)] relative"
       >
         <div class="rounded-[1.25rem] bg-basalt-700 h-[6.25rem] w-full shadow-lg inset-x-0 top-0 absolute z-0" />
 

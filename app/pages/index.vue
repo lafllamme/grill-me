@@ -398,7 +398,7 @@ function updateUsername(value: string) {
               id="top"
               class="px-[clamp(1.5rem,1.5vw,2rem)] pb-5 pt-24 flex flex-col min-h-[100svh] w-full justify-between relative lg:pb-7 sm:pt-28"
             >
-              <div aria-hidden="true" class="pointer-events-none z-20 inset-0 absolute hidden lg:block">
+              <div aria-hidden="true" class="hidden pointer-events-none inset-0 absolute z-20 lg:block">
                 <motion.span
                   v-for="(position, markerIndex) in [
                     'left-[38%] top-[63%]',
@@ -420,9 +420,9 @@ function updateUsername(value: string) {
               </div>
 
               <div
-                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start md:pt-[11.25svh] lg:pt-[8svh]"
+                class="fuel-hero-copy pt-[13svh] flex flex-1 items-start lg:pt-[8svh] md:pt-[11.25svh]"
               >
-                <div class="w-fit max-w-full">
+                <div class="max-w-full w-fit">
                   <p class="text-[clamp(1rem,1.25vw,1.25rem)] text-explore-copy leading-[1.26] tracking-[-0.035em] font-body font-normal">
                     <span
                       v-for="(line, lineIndex) in heroCopyLines"
@@ -450,7 +450,7 @@ function updateUsername(value: string) {
                     :transition="{ ...heroCopyItemTransition, delay: 1.6 }"
                   >
                     Grill now
-                    <span aria-hidden="true" class="border-t-[1px] border-r-[1px] border-explore-copy/85 h-2.5 w-2.5 border-solid transition-colors duration-300 ease-out group-hover:border-explore-copy/70" />
+                    <span aria-hidden="true" class="border-r-[1px] border-t-[1px] border-explore-copy/85 border-solid h-2.5 w-2.5 transition-colors duration-300 ease-out group-hover:border-explore-copy/70" />
                   </motion.a>
                 </div>
               </div>
@@ -458,7 +458,7 @@ function updateUsername(value: string) {
               <div class="mt-[1.1rem]">
                 <motion.h1
                   aria-label="Grill me"
-                  class="text-explore-copy pb-[0.04em] whitespace-nowrap origin-right ml-auto flex w-full max-w-none justify-end"
+                  class="text-explore-copy ml-auto pb-[0.04em] flex max-w-none w-full whitespace-nowrap origin-right justify-end"
                   :initial="heroEntryInitial"
                   :animate="heroAnimationState"
                   :variants="heroWordmarkVariants"
@@ -481,7 +481,7 @@ function updateUsername(value: string) {
               </div>
 
               <motion.div
-                class="left-[clamp(12rem,18.3vw,22rem)] bottom-[clamp(10rem,30vh,16rem)] z-20 hidden absolute lg:block"
+                class="hidden bottom-[clamp(10rem,30vh,16rem)] left-[clamp(12rem,18.3vw,22rem)] absolute z-20 lg:block"
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
@@ -508,7 +508,7 @@ function updateUsername(value: string) {
               </motion.div>
 
               <motion.div
-                class="left-[clamp(1.5rem,1.5vw,2rem)] bottom-6 absolute h-[46px] flex items-end"
+                class="flex h-[46px] items-end bottom-6 left-[clamp(1.5rem,1.5vw,2rem)] absolute"
                 :initial="heroEntryInitial"
                 :animate="heroAnimationState"
                 :variants="heroCopyItemVariants"
@@ -519,10 +519,10 @@ function updateUsername(value: string) {
                   letterSpacing: '-0.02em',
                 }"
               >
-                <p class="text-base text-explore-copy/80 leading-[1.26] font-body w-[56px] shrink-0">
+                <p class="text-base text-explore-copy/80 leading-[1.26] font-body shrink-0 w-[56px]">
                   © 2026
                 </p>
-                <div ref="timeRulerRef" class="ml-2.5 flex gap-[9px] h-[46px] shrink-0 pb-[6px] box-border items-end cursor-ew-resize">
+                <div ref="timeRulerRef" class="ml-2.5 pb-[6px] flex shrink-0 gap-[9px] h-[46px] cursor-ew-resize items-end box-border">
                   <span
                     v-for="(marker, markerIndex) in timeRulerMarkers"
                     :key="markerIndex"
@@ -530,7 +530,7 @@ function updateUsername(value: string) {
                     :style="{ height: `${marker.height}px`, opacity: marker.opacity }"
                   />
                 </div>
-                <p class="text-base text-explore-copy/80 leading-[1.26] font-body w-[20px] shrink-0 ml-2.5">
+                <p class="text-base text-explore-copy/80 leading-[1.26] font-body ml-2.5 shrink-0 w-[20px]">
                   19'
                 </p>
               </motion.div>

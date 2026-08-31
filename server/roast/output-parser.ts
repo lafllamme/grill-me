@@ -9,6 +9,28 @@ interface ParsedRoastContent {
   parserPath: string
 }
 
+function modelContentToText(value: unknown): string {
+  if (typeof value === 'string')
+    return value
+
+  if (Array.isArray(value))
+    return value.map(modelContentToText).filter(Boolean).join('')
+
+  if (value && typeof value === 'object') {
+    const content = value as Record<string, unknown>
+    for (const key of ['text', 'content', 'output_text', 'value']) {
+      const nested = modelContentToText(content[key])
+      if (nested)
+        return nested
+    }
+
+    if ('confidence' in content || 'findings' in content || 'roastLines' in content || 'feedback' in content)
+      return JSON.stringify(content)
+  }
+
+  return ''
+}
+
 export interface ParsedModelEnvelope {
   rawText: string
   parserPath: string
@@ -19,22 +41,7 @@ export interface ParsedModelEnvelope {
  */
 export function extractModelText(payload: any): ParsedModelEnvelope {
   const joinContentArray = (value: unknown): string => {
-    if (!Array.isArray(value))
-      return ''
-
-    const chunks = value
-      .map((item) => {
-        if (typeof item === 'string')
-          return item
-        if (item && typeof item === 'object' && typeof (item as any).text === 'string')
-          return String((item as any).text)
-        if (item && typeof item === 'object' && typeof (item as any).content === 'string')
-          return String((item as any).content)
-        return ''
-      })
-      .filter(Boolean)
-
-    return chunks.join('')
+    return Array.isArray(value) ? modelContentToText(value) : ''
   }
 
   const candidates: Array<{ path: string, value: unknown }> = [
@@ -58,9 +65,10 @@ export function extractModelText(payload: any): ParsedModelEnvelope {
   ]
 
   for (const candidate of candidates) {
-    if (typeof candidate.value === 'string' && candidate.value.trim()) {
+    const text = modelContentToText(candidate.value)
+    if (text.trim()) {
       return {
-        rawText: candidate.value,
+        rawText: text,
         parserPath: candidate.path,
       }
     }

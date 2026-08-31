@@ -244,7 +244,7 @@ useSeoMeta({
       <section class="mt-10">
         <div class="flex flex-col gap-6 justify-between md:flex-row md:items-end">
           <div>
-            <div class="flex gap-3 flex-wrap items-center">
+            <div class="flex flex-wrap gap-3 items-center">
               <p class="text-[11px] text-primary-strong tracking-[0.18em] font-meta uppercase">
                 01 · palette
               </p>
@@ -262,10 +262,10 @@ useSeoMeta({
         </div>
 
         <div class="mt-8">
-          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase mb-3">
+          <p class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta mb-3 uppercase">
             Core roles
           </p>
-          <div class="gap-2 grid sm:grid-cols-2 lg:grid-cols-4">
+          <div class="gap-2 grid lg:grid-cols-4 sm:grid-cols-2">
             <div class="p-4 rounded-lg bg-black">
               <p class="text-sm text-bone-50 font-body">
                 Stage
@@ -397,14 +397,14 @@ useSeoMeta({
             <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[40ch]">
               {{ patternSection.description }}
             </p>
-            <div class="flex gap-1 shrink-0 items-center">
-              <button class="text-lg text-on-surface-variant border border-outline rounded-lg h-8 w-8 leading-none transition-colors border-solid hover:text-on-background hover:border-on-surface-variant focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" :aria-label="`Previous ${patternSection.label} pattern`" @click="moveCarousel(patternSection.id, -1)">
+            <div class="flex shrink-0 gap-1 items-center">
+              <button class="text-lg text-on-surface-variant leading-none border border-outline rounded-lg border-solid h-8 w-8 transition-colors hover:text-on-background focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:border-on-surface-variant" type="button" :aria-label="`Previous ${patternSection.label} pattern`" @click="moveCarousel(patternSection.id, -1)">
                 ←
               </button>
-              <span class="text-[10px] text-on-surface-variant tracking-[0.08em] font-meta min-w-12 text-center" aria-live="polite">
+              <span class="text-[10px] text-on-surface-variant tracking-[0.08em] font-meta text-center min-w-12" aria-live="polite">
                 {{ getCarouselPosition(patternSection) }}
               </span>
-              <button class="text-lg text-on-surface-variant border border-outline rounded-lg h-8 w-8 leading-none transition-colors border-solid hover:text-on-background hover:border-on-surface-variant focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2" type="button" :aria-label="`Next ${patternSection.label} pattern`" @click="moveCarousel(patternSection.id, 1)">
+              <button class="text-lg text-on-surface-variant leading-none border border-outline rounded-lg border-solid h-8 w-8 transition-colors hover:text-on-background focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:border-on-surface-variant" type="button" :aria-label="`Next ${patternSection.label} pattern`" @click="moveCarousel(patternSection.id, 1)">
                 →
               </button>
             </div>
@@ -422,7 +422,7 @@ useSeoMeta({
                   <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[10px] leading-tight font-meta mt-1">
                     {{ getCarouselPattern(patternSection, offset).mood }}
                   </p>
-                  <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[9px] tracking-[0.08em] font-meta uppercase mt-2">
+                  <p :class="getCarouselPattern(patternSection, offset).mutedClass" class="text-[9px] tracking-[0.08em] font-meta mt-2 uppercase">
                     stage ↔ card {{ getSurfaceContrast(getCarouselPattern(patternSection, offset)) }}
                   </p>
                 </div>
@@ -459,7 +459,7 @@ useSeoMeta({
             </template>
           </article>
         </div>
-        <div v-else class="p-6 border border-dashed border-outline rounded-xl mt-8">
+        <div v-else class="mt-8 p-6 border border-outline rounded-xl border-dashed">
           <p class="text-sm text-on-surface-variant leading-relaxed font-body max-w-[52ch]">
             {{ patternSection.emptyMessage }}
           </p>

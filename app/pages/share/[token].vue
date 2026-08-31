@@ -21,7 +21,7 @@ const shareErrorMessage = computed(() => {
 </script>
 
 <template>
-  <div class="bg-basalt-950 text-on-surface min-h-screen">
+  <div class="text-on-surface bg-basalt-950 min-h-screen">
     <LandingTopNav />
     <main class="mx-auto px-4 pb-24 pt-32 max-w-4xl md:px-10">
       <header class="mb-8 space-y-3">

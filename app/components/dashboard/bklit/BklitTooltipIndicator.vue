@@ -26,7 +26,7 @@ const stops = computed(() => {
 </script>
 
 <template>
-  <svg v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
+  <svg v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'" class="h-full w-full pointer-events-none inset-0 absolute overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
     <defs>
       <linearGradient :id="gradientId" x1="0%" x2="0%" y1="0%" y2="100%">
         <stop v-for="stop in stops" :key="stop.offset" :offset="stop.offset" stop-color="var(--color-on-background)" :stop-opacity="stop.opacity" />

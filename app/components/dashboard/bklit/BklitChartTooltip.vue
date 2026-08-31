@@ -78,17 +78,19 @@ onBeforeUnmount(() => {
 <template>
   <template v-if="context.hoveredIndex.value !== null && context.status.value === 'ready'">
     <BklitTooltipIndicator v-if="props.showCrosshair" />
-    <svg v-if="props.showDots" class="pointer-events-none absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
+    <svg v-if="props.showDots" class="h-full w-full pointer-events-none inset-0 absolute overflow-visible" viewBox="0 0 640 320" aria-hidden="true">
       <BklitTooltipDot v-for="key in seriesKeys" :key="key" :data-key="key" :color="context.seriesColors[key]" />
     </svg>
     <div ref="tooltipRef" class="pointer-events-none absolute z-50" :style="tooltipStyle">
-      <div class="min-w-[140px] overflow-hidden rounded-none bg-chart-tooltip text-on-background shadow-lg backdrop-blur-md" :style="panelStyle">
+      <div class="text-on-background rounded-none bg-chart-tooltip min-w-[140px] shadow-lg overflow-hidden backdrop-blur-md" :style="panelStyle">
         <div class="px-3 py-2.5">
-          <p class="mb-2 text-xs font-medium">{{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}</p>
+          <p class="text-xs font-medium mb-2">
+            {{ context.data[context.hoveredIndex.value]?.[context.xDataKey] }}
+          </p>
           <div class="flex flex-col gap-1.5">
-            <div v-for="key in seriesKeys" :key="key" class="flex items-center justify-between gap-4 text-sm">
-              <span class="flex min-w-0 items-center gap-2 text-on-surface-variant/70">
-                <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-surface-variant)' }" />
+            <div v-for="key in seriesKeys" :key="key" class="text-sm flex gap-4 items-center justify-between">
+              <span class="text-on-surface-variant/70 flex gap-2 min-w-0 items-center">
+                <span class="rounded-full shrink-0 h-2.5 w-2.5" :style="{ backgroundColor: context.seriesColors[key] ?? 'var(--color-surface-variant)' }" />
                 <span>{{ key }}</span>
               </span>
               <Transition
@@ -101,7 +103,7 @@ onBeforeUnmount(() => {
                 leave-from-class="translate-y-0 opacity-100"
                 leave-to-class="-translate-y-2 opacity-0"
               >
-                <strong class="shrink-0 tabular-nums text-on-background font-medium" :key="Number(context.data[context.hoveredIndex.value]?.[key] ?? 0)">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
+                <strong :key="Number(context.data[context.hoveredIndex.value]?.[key] ?? 0)" class="text-on-background font-medium shrink-0 tabular-nums">{{ Number(context.data[context.hoveredIndex.value]?.[key] ?? 0).toLocaleString() }}</strong>
               </Transition>
             </div>
           </div>

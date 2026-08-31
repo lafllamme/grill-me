@@ -513,14 +513,14 @@ watch(isReducedMotion, () => {
       <path v-if="status === 'loading' && !isReducedMotion" :d="skeletonPath" fill="none" stroke="url(#bklit-line-loading-fade)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" clip-path="url(#bklit-line-loading-pulse-clip)" />
       <path v-else-if="status === 'loading'" :d="skeletonPath" fill="none" stroke="var(--color-on-background)" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" />
       <template v-else>
-        <path v-for="series in linePaths" :key="series.dataKey" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" mask="url(#bklit-line-series-mask)" :style="{ opacity: tooltipVisible ? 0.3 : 1, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
-        <path v-for="series in linePaths" :key="`highlight-${series.dataKey}`" :d="series.path" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" mask="url(#bklit-line-series-mask)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
+        <path v-for="linePath in linePaths" :key="linePath.dataKey" :d="linePath.path" fill="none" :stroke="linePath.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" :stroke-dasharray="`1 ${1}`" :stroke-dashoffset="1 - revealProgress" mask="url(#bklit-line-series-mask)" :style="{ opacity: tooltipVisible ? 0.3 : 1, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
+        <path v-for="linePath in linePaths" :key="`highlight-${linePath.dataKey}`" :d="linePath.path" fill="none" :stroke="linePath.color" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#bklit-line-highlight-clip)" mask="url(#bklit-line-series-mask)" :style="{ opacity: tooltipVisible ? 1 : 0, transition: isReducedMotion ? 'none' : 'opacity 400ms ease-in-out' }" />
       </template>
 
       <line v-if="tooltipVisible" :x1="crosshairX" :x2="crosshairX" :y1="margin.top" :y2="chartHeight - margin.bottom" stroke="var(--color-on-background)" stroke-width="1" opacity="0.9" />
       <template v-if="tooltipVisible">
-        <template v-for="(series, seriesIndex) in linePaths" :key="`dot-${series.dataKey}`">
-          <circle :cx="crosshairX" :cy="dotYValues[seriesIndex]" r="7" :fill="series.color" stroke="var(--color-chart-track)" stroke-width="3" />
+        <template v-for="(linePath, linePathIndex) in linePaths" :key="`dot-${linePath.dataKey}`">
+          <circle :cx="crosshairX" :cy="dotYValues[linePathIndex]" r="7" :fill="linePath.color" stroke="var(--color-chart-track)" stroke-width="3" />
         </template>
       </template>
 
@@ -533,10 +533,10 @@ watch(isReducedMotion, () => {
           <clipPath id="bklit-line-pill-clip"><rect :x="-activeTickerWidth / 2" y="0" :width="activeTickerWidth" height="32" rx="16" /></clipPath>
           <g clip-path="url(#bklit-line-pill-clip)">
             <g :style="{ transform: `translateY(${-(isReducedMotion ? currentMonthIndex * 24 : pillMonthY)}px)` }">
-              <text v-for="segment in monthSegments" :key="`pill-month-${segment.startIndex}`" :x="pillTextPositions.month" :y="20 + monthSegments.indexOf(segment) * 24" text-anchor="middle" class="text-background text-sm font-medium" fill="currentColor">{{ segment.month }}</text>
+              <text v-for="segment in monthSegments" :key="`pill-month-${segment.startIndex}`" :x="pillTextPositions.month" :y="20 + monthSegments.indexOf(segment) * 24" text-anchor="middle" class="text-sm text-background font-medium" fill="currentColor">{{ segment.month }}</text>
             </g>
             <g :style="{ transform: `translateY(${-(isReducedMotion ? hoveredIndex * 24 : pillDayY)}px)` }">
-              <text v-for="item in parsedLabels" :key="`pill-day-${item.index}`" :x="pillTextPositions.day" :y="20 + item.index * 24" text-anchor="middle" class="text-background text-sm font-medium" fill="currentColor">{{ item.day }}</text>
+              <text v-for="item in parsedLabels" :key="`pill-day-${item.index}`" :x="pillTextPositions.day" :y="20 + item.index * 24" text-anchor="middle" class="text-sm text-background font-medium" fill="currentColor">{{ item.day }}</text>
             </g>
           </g>
         </g>
@@ -552,8 +552,8 @@ watch(isReducedMotion, () => {
       leave-to-class="opacity-0"
     >
       <div v-if="status === 'loading'" class="flex pointer-events-none items-center inset-0 justify-center absolute" role="status" aria-live="polite">
-        <span v-if="loadingLabel" class="inline-flex select-none items-center leading-none text-sm text-on-surface-variant tracking-wide font-medium" aria-hidden="true">
-          <span v-for="(character, index) in loadingLabelCharacters" :key="`${character}-${index}`" :ref="element => setLoadingLabelCharacterRef(element, index)" class="inline-block whitespace-pre leading-none">{{ character }}</span>
+        <span v-if="loadingLabel" class="text-sm text-on-surface-variant leading-none tracking-wide font-medium inline-flex select-none items-center" aria-hidden="true">
+          <span v-for="(character, index) in loadingLabelCharacters" :key="`${character}-${index}`" :ref="element => setLoadingLabelCharacterRef(element, index)" class="leading-none inline-block whitespace-pre">{{ character }}</span>
         </span>
         <span class="sr-only">{{ loadingLabel }}</span>
       </div>
@@ -572,17 +572,21 @@ watch(isReducedMotion, () => {
           {{ activeTooltipLabel }}
         </p>
         <div class="flex flex-col gap-1.5">
-          <div v-for="series in props.series" :key="series.dataKey" class="text-sm flex gap-4 items-center justify-between">
-            <span class="text-on-surface-variant/70 flex gap-2 min-w-0 items-center"><span class="rounded-full shrink-0 h-2.5 w-2.5" :style="{ backgroundColor: series.color }" />{{ series.label }}</span>
-            <strong class="font-medium shrink-0 tabular-nums">{{ formatValue(activeDatum[series.dataKey]) }}</strong>
+          <div v-for="tooltipSeries in props.series" :key="tooltipSeries.dataKey" class="text-sm flex gap-4 items-center justify-between">
+            <span class="text-on-surface-variant/70 flex gap-2 min-w-0 items-center"><span class="rounded-full shrink-0 h-2.5 w-2.5" :style="{ backgroundColor: tooltipSeries.color }" />{{ tooltipSeries.label }}</span>
+            <strong class="font-medium shrink-0 tabular-nums">{{ formatValue(activeDatum[tooltipSeries.dataKey]) }}</strong>
           </div>
         </div>
-        <div v-if="activeMarkers.length" class="border-chart-grid pt-2 mt-2 border-t-[1px] border-solid flex flex-col gap-2">
+        <div v-if="activeMarkers.length" class="mt-2 pt-2 border-t-[1px] border-chart-grid border-solid flex flex-col gap-2">
           <div v-for="marker in activeMarkers" :key="marker.title" class="flex gap-2 items-start">
-            <span class="text-on-background flex shrink-0 items-center justify-center rounded-full h-5 w-5 bg-chart-tooltip border-[1px] border-chart-grid border-solid text-[10px] font-meta">{{ marker.icon }}</span>
-            <div class="min-w-0 flex-1">
-              <div class="text-on-background text-sm font-medium truncate">{{ marker.title }}</div>
-              <div v-if="marker.description" class="text-on-surface-variant/70 text-xs truncate">{{ marker.description }}</div>
+            <span class="text-[10px] text-on-background font-meta border-[1px] border-chart-grid rounded-full border-solid bg-chart-tooltip flex shrink-0 h-5 w-5 items-center justify-center">{{ marker.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm text-on-background font-medium truncate">
+                {{ marker.title }}
+              </div>
+              <div v-if="marker.description" class="text-xs text-on-surface-variant/70 truncate">
+                {{ marker.description }}
+              </div>
             </div>
           </div>
         </div>

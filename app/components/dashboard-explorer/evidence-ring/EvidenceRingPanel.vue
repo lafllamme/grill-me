@@ -30,7 +30,7 @@ const brandedData = computed(() => props.data.map((item, index) => ({
       <h2 class="text-2xl tracking-[-0.04em] font-body">
         Evidence
       </h2>
-      <span class="text-[10px] text-primary-strong font-meta uppercase">Mock</span>
+      <span class="text-[10px] text-primary-strong font-meta uppercase">{{ props.isLive ? 'Live' : 'Mock' }}</span>
     </div>
     <div class="mt-8 p-6 rounded-none flex flex-col gap-8 items-center sm:flex-row sm:items-center">
       <BklitRingChart :data="brandedData" :size="320">

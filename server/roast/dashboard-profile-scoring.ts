@@ -1,4 +1,4 @@
-import type { DashboardAiSafetyAssessment } from './dashboard-ai-scoring'
+import type { DashboardAiReviewAssessment, DashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import type { DashboardProfileRole, DashboardRoleClassification } from './dashboard-profile-roles'
 import type { GithubCommit, GithubContext } from './github-collector'
 import { resolveDashboardProfileRole } from './dashboard-profile-roles'
@@ -68,10 +68,12 @@ export interface DashboardProfileAssessment {
   derivedMetrics: DashboardDerivedMetrics
   confidence: number
   aiSafety?: DashboardAiSafetyAssessment
+  aiReview?: DashboardAiReviewAssessment
+  aiAdjustments: Partial<Record<DashboardProfileAxis, number>>
   evidenceWindow: {
     commitCount: number
     pullRequestCount: number
-    source: 'github-public-activity'
+    source: 'github-public-activity' | 'github-repository-evidence'
     from?: string
     to?: string
   }
@@ -131,7 +133,8 @@ export function confirmedRiskPenalty(aiSafety: DashboardAiSafetyAssessment | und
 }
 
 export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: readonly GithubCommit[], aiSafety?: DashboardAiSafetyAssessment): number {
-  const hasPatchEvidence = commits.some(commit => commit.files.some(file => Boolean(file.patch?.trim())))
+  const personalCommits = commits.filter(commit => !isMergeCommit(commit))
+  const hasPatchEvidence = personalCommits.some(commit => commit.files.some(file => Boolean(file.patch?.trim())))
   if (!hasPatchEvidence)
     return 50
 
@@ -141,7 +144,7 @@ export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: 
     + metrics.ciFileRatio * 0.15
     + metrics.validationFileRatio * 0.10
     + metrics.pullRequestCoverage * 0.10
-    - confirmedRiskPenalty(aiSafety, commits))
+    - confirmedRiskPenalty(aiSafety, personalCommits))
 }
 
 /**
@@ -150,7 +153,7 @@ export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: 
  * merge ratio stay dashboard facts; they are intentionally not penalties.
  */
 export function scoreDashboardWorkflow(metrics: DashboardDerivedMetrics): number {
-  if (metrics.commitCount === 0)
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
     return 50
 
   if (metrics.workflowCommitCount === 0)
@@ -252,7 +255,9 @@ function patchSignal(commits: readonly GithubCommit[], pattern: RegExp): number 
 }
 
 function isMergeCommit(commit: GithubCommit): boolean {
-  return /^merge\s/i.test(commit.message) || /\bmerge branch\b/i.test(commit.message)
+  return commit.isMerge ?? (commit.parentCount !== undefined
+    ? commit.parentCount > 1
+    : /^merge\s/i.test(commit.message) || /\bmerge branch\b/i.test(commit.message))
 }
 
 export function deriveDashboardMetrics(context: GithubContext): DashboardDerivedMetrics {
@@ -282,7 +287,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const conventionalMessages = commits.filter(commit => /^(?:feat|fix|refactor|docs|test|chore|perf|build|ci|style)(?:\(.+\))?:\s+\S+/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const genericMessages = commits.filter(commit => /^(?:fix|changes?|stuff|update|wip|misc|asdf|test)$/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const emptyMessages = commits.filter(commit => !commit.message.split('\n')[0]?.trim()).length
-  const documentationFileRatio = Math.round(fileSignal(commits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100)
+  const documentationFileRatio = Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100)
   const workflowDeletionRatio = Math.round(ratio(workflowDeletions, workflowAdditions + workflowDeletions) * 100)
   const complexityScopeSignal = workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 2) * 6) : 50
   const complexityOutlierSignal = workflowCommits.length ? 100 - Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50
@@ -317,18 +322,52 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     genericMessageRatio: Math.round(ratio(genericMessages, commits.length) * 100),
     emptyMessageRatio: Math.round(ratio(emptyMessages, commits.length) * 100),
     documentationFileRatio,
-    testFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i) * 100),
-    ciFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:\.github\/workflows|\.circleci|\.buildkite)(?:\/|$)|(?:^|\/)(?:Jenkinsfile|azure-pipelines\.ya?ml)$/i) * 100),
-    validationFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:schemas?|validators?|validation|middleware|guards?)(?:\/|$)|(?:schema|validator|validation|guard)[^/]*\.[^.]+$/i) * 100),
-    pullRequestCoverage: Math.round(Math.min(1, ratio(context.prs.length, commits.length)) * 100),
+    testFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i) * 100),
+    ciFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:\.github\/workflows|\.circleci|\.buildkite)(?:\/|$)|(?:^|\/)(?:Jenkinsfile|azure-pipelines\.ya?ml)$/i) * 100),
+    validationFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:schemas?|validators?|validation|middleware|guards?)(?:\/|$)|(?:schema|validator|validation|guard)[^/]*\.[^.]+$/i) * 100),
+    pullRequestCoverage: Math.round(Math.min(1, ratio(context.prs.length, workflowCommits.length)) * 100),
     deletionRatio: Math.round(ratio(deletions, additions + deletions) * 100),
     workflowDeletionRatio,
-    riskyFileRatio: Math.round(fileSignal(commits, /(?:^|\/)(?:auth|security|permissions?|secrets?|database|db|payments?)(?:\/|$)|(?:auth|security|permission|secret|database|payment)[^/]*\.[^.]+$/i) * 100),
-    defensivePatchRatio: Math.round(patchSignal(commits, /\b(?:try\s*\{|catch\s*\(|validate|sanitize|escape|authorize|permission|fallback|throw new)\b/i) * 100),
-    riskyPatchRatio: Math.round(patchSignal(commits, /\b(?:eval\s*\(|innerHTML\s*=|dangerouslySetInnerHTML|child_process|exec\s*\(|spawn\s*\(|SELECT[^;\n]{0,120}(?:\+|\$\{|format\s*\()|(?:api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{16,}['"])/i) * 100),
+    riskyFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:auth|security|permissions?|secrets?|database|db|payments?)(?:\/|$)|(?:auth|security|permission|secret|database|payment)[^/]*\.[^.]+$/i) * 100),
+    defensivePatchRatio: Math.round(patchSignal(workflowCommits, /\b(?:try\s*\{|catch\s*\(|validate|sanitize|escape|authorize|permission|fallback|throw new)\b/i) * 100),
+    riskyPatchRatio: Math.round(patchSignal(workflowCommits, /\b(?:eval\s*\(|innerHTML\s*=|dangerouslySetInnerHTML|child_process|exec\s*\(|spawn\s*\(|SELECT[^;\n]{0,120}(?:\+|\$\{|format\s*\()|(?:api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{16,}['"])/i) * 100),
     mergeCommitRatio: Math.round(ratio(commits.filter(isMergeCommit).length, commits.length) * 100),
     largeCommitRatio: Math.round(ratio(largeCommitCount, commits.length) * 100),
   }
+}
+
+function isGroundedReviewFinding(finding: NonNullable<DashboardAiReviewAssessment['findings']>[number], commits: readonly GithubCommit[]): boolean {
+  return commits.some(commit => (
+    (finding.commitSha === commit.sha || commit.sha.startsWith(finding.commitSha) || finding.commitSha.startsWith(commit.sha))
+    && commit.files.some(file => file.filename === finding.filename)
+  ))
+}
+
+/**
+ * Lets the single AI review refine non-safety axes only after it has supplied
+ * at least two grounded findings. Safety remains governed by confirmed-risk
+ * penalties so semantic prose cannot inflate or collapse that score.
+ */
+export function computeDashboardAiAdjustments(review: DashboardAiReviewAssessment | undefined, commits: readonly GithubCommit[]): Partial<Record<DashboardProfileAxis, number>> {
+  if (!review || review.status !== 'assessed' || review.confidence < 60)
+    return {}
+
+  const grounded = review.findings.filter(finding => finding.axis !== 'safety' && isGroundedReviewFinding(finding, commits))
+  if (grounded.length < 2)
+    return {}
+
+  const adjustments: Partial<Record<DashboardProfileAxis, number>> = {}
+  for (const axis of ['clarity', 'workflow', 'complexity', 'context'] as const) {
+    const findings = grounded.filter(finding => finding.axis === axis)
+    const positive = findings.filter(finding => finding.verdict === 'positive' && finding.impact !== 'unclear').length
+    const negative = findings.filter(finding => finding.verdict === 'negative' && finding.impact === 'introduced').length
+    if (positive === 0 && negative === 0)
+      continue
+
+    adjustments[axis] = clamp((positive - negative) * 4, -8, 8)
+  }
+
+  return adjustments
 }
 
 export function gradeForDashboardScore(score: number): string {
@@ -374,9 +413,10 @@ export function gradeForDashboardScore(score: number): string {
   return 'F'
 }
 
-export function scoreDashboardProfile(context: GithubContext, aiSafety?: DashboardAiSafetyAssessment): DashboardProfileAssessment {
+export function scoreDashboardProfile(context: GithubContext, aiSafety?: DashboardAiSafetyAssessment, aiReview?: DashboardAiReviewAssessment): DashboardProfileAssessment {
   const metrics = deriveDashboardMetrics(context)
   const empty = metrics.commitCount === 0
+  const aiAdjustments = computeDashboardAiAdjustments(aiReview, context.commits)
   const scores: DashboardProfileScores = {
     clarity: scoreDashboardClarity(metrics),
     safety: scoreDashboardSafety(metrics, context.commits, aiSafety),
@@ -391,6 +431,10 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
     scores.workflow = 50
     scores.complexity = 50
     scores.context = 50
+  }
+
+  for (const [axis, adjustment] of Object.entries(aiAdjustments) as [DashboardProfileAxis, number][]) {
+    scores[axis] = clamp(scores[axis] + adjustment)
   }
 
   const overallScore = clamp(axisWeights.reduce((sum, [axis, weight]) => sum + scores[axis] * weight, 0))
@@ -415,10 +459,12 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
     derivedMetrics: metrics,
     confidence,
     ...(aiSafety ? { aiSafety } : {}),
+    ...(aiReview ? { aiReview } : {}),
+    aiAdjustments,
     evidenceWindow: {
       commitCount: metrics.commitCount,
       pullRequestCount: metrics.pullRequestCount,
-      source: 'github-public-activity',
+      source: context.collection?.mode === 'dashboard' ? 'github-repository-evidence' : 'github-public-activity',
       ...(commitDates[0] ? { from: commitDates[0] } : {}),
       ...(commitDates.at(-1) ? { to: commitDates.at(-1) } : {}),
     },

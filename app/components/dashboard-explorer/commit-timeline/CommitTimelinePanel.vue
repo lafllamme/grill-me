@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type { CommitTimelinePanelProps } from './types'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import type { BklitLineMarker } from '~/components/dashboard/bklit/BklitLineChart.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
 
 const props = defineProps<CommitTimelinePanelProps>()
 const isLoading = ref(true)
 let loadingTimer: ReturnType<typeof setTimeout> | undefined
-const markers = [
+const defaultMarkers: readonly BklitLineMarker[] = [
   { date: new Date('2026-08-09T00:00:00Z'), icon: '✦', title: 'Design update', description: 'New color system' },
   { date: new Date('2026-08-17T00:00:00Z'), icon: '↗', title: 'Docs updated', description: 'Added examples' },
 ] as const
+const markers = computed(() => props.markers ?? defaultMarkers)
 
 function replayLoading() {
   isLoading.value = true

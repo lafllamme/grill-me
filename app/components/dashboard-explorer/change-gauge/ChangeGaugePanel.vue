@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<ChangeGaugePanelProps>(), {
       <h2 class="text-2xl tracking-[-0.05em] font-display">
         Commit frequency
       </h2>
-      <span :class="props.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">Mock</span>
+      <span :class="props.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">{{ props.isLive ? 'Live' : 'Mock' }}</span>
     </div>
     <BklitGaugeChart class="mt-6" :value="props.value" :center-value="props.centerValue ?? props.value" :default-label="props.label" active-fill="var(--color-primary)" inactive-fill="var(--color-chart-track)" :replay-key="`${props.value}-${props.centerValue ?? props.value}`" />
     <p :class="props.mutedClass" class="text-sm leading-6 mt-2 max-w-[26rem]">

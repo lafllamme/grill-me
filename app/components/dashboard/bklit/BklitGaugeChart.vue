@@ -127,8 +127,8 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
 </script>
 
 <template>
-  <div class="relative mx-auto w-full max-w-[560px]" :style="{ aspectRatio: `${width} / ${height}` }">
-    <svg class="block h-full w-full overflow-visible" :viewBox="`0 0 ${width} ${height}`" role="img" :aria-label="`${defaultLabel}: ${centerValue ?? value}`">
+  <div class="mx-auto max-w-[560px] w-full relative" :style="{ aspectRatio: `${width} / ${height}` }">
+    <svg class="h-full w-full block overflow-visible" :viewBox="`0 0 ${width} ${height}`" role="img" :aria-label="`${defaultLabel}: ${centerValue ?? value}`">
       <g>
         <BklitGaugeNotch
           v-for="notch in notches"
@@ -152,12 +152,12 @@ const notches = computed(() => Array.from({ length: props.totalNotches }, (_, in
         />
       </g>
     </svg>
-    <div v-if="centerValue !== undefined" class="pointer-events-none absolute inset-0 flex items-center justify-center pt-[8%]">
-      <div class="@container/chart-center size-full min-w-0 text-center flex flex-col items-center justify-center" :style="{ width: `${centerSize}px`, height: `${centerSize}px` }">
-        <span class="font-bold tabular-nums leading-none text-[clamp(0.75rem,22cqw,1.875rem)]" :style="{ color: 'var(--chart-text)' }">
+    <div v-if="centerValue !== undefined" class="pt-[8%] flex pointer-events-none items-center inset-0 justify-center absolute">
+      <div class="@container/chart-center text-center flex flex-col size-full min-w-0 items-center justify-center" :style="{ width: `${centerSize}px`, height: `${centerSize}px` }">
+        <span class="text-[clamp(0.75rem,22cqw,1.875rem)] leading-none font-bold tabular-nums" :style="{ color: 'var(--chart-text)' }">
           <NumberFlow :value="displayedCenterValue" :format="{ notation: 'standard', maximumFractionDigits: 0 }" :will-change="true" :isolate="true" />
         </span>
-        <span class="max-w-full truncate leading-tight text-[clamp(0.625rem,9cqw,0.75rem)]" :style="{ color: 'var(--chart-label)' }">{{ defaultLabel }}</span>
+        <span class="text-[clamp(0.625rem,9cqw,0.75rem)] leading-tight max-w-full truncate" :style="{ color: 'var(--chart-label)' }">{{ defaultLabel }}</span>
       </div>
     </div>
   </div>

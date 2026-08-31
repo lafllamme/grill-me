@@ -43,7 +43,7 @@ function createNavigationItemTransition(index: number) {
 <template>
   <header class="pointer-events-none inset-x-0 top-0 absolute z-40">
     <motion.div
-      class="px-[clamp(1.5rem,1.5vw,2rem)] mt-6 flex h-[4.375rem] w-full pointer-events-auto items-center justify-between relative"
+      class="mt-6 px-[clamp(1.5rem,1.5vw,2rem)] flex h-[4.375rem] w-full pointer-events-auto items-center justify-between relative"
       :initial="heroEntryInitial"
       animate="visible"
       :variants="heroHeaderVariants"
@@ -61,7 +61,7 @@ function createNavigationItemTransition(index: number) {
         </a>
       </div>
 
-      <div class="flex ml-[13px] items-center inset-y-0 left-1/2 absolute -translate-x-1/2">
+      <div class="ml-[13px] flex items-center inset-y-0 left-1/2 absolute -translate-x-1/2">
         <nav
           aria-label="Homepage sections"
           class="gap-20 hidden items-center md:flex lg:gap-[5.5rem]"
@@ -103,7 +103,7 @@ function createNavigationItemTransition(index: number) {
         href="#target"
         class="group text-explore-ink py-[2px] pl-[2px] pr-2 border-[1px] border-white/60 rounded-[5px] border-solid bg-explore-copy gap-2.5 grid grid-cols-[4rem_1fr] h-[4.375rem] min-w-[16.9375rem] transition-colors relative hover:bg-white"
       >
-        <span class="rounded-[2.5px] bg-signal-red-600 grid self-center size-16 overflow-hidden place-items-center">
+        <span class="rounded-[2.5px] bg-signal-red-600 grid size-16 self-center place-items-center overflow-hidden">
           <img
             src="https://thumbs.dreamstime.com/b/crosshair-symbol-isoliert-auf-schwarzem-hintergrund-einfaches-logo-161246758.jpg"
             alt=""

@@ -23,9 +23,11 @@ this contract.
 | Context | v1 implemented and first-pass validated | deterministic server formula | optional content explanation later |
 
 Safety, Workflow, Clarity, Context, and Complexity now have documented scoring
-rules in the current live slice. The overall grade and role matrix remain
-exploratory until the category rules have been calibrated against a larger,
-repository-aware evidence window.
+rules in the current live slice. The combined AI second-review contract,
+payload budget, and repository-first collection are documented in
+[Dashboard AI Review](./dashboard-ai-review.md). The overall grade and role
+matrix remain exploratory until the category rules have been calibrated against
+a larger, repository-aware evidence window.
 
 ## Source-of-truth pipeline
 
@@ -69,7 +71,7 @@ than reusing those values.
 ## Dashboard evidence model
 
 The current server-owned core assessment shape is intentionally separate from
-the optional AI Safety signal contract below:
+the optional AI review contract:
 
 ```ts
 interface DashboardProfileAssessment {
@@ -83,19 +85,26 @@ interface DashboardProfileAssessment {
   roleStatus: 'classified' | 'unclassified'
   confidence: number
   derivedMetrics: DashboardDerivedMetrics
+  aiAdjustments: Partial<Record<'clarity' | 'safety' | 'workflow' | 'complexity' | 'context', number>>
   evidenceWindow: {
     commitCount: number
     pullRequestCount: number
-    source: 'github-public-activity'
+    source: 'github-public-activity' | 'github-repository-evidence'
     from?: string
     to?: string
   }
 }
 ```
 
-Any evidence reference in a future axis contract must point to collected
-commits, files, pull requests, or derived metric identifiers. The AI may
-explain a score, but it must not cite evidence that was not fetched.
+Any evidence reference in an axis contract must point to collected commits,
+files, pull requests, or derived metric identifiers. The AI may explain or
+boundedly refine a score, but it must not cite evidence that was not fetched.
+
+The dashboard endpoint now uses the repository-first collector and one combined
+AI review. The complete request and patch limits are recorded in
+[Dashboard AI Review](./dashboard-ai-review.md); this keeps the five category
+prompts from drifting apart and prevents the Cloudflare payload from growing
+with every new axis.
 
 ## Evidence policy: neutral fallback
 
@@ -178,11 +187,12 @@ Safety scoring. This protects merge-heavy maintainer profiles from being ranked
 on changes that are not attributable to them. The pull-request denominator
 must likewise use personal commits. See the active
 [merge-commit decision](../decisions/active/merge-commits-as-integration-evidence.md)
-for the rationale and the current implementation gap in Safety.
+for the rationale. The dashboard collector now applies the same personal-commit
+filter to Safety as well.
 
 ## Cross-profile validation log
 
-Every metric is checked against the same three real GitHub profiles before it
+Every metric is checked against the same six real GitHub profiles before it
 is allowed to influence a final category score:
 
 | Profile | Why it is useful as a check |
@@ -192,8 +202,10 @@ is allowed to influence a final category score:
 | `lafllamme` | current product user and smaller project context |
 
 These comparisons are sanity checks, not rankings of developer ability. The
-collector currently samples up to 12 enriched public commits, so results can
-reflect the sampled window rather than the complete GitHub history.
+legacy tables below were produced from the earlier event-based collector, which
+sampled up to 12 enriched public commits. The live dashboard path now uses the
+repository-first budget documented in [Dashboard AI Review](./dashboard-ai-review.md),
+so those historical values are not API snapshots.
 
 ### Current metric results
 
@@ -281,37 +293,15 @@ fixed bug, an unclear excerpt, a missing safeguard, or a signal for a commit
 outside the supplied sample is ignored. If no usable patch exists at all, the
 Safety score is `50` with low AI confidence rather than a fabricated ranking.
 
-#### AI contract
+#### AI second review
 
-The AI is an evidence classifier, not a scorer. The server selects at most
-three commits deterministically:
-
-1. the newest commit;
-2. the largest commit by additions plus deletions;
-3. the commit with the strongest Safety file or patch signal.
-
-Duplicates are removed. The AI receives only those commits, up to three
-changed files per commit, and bounded patch excerpts. It must return exactly:
-
-```ts
-interface DashboardSafetySignal {
-  category: 'validation' | 'auth' | 'error-handling' | 'secrets' | 'dependency'
-  verdict: 'safe' | 'risk' | 'unclear'
-  impact: 'introduced' | 'fixed' | 'unclear'
-  severity: 'low' | 'medium' | 'high'
-  commitSha: string
-  evidence: string
-}
-
-interface DashboardAiSafetyAssessment {
-  confidence: number
-  signals: DashboardSafetySignal[]
-}
-```
-
-The server validates the shape, grounds each `commitSha` in the selected
-commits, and computes the numeric penalty. The old AI `score`, `findings`, and
-category-gap calculation are retired.
+The former Safety-only three-commit request is superseded by the combined
+contract in [Dashboard AI Review](./dashboard-ai-review.md). One bounded patch
+sample now covers all five axes. The AI remains an evidence classifier, not a
+scorer: the server validates exact SHA/filename anchors, converts only grounded
+introduced Safety risks into the existing severity penalty, and allows only
+bounded non-safety adjustments after sufficient evidence. The old AI `score`,
+findings, and category-gap calculation are retired.
 
 Role resolution is a separate deterministic step. It evaluates every matching
 rule in the matrix, keeps all matches in `roleCandidates`, and uses stable
@@ -335,20 +325,21 @@ ranked:
 
 These numbers validate direction and boundaries, not a developer ranking.
 
-#### Live six-profile calibration
+#### Repository-first six-profile calibration
 
 The agreed public test set was run through `POST /api/dashboard-profile` after
-the v1 implementation. Every request returned HTTP 200 and a valid AI signal
-response; no ungrounded introduced-risk signal was accepted in this run.
+the v1 implementation. Every request returned HTTP 200. The Qwen response was
+valid for five profiles; one response was marked invalid and therefore made no
+AI adjustment. No ungrounded introduced-risk signal was accepted in this run.
 
-| Profile | Commits | Safety v1 | AI status | AI confidence | Accepted introduced risks |
-| --- | ---: | ---: | --- | ---: | ---: |
-| `lafllamme` | 12 | 66 | assessed | 60% | 0 |
-| `danielroe` | 12 | 75 | assessed | 60% | 0 |
-| `torvalds` | 12 | 65 | assessed | 60% | 0 |
-| `sindresorhus` | 12 | 73 | assessed | 60% | 0 |
-| `antfu` | 12 | 71 | assessed | 60% | 0 |
-| `kentcdodds` | 5 | 81 | assessed | 60% | 0 |
+| Profile | Safety v1 | Overall | Grade | Role | AI status | Patch files | Accepted introduced risks |
+| --- | ---: | ---: | --- | --- | ---: | ---: | ---: |
+| `lafllamme` | 66 | 81 | B+ | Human Compiler | assessed | 12 | 0 |
+| `danielroe` | 71 | 82 | B+ | Dependency Detective | invalid-response | 3 | 0 |
+| `torvalds` | 65 | 62 | C | Unclassified | assessed | 6 | 0 |
+| `sindresorhus` | 69 | 61 | C | Unclassified | assessed | 12 | 0 |
+| `antfu` | 67 | 82 | B+ | Human Compiler | assessed | 8 | 0 |
+| `kentcdodds` | 72 | 51 | D+ | Vibe Coder | assessed | 6 | 0 |
 
 This run validates the contract and confirms that the server no longer trusts
 an AI-provided number. It is still a bounded sample of public activity, not a
@@ -356,11 +347,13 @@ claim about overall developer ability.
 
 #### Qwen response contract
 
-The Safety prompt ends with `/no_think` for the configured Qwen model. Without
-that marker, the provider can return only `reasoning_content` with an empty
-`message.content`, which is not a usable signal response. The parser therefore
-marks that case as `invalid-response`; the server still owns the deterministic
-score and never treats reasoning text as JSON.
+The combined review ends with `/no_think` for the configured Qwen model. The
+OpenAI-compatible endpoint can still return a reasoning-only response with an
+empty `message.content`. The server may recover a strict review object from
+that channel only when it passes the same JSON contract, exact SHA/filename
+grounding, and safety validation; free-form reasoning is never exposed or
+treated as evidence. If no valid object exists, the result is
+`invalid-response` and the deterministic score remains authoritative.
 
 ### Validation in progress: commit frequency
 
@@ -642,26 +635,27 @@ evidence model.
 ## Current implementation
 
 The first live slice is available at `POST /api/dashboard-profile` with a
-body of `{ "username": "lafllamme" }`. It calls the existing GitHub collector,
-derives the metrics above, runs the bounded Safety signal review, and returns
-a versioned assessment in memory. Workflow v1, Clarity v1, Context v1, and
-Complexity v1 are calculated in the same pass from the collected commit
-metadata; they do not make additional AI requests.
+body of `{ "username": "lafllamme" }`. It calls the repository-first GitHub
+collector, derives the metrics above, runs one bounded combined AI review, and
+returns a versioned assessment in memory. Workflow v1, Clarity v1, Context v1,
+and Complexity v1 are calculated in the same pass from the collected commit
+metadata; the AI can only provide the documented second-review adjustments.
 The dashboard page exposes this through its
 `Analyze live` control while keeping the mock profile selector available for
 comparison. Safety v1 lives in `server/roast/dashboard-profile-scoring.ts`,
 with deterministic commit selection in
-`server/roast/dashboard-safety-selection.ts` and the AI adapter in
+`server/roast/dashboard-patch-selection.ts` and the AI adapter in
 `server/roast/dashboard-ai-scoring.ts`. Role matching lives in
 `server/roast/dashboard-profile-roles.ts` and never runs without the minimum
-evidence gate.
+evidence gate. The endpoint also returns repository, check-run, collection, and
+AI review metadata so the UI can show how much evidence was actually available.
 
 The rule layer is covered by synthetic scenarios for small documented work,
 large merge-heavy commits, and an empty GitHub result. These scenarios are
 deliberately assertions about direction and bounds, not snapshots of a user's
 grade, so the model can be tuned without hiding regressions.
 
-#### Live Clarity calibration
+#### Historical event-based Clarity calibration
 
 The six agreed comparison profiles were run through the same live endpoint
 after Clarity v1 was implemented. These are deterministic results from the
@@ -686,7 +680,7 @@ The role matrix must remain provisional until the other axes and evidence
 statuses can prevent such sample-local signals from becoming a full profile
 verdict.
 
-#### Live Context calibration
+#### Historical event-based Context calibration
 
 The same six profiles were run through the endpoint after Context v1 was
 implemented. These are deterministic results from the current public activity
@@ -706,7 +700,7 @@ weak evidence in a public commit sample. `torvalds` remains neutral under the
 same three-personal-commit gate. The result is a context-of-the-sample signal,
 not proof that a repository has or lacks complete documentation.
 
-#### Live Complexity calibration
+#### Historical event-based Complexity calibration
 
 The same six profiles were run through the endpoint after Complexity v1 was
 implemented. These values measure the observed personal change surface, not
@@ -728,7 +722,7 @@ not being declared poor developers; their sampled change surface is simply
 broad under this proxy. This is the point at which a future repository-aware
 AST/dependency analysis could add evidence without changing the v1 contract.
 
-#### Live Workflow calibration
+#### Historical event-based Workflow calibration
 
 The agreed comparison profiles were run through the same live endpoint after
 Workflow v1 was implemented. The values below are the deterministic result of
@@ -751,11 +745,11 @@ Workflow measures the shape of the sampled delivery history. The collector's
 
 1. Define and test the shared `DashboardProfileAssessment` contract. **Done**
 2. Build a pure feature-extraction layer over `GithubContext`. **Done**
-3. Add deterministic normalization and score calculation. **Done for Safety v1, Workflow v1, and Clarity v1**
-4. Add the constrained Safety signal step with evidence-grounded penalties. **Done**
+3. Add deterministic normalization and score calculation. **Done for all five v1 axes**
+4. Add the constrained combined AI second-review step with evidence-grounded penalties and bounded refinements. **Done**
 5. Add the role resolver and grade resolver using the documented matrix. **Done**
 6. Map the assessment to the existing dashboard fixture shape. **Done**
-7. Run the pipeline against the six-profile calibration set without persistence. **Safety, Workflow, Clarity, Context, and Complexity done**
+7. Run the pipeline against the six-profile calibration set without persistence. **Done; repository-first calibration recorded above**
 8. Compare the real result with the mock stories and only then design database
    storage and caching.
 

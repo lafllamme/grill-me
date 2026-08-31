@@ -22,10 +22,10 @@ function selectFont(id: string) {
 
 <template>
   <div
-    class="text-explore-copy p-3 border border-white/10 rounded-xl bg-black/70 max-w-[560px] right-6 bottom-28 fixed z-50 backdrop-blur-md"
+    class="text-explore-copy p-3 border border-white/10 rounded-xl bg-black/70 max-w-[560px] bottom-28 right-6 fixed z-50 backdrop-blur-md"
   >
-    <div class="flex gap-1 items-center flex-wrap">
-      <span class="text-[10px] tracking-[0.14em] font-meta uppercase mr-1 opacity-60">Font</span>
+    <div class="flex flex-wrap gap-1 items-center">
+      <span class="text-[10px] tracking-[0.14em] font-meta mr-1 opacity-60 uppercase">Font</span>
       <button
         v-for="id in FONT_IDS"
         :key="id"

@@ -16,7 +16,7 @@ const props = defineProps<RepositorySunburstPanelProps>()
           {{ props.description }}
         </p>
       </div>
-      <span class="text-[10px] text-primary-strong tracking-[0.12em] font-meta uppercase">Mock</span>
+      <span class="text-[10px] text-primary-strong tracking-[0.12em] font-meta uppercase">{{ props.isLive ? 'Live' : 'Mock' }}</span>
     </div>
     <BklitSunburstChart class="mt-6" :data="props.data" :size="560" />
   </article>

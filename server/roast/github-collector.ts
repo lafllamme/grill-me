@@ -20,26 +20,91 @@ export interface GithubCommit {
   changedFiles: number
   files: GithubCommitFile[]
   committedAt?: string
+  authorLogin?: string
+  committerLogin?: string
+  parentCount?: number
+  isMerge?: boolean
+  htmlUrl?: string
 }
 
 export interface GithubPullRequest {
   repo: string
+  number?: number
   title: string
   url: string
   state: string
+  authorLogin?: string
+  mergedAt?: string
+  reviewCount?: number
+  reviewCommentCount?: number
+  commentCount?: number
+  changedFiles?: number
+}
+
+export interface GithubRepositoryEvidence {
+  repo: string
+  defaultBranch: string
+  language?: string
+  pushedAt?: string
+  isFork: boolean
+  isArchived: boolean
+  size: number
+  stars: number
+  rootEntries: string[]
+}
+
+export interface GithubCheckSummary {
+  repo: string
+  sha: string
+  total: number
+  successful: number
+  failed: number
+  pending: number
+}
+
+export interface GithubCollectionSummary {
+  mode: 'events' | 'dashboard'
+  repositories: number
+  candidateCommits: number
+  enrichedCommits: number
+  usablePatches: number
+  associatedPullRequests: number
+  checkSummaries: number
 }
 
 export interface GithubContext {
   username: string
   commits: GithubCommit[]
   prs: GithubPullRequest[]
+  repositories?: GithubRepositoryEvidence[]
+  checks?: GithubCheckSummary[]
+  collection?: GithubCollectionSummary
 }
 
 interface GithubCommitRef {
   repo: string
   sha: string
   message: string
+  committedAt?: string
+  authorLogin?: string
+  committerLogin?: string
+  parentCount?: number
+  isMerge?: boolean
 }
+
+export const DASHBOARD_GITHUB_LIMITS = {
+  maxRepositories: 3,
+  maxRepositoryCandidates: 5,
+  maxHistoryCommitsPerRepository: 12,
+  maxCandidateCommits: 30,
+  maxDetailedCommits: 18,
+  maxAssociatedPullRequestCommits: 6,
+  maxPullRequests: 6,
+  maxReviewRequests: 3,
+  maxCheckRequests: 6,
+  maxRootEntries: 80,
+  maxFilesPerCommit: 8,
+} as const
 
 /**
  * Redacts likely secret patterns from patch snippets.
@@ -106,7 +171,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 /**
  * Fetches JSON from GitHub REST API with auth and baseline error mapping.
  */
-async function getGithubJson(url: string, token: string | undefined, timeoutMs: number, debug: RoastDebug | undefined, stage: 'github_profile' | 'github_events' | 'github_commit'): Promise<any> {
+async function getGithubJson(url: string, token: string | undefined, timeoutMs: number, debug: RoastDebug | undefined, stage: 'github_profile' | 'github_events' | 'github_repositories' | 'github_history' | 'github_repository' | 'github_commit' | 'github_pull_request' | 'github_checks'): Promise<any> {
   const startedAt = Date.now()
   const response = await fetchWithTimeout(
     url,
@@ -266,6 +331,11 @@ export async function collectGithubContext(username: string, githubToken: string
         committedAt: typeof details.commit?.author?.date === 'string'
           ? details.commit.author.date
           : typeof details.commit?.committer?.date === 'string' ? details.commit.committer.date : undefined,
+        authorLogin: typeof details.author?.login === 'string' ? details.author.login : undefined,
+        committerLogin: typeof details.committer?.login === 'string' ? details.committer.login : undefined,
+        parentCount: Array.isArray(details.parents) ? details.parents.length : undefined,
+        isMerge: Array.isArray(details.parents) ? details.parents.length > 1 : undefined,
+        htmlUrl: typeof details.html_url === 'string' ? details.html_url : undefined,
       }
 
       return commit
@@ -336,5 +406,296 @@ export async function collectGithubContext(username: string, githubToken: string
     username,
     commits,
     prs: prs.slice(0, ROAST_LIMITS.maxPrs),
+    collection: {
+      mode: 'events',
+      repositories: 0,
+      candidateCommits: candidateCommits.length,
+      enrichedCommits: commits.length,
+      usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
+      associatedPullRequests: 0,
+      checkSummaries: 0,
+    },
+  }
+}
+
+function sameLogin(left: unknown, right: string): boolean {
+  return typeof left === 'string' && left.toLowerCase() === right.toLowerCase()
+}
+
+function parseRepositoryEvidence(raw: any): GithubRepositoryEvidence | null {
+  const repo = typeof raw?.full_name === 'string' ? raw.full_name : ''
+  if (!repo)
+    return null
+
+  return {
+    repo,
+    defaultBranch: typeof raw.default_branch === 'string' ? raw.default_branch : 'HEAD',
+    language: typeof raw.language === 'string' ? raw.language : undefined,
+    pushedAt: typeof raw.pushed_at === 'string' ? raw.pushed_at : undefined,
+    isFork: Boolean(raw.fork),
+    isArchived: Boolean(raw.archived),
+    size: asNumber(raw.size),
+    stars: asNumber(raw.stargazers_count),
+    rootEntries: [],
+  }
+}
+
+function parseCommitRef(raw: any, repo: string, username: string): GithubCommitRef | null {
+  const sha = typeof raw?.sha === 'string' ? raw.sha : ''
+  if (!sha)
+    return null
+
+  const authorLogin = typeof raw?.author?.login === 'string' ? raw.author.login : undefined
+  const committerLogin = typeof raw?.committer?.login === 'string' ? raw.committer.login : undefined
+  if (authorLogin && !sameLogin(authorLogin, username) && committerLogin && !sameLogin(committerLogin, username))
+    return null
+
+  const parents = Array.isArray(raw.parents) ? raw.parents.length : undefined
+  return {
+    repo,
+    sha,
+    message: typeof raw?.commit?.message === 'string' ? raw.commit.message : '',
+    committedAt: typeof raw?.commit?.author?.date === 'string' ? raw.commit.author.date : undefined,
+    authorLogin,
+    committerLogin,
+    parentCount: parents,
+    isMerge: parents !== undefined ? parents > 1 : undefined,
+  }
+}
+
+function enrichDashboardCommit(details: any, ref: GithubCommitRef, username: string): GithubCommit | null {
+  const authorLogin = typeof details?.author?.login === 'string' ? details.author.login : ref.authorLogin
+  const committerLogin = typeof details?.committer?.login === 'string' ? details.committer.login : ref.committerLogin
+  if (authorLogin && !sameLogin(authorLogin, username) && committerLogin && !sameLogin(committerLogin, username))
+    return null
+
+  const files = Array.isArray(details?.files) ? details.files : []
+  const parentCount = Array.isArray(details?.parents) ? details.parents.length : ref.parentCount
+
+  return {
+    repo: ref.repo,
+    sha: ref.sha,
+    message: ref.message || String(details?.commit?.message || ''),
+    additions: asNumber(details?.stats?.additions),
+    deletions: asNumber(details?.stats?.deletions),
+    changedFiles: files.length,
+    files: files.slice(0, DASHBOARD_GITHUB_LIMITS.maxFilesPerCommit).map((file: any) => ({
+      filename: String(file.filename || 'unknown'),
+      status: String(file.status || 'modified'),
+      additions: asNumber(file.additions),
+      deletions: asNumber(file.deletions),
+      patch: trimPatch(typeof file.patch === 'string' ? file.patch : undefined),
+    })),
+    committedAt: typeof details?.commit?.author?.date === 'string'
+      ? details.commit.author.date
+      : typeof details?.commit?.committer?.date === 'string' ? details.commit.committer.date : ref.committedAt,
+    authorLogin,
+    committerLogin,
+    parentCount,
+    isMerge: parentCount !== undefined ? parentCount > 1 : ref.isMerge,
+    htmlUrl: typeof details?.html_url === 'string' ? details.html_url : undefined,
+  }
+}
+
+function parsePullRequest(raw: any, repo: string): GithubPullRequest | null {
+  const number = Number(raw?.number)
+  const title = typeof raw?.title === 'string' ? raw.title : ''
+  if (!Number.isInteger(number) || number < 1 || !title)
+    return null
+
+  return {
+    repo,
+    number,
+    title,
+    url: typeof raw.html_url === 'string' ? raw.html_url : '',
+    state: typeof raw.state === 'string' ? raw.state : 'unknown',
+    authorLogin: typeof raw.user?.login === 'string' ? raw.user.login : undefined,
+    mergedAt: typeof raw.merged_at === 'string' ? raw.merged_at : undefined,
+    reviewCommentCount: asNumber(raw.review_comments),
+    commentCount: asNumber(raw.comments),
+    changedFiles: asNumber(raw.changed_files),
+  }
+}
+
+function parseCheckSummary(raw: any, repo: string, sha: string): GithubCheckSummary {
+  const checks = Array.isArray(raw?.check_runs) ? raw.check_runs : []
+  const successful = checks.filter((check: any) => check.conclusion === 'success').length
+  const failed = checks.filter((check: any) => ['failure', 'timed_out', 'action_required', 'cancelled', 'startup_failure'].includes(check.conclusion)).length
+  return {
+    repo,
+    sha,
+    total: asNumber(raw?.total_count) || checks.length,
+    successful,
+    failed,
+    pending: Math.max(0, checks.length - successful - failed),
+  }
+}
+
+function commitTimestamp(value?: string): number {
+  if (!value)
+    return 0
+  const timestamp = Date.parse(value)
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+/**
+ * Collects a bounded repository-first evidence pack for dashboard scoring.
+ * Repository metadata is a sampling scope only; it is never a quality score.
+ */
+export async function collectDashboardGithubContext(username: string, githubToken: string | undefined, options?: {
+  githubTimeoutMs?: number
+  debug?: RoastDebug
+}): Promise<GithubContext> {
+  const githubTimeoutMs = options?.githubTimeoutMs ?? ROAST_DEFAULTS.githubTimeoutMs
+  const debug = options?.debug
+  const profile = await getGithubJson(
+    `https://api.github.com/users/${username}`,
+    githubToken,
+    githubTimeoutMs,
+    debug,
+    'github_profile',
+  )
+  const canonicalLogin = typeof profile?.login === 'string' ? profile.login : username
+  const repositoryResponse = await getGithubJson(
+    `https://api.github.com/users/${encodeURIComponent(canonicalLogin)}/repos?type=owner&sort=pushed&direction=desc&per_page=${DASHBOARD_GITHUB_LIMITS.maxRepositoryCandidates}`,
+    githubToken,
+    githubTimeoutMs,
+    debug,
+    'github_repositories',
+  )
+  const rawRepositories = Array.isArray(repositoryResponse) ? repositoryResponse : []
+  const selectedRawRepositories = rawRepositories
+    .filter(repository => !repository?.fork && !repository?.archived)
+    .slice(0, DASHBOARD_GITHUB_LIMITS.maxRepositories)
+  const repositories = selectedRawRepositories
+    .map(parseRepositoryEvidence)
+    .filter((repository): repository is GithubRepositoryEvidence => Boolean(repository))
+
+  const commitRefs = new Map<string, GithubCommitRef>()
+  for (const repository of repositories) {
+    const history = await getGithubJson(
+      `https://api.github.com/repos/${repository.repo}/commits?author=${encodeURIComponent(canonicalLogin)}&per_page=${DASHBOARD_GITHUB_LIMITS.maxHistoryCommitsPerRepository}`,
+      githubToken,
+      githubTimeoutMs,
+      debug,
+      'github_history',
+    )
+
+    for (const rawCommit of Array.isArray(history) ? history : []) {
+      const ref = parseCommitRef(rawCommit, repository.repo, canonicalLogin)
+      if (ref)
+        commitRefs.set(`${ref.repo}:${ref.sha}`, ref)
+    }
+
+    try {
+      const rootContents = await getGithubJson(
+        `https://api.github.com/repos/${repository.repo}/contents?ref=${encodeURIComponent(repository.defaultBranch)}`,
+        githubToken,
+        githubTimeoutMs,
+        debug,
+        'github_repository',
+      )
+      repository.rootEntries = (Array.isArray(rootContents) ? rootContents : [])
+        .map(entry => typeof entry?.name === 'string' ? entry.name : '')
+        .filter(Boolean)
+        .slice(0, DASHBOARD_GITHUB_LIMITS.maxRootEntries)
+    }
+    catch {
+      repository.rootEntries = []
+    }
+  }
+
+  const candidateRefs = Array.from(commitRefs.values())
+    .sort((left, right) => commitTimestamp(right.committedAt) - commitTimestamp(left.committedAt) || right.sha.localeCompare(left.sha))
+    .slice(0, DASHBOARD_GITHUB_LIMITS.maxCandidateCommits)
+  const commits: GithubCommit[] = []
+  for (const ref of candidateRefs.slice(0, DASHBOARD_GITHUB_LIMITS.maxDetailedCommits)) {
+    try {
+      const details = await getGithubJson(
+        `https://api.github.com/repos/${ref.repo}/commits/${ref.sha}`,
+        githubToken,
+        githubTimeoutMs,
+        debug,
+        'github_commit',
+      )
+      const commit = enrichDashboardCommit(details, ref, canonicalLogin)
+      if (commit)
+        commits.push(commit)
+    }
+    catch {
+      continue
+    }
+  }
+
+  const prsByKey = new Map<string, GithubPullRequest>()
+  const checks: GithubCheckSummary[] = []
+  for (const commit of commits.slice(0, DASHBOARD_GITHUB_LIMITS.maxAssociatedPullRequestCommits)) {
+    try {
+      const associated = await getGithubJson(
+        `https://api.github.com/repos/${commit.repo}/commits/${commit.sha}/pulls`,
+        githubToken,
+        githubTimeoutMs,
+        debug,
+        'github_pull_request',
+      )
+      for (const rawPullRequest of Array.isArray(associated) ? associated : []) {
+        const pullRequest = parsePullRequest(rawPullRequest, commit.repo)
+        if (pullRequest)
+          prsByKey.set(`${pullRequest.repo}#${pullRequest.number}`, pullRequest)
+      }
+    }
+    catch {
+      continue
+    }
+  }
+
+  const prs = Array.from(prsByKey.values()).slice(0, DASHBOARD_GITHUB_LIMITS.maxPullRequests)
+  for (const pullRequest of prs.slice(0, DASHBOARD_GITHUB_LIMITS.maxReviewRequests)) {
+    try {
+      const reviews = await getGithubJson(
+        `https://api.github.com/repos/${pullRequest.repo}/pulls/${pullRequest.number}/reviews?per_page=20`,
+        githubToken,
+        githubTimeoutMs,
+        debug,
+        'github_pull_request',
+      )
+      pullRequest.reviewCount = Array.isArray(reviews) ? reviews.length : 0
+    }
+    catch {
+      pullRequest.reviewCount = 0
+    }
+  }
+
+  for (const commit of commits.slice(0, DASHBOARD_GITHUB_LIMITS.maxCheckRequests)) {
+    try {
+      const checkResponse = await getGithubJson(
+        `https://api.github.com/repos/${commit.repo}/commits/${commit.sha}/check-runs?per_page=20`,
+        githubToken,
+        githubTimeoutMs,
+        debug,
+        'github_checks',
+      )
+      checks.push(parseCheckSummary(checkResponse, commit.repo, commit.sha))
+    }
+    catch {
+      continue
+    }
+  }
+
+  return {
+    username: canonicalLogin,
+    commits,
+    prs,
+    repositories,
+    checks,
+    collection: {
+      mode: 'dashboard',
+      repositories: repositories.length,
+      candidateCommits: candidateRefs.length,
+      enrichedCommits: commits.length,
+      usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
+      associatedPullRequests: prs.length,
+      checkSummaries: checks.length,
+    },
   }
 }

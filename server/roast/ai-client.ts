@@ -16,6 +16,10 @@ export interface AiRequestInput {
   debug?: RoastDebug
 }
 
+export const AI_REQUEST_LIMITS = {
+  maxBodyBytes: 96 * 1024,
+} as const
+
 function extractStreamTextChunk(payload: any): string {
   const toText = (value: unknown): string => {
     if (typeof value === 'string')
@@ -78,6 +82,48 @@ function assertAiConfig(input: AiRequestInput): void {
   }
 }
 
+function throwCloudflareUpstreamError(status: number): never {
+  const isPayloadTooLarge = status === 413
+  throw createError({
+    statusCode: status >= 500 ? 503 : 502,
+    statusMessage: isPayloadTooLarge ? 'Cloudflare AI request payload is too large' : 'Cloudflare AI upstream failed',
+    data: {
+      code: isPayloadTooLarge ? 'cloudflare_ai_request_too_large' : 'cloudflare_ai_error',
+    },
+  })
+}
+
+function buildAiRequestBody(input: AiRequestInput, stream = false): string {
+  const body = {
+    model: input.model,
+    messages: [
+      { role: 'system', content: input.systemPrompt },
+      { role: 'user', content: input.userPrompt },
+    ],
+    ...(stream ? { stream: true } : {}),
+    max_tokens: input.maxTokens,
+    temperature: input.temperature,
+    top_p: input.topP,
+    reasoning_effort: input.reasoningEffort ?? 'low',
+  }
+  const serialized = JSON.stringify(body)
+  const bodyBytes = new TextEncoder().encode(serialized).byteLength
+
+  if (bodyBytes > AI_REQUEST_LIMITS.maxBodyBytes) {
+    throw createError({
+      statusCode: 413,
+      statusMessage: 'Cloudflare AI request payload is too large',
+      data: {
+        code: 'cloudflare_ai_request_too_large',
+        bodyBytes,
+        maxBodyBytes: AI_REQUEST_LIMITS.maxBodyBytes,
+      },
+    })
+  }
+
+  return serialized
+}
+
 /**
  * Sends a synchronous Cloudflare Workers AI request.
  *
@@ -102,17 +148,7 @@ export async function runAiSync(input: AiRequestInput): Promise<any> {
         'Authorization': `Bearer ${input.apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: input.model,
-        messages: [
-          { role: 'system', content: input.systemPrompt },
-          { role: 'user', content: input.userPrompt },
-        ],
-        max_tokens: input.maxTokens,
-        temperature: input.temperature,
-        top_p: input.topP,
-        reasoning_effort: input.reasoningEffort ?? 'low',
-      }),
+      body: buildAiRequestBody(input),
       signal: controller.signal,
     })
 
@@ -125,13 +161,7 @@ export async function runAiSync(input: AiRequestInput): Promise<any> {
     })
 
     if (!response.ok) {
-      throw createError({
-        statusCode: response.status >= 500 ? 503 : 502,
-        statusMessage: 'Cloudflare AI upstream failed',
-        data: {
-          code: 'cloudflare_ai_error',
-        },
-      })
+      throwCloudflareUpstreamError(response.status)
     }
 
     const payload = await response.json()
@@ -195,18 +225,7 @@ export async function runAiStream(input: AiRequestInput, onChunk: (chunk: string
         'Authorization': `Bearer ${input.apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: input.model,
-        messages: [
-          { role: 'system', content: input.systemPrompt },
-          { role: 'user', content: input.userPrompt },
-        ],
-        stream: true,
-        max_tokens: input.maxTokens,
-        temperature: input.temperature,
-        top_p: input.topP,
-        reasoning_effort: 'low',
-      }),
+      body: buildAiRequestBody(input, true),
       signal: controller.signal,
     })
 
@@ -219,13 +238,7 @@ export async function runAiStream(input: AiRequestInput, onChunk: (chunk: string
     })
 
     if (!response.ok) {
-      throw createError({
-        statusCode: response.status >= 500 ? 503 : 502,
-        statusMessage: 'Cloudflare AI upstream failed',
-        data: {
-          code: 'cloudflare_ai_error',
-        },
-      })
+      throwCloudflareUpstreamError(response.status)
     }
 
     if (!response.body) {

@@ -84,7 +84,17 @@ export const roastMetaSchema = z.object({
 export type RoastMeta = z.infer<typeof roastMetaSchema>
 
 export const debugRequestInfoSchema = z.object({
-  stage: z.enum(['github_profile', 'github_events', 'github_commit', 'cloudflare_ai']),
+  stage: z.enum([
+    'github_profile',
+    'github_events',
+    'github_repositories',
+    'github_history',
+    'github_repository',
+    'github_commit',
+    'github_pull_request',
+    'github_checks',
+    'cloudflare_ai',
+  ]),
   url: z.string(),
   durationMs: z.number().nonnegative(),
   ok: z.boolean(),

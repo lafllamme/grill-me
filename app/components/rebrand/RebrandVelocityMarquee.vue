@@ -94,13 +94,13 @@ watch(reducedMotion, (preference) => {
 </script>
 
 <template>
-  <div ref="sectionRef" class="relative left-1/2 py-8 border-y-[1px] border-basalt-950/16 border-solid w-screen -translate-x-1/2 overflow-hidden" :aria-label="label">
+  <div ref="sectionRef" class="py-8 border-y-[1px] border-basalt-950/16 border-solid w-screen left-1/2 relative overflow-hidden -translate-x-1/2" :aria-label="label">
     <div class="space-y-6">
       <div ref="primaryTrackRef" class="will-change-transform w-max motion-reduce:transform-none">
         <div v-for="copyIndex in trackCopies" :key="`forward-copy-${copyIndex}`" class="pr-10 inline-flex gap-10" :aria-hidden="copyIndex > 1">
           <span v-for="(item, index) in items" :key="`forward-copy-${index}-${item}`" :class="marqueeTextClass">
             {{ item }}
-            <svg class="text-signal-red-700 ml-10 inline-block size-[0.62em] translate-y-[-0.04em]" viewBox="0 0 256 256" aria-hidden="true">
+            <svg class="text-signal-red-700 ml-10 size-[0.62em] inline-block translate-y-[-0.04em]" viewBox="0 0 256 256" aria-hidden="true">
               <path fill="currentColor" d="M152 70.059 201.539 20.519 235.48 54.461 185.941 104H256v48h-70.059l49.539 49.539-33.941 33.941L152 185.941V256h-48v-70.059l-49.54 49.539-33.94-33.941L70.059 152H0v-48h70.059L20.519 54.46 54.461 20.52 104 70.059V0h48z" />
             </svg>
           </span>
@@ -110,7 +110,7 @@ watch(reducedMotion, (preference) => {
         <div v-for="copyIndex in trackCopies" :key="`reverse-copy-${copyIndex}`" class="pr-10 inline-flex gap-10">
           <span v-for="(item, index) in secondaryItems" :key="`reverse-first-${index}-${item}`" :class="marqueeTextClass">
             {{ item }}
-            <svg class="text-signal-red-700 ml-10 inline-block size-[0.62em] translate-y-[-0.04em]" viewBox="0 0 256 256" aria-hidden="true">
+            <svg class="text-signal-red-700 ml-10 size-[0.62em] inline-block translate-y-[-0.04em]" viewBox="0 0 256 256" aria-hidden="true">
               <path fill="currentColor" d="M152 70.059 201.539 20.519 235.48 54.461 185.941 104H256v48h-70.059l49.539 49.539-33.941 33.941L152 185.941V256h-48v-70.059l-49.54 49.539-33.94-33.941L70.059 152H0v-48h70.059L20.519 54.46 54.461 20.52 104 70.059V0h48z" />
             </svg>
           </span>

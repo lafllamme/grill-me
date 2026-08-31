@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { computeDashboardAiAdjustments, deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
@@ -53,7 +53,7 @@ describe('dashboard profile scoring', () => {
       changedFiles: 22,
       files: [{ filename: `app/generated-${index}.ts`, status: 'modified', additions: 900, deletions: 700 }],
     })), 0))
-    expect(assessment.scores.workflow).toBeLessThan(50)
+    expect(assessment.scores.workflow).toBe(50)
     expect(assessment.scores.complexity).toBe(50)
     expect(assessment.scores.context).toBe(50)
     expect(assessment.derivedMetrics.mergeCommitRatio).toBe(50)
@@ -228,7 +228,7 @@ describe('dashboard profile scoring', () => {
     ], 0)
 
     expect(scoreDashboardWorkflow(deriveDashboardMetrics(cleanHistory))).toBeGreaterThan(90)
-    expect(scoreDashboardWorkflow(deriveDashboardMetrics(mergeHeavyHistory))).toBeLessThan(40)
+    expect(scoreDashboardWorkflow(deriveDashboardMetrics(mergeHeavyHistory))).toBe(50)
   })
 
   it('keeps merge-only maintainer history neutral instead of calling it bad workflow', () => {
@@ -358,6 +358,55 @@ describe('dashboard profile scoring', () => {
     })
 
     expect(assessment.scores.safety).toBe(15)
+  })
+
+  it('applies only bounded, grounded AI adjustments to non-safety axes', () => {
+    const sample = context([
+      commit({ sha: 'one', files: [{ filename: 'src/one.ts', status: 'modified', additions: 4, deletions: 1, patch: '+ const clearName = input' }] }),
+      commit({ sha: 'two', files: [{ filename: 'src/two.ts', status: 'modified', additions: 4, deletions: 1, patch: '+ const anotherClearName = input' }] }),
+      commit({ sha: 'three', files: [{ filename: 'src/three.ts', status: 'modified', additions: 4, deletions: 1, patch: '+ const finalClearName = input' }] }),
+    ], 0)
+    const review = {
+      confidence: 90,
+      status: 'assessed' as const,
+      selectedCommitCount: 3,
+      patchCount: 3,
+      patchChars: 90,
+      findings: [
+        { axis: 'clarity' as const, verdict: 'positive' as const, impact: 'introduced' as const, severity: 'low' as const, commitSha: 'one', filename: 'src/one.ts', evidence: 'the name explains the value' },
+        { axis: 'clarity' as const, verdict: 'positive' as const, impact: 'introduced' as const, severity: 'low' as const, commitSha: 'two', filename: 'src/two.ts', evidence: 'the name explains the value' },
+        { axis: 'safety' as const, verdict: 'negative' as const, impact: 'introduced' as const, severity: 'high' as const, category: 'auth' as const, commitSha: 'three', filename: 'src/three.ts', evidence: 'auth signal is not directly visible' },
+      ],
+    }
+
+    expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({ clarity: 8 })
+    const base = scoreDashboardProfile(sample)
+    const adjusted = scoreDashboardProfile(sample, undefined, review)
+    expect(adjusted.scores.clarity).toBe(Math.min(100, base.scores.clarity + 8))
+    expect(adjusted.scores.safety).toBe(base.scores.safety)
+    expect(adjusted.aiAdjustments).toEqual({ clarity: 8 })
+  })
+
+  it('does not let low-confidence or ungrounded AI findings change a score', () => {
+    const sample = context([
+      commit({ sha: 'one' }),
+      commit({ sha: 'two' }),
+      commit({ sha: 'three' }),
+    ], 0)
+    const review = {
+      confidence: 59,
+      status: 'assessed' as const,
+      selectedCommitCount: 1,
+      patchCount: 1,
+      patchChars: 20,
+      findings: [
+        { axis: 'workflow' as const, verdict: 'negative' as const, impact: 'introduced' as const, severity: 'high' as const, commitSha: 'not-present', filename: 'src/nope.ts', evidence: 'not grounded' },
+        { axis: 'workflow' as const, verdict: 'negative' as const, impact: 'introduced' as const, severity: 'high' as const, commitSha: 'also-not-present', filename: 'src/nope-two.ts', evidence: 'not grounded' },
+      ],
+    }
+
+    expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({})
+    expect(scoreDashboardProfile(sample, undefined, review).aiAdjustments).toEqual({})
   })
 
   it('selects at most the newest, largest, and most relevant commits', () => {

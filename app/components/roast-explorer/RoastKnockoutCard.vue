@@ -177,14 +177,14 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
 
 <template>
   <div class="p-5 bg-background lg:p-12 sm:p-8">
-    <div class="mx-auto min-h-[54rem] max-w-7xl">
+    <div class="mx-auto max-w-7xl min-h-[54rem]">
       <div class="gap-8 grid min-w-0 lg:grid-cols-[minmax(18rem,0.31fr)_minmax(24rem,0.38fr)_minmax(20rem,0.31fr)] lg:items-start">
-        <aside class="order-1 min-w-0 gap-4 grid lg:min-h-[41rem] lg:grid-rows-[15rem_minmax(0,1fr)] lg:order-1">
+        <aside class="gap-4 grid min-w-0 order-1 lg:grid-rows-[15rem_minmax(0,1fr)] lg:min-h-[41rem] lg:order-1">
           <div class="p-5 border border-divider rounded-[1.5rem] bg-surface-container">
             <p class="text-[10px] text-on-surface-variant tracking-[0.2em] font-meta uppercase">
               Username
             </p>
-            <div class="mt-5 min-h-[10rem] flex flex-col">
+            <div class="mt-5 flex flex-col min-h-[10rem]">
               <p class="text-[clamp(2rem,3vw,3.5rem)] text-on-surface leading-[0.9] tracking-[-0.06em] font-display break-words">
                 @{{ fixture.username }}
               </p>
@@ -199,29 +199,29 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
           <RoastReceiptPrinter :fixture="fixture" :reveal-phase="revealPhase" />
         </aside>
 
-        <article class="order-2 min-h-[41rem] min-w-0 lg:order-2">
-          <div class="min-h-[41rem] p-0 flex flex-col justify-center sm:px-4 lg:px-6">
-            <div class="mt-2 min-h-[16rem] relative text-center">
-              <div class="inset-0 absolute flex items-start justify-center transition-[opacity,transform,filter] duration-800 ease-out motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">
-                <div class="mx-auto max-w-[24rem] space-y-6 pt-5 w-full" aria-label="Loading roast identity">
-                  <Skeleton class="rounded-full h-8 w-3/4 mx-auto" />
-                  <Skeleton class="rounded-full h-4 w-1/2 mx-auto" />
+        <article class="min-h-[41rem] min-w-0 order-2 lg:order-2">
+          <div class="p-0 flex flex-col min-h-[41rem] justify-center lg:px-6 sm:px-4">
+            <div class="mt-2 text-center min-h-[16rem] relative">
+              <div class="flex transition-[opacity,transform,filter] duration-800 ease-out items-start inset-0 justify-center absolute motion-reduce:transition-none" :class="isSkeletonVisible ? (isSkeletonResolving ? 'opacity-0 scale-[0.96] blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0') : 'opacity-0 scale-[0.96] blur-sm pointer-events-none'" :aria-hidden="!isSkeletonVisible">
+                <div class="mx-auto pt-5 max-w-[24rem] w-full space-y-6" aria-label="Loading roast identity">
+                  <Skeleton class="mx-auto rounded-full h-8 w-3/4" />
+                  <Skeleton class="mx-auto rounded-full h-4 w-1/2" />
                 </div>
               </div>
 
-              <div class="inset-0 absolute mx-auto max-w-[24rem] text-left pt-1 transition-[opacity,transform,filter,max-height] duration-800 ease-out motion-reduce:transition-none" :class="isAnalysisVisible ? 'opacity-100 translate-y-0 blur-0 max-h-[16rem]' : 'opacity-0 translate-y-[0.35rem] blur-sm max-h-0 pointer-events-none'" :aria-hidden="!isAnalysisVisible" aria-label="Assembly analysis">
+              <div class="mx-auto pt-1 text-left max-w-[24rem] transition-[opacity,transform,filter,max-height] duration-800 ease-out inset-0 absolute motion-reduce:transition-none" :class="isAnalysisVisible ? 'opacity-100 translate-y-0 blur-0 max-h-[16rem]' : 'opacity-0 translate-y-[0.35rem] blur-sm max-h-0 pointer-events-none'" :aria-hidden="!isAnalysisVisible" aria-label="Assembly analysis">
                 <p class="text-[10px] text-primary tracking-[0.2em] font-meta uppercase">
                   Evidence assembly
                 </p>
                 <ol class="mt-5 space-y-4">
-                  <li v-for="(step, index) in analysisSteps" :key="step" class="text-sm text-on-surface-variant leading-relaxed font-meta flex gap-3 items-center transition-opacity duration-300" :class="index < revealedAnalysisSteps ? 'opacity-100' : 'opacity-25'">
-                    <span class="text-primary text-[10px]">{{ index < revealedAnalysisSteps ? String(index + 1).padStart(2, '0') : '··' }}</span>
+                  <li v-for="(step, index) in analysisSteps" :key="step" class="text-sm text-on-surface-variant leading-relaxed font-meta flex gap-3 transition-opacity duration-300 items-center" :class="index < revealedAnalysisSteps ? 'opacity-100' : 'opacity-25'">
+                    <span class="text-[10px] text-primary">{{ index < revealedAnalysisSteps ? String(index + 1).padStart(2, '0') : '··' }}</span>
                     <span>{{ step }}</span>
                   </li>
                 </ol>
               </div>
 
-              <div class="inset-0 absolute flex flex-col items-center transition-[opacity,transform,filter] duration-800 ease-out motion-reduce:transition-none" :class="isCenterIdentityVisible ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-[0.5rem] blur-sm pointer-events-none'" :aria-hidden="!isCenterIdentityVisible">
+              <div class="flex flex-col transition-[opacity,transform,filter] duration-800 ease-out items-center inset-0 absolute motion-reduce:transition-none" :class="isCenterIdentityVisible ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-[0.5rem] blur-sm pointer-events-none'" :aria-hidden="!isCenterIdentityVisible">
                 <h2 class="text-[clamp(2.1rem,4.5vw,4.25rem)] text-on-surface leading-[0.88] tracking-[-0.07em] font-display">
                   {{ fixture.title }}
                 </h2>
@@ -231,25 +231,24 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
               </div>
             </div>
 
-            <div class="mt-2 min-h-[12rem] text-center">
-              <div class="relative mx-auto flex h-52 w-52 items-center justify-center">
-                <div class="inset-0 absolute transition-transform duration-1000 ease-out motion-reduce:transition-none [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" :style="{ transform: `rotate(${starRotation}deg)` }" role="status" aria-label="Loading grade">
-                  <div class="h-full w-full bg-surface-container-highest" />
-                  <div class="inset-0 absolute overflow-hidden transition-[clip-path] duration-800 ease-out motion-reduce:transition-none" :style="{ clipPath: `inset(${100 - starFillPercent}% 0 0 0)` }">
-                    <div class="h-full w-full bg-primary [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" />
+            <div class="mt-2 text-center min-h-[12rem]">
+              <div class="mx-auto flex h-52 w-52 items-center justify-center relative">
+                <div class="transition-transform duration-1000 ease-out [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)] inset-0 absolute motion-reduce:transition-none" :style="{ transform: `rotate(${starRotation}deg)` }" role="status" aria-label="Loading grade">
+                  <div class="bg-surface-container-highest h-full w-full" />
+                  <div class="transition-[clip-path] duration-800 ease-out inset-0 absolute overflow-hidden motion-reduce:transition-none" :style="{ clipPath: `inset(${100 - starFillPercent}% 0 0 0)` }">
+                    <div class="bg-primary h-full w-full [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]" />
                   </div>
                 </div>
-                <span class="text-5xl text-background font-display relative z-10 transition-all duration-700 motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">{{ fixture.metrics.grade }}</span>
+                <span class="text-5xl text-background font-display transition-all duration-700 relative z-10 motion-reduce:transition-none" :class="isGradeVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'">{{ fixture.metrics.grade }}</span>
               </div>
               <p class="text-[10px] text-primary tracking-[0.2em] font-meta mt-6 px-3 py-2 border border-primary border-solid inline-block uppercase transition-opacity duration-500" :class="isGradeVisible ? 'opacity-100' : 'opacity-0'">
                 {{ verdict }}
               </p>
             </div>
-
           </div>
         </article>
 
-        <aside class="order-3 min-w-0 lg:min-h-[41rem] lg:flex lg:flex-col lg:pt-2">
+        <aside class="min-w-0 order-3 lg:pt-2 lg:flex lg:flex-col lg:min-h-[41rem]">
           <div class="h-[25rem] min-h-0 relative">
             <TransitionGroup
               tag="div"
@@ -260,7 +259,7 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
               leave-from-class="opacity-100 translate-x-0"
               leave-to-class="opacity-0 -translate-x-4"
             >
-              <button v-for="(card, index) in visibleEvidenceCards" :key="`${card.label}-${activeEvidenceCard}`" type="button" class="p-6 text-left border-[1px] rounded-[1.5rem] border-solid inset-x-0 top-0 absolute h-[23rem] sm:p-7" :class="[card.kind === 'roast' ? 'border-primary bg-surface-container-high' : 'border-divider bg-surface-container', index === 0 ? 'cursor-pointer' : 'pointer-events-none']" :style="{ transform: `translate(${index * 0.8}rem, ${index * 0.8}rem) scale(${1 - index * 0.035})`, zIndex: 3 - index, opacity: 1 - index * 0.12 }" :aria-label="`${card.label}: ${card.text}`" @click="index === 0 && nextEvidenceCard()">
+              <button v-for="(card, index) in visibleEvidenceCards" :key="`${card.label}-${activeEvidenceCard}`" type="button" class="p-6 text-left border-[1px] rounded-[1.5rem] border-solid h-[23rem] inset-x-0 top-0 absolute sm:p-7" :class="[card.kind === 'roast' ? 'border-primary bg-surface-container-high' : 'border-divider bg-surface-container', index === 0 ? 'cursor-pointer' : 'pointer-events-none']" :style="{ transform: `translate(${index * 0.8}rem, ${index * 0.8}rem) scale(${1 - index * 0.035})`, zIndex: 3 - index, opacity: 1 - index * 0.12 }" :aria-label="`${card.label}: ${card.text}`" @click="index === 0 && nextEvidenceCard()">
                 <div class="flex gap-3 items-center justify-between">
                   <span class="text-[10px] tracking-[0.2em] font-meta uppercase" :class="card.kind === 'roast' ? 'text-primary' : 'text-on-surface-variant'">
                     {{ card.label }}
@@ -272,8 +271,8 @@ const areScoresVisible = computed(() => revealPhase.value >= 5)
                 <p v-if="(card.kind === 'roast' && activeEvidenceCard + index < revealedRounds) || (card.kind === 'feedback' && areScoresVisible)" class="text-xl text-on-surface leading-[1.08] tracking-[-0.03em] font-body mt-12 sm:text-2xl">
                   {{ card.text }}
                 </p>
-                <Skeleton v-else class="rounded-[0.4rem] h-4 mt-12 w-full" label="Loading evidence" />
-                <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta bottom-5 left-5 absolute uppercase sm:left-6">
+                <Skeleton v-else class="mt-12 rounded-[0.4rem] h-4 w-full" label="Loading evidence" />
+                <span class="text-[10px] text-on-surface-variant tracking-[0.16em] font-meta uppercase bottom-5 left-5 absolute sm:left-6">
                   {{ card.kind === 'roast' ? 'damage logged' : 'exchange suggested' }}
                 </span>
               </button>

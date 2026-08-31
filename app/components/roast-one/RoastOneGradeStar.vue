@@ -69,12 +69,12 @@ const gradeSizeClasses = {
 
 <template>
   <div
-    class="relative flex items-center justify-center"
+    class="flex items-center justify-center relative"
     data-testid="roast-one-grade-star"
     :class="sizeClasses[size]"
   >
     <div
-      class="inset-0 absolute transition-transform duration-1000 ease-out motion-reduce:transition-none"
+      class="transition-transform duration-1000 ease-out inset-0 absolute motion-reduce:transition-none"
       role="img"
       :aria-label="`Grade ${grade}`"
       :style="{ transform: `rotate(${starRotation}deg)`, clipPath: starClipPath }"
@@ -84,17 +84,17 @@ const gradeSizeClasses = {
         :class="tone === 'light' ? 'bg-basalt-200' : 'bg-surface-container-highest'"
       />
       <div
-        class="inset-0 absolute overflow-hidden transition-[clip-path] duration-1000 ease-out motion-reduce:transition-none"
+        class="transition-[clip-path] duration-1000 ease-out inset-0 absolute overflow-hidden motion-reduce:transition-none"
         :style="{ clipPath: `inset(${100 - starFillPercent}% 0 0 0)` }"
       >
         <div
-          class="h-full w-full bg-primary"
+          class="bg-primary h-full w-full"
           :style="{ clipPath: starClipPath }"
         />
       </div>
     </div>
     <span
-      class="font-display relative z-10 transition-all duration-700 motion-reduce:transition-none"
+      class="font-display transition-all duration-700 relative z-10 motion-reduce:transition-none"
       :class="[
         tone === 'light' ? 'text-basalt-950' : 'text-background',
         gradeSizeClasses[gradeSize],

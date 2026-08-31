@@ -45,7 +45,7 @@ function labelOpacity(index: number) {
   <g>
     <template v-for="(item, index) in context.data" :key="index">
       <template v-if="props.showAllLabels || context.data.length <= props.maxLabels || index === context.hoveredIndex.value || index % Math.max(1, Math.ceil(context.data.length / props.maxLabels)) === 0">
-        <text :x="context.xAt(index)" y="304" text-anchor="middle" :opacity="labelOpacity(index)" class="font-body text-[12px]" :style="{ fill: 'var(--chart-label)' }">
+        <text :x="context.xAt(index)" y="304" text-anchor="middle" :opacity="labelOpacity(index)" class="text-[12px] font-body" :style="{ fill: 'var(--chart-label)' }">
           {{ item[context.xDataKey] }}
         </text>
       </template>
@@ -75,7 +75,7 @@ function labelOpacity(index: number) {
             :key="`${item[context.xDataKey]}-${index}`"
             :y="20 + index * 24"
             text-anchor="middle"
-            class="font-body text-sm font-medium"
+            class="text-sm font-body font-medium"
             fill="var(--chart-axis-badge-foreground, #171717)"
           >
             {{ item[context.xDataKey] }}

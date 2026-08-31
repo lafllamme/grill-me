@@ -158,7 +158,7 @@ const visibleFeedback = computed(() => props.model.feedback.slice(0, 3))
                   </div>
                   <span class="text-xs text-signal-red-400 font-mono">+{{ file.additions }} / -{{ file.deletions }}</span>
                 </div>
-                <pre v-if="file.patch" class="text-[10px] text-explore-muted leading-relaxed font-mono mt-4 p-4 border-[1px] border-white/10 rounded-lg border-solid bg-white/[0.025] max-h-48 overflow-auto whitespace-pre-wrap">{{ file.patch }}</pre>
+                <pre v-if="file.patch" class="text-[10px] text-explore-muted leading-relaxed font-mono mt-4 p-4 border-[1px] border-white/10 rounded-lg border-solid bg-white/[0.025] max-h-48 whitespace-pre-wrap overflow-auto">{{ file.patch }}</pre>
               </div>
             </TransitionGroup>
           </div>
