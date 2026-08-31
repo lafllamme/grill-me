@@ -141,3 +141,48 @@ export interface DashboardProfileResponse {
   assessment: DashboardProfileAssessment
   evidence: DashboardEvidence
 }
+
+export type DashboardProfileStreamPhase = 'collecting-github' | 'scoring' | 'reviewing-ai' | 'finalizing'
+
+export interface DashboardProfileStreamMetaEvent {
+  type: 'meta'
+  requestId: string
+  username: string
+}
+
+export interface DashboardProfileStreamStatusEvent {
+  type: 'status'
+  phase: DashboardProfileStreamPhase
+  message: string
+}
+
+export interface DashboardProfileStreamEvidenceEvent {
+  type: 'evidence'
+  evidence: DashboardEvidence
+}
+
+export interface DashboardProfileStreamScoresEvent {
+  type: 'deterministic_scores'
+  assessment: DashboardProfileAssessment
+}
+
+export interface DashboardProfileStreamDoneEvent {
+  type: 'done'
+  data: DashboardProfileResponse
+}
+
+export interface DashboardProfileStreamErrorEvent {
+  type: 'error'
+  error: {
+    code: string
+    message: string
+  }
+}
+
+export type DashboardProfileStreamEvent
+  = | DashboardProfileStreamMetaEvent
+    | DashboardProfileStreamStatusEvent
+    | DashboardProfileStreamEvidenceEvent
+    | DashboardProfileStreamScoresEvent
+    | DashboardProfileStreamDoneEvent
+    | DashboardProfileStreamErrorEvent

@@ -15,7 +15,7 @@ const emit = defineEmits<{
   retry: []
 }>()
 const renderModel = computed(() => props.model)
-const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai'].includes(props.phase))
+const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai', 'finalizing'].includes(props.phase))
 const shouldShowState = computed(() => !renderModel.value || (renderModel.value.source === 'mock' && props.phase !== 'idle' && props.phase !== 'ready'))
 const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loading' : 'ready')
 </script>

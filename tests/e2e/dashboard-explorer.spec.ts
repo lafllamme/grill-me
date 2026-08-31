@@ -14,12 +14,12 @@ test.describe('dashboard explorer analysis states', () => {
     // The dashboard page includes a large client-side chart surface. Give Nuxt
     // one hydration turn before exercising the form event.
     await page.waitForTimeout(750)
-    await page.route('**/api/dashboard-profile', async (route) => {
+    await page.route('**/api/dashboard-profile/stream', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 250))
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
-        body: JSON.stringify({ message: 'Simulated dashboard failure' }),
+        body: JSON.stringify({ error: { code: 'simulated_failure', message: 'Simulated dashboard failure' } }),
       })
     })
 

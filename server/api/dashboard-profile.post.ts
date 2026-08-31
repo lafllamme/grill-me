@@ -1,9 +1,8 @@
-import { createError, readBody } from 'h3'
+import { createError, getRequestIP, readBody } from 'h3'
 import { validateGithubUsername } from '../roast/contracts-adapter'
-import { assessDashboardProfileWithAi, toDashboardAiSafetyAssessment } from '../roast/dashboard-ai-scoring'
-import { scoreDashboardProfile } from '../roast/dashboard-profile-scoring'
+import { runDashboardProfileAnalysis } from '../roast/dashboard-profile-service'
 import { logServerDebug } from '../roast/debug'
-import { collectDashboardGithubContext } from '../roast/github-collector'
+import { checkRateLimit } from '../roast/rate-limit'
 
 export default defineEventHandler(async (event) => {
   const startedAt = Date.now()
@@ -14,30 +13,25 @@ export default defineEventHandler(async (event) => {
 
   const username = validateGithubUsername(body.username)
   const config = useRuntimeConfig(event)
-  const githubStartedAt = Date.now()
-  const context = await collectDashboardGithubContext(username, config.githubToken || undefined, {
-    githubTimeoutMs: Number(config.githubTimeoutMs) || undefined,
+  checkRateLimit(getRequestIP(event, { xForwardedFor: true }) || 'unknown')
+  const analysis = await runDashboardProfileAnalysis({
+    username,
+    githubToken: config.githubToken || undefined,
+    cfAccountId: config.cfAccountId || undefined,
+    cfApiToken: config.cfApiToken || undefined,
+    cfAiModel: config.cfAiModel || undefined,
+    githubTimeoutMs: Number(config.githubTimeoutMs) || 12_000,
+    aiTimeoutMs: Number(config.cfAiTimeoutMs) || 30_000,
+    aiMaxTokens: Number(config.cfAiMaxTokens) || 2200,
   })
-  const githubDurationMs = Date.now() - githubStartedAt
-  const aiStartedAt = Date.now()
-  const aiReview = await assessDashboardProfileWithAi({
-    context,
-    accountId: config.cfAccountId,
-    apiToken: config.cfApiToken,
-    model: config.cfAiModel,
-    timeoutMs: Number(config.cfAiTimeoutMs) || 30_000,
-    maxTokens: Number(config.cfAiMaxTokens) || 2200,
-  })
-  const aiDurationMs = Date.now() - aiStartedAt
-  const aiSafety = toDashboardAiSafetyAssessment(aiReview)
-  const assessment = scoreDashboardProfile(context, aiSafety, aiReview)
+  const { assessment, evidence } = analysis.response
 
   logServerDebug('dashboard-profile-summary', {
     username,
-    durationMs: Date.now() - startedAt,
-    githubDurationMs,
-    aiDurationMs,
-    collection: context.collection,
+    durationMs: analysis.timingsMs.total || Date.now() - startedAt,
+    githubDurationMs: analysis.timingsMs.github,
+    aiDurationMs: analysis.timingsMs.ai,
+    collection: analysis.context.collection,
     derivedMetrics: assessment.derivedMetrics,
     scores: assessment.scores,
     overallScore: assessment.overallScore,
@@ -45,38 +39,15 @@ export default defineEventHandler(async (event) => {
     role: assessment.role,
     roleStatus: assessment.roleStatus,
     aiReview: {
-      status: aiReview.status,
-      confidence: aiReview.confidence,
-      selectedCommitCount: aiReview.selectedCommitCount,
-      patchCount: aiReview.patchCount,
-      patchChars: aiReview.patchChars,
-      findingCount: aiReview.findings.length,
+      status: analysis.aiReview.status,
+      confidence: analysis.aiReview.confidence,
+      selectedCommitCount: analysis.aiReview.selectedCommitCount,
+      patchCount: analysis.aiReview.patchCount,
+      patchChars: analysis.aiReview.patchChars,
+      findingCount: analysis.aiReview.findings.length,
     },
-    acceptedSafetyRiskCount: aiSafety.signals.filter(signal => signal.verdict === 'risk' && signal.impact === 'introduced').length,
+    acceptedSafetyRiskCount: assessment.aiSafety?.signals.filter(signal => signal.verdict === 'risk' && signal.impact === 'introduced').length ?? 0,
   })
 
-  return {
-    assessment,
-    evidence: {
-      commits: context.commits.map(commit => ({
-        repo: commit.repo,
-        sha: commit.sha,
-        message: commit.message,
-        additions: commit.additions,
-        deletions: commit.deletions,
-        changedFiles: commit.changedFiles,
-        committedAt: commit.committedAt,
-        files: commit.files.map(file => ({
-          filename: file.filename,
-          status: file.status,
-          additions: file.additions,
-          deletions: file.deletions,
-        })),
-      })),
-      pullRequests: context.prs,
-      repositories: context.repositories ?? [],
-      checks: context.checks ?? [],
-      collection: context.collection,
-    },
-  }
+  return { assessment, evidence }
 })

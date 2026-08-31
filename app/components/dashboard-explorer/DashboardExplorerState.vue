@@ -17,7 +17,7 @@ const emit = defineEmits<{
   retry: []
 }>()
 
-const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai'].includes(props.phase))
+const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai', 'finalizing'].includes(props.phase))
 const stateKind = computed<'idle' | 'loading' | 'empty' | 'error'>(() => {
   if (props.phase === 'error')
     return 'error'
@@ -33,6 +33,8 @@ const stateCopy = computed(() => {
       return { eyebrow: '02 / Profile pass', title: 'Turning evidence into signals.', description: 'The GitHub sample is in. Now the deterministic profile rules are doing the boring, reliable part.' }
     if (props.phase === 'reviewing-ai')
       return { eyebrow: '03 / AI review', title: 'Reading the selected patches.', description: 'A bounded set of code changes is being checked for grounded context. The AI can explain findings; it does not invent the score.' }
+    if (props.phase === 'finalizing')
+      return { eyebrow: '04 / Profile filed', title: 'Filing the final read.', description: 'The reviewed signals are being merged into the same profile model that powers every chart.' }
     return { eyebrow: '01 / GitHub pass', title: 'Collecting the public trail.', description: props.username ? `Opening @${props.username}'s public activity and repository evidence.` : 'Opening the public activity and repository evidence.' }
   }
   if (stateKind.value === 'error')

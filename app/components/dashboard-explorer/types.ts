@@ -12,7 +12,7 @@ export interface DashboardExplorerPanelProps {
   chartStatus?: 'loading' | 'ready'
 }
 
-export type DashboardAnalysisPhase = 'idle' | 'collecting-github' | 'scoring' | 'reviewing-ai' | 'ready' | 'error'
+export type DashboardAnalysisPhase = 'idle' | 'collecting-github' | 'scoring' | 'reviewing-ai' | 'finalizing' | 'ready' | 'error'
 
 export interface DashboardExplorerModel {
   source: 'mock' | 'live'

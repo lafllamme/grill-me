@@ -127,15 +127,16 @@ type DashboardAnalysisPhase =
   | 'error'
 ```
 
-Current transport limitation:
+Transport status:
 
-- the existing `POST /api/dashboard-profile` completes GitHub collection,
-  deterministic scoring, and the combined AI review before returning;
-- the client therefore uses `collecting-github` as the honest loading phase for
-  the request and switches to `ready` only after the complete model is present;
+- `POST /api/dashboard-profile/stream` now emits the bounded analysis stages;
+- `POST /api/dashboard-profile` remains as a synchronous compatibility path for
+  callers that do not need progressive updates;
+- the client switches from `collecting-github` to `scoring` and then
+  `reviewing-ai` only when the server emits those stages;
 - no timer is allowed to pretend that a score or roast already exists.
 
-Future stream events can update the same model without changing the panels:
+The typed stream events update the same model without changing the panels:
 
 ```text
 analysis_started
@@ -191,10 +192,11 @@ Cloudflare requests.
 
 ### Phase C — progressive transport
 
-- Add a typed dashboard event contract on the server.
+- Add a typed dashboard event contract on the server. **Done**
 - Let the composable merge GitHub evidence, deterministic scores, AI findings,
-  and final roast content into the same model.
+  and final roast content into the same model. **In progress**
 - Replace the single request inside the composable with SSE/fetch streaming.
+  **Done**
 - Keep panels and their props unchanged unless a new visible field is approved.
 
 ## Current implementation status
@@ -205,10 +207,14 @@ Cloudflare requests.
   deterministic scoring, and one combined AI review.
 - Phase A is complete: the response contract, normalized model, request
   composable, and composition root are reusable and independently testable.
-- Phase B is in progress: the root now owns honest idle/loading/empty/error
-  rendering, retry dispatch, and chart status. The landing host is deliberately
-  waiting for the shared response contract so it does not create a duplicate
-  GitHub/AI request.
+- Phase B is complete: the root owns honest idle/loading/empty/error rendering,
+  retry dispatch, and chart status. The landing host is deliberately waiting
+  for the shared response contract so it does not create a duplicate GitHub/AI
+  request.
+- Phase C is in progress: the Explorer uses one SSE request and receives
+  evidence, deterministic scores, and the final AI-reviewed response in order.
+  The landing host still needs to consume this same combined response before it
+  mounts the dashboard there.
 - This work does not change scoring formulas or introduce persistence.
 
 ## Non-goals for this refactor
