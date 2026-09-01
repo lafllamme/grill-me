@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-02
+
+### Dashboard documentation
+- consolidated the dashboard architecture, scoring, AI review, chart contract,
+  testing rules, roles, and calibration history under docs/dashboard/
+- split category formulas into focused documents so each scoring axis has one
+  owner, one evidence gate, and one validation record
+- kept legacy dashboard documentation paths as compatibility links
+- added document version/status metadata and a required validation checklist
+
 ## 2026-05-14
 
 ### Color system

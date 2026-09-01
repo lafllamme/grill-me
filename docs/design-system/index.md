@@ -13,8 +13,7 @@ Aktuell umfasst das Design-System:
 Ergaenzende laufende Richtungsarbeit:
 
 - [rebranding.md](../rebranding.md) - offenes Arbeitsdokument fuer die visuelle Neuausrichtung
-- [dashboard-chart-roadmap.md](../dashboard-chart-roadmap.md) - Chart-Auswahl, Datenbedeutung und Portierungs-Checklist
-- [dashboard-chart-checklist.md](../dashboard-chart-checklist.md) - Kurzer Chart-Status, Quellen und nächste Portierung
+- [dashboard/](../dashboard/) - Dashboard-Architektur, Scoring, AI-Vertrag und Chart-Status
 - [Rebrand research](./research/README.md) - Quellenanalysen, Synthese und Prototype-Grenzen
 - [Rebrand design direction](./research/design-direction.md) - aktuelle Designprinzipien fuer die Exploration
 

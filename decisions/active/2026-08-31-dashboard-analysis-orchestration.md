@@ -34,7 +34,7 @@ Use one normalized client-facing `DashboardModel`, one
   are stable. A future stream updates the same model through typed events.
 
 The full contract and migration sequence live in
-[`docs/dashboard-architecture.md`](../../docs/dashboard-architecture.md).
+[`docs/dashboard/architecture.md`](../../docs/dashboard/architecture.md).
 
 ## Alternatives not chosen
 
