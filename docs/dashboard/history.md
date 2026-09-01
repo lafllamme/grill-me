@@ -1,13 +1,52 @@
 # Dashboard Scoring History
 
 **Status:** calibration record
-**Updated:** 2026-09-01
+**Updated:** 2026-09-02
 
 This file contains calibration evidence that should not be mixed into the
 active formula contract. The values describe a bounded public sample, not a
 general ranking of the named developers.
 
-## Latest six-profile audit
+## Workflow v3 live probe
+
+This run was made against the live dashboard endpoint after the evidence-cap
+change. The AI was still one combined second review; it could change Workflow
+by at most four points only when its patch references were grounded.
+
+| Profile | Workflow | Personal commits | Patch commits | AI adjustment | AI status | Interpretation |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| lafllamme | 92 | 17 | 17 | +4 | assessed | broad sample, AI found the delivery pattern coherent |
+| danielroe | 90 | 18 | 18 | 0 | invalid-response | focused scope; deterministic result kept |
+| torvalds | 86 | 11 | 11 | +4 | assessed | merge-heavy public history, but personal sample is now usable |
+| sindresorhus | 75 | 18 | 18 | 0 | invalid-response | broad package/release work and weaker message signal |
+| antfu | 90 | 18 | 18 | 0 | assessed | focused scope and consistent intent |
+| kentcdodds | 57 | 18 | 18 | 0 | invalid-response | broad personal scope and weak delivery-intent signal |
+
+The live values are not a ranking of engineering ability. They describe the
+observable delivery pattern in the bounded public sample. The new cap did not
+need to lower these particular runs because they had enough personal and patch
+evidence; its behavior is covered by the limited-sample unit tests.
+
+## Workflow v3 post parser-fix probe
+
+The same six-profile probe set was rerun after the combined AI response parser
+was made tolerant of malformed individual items. All six responses were
+`assessed`; none fell back to `invalid-response`.
+
+| Profile | Workflow | Personal commits | Patch commits | AI adjustment | AI status | Interpretation |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| lafllamme | 88 | 17 | 17 | 0 | assessed | broad but understandable delivery sample |
+| danielroe | 95 | 18 | 18 | 0 | assessed | strongest focused delivery signal in this run |
+| torvalds | 82 | 11 | 11 | 0 | assessed | personal commits separated from merge-heavy history |
+| sindresorhus | 79 | 18 | 18 | 0 | assessed | broad package/release work remains mid-range |
+| antfu | 94 | 18 | 18 | +4 | assessed | AI found the sampled changes consistently focused |
+| kentcdodds | 57 | 18 | 18 | 0 | assessed | broad delivery slices and weaker message signal |
+
+The Kent retry returned a grounded `supports` review at 75% axis confidence,
+so the 57 remained unchanged. This validates the AI response path; it does not
+turn the bounded Workflow sample into a general engineering ranking.
+
+## Previous six-profile audit
 
 | Profile | Clarity | Safety | Workflow | Complexity | Context | Overall | Main limitation |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |

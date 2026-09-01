@@ -11,6 +11,7 @@ export const DASHBOARD_AI_REVIEW_LIMITS = {
 export type DashboardPatchSelectionReason
   = | 'latest'
     | 'largest'
+    | 'workflow-signal'
     | 'safety-signal'
 
 export interface DashboardPatchSelectionCommit {
@@ -35,7 +36,7 @@ export interface DashboardPatchSelection {
 }
 
 const safetyFilePattern = /(?:^|\/)(?:auth|security|permission|permissions|secret|secrets|credential|database|db|payment|payments|validator|validation|schema|middleware|guards?)(?:\/|\.|$)|(?:^|\/)(?:\.github\/workflows|\.circleci|\.buildkite)(?:\/|$)|(?:^|\/)(?:dockerfile|jenkinsfile|azure-pipelines\.ya?ml)$/i
-const safetyPatchPattern = /\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\b(?:validate|sanitize|escape|authorize|permission|fallback|throw new|secret|token|password|api[_-]?key)\b/i
+const safetyPatchPattern = /\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\bSELECT[^;\n]{0,120}(?:\+|\.|\$\{|format\s*\()|\b(?:validate|sanitize|escape|authorize|permission|fallback|throw new)\b|\b[\w$]*(?:api[_-]?key|secret|password|token)\b/i
 const generatedFilePattern = /(?:^|\/)(?:node_modules|vendor|dist|build|coverage|\.next|\.nuxt)(?:\/|$)|(?:^|\/)(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb|minified|generated)/i
 
 function commitTimestamp(commit: GithubCommit): number {
@@ -98,8 +99,11 @@ function selectBy(
 
 /**
  * Selects a deterministic, stratified patch sample for one dashboard AI call.
- * It includes the latest, largest, and most safety-relevant authored commits
- * while excluding integration-only and generated-file patches from review.
+ * It includes the latest, largest/workflow-relevant, and most safety-relevant
+ * authored commits while excluding integration-only and generated-file patches
+ * from review. The largest commit is also marked as workflow evidence because
+ * it gives the AI a bounded view of the profile's broadest delivery slice
+ * without adding another commit to the request.
  */
 export function selectDashboardPatchEvidence(context: GithubContext): DashboardPatchSelection {
   const eligible = context.commits
@@ -109,7 +113,9 @@ export function selectDashboardPatchEvidence(context: GithubContext): DashboardP
 
   addCommit(selected, eligible[0], 'latest')
 
-  addCommit(selected, selectBy(eligible, () => true, (left, right) => commitSize(right) - commitSize(left) || commitTimestamp(right) - commitTimestamp(left)), 'largest')
+  const largestCommit = selectBy(eligible, () => true, (left, right) => commitSize(right) - commitSize(left) || commitTimestamp(right) - commitTimestamp(left))
+  addCommit(selected, largestCommit, 'largest')
+  addCommit(selected, largestCommit, 'workflow-signal')
   addCommit(selected, selectBy(eligible, commit => commit.files.some(file => safetyFilePattern.test(file.filename) || safetyPatchPattern.test(file.patch ?? '')), (left, right) => commitTimestamp(right) - commitTimestamp(left) || commitSize(right) - commitSize(left)), 'safety-signal')
 
   const commits = Array.from(selected.values())

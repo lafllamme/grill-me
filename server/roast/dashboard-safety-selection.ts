@@ -1,7 +1,7 @@
 import type { GithubCommit } from './github-collector'
 
 export const safetyFilePattern = /(?:^|\/)(?:auth|security|permission|permissions|secret|secrets|credential|database|db|payment|payments|validator|validation|schema|middleware|guards?)(?:\/|\.|$)|(?:^|\/)(?:\.github\/workflows|\.circleci|\.buildkite)(?:\/|$)|(?:^|\/)(?:dockerfile|jenkinsfile|azure-pipelines\.ya?ml)$/i
-export const safetyPatchPattern = /(?:\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\b(?:validate|sanitize|escape|authorize|permission|fallback|throw new|secret|token|password|api[_-]?key)\b)/i
+export const safetyPatchPattern = /(?:\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\bSELECT[^;\n]{0,120}(?:\+|\.|\$\{|format\s*\()|\b(?:validate|sanitize|escape|authorize|permission|fallback|throw new)\b|\b[\w$]*(?:api[_-]?key|secret|password|token)\b)/i
 
 function commitTimestamp(commit: GithubCommit): number {
   if (!commit.committedAt)

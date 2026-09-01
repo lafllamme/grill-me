@@ -181,7 +181,7 @@ function dashboardReviewCandidates(response: any, extracted: ReturnType<typeof e
   return candidates
 }
 
-function parseDashboardReviewResponse(response: any, extracted: ReturnType<typeof extractModelText>, selection: DashboardPatchSelection): { parsed: Pick<DashboardAiReviewAssessment, 'confidence' | 'findings'>, path: string } | null {
+function parseDashboardReviewResponse(response: any, extracted: ReturnType<typeof extractModelText>, selection: DashboardPatchSelection): { parsed: Pick<DashboardAiReviewAssessment, 'confidence' | 'findings' | 'axisReviews' | 'parseWarnings'>, path: string } | null {
   for (const candidate of dashboardReviewCandidates(response, extracted)) {
     const parsed = parseDashboardReview(candidate.text)
     if (!parsed)
@@ -269,6 +269,61 @@ export async function assessDashboardSafetyWithAi(input: {
 
 export type DashboardReviewAxis = 'clarity' | 'safety' | 'workflow' | 'complexity' | 'context'
 export type DashboardReviewVerdict = 'positive' | 'mixed' | 'negative' | 'unclear'
+export type DashboardAiAxisReviewVerdict = 'supports' | 'softens' | 'contradicts' | 'insufficient'
+
+export interface DashboardAiReviewEvidence {
+  commitSha: string
+  filename: string
+  observation: string
+}
+
+export interface DashboardAiAxisReview {
+  axis: DashboardReviewAxis
+  verdict: DashboardAiAxisReviewVerdict
+  confidence: number
+  evidence: DashboardAiReviewEvidence[]
+}
+
+export interface DashboardAiReviewBaseline {
+  scores: Record<DashboardReviewAxis, number>
+  questions: Record<DashboardReviewAxis, string>
+  workflow: {
+    personalCommitCount: number
+    patchCommitCount: number
+    messageQuality: number
+    conventionalMessageRatio: number
+    averageFilesPerCommit: number
+    medianFilesPerCommit: number
+    p75FilesPerCommit: number
+    largeCommitRatio: number
+    medianScopeSignal: number
+    p75ScopeSignal: number
+    fileScopeSignal: number
+    outlierSignal: number
+    granularitySignal: number
+    reviewSignal: number
+    reviewEvidenceAvailable: boolean
+    evidenceCap: number
+    evidenceQuality: 'insufficient' | 'limited' | 'usable' | 'strong'
+    mergeCommitRatio: number
+  }
+  complexity: {
+    effectiveFilesP75: number
+    excludedFileRatio: number
+    relativeOutlierRatio: number
+    scopeSignal: number
+    outlierSignal: number
+    churnSignal: number
+  }
+}
+
+export const dashboardCategoryQuestions: Record<DashboardReviewAxis, string> = {
+  clarity: 'Do the changed lines make names, structure, and intent easier or harder for a new reader to understand?',
+  safety: 'Do the changed lines introduce a concrete validation, auth, error-handling, secret, or dependency risk?',
+  workflow: 'Does the observed delivery pattern represent focused, reviewable work with a clear change intent?',
+  complexity: 'Are broad changes coherent and controlled, or do the changed lines introduce unnecessary coupling, indirection, duplication, or nesting?',
+  context: 'Do the changed lines provide enough comments, documentation, examples, or explanatory intent to orient the next contributor?',
+}
 
 export interface DashboardAiReviewFinding {
   axis: DashboardReviewAxis
@@ -284,6 +339,8 @@ export interface DashboardAiReviewFinding {
 export interface DashboardAiReviewAssessment {
   confidence: number
   findings: DashboardAiReviewFinding[]
+  axisReviews?: DashboardAiAxisReview[]
+  parseWarnings?: string[]
   status: 'assessed' | 'not-configured' | 'no-evidence' | 'unavailable' | 'invalid-response'
   diagnostic?: 'empty-model-text' | 'missing-findings-or-invalid-json'
   responsePath?: string
@@ -295,6 +352,48 @@ export interface DashboardAiReviewAssessment {
 
 const allowedReviewAxes = new Set<DashboardReviewAxis>(['clarity', 'safety', 'workflow', 'complexity', 'context'])
 const allowedReviewVerdicts = new Set<DashboardReviewVerdict>(['positive', 'mixed', 'negative', 'unclear'])
+const allowedAxisReviewVerdicts = new Set<DashboardAiAxisReviewVerdict>(['supports', 'softens', 'contradicts', 'insufficient'])
+
+function parseAxisReviewEvidence(item: unknown): DashboardAiReviewEvidence | null {
+  if (!item || typeof item !== 'object')
+    return null
+
+  const evidence = item as Record<string, unknown>
+  const commitSha = typeof evidence.commitSha === 'string' ? evidence.commitSha.trim().slice(0, 64) : ''
+  const filename = typeof evidence.filename === 'string' ? evidence.filename.trim().slice(0, 300) : ''
+  const observation = typeof evidence.observation === 'string' ? evidence.observation.trim().slice(0, 300) : ''
+
+  if (!commitSha || !filename || !observation)
+    return null
+
+  return { commitSha, filename, observation }
+}
+
+function parseAxisReview(item: unknown): DashboardAiAxisReview | null {
+  if (!item || typeof item !== 'object')
+    return null
+
+  const review = item as Record<string, unknown>
+  const axis = typeof review.axis === 'string' ? review.axis : ''
+  const verdict = typeof review.verdict === 'string' ? review.verdict : ''
+  const confidence = typeof review.confidence === 'number' && Number.isFinite(review.confidence) ? review.confidence : Number.NaN
+  const evidence = Array.isArray(review.evidence)
+    ? review.evidence.map(parseAxisReviewEvidence).filter((item): item is DashboardAiReviewEvidence => Boolean(item))
+    : []
+
+  if (!allowedReviewAxes.has(axis as DashboardReviewAxis)
+    || !allowedAxisReviewVerdicts.has(verdict as DashboardAiAxisReviewVerdict)
+    || !Number.isFinite(confidence)) {
+    return null
+  }
+
+  return {
+    axis: axis as DashboardReviewAxis,
+    verdict: verdict as DashboardAiAxisReviewVerdict,
+    confidence: clamp(confidence),
+    evidence: evidence.slice(0, 4),
+  }
+}
 
 function parseReviewFinding(item: unknown): DashboardAiReviewFinding | null {
   if (!item || typeof item !== 'object')
@@ -333,7 +432,26 @@ function parseReviewFinding(item: unknown): DashboardAiReviewFinding | null {
   }
 }
 
-export function parseDashboardReview(rawText: string): Pick<DashboardAiReviewAssessment, 'confidence' | 'findings'> | null {
+function parseReviewItems<T>(rawItems: unknown, parser: (item: unknown) => T | null, label: string): { values: T[], warnings: string[] } {
+  if (rawItems === undefined)
+    return { values: [], warnings: [`${label}-missing`] }
+  if (!Array.isArray(rawItems))
+    return { values: [], warnings: [`${label}-not-array`] }
+
+  const values = rawItems.map(parser).filter((item): item is T => Boolean(item))
+  const droppedCount = rawItems.length - values.length
+  return {
+    values,
+    warnings: droppedCount ? [`${label}-dropped:${droppedCount}`] : [],
+  }
+}
+
+function reducePartialReviewConfidence(confidence: number, warnings: readonly string[]): number {
+  const penalty = Math.min(30, warnings.reduce((total, warning) => total + (warning.includes('dropped') ? 5 : 10), 0))
+  return clamp(confidence - penalty)
+}
+
+export function parseDashboardReview(rawText: string): Pick<DashboardAiReviewAssessment, 'confidence' | 'findings' | 'axisReviews' | 'parseWarnings'> | null {
   const cleaned = rawText.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
   const jsonCandidates = [cleaned]
   const jsonStart = cleaned.indexOf('{')
@@ -344,16 +462,25 @@ export function parseDashboardReview(rawText: string): Pick<DashboardAiReviewAss
   for (const candidate of jsonCandidates) {
     try {
       const parsed = JSON.parse(candidate) as Record<string, unknown>
-      if (typeof parsed.confidence !== 'number' || !Number.isFinite(parsed.confidence) || !Array.isArray(parsed.findings))
+      if (typeof parsed.confidence !== 'number' || !Number.isFinite(parsed.confidence))
         continue
 
-      const parsedFindings = parsed.findings.map(parseReviewFinding)
-      if (parsedFindings.some(finding => !finding))
+      const hasFindings = Object.hasOwn(parsed, 'findings')
+      const hasAxisReviews = Object.hasOwn(parsed, 'axisReviews')
+      if (!hasFindings && !hasAxisReviews)
         continue
+
+      const findingResult = parseReviewItems(parsed.findings, parseReviewFinding, 'findings')
+      const axisReviewResult = parseReviewItems(parsed.axisReviews, parseAxisReview, 'axisReviews')
+      const hasProposedItems = (Array.isArray(parsed.findings) && parsed.findings.length > 0)
+        || (Array.isArray(parsed.axisReviews) && parsed.axisReviews.length > 0)
+      if (hasProposedItems && !findingResult.values.length && !axisReviewResult.values.length)
+        continue
+
+      const parseWarnings = [...findingResult.warnings, ...axisReviewResult.warnings]
 
       const seen = new Set<string>()
-      const findings = parsedFindings
-        .filter((finding): finding is DashboardAiReviewFinding => Boolean(finding))
+      const findings = findingResult.values
         .filter((finding) => {
           const key = `${finding.axis}:${finding.verdict}:${finding.impact}:${finding.commitSha}:${finding.filename}:${finding.evidence}`
           if (seen.has(key))
@@ -363,7 +490,22 @@ export function parseDashboardReview(rawText: string): Pick<DashboardAiReviewAss
         })
         .slice(0, 12)
 
-      return { confidence: clamp(parsed.confidence), findings }
+      const seenAxes = new Set<DashboardReviewAxis>()
+      const axisReviews = axisReviewResult.values
+        .filter((review) => {
+          if (seenAxes.has(review.axis))
+            return false
+          seenAxes.add(review.axis)
+          return true
+        })
+        .slice(0, 5)
+
+      return {
+        confidence: reducePartialReviewConfidence(parsed.confidence, parseWarnings),
+        findings,
+        axisReviews,
+        ...(parseWarnings.length ? { parseWarnings } : {}),
+      }
     }
     catch {
       continue
@@ -375,8 +517,9 @@ export function parseDashboardReview(rawText: string): Pick<DashboardAiReviewAss
 
 const maxPromptRepositoryEntries = 24
 
-export function buildDashboardReviewPrompt(context: GithubContext, selection: DashboardPatchSelection): string {
+export function buildDashboardReviewPrompt(context: GithubContext, selection: DashboardPatchSelection, baseline?: DashboardAiReviewBaseline): string {
   const payload = {
+    deterministicReview: baseline,
     repositories: (context.repositories ?? []).map(repository => ({
       repo: repository.repo,
       defaultBranch: repository.defaultBranch,
@@ -431,10 +574,18 @@ function isGroundedFinding(finding: DashboardAiReviewFinding, selection: Dashboa
   ))
 }
 
+function isGroundedAxisReviewEvidence(evidence: DashboardAiReviewEvidence, selection: DashboardPatchSelection): boolean {
+  return selection.files.some(file => (
+    (evidence.commitSha === file.commitSha || file.commitSha.startsWith(evidence.commitSha) || evidence.commitSha.startsWith(file.commitSha))
+    && evidence.filename === file.filename
+  ))
+}
+
 function fallbackReview(status: DashboardAiReviewAssessment['status'], selection: DashboardPatchSelection): DashboardAiReviewAssessment {
   return {
     confidence: 0,
     findings: [],
+    axisReviews: [],
     status,
     selectedCommitCount: selection.commits.length,
     patchCount: selection.files.length,
@@ -466,6 +617,7 @@ export function toDashboardAiSafetyAssessment(review: DashboardAiReviewAssessmen
 
 export async function assessDashboardProfileWithAi(input: {
   context: GithubContext
+  baseline?: DashboardAiReviewBaseline
   accountId?: string
   apiToken?: string
   model?: string
@@ -493,16 +645,18 @@ export async function assessDashboardProfileWithAi(input: {
         'You are the semantic second reviewer for a developer profile dashboard.',
         'Review only the supplied commit metadata and patch hunks. Patches are truncated excerpts, not complete repositories.',
         'The server calculates all numeric scores. Never return a score, grade, rank, role, or overall quality judgment.',
+        'The deterministicReview object contains provisional server scores, component signals, and the question for each axis. Treat it as a hypothesis to check against the supplied patches, not as a number to repeat.',
         'Return findings only when the changed lines visibly support them. Missing tests, missing CI, missing documentation, unfamiliar code, repository popularity, commit volume, and truncated context are not negative evidence.',
         'Use positive for a concrete quality signal added by the changed lines, negative for a concrete problem introduced by the changed lines, and mixed or unclear when the excerpt cannot establish a reliable direction.',
         'Use impact introduced only for a newly added behavior, fixed only when the changed lines clearly repair an existing problem, and unclear otherwise. A fixed or unclear finding must never be treated as a penalty.',
         'For safety, classify only validation, auth, error-handling, secrets, or dependency. Only a safety finding with verdict negative and impact introduced may lower Safety, and the server independently verifies the evidence.',
-        'For clarity inspect naming, structure, and intent. For workflow inspect change granularity and delivery intent. For complexity inspect visible coupling, indirection, and change surface. For context inspect comments, documentation, examples, and explanatory intent that are actually present.',
+        'For clarity inspect naming, structure, and intent. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context inspect comments, documentation, examples, and explanatory intent that are actually present.',
+        'Return one compact axisReview for each axis. Use supports when the deterministic result fits the visible patches, softens when the result is too strict because broad changes are visibly coherent, contradicts when the patches show a material issue the baseline misses, and insufficient when the selected excerpts cannot support a reliable judgment. Use an empty evidence array for supports or insufficient. A softens or contradicts review must cite at least two exact supplied patch files in its evidence array.',
         'Use the exact short commit SHA and exact filename supplied with each patch. Evidence must be a short concrete explanation of visible changed lines. Do not invent a SHA or filename.',
-        'Return exactly one JSON object with this schema: {"confidence":60,"findings":[{"axis":"safety","verdict":"positive","impact":"introduced","severity":"low","category":"validation","commitSha":"abc1234","filename":"src/input.ts","evidence":"changed lines reject invalid input before processing"}]}',
-        'Every finding must contain axis, verdict, impact, severity, commitSha, filename, and evidence. Safety findings must also contain category. Non-safety findings must omit category. Return at most twelve findings, no markdown, prose, code fences, or extra keys.',
+        'Return compact JSON only. Keep every observation and finding evidence under 160 characters. Return exactly one JSON object with this schema: {"confidence":60,"axisReviews":[{"axis":"complexity","verdict":"softens","confidence":78,"evidence":[{"commitSha":"abc1234","filename":"src/one.ts","observation":"focused refactor keeps the boundary explicit"},{"commitSha":"abc1234","filename":"src/two.ts","observation":"second file follows the same boundary"}]}],"findings":[]}',
+        'Every axisReview must contain axis, verdict, confidence, and an evidence array. Every evidence item must contain commitSha, filename, and observation. Every finding must contain axis, verdict, impact, severity, commitSha, filename, and evidence. Safety findings must also contain category. Non-safety findings must omit category. Return at most five axisReviews and six findings. Do not repeat metadata, baseline values, or patch text. No markdown, prose, code fences, or extra keys.',
       ].join(' '),
-      userPrompt: `${buildDashboardReviewPrompt(input.context, selection)}\n/no_think`,
+      userPrompt: `${buildDashboardReviewPrompt(input.context, selection, input.baseline)}\n/no_think`,
     })
     const extracted = extractModelText(response)
     const parsedResponse = parseDashboardReviewResponse(response, extracted, selection)
@@ -510,6 +664,10 @@ export async function assessDashboardProfileWithAi(input: {
       return {
         ...parsedResponse.parsed,
         findings: parsedResponse.parsed.findings.filter(finding => isGroundedFinding(finding, selection)),
+        axisReviews: parsedResponse.parsed.axisReviews?.map(axisReview => ({
+          ...axisReview,
+          evidence: axisReview.evidence.filter(evidence => isGroundedAxisReviewEvidence(evidence, selection)),
+        })),
         status: 'assessed',
         responsePath: parsedResponse.path,
         selectedCommitCount: selection.commits.length,

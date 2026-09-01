@@ -4,7 +4,7 @@ import type { GithubCommit } from './github-collector'
  * Conservative patterns for risks that can be confirmed from added diff
  * lines. Context lines and removed lines are deliberately ignored.
  */
-export const confirmedRiskPatchPattern = /(?:\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\b(?:api[_-]?key|secret|password|token)\s*[:=]|\b(?:bypassAuthorization|bypassAuth|skipAuthorization|skipAuth)\s*\(|\bSELECT[^;\n]{0,120}(?:\+|\$\{|format\s*\())/i
+export const confirmedRiskPatchPattern = /(?:\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\b[\w$]*(?:api[_-]?key|secret|password|token)\s*[:=]|\b(?:bypassAuthorization|bypassAuth|skipAuthorization|skipAuth)\s*\(|\bSELECT[^;\n]{0,120}(?:\+|\.|\$\{|format\s*\())/i
 
 function matchesCommitSha(signalSha: string, commitSha: string): boolean {
   return signalSha === commitSha || commitSha.startsWith(signalSha) || signalSha.startsWith(commitSha)

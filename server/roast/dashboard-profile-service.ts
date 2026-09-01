@@ -1,9 +1,9 @@
 import type { DashboardEvidence, DashboardProfileAssessment, DashboardProfileResponse, DashboardProfileStreamPhase } from '~~/shared/dashboard/contracts'
-import type { DashboardAiReviewAssessment } from './dashboard-ai-scoring'
+import type { DashboardAiReviewAssessment, DashboardAiReviewBaseline } from './dashboard-ai-scoring'
 import type { GithubCollectionProgress, GithubContext } from './github-collector'
-import { assessDashboardProfileWithAi, toDashboardAiSafetyAssessment } from './dashboard-ai-scoring'
+import { assessDashboardProfileWithAi, dashboardCategoryQuestions, toDashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import { toDashboardEvidence } from './dashboard-profile-evidence'
-import { scoreDashboardProfile } from './dashboard-profile-scoring'
+import { getDashboardWorkflowScoreBreakdown, scoreDashboardProfile } from './dashboard-profile-scoring'
 import { collectDashboardGithubContext } from './github-collector'
 
 export interface DashboardProfileAnalysisInput {
@@ -54,11 +54,46 @@ export async function runDashboardProfileAnalysis(
   await hooks?.onStatus?.('scoring', 'Calculating deterministic profile signals...')
   const deterministicAssessment = scoreDashboardProfile(context)
   await hooks?.onDeterministicScores?.(deterministicAssessment)
+  const workflowBreakdown = getDashboardWorkflowScoreBreakdown(deterministicAssessment.derivedMetrics)
+
+  const aiBaseline: DashboardAiReviewBaseline = {
+    scores: deterministicAssessment.scores,
+    questions: dashboardCategoryQuestions,
+    workflow: {
+      personalCommitCount: deterministicAssessment.derivedMetrics.workflowCommitCount,
+      patchCommitCount: deterministicAssessment.derivedMetrics.workflowPatchCommitCount,
+      messageQuality: workflowBreakdown.messageSignal,
+      conventionalMessageRatio: deterministicAssessment.derivedMetrics.workflowConventionalMessageRatio,
+      averageFilesPerCommit: deterministicAssessment.derivedMetrics.workflowAverageFilesPerCommit,
+      medianFilesPerCommit: deterministicAssessment.derivedMetrics.workflowMedianFilesPerCommit,
+      p75FilesPerCommit: deterministicAssessment.derivedMetrics.workflowP75FilesPerCommit,
+      largeCommitRatio: deterministicAssessment.derivedMetrics.workflowLargeCommitRatio,
+      medianScopeSignal: workflowBreakdown.medianScopeSignal,
+      p75ScopeSignal: workflowBreakdown.p75ScopeSignal,
+      fileScopeSignal: workflowBreakdown.fileScopeSignal,
+      outlierSignal: workflowBreakdown.outlierSignal,
+      granularitySignal: workflowBreakdown.granularitySignal,
+      reviewSignal: workflowBreakdown.reviewSignal,
+      reviewEvidenceAvailable: workflowBreakdown.reviewEvidenceAvailable,
+      evidenceCap: workflowBreakdown.evidenceCap,
+      evidenceQuality: workflowBreakdown.evidenceQuality,
+      mergeCommitRatio: deterministicAssessment.derivedMetrics.mergeCommitRatio,
+    },
+    complexity: {
+      effectiveFilesP75: deterministicAssessment.derivedMetrics.complexityEffectiveFilesP75,
+      excludedFileRatio: deterministicAssessment.derivedMetrics.complexityExcludedFileRatio,
+      relativeOutlierRatio: deterministicAssessment.derivedMetrics.complexityRelativeOutlierRatio,
+      scopeSignal: deterministicAssessment.derivedMetrics.complexityScopeSignal,
+      outlierSignal: deterministicAssessment.derivedMetrics.complexityOutlierSignal,
+      churnSignal: deterministicAssessment.derivedMetrics.complexityChurnSignal,
+    },
+  }
 
   await hooks?.onStatus?.('reviewing-ai', 'Reviewing selected patch evidence with AI...')
   const aiStartedAt = Date.now()
   const aiReview = await assessDashboardProfileWithAi({
     context,
+    baseline: aiBaseline,
     accountId: input.cfAccountId,
     apiToken: input.cfApiToken,
     model: input.cfAiModel,

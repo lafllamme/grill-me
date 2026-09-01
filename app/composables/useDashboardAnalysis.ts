@@ -71,7 +71,10 @@ export function useDashboardAnalysis() {
         }
 
         if (event.type === 'deterministic_scores') {
-          assessment.value = event.assessment
+          // Keep the dashboard coherent while the AI review is still in
+          // flight. The deterministic assessment is useful server-side and
+          // remains part of the stream contract, but rendering it here makes
+          // the user see a score that changes again when `done` arrives.
           phase.value = 'reviewing-ai'
           return
         }

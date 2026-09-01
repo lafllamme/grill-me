@@ -41,6 +41,10 @@ export default defineEventHandler(async (event) => {
     aiReview: {
       status: analysis.aiReview.status,
       confidence: analysis.aiReview.confidence,
+      diagnostic: analysis.aiReview.diagnostic,
+      parseWarnings: analysis.aiReview.parseWarnings ?? [],
+      responsePath: analysis.aiReview.responsePath,
+      responseShape: analysis.aiReview.responseShape,
       selectedCommitCount: analysis.aiReview.selectedCommitCount,
       patchCount: analysis.aiReview.patchCount,
       patchChars: analysis.aiReview.patchChars,

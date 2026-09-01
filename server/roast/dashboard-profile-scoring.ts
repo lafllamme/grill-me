@@ -1,6 +1,6 @@
-import type { DashboardAiReviewAssessment, DashboardAiSafetyAssessment } from './dashboard-ai-scoring'
+import type { DashboardAiReviewAssessment, DashboardAiReviewEvidence, DashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import type { DashboardProfileRole, DashboardRoleClassification } from './dashboard-profile-roles'
-import type { GithubCommit, GithubContext } from './github-collector'
+import type { GithubCommit, GithubCommitFile, GithubContext } from './github-collector'
 import { resolveDashboardProfileRole } from './dashboard-profile-roles'
 import { hasConfirmedRiskEvidence } from './dashboard-safety-evidence'
 
@@ -29,12 +29,18 @@ export interface DashboardDerivedMetrics {
   commitsPer30Days: number
   averageFilesPerCommit: number
   workflowCommitCount: number
+  workflowPatchCommitCount: number
   workflowAverageFilesPerCommit: number
+  workflowMedianFilesPerCommit: number
+  workflowP75FilesPerCommit: number
   workflowMessageQuality: number
   workflowConventionalMessageRatio: number
   workflowLargeCommitRatio: number
   clarityScopeSignal: number
   contextDocumentationSignal: number
+  complexityEffectiveFilesP75: number
+  complexityExcludedFileRatio: number
+  complexityRelativeOutlierRatio: number
   complexityScopeSignal: number
   complexityOutlierSignal: number
   complexityChurnSignal: number
@@ -57,7 +63,7 @@ export interface DashboardDerivedMetrics {
 }
 
 export interface DashboardProfileAssessment {
-  version: 'v1'
+  version: 'v2'
   username: string
   scores: DashboardProfileScores
   overallScore: number
@@ -91,6 +97,11 @@ const clamp = (value: number, min = 0, max = 100): number => Math.round(Math.min
 const average = (values: readonly number[]): number => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
 const ratio = (part: number, whole: number): number => whole > 0 ? part / whole : 0
 
+const complexityExcludedFilePattern = /(?:^|\/)(?:node_modules|vendor|dist|build|coverage|\.next|\.nuxt|\.changeset|generated)(?:\/|$)|(?:^|\/)(?:generated[^/]*|package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb|npm-shrinkwrap\.json|CHANGELOG(?:\.[^/]+)?|release-notes(?:\.[^/]+)?)$/i
+const complexityTestFilePattern = /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i
+const complexityDocumentationFilePattern = /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i
+const complexityNonCodeFilePattern = /(?:^|\/)[^/]+\.kicad_block(?:\/|$)|\.(?:kicad_pcb|kicad_prl|kicad_pro|kicad_sch|pcb|sch|brd|dsn|gbr|step|stp|stl|iges|wrl|svg|png|jpe?g|gif|webp|ico|pdf|zip|tar|gz|bin|hex|uf2)$/i
+
 function percentile(values: readonly number[], percentileValue: number): number {
   if (!values.length)
     return 0
@@ -98,6 +109,34 @@ function percentile(values: readonly number[], percentileValue: number): number 
   const sorted = [...values].sort((left, right) => left - right)
   const index = Math.min(sorted.length - 1, Math.ceil((percentileValue / 100) * sorted.length) - 1)
   return sorted[index] ?? 0
+}
+
+function complexityFileWeight(file: GithubCommitFile): number {
+  if (complexityExcludedFilePattern.test(file.filename) || complexityNonCodeFilePattern.test(file.filename))
+    return 0
+  if (complexityTestFilePattern.test(file.filename))
+    return 0.5
+  if (complexityDocumentationFilePattern.test(file.filename))
+    return 0.25
+  return 1
+}
+
+/**
+ * Estimates the effective change surface while accounting for GitHub's
+ * bounded file sample. Unlisted files inherit the average visible file-class
+ * weight; when no file class is visible, the estimate stays conservative.
+ */
+function effectiveComplexityFiles(commit: GithubCommit): number {
+  const visibleWeights = commit.files.map(complexityFileWeight)
+  const visibleWeight = visibleWeights.reduce((sum, weight) => sum + weight, 0)
+  const omittedFileCount = Math.max(0, commit.changedFiles - commit.files.length)
+  const inferredOmittedWeight = commit.files.length ? average(visibleWeights) : 1
+  return visibleWeight + omittedFileCount * inferredOmittedWeight
+}
+
+function excludedComplexityFileRatio(commits: readonly GithubCommit[]): number {
+  const files = commits.flatMap(commit => commit.files)
+  return Math.round(ratio(files.filter(file => complexityFileWeight(file) === 0).length, files.length) * 100)
 }
 
 const safetySeverityPenalty: Record<DashboardAiSafetyAssessment['signals'][number]['severity'], number> = {
@@ -152,6 +191,88 @@ export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: 
  * maintainer merge work as personal workflow quality. Commit frequency and
  * merge ratio stay dashboard facts; they are intentionally not penalties.
  */
+export interface DashboardWorkflowScoreBreakdown {
+  messageSignal: number
+  medianScopeSignal: number
+  p75ScopeSignal: number
+  fileScopeSignal: number
+  outlierSignal: number
+  granularitySignal: number
+  reviewSignal: number
+  reviewEvidenceAvailable: boolean
+  evidenceCap: number
+  evidenceQuality: 'insufficient' | 'limited' | 'usable' | 'strong'
+  rawScore: number
+}
+
+export function getDashboardWorkflowEvidenceCap(metrics: DashboardDerivedMetrics): number {
+  if (metrics.workflowCommitCount < 3)
+    return 50
+
+  // A score in the 90s needs more than a clean-looking metadata sample. Patch
+  // evidence and enough personal commits are required before Workflow can
+  // claim a strong delivery pattern.
+  if (metrics.workflowPatchCommitCount < 3 || metrics.workflowCommitCount < 6)
+    return 84
+  if (metrics.workflowCommitCount < 10)
+    return 89
+  return 95
+}
+
+function getDashboardWorkflowEvidenceQuality(metrics: DashboardDerivedMetrics): DashboardWorkflowScoreBreakdown['evidenceQuality'] {
+  if (metrics.workflowCommitCount < 3)
+    return 'insufficient'
+  if (metrics.workflowPatchCommitCount < 3 || metrics.workflowCommitCount < 6)
+    return 'limited'
+  if (metrics.workflowCommitCount < 10)
+    return 'usable'
+  return 'strong'
+}
+
+export function getDashboardWorkflowScoreBreakdown(metrics: DashboardDerivedMetrics): DashboardWorkflowScoreBreakdown {
+  if (metrics.workflowCommitCount === 0) {
+    return {
+      messageSignal: 50,
+      medianScopeSignal: 50,
+      p75ScopeSignal: 50,
+      fileScopeSignal: 50,
+      outlierSignal: 50,
+      granularitySignal: 50,
+      reviewSignal: 50,
+      reviewEvidenceAvailable: false,
+      evidenceCap: 50,
+      evidenceQuality: 'insufficient',
+      rawScore: 50,
+    }
+  }
+
+  const medianScopeSignal = clamp(100 - Math.max(0, metrics.workflowMedianFilesPerCommit - 2) * 5)
+  const p75ScopeSignal = clamp(100 - Math.max(0, metrics.workflowP75FilesPerCommit - 4) * 3)
+  const fileScopeSignal = medianScopeSignal * 0.65 + p75ScopeSignal * 0.35
+  const outlierSignal = 100 - metrics.workflowLargeCommitRatio
+
+  const reviewSignal = metrics.pullRequestCoverage > 0 ? metrics.pullRequestCoverage : 50
+  const reviewEvidenceAvailable = metrics.pullRequestCoverage > 0
+  const weightedSignals = metrics.workflowMessageQuality * 0.45
+    + (fileScopeSignal * 0.75 + outlierSignal * 0.25) * 0.40
+    + (reviewEvidenceAvailable ? reviewSignal * 0.15 : 0)
+  const observedWeight = reviewEvidenceAvailable ? 1 : 0.85
+
+  return {
+    messageSignal: metrics.workflowMessageQuality,
+    medianScopeSignal,
+    p75ScopeSignal,
+    fileScopeSignal,
+    outlierSignal,
+    granularitySignal: fileScopeSignal * 0.75 + outlierSignal * 0.25,
+    reviewSignal,
+    reviewEvidenceAvailable,
+    evidenceCap: getDashboardWorkflowEvidenceCap(metrics),
+    evidenceQuality: getDashboardWorkflowEvidenceQuality(metrics),
+    rawScore: clamp(weightedSignals / observedWeight),
+  }
+}
+
 export function scoreDashboardWorkflow(metrics: DashboardDerivedMetrics): number {
   if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
     return 50
@@ -159,17 +280,7 @@ export function scoreDashboardWorkflow(metrics: DashboardDerivedMetrics): number
   if (metrics.workflowCommitCount === 0)
     return 50
 
-  const messageSignal = metrics.workflowMessageQuality
-  const fileScopeSignal = clamp(100 - Math.max(0, metrics.workflowAverageFilesPerCommit - 1) * 7)
-  const outlierSignal = 100 - metrics.workflowLargeCommitRatio
-  const granularitySignal = fileScopeSignal * 0.75 + outlierSignal * 0.25
-  const reviewSignal = metrics.pullRequestCoverage > 0 ? metrics.pullRequestCoverage : 50
-
-  return clamp(
-    messageSignal * 0.45
-    + granularitySignal * 0.40
-    + reviewSignal * 0.15,
-  )
+  return Math.min(getDashboardWorkflowScoreBreakdown(metrics).rawScore, getDashboardWorkflowEvidenceCap(metrics))
 }
 
 /**
@@ -189,7 +300,7 @@ export function scoreDashboardClarity(metrics: DashboardDerivedMetrics): number 
 }
 
 /**
- * Scores complexity control from the personal change surface. This is a
+ * Scores Complexity v2 from effective personal change surface. This is a
  * GitHub-observable proxy, not a claim about cyclomatic complexity or AST
  * structure. Merge commits are excluded before all three signals are derived.
  */
@@ -198,9 +309,9 @@ export function scoreDashboardComplexity(metrics: DashboardDerivedMetrics): numb
     return 50
 
   return clamp(
-    metrics.complexityScopeSignal * 0.55
+    metrics.complexityScopeSignal * 0.50
     + metrics.complexityOutlierSignal * 0.30
-    + metrics.complexityChurnSignal * 0.15,
+    + metrics.complexityChurnSignal * 0.20,
   )
 }
 
@@ -269,6 +380,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const workflowCommits = commits.filter(commit => !isMergeCommit(commit))
   const workflowCommitSizes = workflowCommits.map(commit => commit.additions + commit.deletions)
   const workflowFileCounts = workflowCommits.map(commit => commit.changedFiles)
+  const complexityEffectiveFileCounts = workflowCommits.map(effectiveComplexityFiles)
   const workflowConventionalMessages = workflowCommits.filter(commit => /^(?:feat|fix|refactor|docs|test|chore|perf|build|ci|style)(?:\(.+\))?:\s+\S+/i.test(commit.message.split('\n')[0]?.trim() ?? '')).length
   const largeCommitCount = commits.filter(commit => commit.additions + commit.deletions >= 500 || commit.changedFiles >= 15).length
   const typicalWorkflowSize = percentile(workflowCommitSizes, 50)
@@ -276,6 +388,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const workflowSizeThreshold = Math.max(500, typicalWorkflowSize * 4)
   const workflowFileThreshold = Math.max(15, typicalWorkflowFiles * 4)
   const workflowLargeCommitCount = workflowCommits.filter(commit => commit.additions + commit.deletions >= workflowSizeThreshold || commit.changedFiles >= workflowFileThreshold).length
+  const complexityOutlierCommitCount = complexityEffectiveFileCounts.filter(effectiveFileCount => effectiveFileCount >= 12).length
   const workflowAdditions = workflowCommits.reduce((sum, commit) => sum + commit.additions, 0)
   const workflowDeletions = workflowCommits.reduce((sum, commit) => sum + commit.deletions, 0)
   const commitDates = commits.map(commit => commit.committedAt ? new Date(commit.committedAt) : null).filter((date): date is Date => Boolean(date && !Number.isNaN(date.getTime())))
@@ -289,8 +402,12 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const emptyMessages = commits.filter(commit => !commit.message.split('\n')[0]?.trim()).length
   const documentationFileRatio = Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100)
   const workflowDeletionRatio = Math.round(ratio(workflowDeletions, workflowAdditions + workflowDeletions) * 100)
-  const complexityScopeSignal = workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 2) * 6) : 50
-  const complexityOutlierSignal = workflowCommits.length ? 100 - Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50
+  const complexityEffectiveFilesP75 = workflowCommits.length ? Number(percentile(complexityEffectiveFileCounts, 75).toFixed(1)) : 50
+  const complexityRelativeOutlierRatio = workflowCommits.length ? Math.round(ratio(complexityOutlierCommitCount, workflowCommits.length) * 100) : 50
+  const complexityScopeSignal = workflowCommits.length
+    ? clamp(100 - Math.min(60, Math.max(0, complexityEffectiveFilesP75 - 2) * 5))
+    : 50
+  const complexityOutlierSignal = workflowCommits.length ? 100 - complexityRelativeOutlierRatio : 50
   const complexityChurnSignal = clamp(100 - Math.max(0, workflowDeletionRatio - 50) * 0.5)
 
   return {
@@ -308,12 +425,18 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     commitsPer30Days: spanDays ? Number((commits.length / spanDays * 30).toFixed(1)) : 0,
     averageFilesPerCommit: Number(average(commits.map(commit => commit.changedFiles)).toFixed(1)),
     workflowCommitCount: workflowCommits.length,
+    workflowPatchCommitCount: workflowCommits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
     workflowAverageFilesPerCommit: workflowCommits.length ? Number(average(workflowFileCounts).toFixed(1)) : 0,
+    workflowMedianFilesPerCommit: workflowCommits.length ? Number(percentile(workflowFileCounts, 50).toFixed(1)) : 0,
+    workflowP75FilesPerCommit: workflowCommits.length ? Number(percentile(workflowFileCounts, 75).toFixed(1)) : 0,
     workflowMessageQuality: workflowCommits.length ? Math.round(average(workflowCommits.map(commit => scoreCommitMessage(commit.message)))) : 50,
     workflowConventionalMessageRatio: Math.round(ratio(workflowConventionalMessages, workflowCommits.length) * 100),
     workflowLargeCommitRatio: workflowCommits.length ? Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50,
     clarityScopeSignal: workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 1) * 7) : 50,
     contextDocumentationSignal: documentationFileRatio > 0 ? clamp(50 + Math.min(documentationFileRatio * 2, 30)) : 50,
+    complexityEffectiveFilesP75,
+    complexityExcludedFileRatio: excludedComplexityFileRatio(workflowCommits),
+    complexityRelativeOutlierRatio,
     complexityScopeSignal,
     complexityOutlierSignal,
     complexityChurnSignal,
@@ -336,35 +459,39 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   }
 }
 
-function isGroundedReviewFinding(finding: NonNullable<DashboardAiReviewAssessment['findings']>[number], commits: readonly GithubCommit[]): boolean {
+function isGroundedReviewEvidence(evidence: DashboardAiReviewEvidence, commits: readonly GithubCommit[]): boolean {
   return commits.some(commit => (
-    (finding.commitSha === commit.sha || commit.sha.startsWith(finding.commitSha) || finding.commitSha.startsWith(commit.sha))
-    && commit.files.some(file => file.filename === finding.filename)
+    (evidence.commitSha === commit.sha || commit.sha.startsWith(evidence.commitSha) || evidence.commitSha.startsWith(commit.sha))
+    && commit.files.some(file => file.filename === evidence.filename)
   ))
 }
 
 /**
  * Lets the single AI review refine non-safety axes only after it has supplied
- * at least two grounded findings. Safety remains governed by confirmed-risk
- * penalties so semantic prose cannot inflate or collapse that score.
+ * a high-confidence, grounded axis verdict with at least two patch references.
+ * Safety remains governed by confirmed-risk penalties so semantic prose cannot
+ * inflate or collapse that score.
  */
 export function computeDashboardAiAdjustments(review: DashboardAiReviewAssessment | undefined, commits: readonly GithubCommit[]): Partial<Record<DashboardProfileAxis, number>> {
   if (!review || review.status !== 'assessed' || review.confidence < 60)
     return {}
 
-  const grounded = review.findings.filter(finding => finding.axis !== 'safety' && isGroundedReviewFinding(finding, commits))
-  if (grounded.length < 2)
-    return {}
-
   const adjustments: Partial<Record<DashboardProfileAxis, number>> = {}
   for (const axis of ['clarity', 'workflow', 'complexity', 'context'] as const) {
-    const findings = grounded.filter(finding => finding.axis === axis)
-    const positive = findings.filter(finding => finding.verdict === 'positive' && finding.impact !== 'unclear').length
-    const negative = findings.filter(finding => finding.verdict === 'negative' && finding.impact === 'introduced').length
-    if (positive === 0 && negative === 0)
+    const axisReview = review.axisReviews?.find(item => item.axis === axis)
+    if (!axisReview || axisReview.confidence < 70 || axisReview.verdict === 'supports' || axisReview.verdict === 'insufficient')
       continue
 
-    adjustments[axis] = clamp((positive - negative) * 4, -8, 8)
+    const groundedEvidence = axisReview.evidence
+      .filter(evidence => isGroundedReviewEvidence(evidence, commits))
+    const distinctEvidence = new Set(groundedEvidence.map(evidence => `${evidence.commitSha}:${evidence.filename}`))
+    if (distinctEvidence.size < 2)
+      continue
+
+    if (axisReview.verdict === 'softens')
+      adjustments[axis] = 4
+    if (axisReview.verdict === 'contradicts')
+      adjustments[axis] = -4
   }
 
   return adjustments
@@ -435,6 +562,8 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
 
   for (const [axis, adjustment] of Object.entries(aiAdjustments) as [DashboardProfileAxis, number][]) {
     scores[axis] = clamp(scores[axis] + adjustment)
+    if (axis === 'workflow')
+      scores[axis] = Math.min(scores[axis], getDashboardWorkflowEvidenceCap(metrics))
   }
 
   const overallScore = clamp(axisWeights.reduce((sum, [axis, weight]) => sum + scores[axis] * weight, 0))
@@ -448,7 +577,7 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
   })
 
   return {
-    version: 'v1',
+    version: 'v2',
     username: context.username,
     scores,
     overallScore,

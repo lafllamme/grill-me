@@ -23,12 +23,18 @@ export interface DashboardDerivedMetrics {
   commitsPer30Days: number
   averageFilesPerCommit: number
   workflowCommitCount: number
+  workflowPatchCommitCount: number
   workflowAverageFilesPerCommit: number
+  workflowMedianFilesPerCommit: number
+  workflowP75FilesPerCommit: number
   workflowMessageQuality: number
   workflowConventionalMessageRatio: number
   workflowLargeCommitRatio: number
   clarityScopeSignal: number
   contextDocumentationSignal: number
+  complexityEffectiveFilesP75: number
+  complexityExcludedFileRatio: number
+  complexityRelativeOutlierRatio: number
   complexityScopeSignal: number
   complexityOutlierSignal: number
   complexityChurnSignal: number
@@ -72,7 +78,7 @@ export type DashboardProfileRole
 export type DashboardProfileRoleStatus = 'classified' | 'unclassified'
 
 export interface DashboardProfileAssessment {
-  version: 'v1'
+  version: 'v2'
   username: string
   scores: DashboardProfileScores
   overallScore: number
@@ -97,6 +103,7 @@ export interface DashboardProfileAssessment {
   aiReview?: {
     confidence: number
     status: string
+    parseWarnings?: readonly string[]
     selectedCommitCount: number
     patchCount: number
     patchChars: number

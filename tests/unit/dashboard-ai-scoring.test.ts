@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it, vi } from 'vitest'
 import { runAiSync } from '../../server/roast/ai-client'
-import { assessDashboardProfileWithAi, buildDashboardReviewPrompt, parseDashboardReview, toDashboardAiSafetyAssessment } from '../../server/roast/dashboard-ai-scoring'
+import { assessDashboardProfileWithAi, buildDashboardReviewPrompt, dashboardCategoryQuestions, parseDashboardReview, toDashboardAiSafetyAssessment } from '../../server/roast/dashboard-ai-scoring'
 import { selectDashboardPatchEvidence } from '../../server/roast/dashboard-patch-selection'
 
 vi.mock('h3', () => ({ createError: (input: unknown) => input }))
@@ -72,20 +72,56 @@ describe('dashboard AI review contract', () => {
       timeoutMs: 1000,
     })
 
-    expect(result).toMatchObject({ status: 'assessed', confidence: 82, responsePath: 'choices[0].message.reasoning' })
+    expect(result).toMatchObject({ status: 'assessed', confidence: 72, responsePath: 'choices[0].message.reasoning', parseWarnings: ['axisReviews-missing'] })
     expect(result.findings).toHaveLength(1)
+  })
+
+  it('keeps axis review evidence limited to the patches sent to the model', async () => {
+    const { extractModelText } = await import('../../server/roast/output-parser')
+    vi.mocked(extractModelText).mockReturnValue({ rawText: JSON.stringify({
+      confidence: 82,
+      axisReviews: [{
+        axis: 'complexity',
+        verdict: 'softens',
+        confidence: 80,
+        evidence: [
+          { commitSha: 'abcdef1', filename: 'src/not-sent.ts', observation: 'not part of the selected patch sample' },
+        ],
+      }],
+      findings: [],
+    }), parserPath: 'content' })
+    vi.mocked(runAiSync).mockResolvedValue({ choices: [{ message: { content: 'ignored' } }] })
+
+    const result = await assessDashboardProfileWithAi({
+      context: context([commit()]),
+      accountId: 'account',
+      apiToken: 'token',
+      model: '@cf/qwen/qwen3-30b-a3b-fp8',
+      timeoutMs: 1000,
+    })
+
+    expect(result.axisReviews).toEqual([{ axis: 'complexity', verdict: 'softens', confidence: 80, evidence: [] }])
   })
 
   it('parses grounded multi-axis findings and maps safety vocabulary', () => {
     const parsed = parseDashboardReview(JSON.stringify({
       confidence: 84,
+      axisReviews: [{
+        axis: 'complexity',
+        verdict: 'softens',
+        confidence: 78,
+        evidence: [
+          { commitSha: 'abcdef1', filename: 'src/validation.ts', observation: 'the focused patch keeps the boundary explicit' },
+          { commitSha: 'abcdef1', filename: 'src/validation.ts', observation: 'the validation change remains local' },
+        ],
+      }],
       findings: [
         { axis: 'safety', verdict: 'positive', impact: 'introduced', severity: 'low', category: 'validation', commitSha: 'abcdef1', filename: 'src/validation.ts', evidence: 'input is validated before processing' },
         { axis: 'clarity', verdict: 'negative', impact: 'introduced', severity: 'low', commitSha: 'abcdef1', filename: 'src/validation.ts', evidence: 'the changed name hides the value meaning' },
       ],
     }))
 
-    expect(parsed).toMatchObject({ confidence: 84, findings: [{ axis: 'safety' }, { axis: 'clarity' }] })
+    expect(parsed).toMatchObject({ confidence: 84, axisReviews: [{ axis: 'complexity', verdict: 'softens' }], findings: [{ axis: 'safety' }, { axis: 'clarity' }] })
 
     const safety = toDashboardAiSafetyAssessment({
       ...parsed!,
@@ -104,15 +140,89 @@ describe('dashboard AI review contract', () => {
     }))).toBeNull()
   })
 
+  it('keeps valid review items when another item is malformed', () => {
+    const parsed = parseDashboardReview(JSON.stringify({
+      confidence: 90,
+      axisReviews: [
+        {
+          axis: 'workflow',
+          verdict: 'supports',
+          confidence: 80,
+          evidence: [{ commitSha: 'abcdef1', filename: 'src/validation.ts', observation: 'focused change' }],
+        },
+        { axis: 'not-an-axis', verdict: 'supports', confidence: 80, evidence: [] },
+      ],
+      findings: [
+        { axis: 'safety', verdict: 'positive', impact: 'introduced', severity: 'low', category: 'validation', commitSha: 'abcdef1', filename: 'src/validation.ts', evidence: 'validates input' },
+        { axis: 'safety', verdict: 'positive', impact: 'introduced', severity: 'low', commitSha: 'abcdef1', evidence: 'filename is missing' },
+      ],
+    }))
+
+    expect(parsed).toMatchObject({
+      confidence: 80,
+      parseWarnings: ['findings-dropped:1', 'axisReviews-dropped:1'],
+      findings: [{ axis: 'safety', evidence: 'validates input' }],
+      axisReviews: [{ axis: 'workflow', verdict: 'supports' }],
+    })
+  })
+
+  it('accepts an axis-only response with a reduced confidence warning', () => {
+    const parsed = parseDashboardReview(JSON.stringify({
+      confidence: 90,
+      axisReviews: [{ axis: 'context', verdict: 'insufficient', confidence: 40, evidence: [] }],
+    }))
+
+    expect(parsed).toMatchObject({
+      confidence: 80,
+      parseWarnings: ['findings-missing'],
+      findings: [],
+      axisReviews: [{ axis: 'context', verdict: 'insufficient' }],
+    })
+  })
+
   it('keeps repository metadata scoped and the prompt within the patch budget', () => {
     const sample = context([
       commit(),
       commit({ sha: '123456789abc', committedAt: '2026-08-02T00:00:00Z', files: [{ filename: 'README.md', status: 'modified', additions: 3, deletions: 0, patch: '+ explains the profile contract' }] }),
     ])
     const selection = selectDashboardPatchEvidence(sample)
-    const prompt = buildDashboardReviewPrompt(sample, selection)
+    const prompt = buildDashboardReviewPrompt(sample, selection, {
+      scores: { clarity: 80, safety: 75, workflow: 72, complexity: 76, context: 70 },
+      questions: dashboardCategoryQuestions,
+      workflow: {
+        personalCommitCount: 3,
+        patchCommitCount: 3,
+        messageQuality: 82,
+        conventionalMessageRatio: 67,
+        averageFilesPerCommit: 3.5,
+        medianFilesPerCommit: 2,
+        p75FilesPerCommit: 4,
+        largeCommitRatio: 0,
+        medianScopeSignal: 100,
+        p75ScopeSignal: 100,
+        fileScopeSignal: 100,
+        outlierSignal: 100,
+        granularitySignal: 82,
+        reviewSignal: 50,
+        reviewEvidenceAvailable: false,
+        evidenceCap: 84,
+        evidenceQuality: 'limited',
+        mergeCommitRatio: 25,
+      },
+      complexity: {
+        effectiveFilesP75: 10.1,
+        excludedFileRatio: 0,
+        relativeOutlierRatio: 12,
+        scopeSignal: 60,
+        outlierSignal: 88,
+        churnSignal: 100,
+      },
+    })
 
     expect(prompt).toContain('README.md')
+    expect(prompt).toContain('"complexity":76')
+    expect(prompt).toContain('"averageFilesPerCommit":3.5')
+    expect(prompt).toContain('Are broad changes coherent and controlled')
     expect(prompt).not.toContain('999')
     expect(prompt.length).toBeLessThan(20_000)
   })

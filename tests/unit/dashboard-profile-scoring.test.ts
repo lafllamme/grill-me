@@ -1,8 +1,9 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { computeDashboardAiAdjustments, deriveDashboardMetrics, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
+import { dashboardSafetyProbeSet, dashboardSafetyRepositoryProbeSet } from '../fixtures/dashboard-safety-probes'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
   return {
@@ -20,13 +21,14 @@ function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
   }
 }
 
-function context(commits: GithubCommit[], prs = 2): GithubContext {
-  return { username: 'lafllamme', commits, prs: Array.from({ length: prs }, (_, index) => ({ repo: 'flame/example', title: `PR ${index}`, url: '', state: 'closed' })) }
+function context(commits: GithubCommit[], prs = 2, username = 'lafllamme'): GithubContext {
+  return { username, commits, prs: Array.from({ length: prs }, (_, index) => ({ repo: 'flame/example', title: `PR ${index}`, url: '', state: 'closed' })) }
 }
 
 describe('dashboard profile scoring', () => {
   it('keeps every score bounded and exposes explainable evidence metrics', () => {
     const assessment = scoreDashboardProfile(context([commit(), commit({ sha: 'def456' })]))
+    expect(assessment.version).toBe('v2')
     expect(Object.values(assessment.scores).every(score => score >= 0 && score <= 100)).toBe(true)
     expect(assessment.overallScore).toBeGreaterThanOrEqual(0)
     expect(assessment.overallScore).toBeLessThanOrEqual(100)
@@ -173,6 +175,61 @@ describe('dashboard profile scoring', () => {
     expect(scoreDashboardComplexity(deriveDashboardMetrics(mergeHeavyHistory))).toBe(focusedScore)
   })
 
+  it('uses weighted effective files instead of treating docs, tests, and release artifacts as runtime complexity', () => {
+    const history = context(Array.from({ length: 4 }, (_, index) => commit({
+      sha: `weighted-${index}`,
+      additions: 20,
+      deletions: 2,
+      changedFiles: 4,
+      files: [
+        { filename: `src/feature-${index}.ts`, status: 'modified', additions: 12, deletions: 1 },
+        { filename: `tests/feature-${index}.test.ts`, status: 'modified', additions: 4, deletions: 1 },
+        { filename: `docs/feature-${index}.md`, status: 'modified', additions: 4, deletions: 0 },
+        { filename: 'pnpm-lock.yaml', status: 'modified', additions: 0, deletions: 0 },
+      ],
+    })), 0)
+    const metrics = deriveDashboardMetrics(history)
+
+    expect(metrics.complexityEffectiveFilesP75).toBe(1.8)
+    expect(metrics.complexityExcludedFileRatio).toBe(25)
+    expect(metrics.complexityScopeSignal).toBe(100)
+    expect(scoreDashboardComplexity(metrics)).toBeGreaterThan(90)
+  })
+
+  it('does not count non-code design artifacts or extrapolate them as runtime files', () => {
+    const history = context(Array.from({ length: 4 }, (_, index) => commit({
+      sha: `design-${index}`,
+      additions: 900,
+      deletions: 700,
+      changedFiles: 12,
+      files: [
+        { filename: `Hardware/board-${index}/board.kicad_pcb`, status: 'modified', additions: 220, deletions: 180 },
+        { filename: `Hardware/board-${index}/board.kicad_sch`, status: 'modified', additions: 680, deletions: 520 },
+        { filename: `Hardware/board-${index}/board.kicad_block/components.json`, status: 'modified', additions: 0, deletions: 0 },
+      ],
+    })), 0)
+    const metrics = deriveDashboardMetrics(history)
+
+    expect(metrics.complexityEffectiveFilesP75).toBe(0)
+    expect(metrics.complexityExcludedFileRatio).toBe(100)
+    expect(metrics.complexityScopeSignal).toBe(100)
+    expect(scoreDashboardComplexity(metrics)).toBe(100)
+  })
+
+  it('does not turn raw line volume into complexity when the effective surface stays focused', () => {
+    const history = context(Array.from({ length: 4 }, (_, index) => commit({
+      sha: `large-file-${index}`,
+      additions: 50_000,
+      deletions: 49_000,
+      changedFiles: 1,
+      files: [{ filename: `src/refactor-${index}.ts`, status: 'modified', additions: 50_000, deletions: 49_000 }],
+    })), 0)
+    const metrics = deriveDashboardMetrics(history)
+
+    expect(metrics.complexityRelativeOutlierRatio).toBe(0)
+    expect(scoreDashboardComplexity(metrics)).toBe(100)
+  })
+
   it('keeps Complexity neutral when personal evidence is insufficient', () => {
     const thinHistory = context([
       commit({ sha: 'one', changedFiles: 1 }),
@@ -227,8 +284,97 @@ describe('dashboard profile scoring', () => {
       commit({ sha: 'merge-three', message: 'Merge branch release into main', additions: 700, deletions: 500, changedFiles: 18 }),
     ], 0)
 
-    expect(scoreDashboardWorkflow(deriveDashboardMetrics(cleanHistory))).toBeGreaterThan(90)
+    expect(scoreDashboardWorkflow(deriveDashboardMetrics(cleanHistory))).toBe(84)
     expect(scoreDashboardWorkflow(deriveDashboardMetrics(mergeHeavyHistory))).toBe(50)
+  })
+
+  it('uses median and p75 scope instead of letting one broad change define Workflow', () => {
+    const history = context([
+      commit({ sha: 'focused-one', changedFiles: 2 }),
+      commit({ sha: 'focused-two', changedFiles: 2 }),
+      commit({ sha: 'focused-three', changedFiles: 2 }),
+      commit({ sha: 'focused-four', changedFiles: 2 }),
+      commit({ sha: 'broad-refactor', changedFiles: 40, additions: 900, deletions: 100 }),
+    ], 0)
+    const metrics = deriveDashboardMetrics(history)
+    const breakdown = getDashboardWorkflowScoreBreakdown(metrics)
+
+    expect(metrics.workflowAverageFilesPerCommit).toBe(9.6)
+    expect(metrics.workflowMedianFilesPerCommit).toBe(2)
+    expect(metrics.workflowP75FilesPerCommit).toBe(2)
+    expect(breakdown.fileScopeSignal).toBe(100)
+    expect(breakdown.rawScore).toBeGreaterThan(90)
+    expect(breakdown.evidenceCap).toBe(84)
+    expect(scoreDashboardWorkflow(metrics)).toBe(84)
+  })
+
+  it('requires enough personal and patch evidence before Workflow can enter the strong band', () => {
+    const strongHistory = context(Array.from({ length: 10 }, (_, index) => commit({
+      sha: `strong-${index}`,
+      files: [{ filename: `src/feature-${index}.ts`, status: 'modified', additions: 12, deletions: 2, patch: '+ const focusedChange = true' }],
+      changedFiles: 1,
+    })), 0)
+    const limitedMetrics = deriveDashboardMetrics(context([
+      commit({ sha: 'limited-one', files: [{ filename: 'src/one.ts', status: 'modified', additions: 12, deletions: 2, patch: '+ const one = true' }] }),
+      commit({ sha: 'limited-two', files: [{ filename: 'src/two.ts', status: 'modified', additions: 12, deletions: 2, patch: '+ const two = true' }] }),
+      commit({ sha: 'limited-three', files: [{ filename: 'src/three.ts', status: 'modified', additions: 12, deletions: 2, patch: '+ const three = true' }] }),
+    ], 0))
+
+    expect(scoreDashboardWorkflow(limitedMetrics)).toBeLessThanOrEqual(84)
+    expect(getDashboardWorkflowScoreBreakdown(limitedMetrics).evidenceQuality).toBe('limited')
+    expect(scoreDashboardWorkflow(deriveDashboardMetrics(strongHistory))).toBeLessThanOrEqual(95)
+    expect(getDashboardWorkflowScoreBreakdown(deriveDashboardMetrics(strongHistory)).evidenceQuality).toBe('strong')
+  })
+
+  it('does not lower a good Workflow score just because public PR evidence is absent', () => {
+    const commits = [
+      commit({ sha: 'one', changedFiles: 1 }),
+      commit({ sha: 'two', changedFiles: 2 }),
+      commit({ sha: 'three', changedFiles: 1 }),
+    ]
+    const withoutPrs = deriveDashboardMetrics(context(commits, 0))
+    const withPrs = deriveDashboardMetrics(context(commits, 3))
+
+    expect(getDashboardWorkflowScoreBreakdown(withoutPrs).reviewEvidenceAvailable).toBe(false)
+    expect(getDashboardWorkflowScoreBreakdown(withPrs).reviewEvidenceAvailable).toBe(true)
+    expect(scoreDashboardWorkflow(withoutPrs)).toBe(scoreDashboardWorkflow(withPrs))
+  })
+
+  it('keeps the named probe set in plausible Workflow bands', () => {
+    const probeSet = [
+      { username: 'lafllamme', fileScopes: [2, 3, 4, 6, 12], minimum: 80 },
+      { username: 'danielroe', fileScopes: [1, 1, 2, 2, 3], minimum: 80 },
+      { username: 'torvalds', fileScopes: [2, 3, 4], mergeCount: 6, minimum: 80 },
+      { username: 'sindresorhus', fileScopes: [2, 2, 3, 5, 20], minimum: 80 },
+      { username: 'antfu', fileScopes: [1, 1, 1, 2, 2], minimum: 80 },
+      { username: 'kentcdodds', fileScopes: [2, 3, 4, 5, 6], minimum: 80 },
+    ]
+
+    const scores = new Map(probeSet.map((probe) => {
+      const personalCommits = probe.fileScopes.map((changedFiles, index) => commit({
+        sha: `${probe.username}-${index}`,
+        changedFiles,
+      }))
+      const mergeCommits = Array.from({ length: probe.mergeCount ?? 0 }, (_, index) => commit({
+        sha: `${probe.username}-merge-${index}`,
+        message: 'Merge branch release into main',
+        changedFiles: 30,
+        isMerge: true,
+      }))
+      const score = scoreDashboardWorkflow(deriveDashboardMetrics(context([...personalCommits, ...mergeCommits], 0, probe.username)))
+
+      expect(score, probe.username).toBeGreaterThanOrEqual(probe.minimum)
+      return [probe.username, score] as const
+    }))
+
+    const torvaldsWithoutMerges = scoreDashboardWorkflow(deriveDashboardMetrics(context(
+      [2, 3, 4].map((changedFiles, index) => commit({ sha: `torvalds-personal-${index}`, changedFiles })),
+      0,
+      'torvalds',
+    )))
+
+    expect(scores.get('torvalds')).toBe(torvaldsWithoutMerges)
+    expect(scores.get('sindresorhus')).toBeGreaterThan(scores.get('lafllamme')! - 15)
   })
 
   it('keeps merge-only maintainer history neutral instead of calling it bad workflow', () => {
@@ -349,6 +495,54 @@ describe('dashboard profile scoring', () => {
     expect(unsupported.scores.safety).toBe(65)
   })
 
+  it('keeps repository-specific negative probes low and paired fixes unpenalized', () => {
+    for (const probe of dashboardSafetyProbeSet) {
+      const assessment = scoreDashboardProfile(context([commit({
+        repo: probe.repository,
+        sha: probe.id,
+        files: [{ filename: probe.filename, status: 'modified', additions: 1, deletions: 0, patch: probe.patch }],
+        changedFiles: 1,
+      })], 0, probe.username), {
+        confidence: 95,
+        signals: [{
+          category: probe.category,
+          verdict: probe.kind === 'introduced-risk' ? 'risk' : 'unclear',
+          impact: probe.impact,
+          severity: probe.severity,
+          commitSha: probe.id,
+          evidence: `${probe.repository} controlled ${probe.kind} probe`,
+        }],
+        status: 'assessed',
+      })
+
+      expect(assessment.scores.safety, probe.id).toBe(65 - probe.expectedPenalty)
+    }
+  })
+
+  it('scores real repository commit probes as concrete Safety risks', () => {
+    for (const probe of dashboardSafetyRepositoryProbeSet) {
+      const assessment = scoreDashboardProfile(context([commit({
+        repo: probe.repository,
+        sha: probe.commitSha,
+        files: [{ filename: probe.filename, status: 'modified', additions: 1, deletions: 0, patch: probe.patch }],
+        changedFiles: 1,
+      })], 0, probe.username), {
+        confidence: 95,
+        signals: [{
+          category: probe.category,
+          verdict: 'risk',
+          impact: probe.impact,
+          severity: probe.severity,
+          commitSha: probe.commitSha,
+          evidence: `${probe.repository} commit ${probe.commitSha.slice(0, 7)} adds the visible risky line`,
+        }],
+        status: 'assessed',
+      })
+
+      expect(assessment.scores.safety, probe.sourceUrl).toBe(65 - probe.expectedPenalty)
+    }
+  })
+
   it('uses the dedicated secret or auth bypass penalty', () => {
     const sample = context([commit({ sha: 'secret', files: [{ filename: 'app/auth.ts', status: 'modified', additions: 4, deletions: 0, patch: '+ bypassAuthorization(input)' }] })], 0)
     const assessment = scoreDashboardProfile(sample, {
@@ -372,6 +566,15 @@ describe('dashboard profile scoring', () => {
       selectedCommitCount: 3,
       patchCount: 3,
       patchChars: 90,
+      axisReviews: [{
+        axis: 'clarity' as const,
+        verdict: 'softens' as const,
+        confidence: 90,
+        evidence: [
+          { commitSha: 'one', filename: 'src/one.ts', observation: 'the name explains the value' },
+          { commitSha: 'two', filename: 'src/two.ts', observation: 'the second name follows the same clear pattern' },
+        ],
+      }],
       findings: [
         { axis: 'clarity' as const, verdict: 'positive' as const, impact: 'introduced' as const, severity: 'low' as const, commitSha: 'one', filename: 'src/one.ts', evidence: 'the name explains the value' },
         { axis: 'clarity' as const, verdict: 'positive' as const, impact: 'introduced' as const, severity: 'low' as const, commitSha: 'two', filename: 'src/two.ts', evidence: 'the name explains the value' },
@@ -379,12 +582,12 @@ describe('dashboard profile scoring', () => {
       ],
     }
 
-    expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({ clarity: 8 })
+    expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({ clarity: 4 })
     const base = scoreDashboardProfile(sample)
     const adjusted = scoreDashboardProfile(sample, undefined, review)
-    expect(adjusted.scores.clarity).toBe(Math.min(100, base.scores.clarity + 8))
+    expect(adjusted.scores.clarity).toBe(Math.min(100, base.scores.clarity + 4))
     expect(adjusted.scores.safety).toBe(base.scores.safety)
-    expect(adjusted.aiAdjustments).toEqual({ clarity: 8 })
+    expect(adjusted.aiAdjustments).toEqual({ clarity: 4 })
   })
 
   it('does not let low-confidence or ungrounded AI findings change a score', () => {
@@ -407,6 +610,30 @@ describe('dashboard profile scoring', () => {
 
     expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({})
     expect(scoreDashboardProfile(sample, undefined, review).aiAdjustments).toEqual({})
+  })
+
+  it('does not apply an axis review without two grounded patch references', () => {
+    const sample = context([
+      commit({ sha: 'one' }),
+      commit({ sha: 'two' }),
+      commit({ sha: 'three' }),
+    ], 0)
+    const review = {
+      confidence: 90,
+      status: 'assessed' as const,
+      selectedCommitCount: 3,
+      patchCount: 3,
+      patchChars: 90,
+      axisReviews: [{
+        axis: 'complexity' as const,
+        verdict: 'softens' as const,
+        confidence: 80,
+        evidence: [{ commitSha: 'not-present', filename: 'src/nope.ts', observation: 'not grounded' }],
+      }],
+      findings: [],
+    }
+
+    expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({})
   })
 
   it('selects at most the newest, largest, and most relevant commits', () => {

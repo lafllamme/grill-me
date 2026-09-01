@@ -60,6 +60,7 @@ describe('dashboard patch selection', () => {
     expect(selection.commits.some(item => item.commit.sha === 'sha-13')).toBe(true)
     expect(selection.commits.some(item => item.reasons.includes('safety-signal'))).toBe(true)
     expect(selection.commits.some(item => item.reasons.includes('largest'))).toBe(true)
+    expect(selection.commits.some(item => item.reasons.includes('workflow-signal'))).toBe(true)
   })
 
   it('excludes merge commits and generated files from semantic evidence', () => {
@@ -72,5 +73,19 @@ describe('dashboard patch selection', () => {
     expect(selection.usablePatchCount).toBe(1)
     expect(selection.commits.map(item => item.commit.sha)).toEqual(['personal'])
     expect(selection.files.map(file => file.filename)).toEqual(['src/input.ts'])
+  })
+
+  it('marks SQL concatenation and prefixed secret assignments as Safety evidence', () => {
+    const sqlSelection = selectDashboardPatchEvidence(context([commit({
+      sha: 'sql-risk',
+      files: [{ filename: 'vulnerabilities/sqli/source/low.php', status: 'modified', additions: 1, deletions: 0, patch: '+ $query = "SELECT * FROM users WHERE id = " . $_GET[\'id\'];' }],
+    })]))
+    const secretSelection = selectDashboardPatchEvidence(context([commit({
+      sha: 'secret-risk',
+      files: [{ filename: 'src/SonarReport.java', status: 'modified', additions: 1, deletions: 0, patch: '+ private static final String SONAR_PASSWORD = "P4ssword!!!!";' }],
+    })]))
+
+    expect(sqlSelection.commits[0]?.reasons).toContain('safety-signal')
+    expect(secretSelection.commits[0]?.reasons).toContain('safety-signal')
   })
 })

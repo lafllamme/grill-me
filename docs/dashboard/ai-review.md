@@ -1,8 +1,8 @@
 # Dashboard AI Review
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** active
-**Updated:** 2026-09-01
+**Updated:** 2026-09-02
 
 The dashboard makes one semantic AI request after deterministic collection and
 scoring. The AI is a second layer, not a second scoring authority.
@@ -74,6 +74,22 @@ interface DashboardAiAxisReview {
 Every accepted finding must point to an exact selected filename and commit SHA.
 Missing tests, CI, documentation, unfamiliar code, frequency, popularity, and
 truncated context are not negative evidence.
+
+### Partial response recovery
+
+The response boundary remains strict for JSON itself: a missing/invalid
+`confidence`, a response without `findings` and `axisReviews`, or a truncated
+JSON object remains `invalid-response`. Once the top-level object is valid, the
+parser keeps valid findings and axis reviews even if another array item is
+malformed. Dropped items are reported as `parseWarnings` and reduce AI
+confidence by a small bounded amount; they never create a score adjustment.
+This prevents one malformed model item from hiding otherwise grounded evidence
+without turning malformed output into trusted data.
+
+The prompt asks for compact JSON, at most six findings, and short evidence.
+`supports` and `insufficient` axis reviews may use an empty evidence array;
+`softens` and `contradicts` still need two grounded patch references before the
+server can change a deterministic score.
 
 For Safety, only verdict negative plus impact introduced can enter the
 confirmed-risk path, and the server independently verifies the pattern. Fixed

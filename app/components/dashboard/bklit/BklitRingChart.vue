@@ -46,14 +46,32 @@ const ringPaths = computed(() => createRingPaths({
 }))
 
 const context: BklitRingContext = {
-  data: props.data,
+  // Keep injected consumers connected to the latest prop value. The live
+  // dashboard replaces the data array when the AI-reviewed assessment
+  // arrives; storing `props.data` here would leave the center and legend on
+  // the deterministic first-pass score.
+  get data() {
+    return props.data
+  },
   hoveredIndex,
-  baseInnerRadius: scaledBaseInnerRadius.value,
-  ringGap: scaledRingGap.value,
-  strokeWidth: scaledStrokeWidth.value,
-  startAngle: props.startAngle,
-  endAngle: props.endAngle,
-  enterStaggerScale: props.enterStaggerScale,
+  get baseInnerRadius() {
+    return scaledBaseInnerRadius.value
+  },
+  get ringGap() {
+    return scaledRingGap.value
+  },
+  get strokeWidth() {
+    return scaledStrokeWidth.value
+  },
+  get startAngle() {
+    return props.startAngle
+  },
+  get endAngle() {
+    return props.endAngle
+  },
+  get enterStaggerScale() {
+    return props.enterStaggerScale
+  },
   setHoveredIndex: (index) => {
     if (hoverClearTimer) {
       clearTimeout(hoverClearTimer)
