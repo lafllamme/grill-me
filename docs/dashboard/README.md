@@ -1,8 +1,8 @@
 # Dashboard Documentation
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** active
-**Updated:** 2026-09-01
+**Updated:** 2026-09-02
 
 This is the entry point for the GrillMe dashboard contract. It describes how
 one bounded GitHub analysis becomes an evidence-backed profile, one combined AI
@@ -29,11 +29,11 @@ are linked from the relevant canonical document instead of copied here.
 
 | Category | Version | Deterministic baseline | AI role | Status |
 | --- | --- | --- | --- | --- |
-| Clarity | v1 | message intent, conventional structure, scope proxy | explain grounded patch evidence | baseline |
-| Safety | v1 | safeguard signals plus confirmed introduced-risk penalties | classify grounded risks only | calibrated |
-| Workflow | v2 | median/p75 delivery scope, outliers, message quality | bounded second check | calibrated |
+| Clarity | v3 | message intent, visible naming, local patch structure | explain grounded patch evidence | calibrated |
+| Safety | v4 | safety-surface and defensive-coverage signals with patch-coverage scaling, bounded AI defense lift, and confirmed introduced-risk penalties | verify grounded defensive signals and risks; never return a number | calibrated |
+| Workflow | v3 | median/p75 delivery scope, outliers, message quality | bounded second check | calibrated |
 | Complexity | v2 | weighted effective change surface, outliers, churn | bounded second check | calibrated |
-| Context | v1 | intent, visible orientation evidence, review context | explain grounded project context | baseline |
+| Context | v4 | centered visible explanations, commit context, lighter orientation and handoff signals | bounded second check | calibrated |
 
 The versions describe behavior contracts, not every wording edit. A formula,
 evidence gate, payload shape, or role threshold change requires a versioned

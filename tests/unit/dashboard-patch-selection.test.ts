@@ -59,7 +59,7 @@ describe('dashboard patch selection', () => {
     expect(selection.totalPatchChars).toBeLessThanOrEqual(DASHBOARD_AI_REVIEW_LIMITS.maxTotalPatchChars)
     expect(selection.commits.some(item => item.commit.sha === 'sha-13')).toBe(true)
     expect(selection.commits.some(item => item.reasons.includes('safety-signal'))).toBe(true)
-    expect(selection.commits.some(item => item.reasons.includes('largest'))).toBe(true)
+    expect(selection.commits.some(item => item.reasons.includes('typical'))).toBe(true)
     expect(selection.commits.some(item => item.reasons.includes('workflow-signal'))).toBe(true)
   })
 

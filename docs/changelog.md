@@ -9,6 +9,33 @@
   owner, one evidence gate, and one validation record
 - kept legacy dashboard documentation paths as compatibility links
 - added document version/status metadata and a required validation checklist
+- replaced Context v1's workflow-heavy formula with Context v2 signals based on
+  visible explanations, orientation artifacts, commit rationale, repository
+  orientation, and weak handoff evidence
+- recalibrated Context as v3 around a neutral 60 midpoint once evidence is
+  sufficient, strengthened concrete commit-context signals, and reduced the
+  overlapping handoff weight so missing public context is not treated as bad
+  work
+- calibrated Context v4 so actual patch explanations and commit context drive
+  70% of the score movement, while root metadata and handoff signals together
+  contribute only 10%
+- replaced Safety v1's indirect test/PR rewards with Safety v2's patch-centred
+  formula; validation and CI remain weak corroborators, while only grounded AI
+  findings for introduced risks can subtract points
+- calibrated Safety v3 around added patch lines and a patch-coverage multiplier;
+  the deterministic layer uses the bounded personal sample while the AI review
+  selects latest, typical-sized, and Safety-relevant patches within the same
+  payload budget
+- raised the Safety v3 patch-backed baseline from 60 to 70 so a visible sample
+  without a confirmed introduced risk is not presented as a mediocre result;
+  insufficient evidence remains 50 and all risk penalties stay unchanged
+- replaced Safety v3.1's flat patch-backed interpretation with Safety v4's
+  safety-surface model; defensive coverage now drives the observed score,
+  normal non-safety patches remain neutral at 70, and the combined AI review
+  may add only a server-verified defense lift of up to eight points
+- recorded the Safety v4 positive/neutral/negative boundary run; controlled
+  probes now demonstrate the range from insufficient 50 through neutral 70 and
+  capped positive 95 down to confirmed critical-risk 20
 
 ## 2026-05-14
 

@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
     grade: assessment.grade,
     role: assessment.role,
     roleStatus: assessment.roleStatus,
+    safetyAiDefenseBonus: assessment.safetyAiDefenseBonus,
     aiReview: {
       status: analysis.aiReview.status,
       confidence: analysis.aiReview.confidence,
@@ -51,6 +52,7 @@ export default defineEventHandler(async (event) => {
       findingCount: analysis.aiReview.findings.length,
     },
     acceptedSafetyRiskCount: assessment.aiSafety?.signals.filter(signal => signal.verdict === 'risk' && signal.impact === 'introduced').length ?? 0,
+    acceptedSafetyDefenseCount: assessment.aiSafety?.signals.filter(signal => signal.verdict === 'safe' && (signal.impact === 'introduced' || signal.impact === 'fixed')).length ?? 0,
   })
 
   return { assessment, evidence }

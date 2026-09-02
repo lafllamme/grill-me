@@ -1,8 +1,8 @@
 # Dashboard Validation
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** active
-**Updated:** 2026-09-01
+**Updated:** 2026-09-02
 
 The dashboard is accepted only when the number, its evidence, and the visible
 story agree. A passing parser test alone is not enough.
@@ -71,6 +71,25 @@ tests/fixtures/dashboard-safety-probes.ts.
 
 Repository probes are not assigned to a username score. They validate the
 Safety contract for a supplied owner/repository and immutable commit.
+
+### Latest Safety boundary run
+
+The current Safety v4 controls produce a deliberate spread instead of a fixed
+normal value:
+
+| Case | Score | Expected interpretation |
+| --- | ---: | --- |
+| no patch evidence | 50 | insufficient evidence |
+| ordinary patch without a Safety surface | 70 | neutral |
+| sparse defensive patch | 84 | limited positive evidence |
+| fully defensive patch | 95 | strong visible defense, capped |
+| medium introduced risk | 55 | confirmed penalty |
+| high `eval` risk | 40 | confirmed high-severity penalty |
+| secret/auth bypass | 20 | confirmed critical penalty |
+
+The focused Safety run currently passes 10 tests. These controls validate score
+behavior; they do not turn the six named calibration profiles into a developer
+ranking.
 
 ## Evidence review
 

@@ -1,6 +1,6 @@
 # Dashboard AI Review
 
-**Version:** 1.1.0
+**Version:** 1.3.0
 **Status:** active
 **Updated:** 2026-09-02
 
@@ -33,10 +33,11 @@ The AI receives a deterministic sample of at most:
 | AI output tokens | 3,200 |
 | serialized request body | 96 KiB |
 
-Selection covers the latest authored commit, the largest authored commit, and
-the latest commit with a relevant safety or patch signal. Generated, vendored,
-lock, and build artifacts are excluded. Secrets are redacted before patches
-leave the server.
+Selection covers the latest authored commit, a typical-sized authored commit
+near the sample median, and the latest authored commit with a relevant safety
+or patch signal. The typical commit avoids letting one unusually large change
+dominate the semantic review. Generated, vendored, lock, and build artifacts
+are excluded. Secrets are redacted before patches leave the server.
 
 The request uses one combined prompt for all five axes with temperature 0,
 top_p 0.1, and no reasoning budget. JSON Mode is not assumed for the configured
@@ -92,10 +93,12 @@ The prompt asks for compact JSON, at most six findings, and short evidence.
 server can change a deterministic score.
 
 For Safety, only verdict negative plus impact introduced can enter the
-confirmed-risk path, and the server independently verifies the pattern. Fixed
-and unclear findings never lower Safety. For other axes, softens or
-contradicts may change the deterministic score by at most 4 points only with
-confidence ≥70 and two grounded patch references.
+confirmed-risk path, and the server independently verifies the pattern. A
+positive Safety finding can add at most eight points only when it names a
+grounded commit and file and the server confirms a defensive pattern in the
+added lines. Fixed and unclear findings never lower Safety. For other axes,
+softens or contradicts may change the deterministic score by at most 4 points
+only with confidence ≥70 and two grounded patch references.
 
 ## Status semantics
 

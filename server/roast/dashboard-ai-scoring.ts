@@ -19,6 +19,7 @@ export interface DashboardSafetySignal {
   impact: DashboardSafetyImpact
   severity: DashboardSafetySeverity
   commitSha: string
+  filename?: string
   evidence: string
 }
 
@@ -47,6 +48,7 @@ function parseSignal(item: unknown): DashboardSafetySignal | null {
   const impact = typeof signal.impact === 'string' ? signal.impact : ''
   const severity = typeof signal.severity === 'string' ? signal.severity : ''
   const commitSha = typeof signal.commitSha === 'string' ? signal.commitSha.trim().slice(0, 64) : ''
+  const filename = typeof signal.filename === 'string' ? signal.filename.trim().slice(0, 300) : undefined
   const evidence = typeof signal.evidence === 'string' ? signal.evidence.trim().slice(0, 300) : ''
 
   if (!allowedCategories.has(category as DashboardSafetyCategory)
@@ -64,6 +66,7 @@ function parseSignal(item: unknown): DashboardSafetySignal | null {
     impact: impact as DashboardSafetyImpact,
     severity: severity as DashboardSafetySeverity,
     commitSha,
+    ...(filename ? { filename } : {}),
     evidence,
   }
 }
@@ -234,9 +237,9 @@ export async function assessDashboardSafetyWithAi(input: {
         'Use impact fixed when the changed lines clearly fix or mitigate an existing leak, overflow, out-of-bounds access, use-after-free, injection, validation bug, or cleanup bug. Fixed and unclear signals never lower the score.',
         'Only a signal with verdict risk and impact introduced can lower the score. Never turn absence of evidence into a risk.',
         'Classify signals only as validation, auth, error-handling, secrets, or dependency. Use high severity for an exposed secret or authorization bypass, medium for a concrete exploitable weakness, and low for a smaller concrete safety gap.',
-        'Use the exact short commit SHA supplied with the patch and quote a short, concrete explanation in evidence. Do not invent a SHA or evidence.',
-        'Return exactly one JSON object with this schema: {"confidence":60,"signals":[{"category":"validation","verdict":"safe","impact":"introduced","severity":"low","commitSha":"abc1234","evidence":"changed lines add explicit input validation"}]}',
-        'confidence is a number from 0 to 100. signals is an array and may be empty. Every signal must contain all six fields. No markdown, prose, code fences, or extra keys.',
+        'Use the exact short commit SHA and filename supplied with the patch when available, and quote a short, concrete explanation in evidence. Do not invent a SHA, filename, or evidence.',
+        'Return exactly one JSON object with this schema: {"confidence":60,"signals":[{"category":"validation","verdict":"safe","impact":"introduced","severity":"low","commitSha":"abc1234","filename":"src/validation.ts","evidence":"changed lines add explicit input validation"}]}',
+        'confidence is a number from 0 to 100. signals is an array and may be empty. Every signal must contain category, verdict, impact, severity, commitSha, and evidence; include filename when available. No markdown, prose, code fences, or extra keys.',
       ].join(' '),
       userPrompt: `${buildSafetyPrompt(commitsWithPatches)}\n/no_think`,
     })
@@ -287,6 +290,14 @@ export interface DashboardAiAxisReview {
 export interface DashboardAiReviewBaseline {
   scores: Record<DashboardReviewAxis, number>
   questions: Record<DashboardReviewAxis, string>
+  safety: {
+    surfaceFileRatio: number
+    surfaceLineRatio: number
+    defenseCoverage: number
+    patchCommitRatio: number
+    validationFileRatio: number
+    ciFileRatio: number
+  }
   clarity: {
     messageSignal: number
     /** Diagnostic workflow context; not a Clarity score input. */
@@ -323,6 +334,18 @@ export interface DashboardAiReviewBaseline {
     scopeSignal: number
     outlierSignal: number
     churnSignal: number
+  }
+  context: {
+    patchExplanationSignal: number
+    orientationArtifactSignal: number
+    commitContextSignal: number
+    repositoryOrientationSignal: number
+    handoffSignal: number
+    patchExplanationEvidenceAvailable: boolean
+    orientationArtifactEvidenceAvailable: boolean
+    commitContextEvidenceAvailable: boolean
+    repositoryEvidenceAvailable: boolean
+    handoffEvidenceAvailable: boolean
   }
 }
 
@@ -611,6 +634,7 @@ export function toDashboardAiSafetyAssessment(review: DashboardAiReviewAssessmen
       impact: finding.impact,
       severity: finding.severity,
       commitSha: finding.commitSha,
+      filename: finding.filename,
       evidence: finding.evidence,
     }))
 
@@ -658,8 +682,8 @@ export async function assessDashboardProfileWithAi(input: {
         'Return findings only when the changed lines visibly support them. Missing tests, missing CI, missing documentation, unfamiliar code, repository popularity, commit volume, and truncated context are not negative evidence.',
         'Use positive for a concrete quality signal added by the changed lines, negative for a concrete problem introduced by the changed lines, and mixed or unclear when the excerpt cannot establish a reliable direction.',
         'Use impact introduced only for a newly added behavior, fixed only when the changed lines clearly repair an existing problem, and unclear otherwise. A fixed or unclear finding must never be treated as a penalty.',
-        'For safety, classify only validation, auth, error-handling, secrets, or dependency. Only a safety finding with verdict negative and impact introduced may lower Safety, and the server independently verifies the evidence.',
-        'For clarity use the supplied clarity breakdown to inspect naming, local structure, and intent in the changed lines; conventionalMessageRatio is diagnostic workflow context, not a Clarity input. Do not treat commit count, file count, repository size, or missing patch evidence as clarity evidence. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context inspect comments, documentation, examples, and explanatory intent that are actually present.',
+        'For safety, classify only validation, auth, error-handling, secrets, or dependency. A positive safety finding is allowed only for a visible defensive safeguard and may provide a small bounded lift after server verification. Only a safety finding with verdict negative and impact introduced may lower Safety, and the server independently verifies the evidence.',
+        'For clarity use the supplied clarity breakdown to inspect naming, local structure, and intent in the changed lines; conventionalMessageRatio is diagnostic workflow context, not a Clarity input. Do not treat commit count, file count, repository size, or missing patch evidence as clarity evidence. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context use the supplied context breakdown and inspect only actual explanatory additions, orientation artifacts, commit bodies, examples, and visible handoff evidence. A README or docs entry in repository metadata is weak orientation evidence, not proof of documentation quality; missing docs, missing PRs, missing comments, and truncated patches are neutral rather than negative.',
         'Return one compact axisReview for each axis. Use supports when the deterministic result fits the visible patches, softens when the result is too strict because broad changes are visibly coherent, contradicts when the patches show a material issue the baseline misses, and insufficient when the selected excerpts cannot support a reliable judgment. Use an empty evidence array for supports or insufficient. A softens or contradicts review must cite at least two exact supplied patch files in its evidence array.',
         'Use the exact short commit SHA and exact filename supplied with each patch. Evidence must be a short concrete explanation of visible changed lines. Do not invent a SHA or filename.',
         'Return compact JSON only. Keep every observation and finding evidence under 160 characters. Return exactly one JSON object with this schema: {"confidence":60,"axisReviews":[{"axis":"complexity","verdict":"softens","confidence":78,"evidence":[{"commitSha":"abc1234","filename":"src/one.ts","observation":"focused refactor keeps the boundary explicit"},{"commitSha":"abc1234","filename":"src/two.ts","observation":"second file follows the same boundary"}]}],"findings":[]}',

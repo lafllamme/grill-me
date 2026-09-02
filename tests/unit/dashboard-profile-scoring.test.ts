@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardClarityScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardClarityScoreBreakdown, getDashboardContextScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 import { dashboardSafetyProbeSet, dashboardSafetyRepositoryProbeSet } from '../fixtures/dashboard-safety-probes'
 
@@ -271,28 +271,54 @@ describe('dashboard profile scoring', () => {
     expect(scoreDashboardComplexity(deriveDashboardMetrics(thinHistory))).toBe(50)
   })
 
-  it('scores Context from intent, visible documentation work, and review evidence', () => {
+  it('scores Context from visible explanations, orientation artifacts, and handoff evidence', () => {
     const orientedHistory = context([
-      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1 }),
-      commit({ sha: 'two', message: 'docs: explain profile scoring contract', changedFiles: 2, files: [{ filename: 'docs/scoring.md', status: 'added', additions: 20, deletions: 0 }] }),
-      commit({ sha: 'three', message: 'fix: handle missing profile data', changedFiles: 1 }),
-    ], 3)
+      commit({ sha: 'one', message: 'feat: add profile summary\n\nExplains why the summary stays separate from the score.', changedFiles: 1, files: [{ filename: 'src/profile.ts', status: 'modified', additions: 1, deletions: 0, patch: '+ // Keeps profile context next to the summary boundary' }] }),
+      commit({ sha: 'two', message: 'docs: explain profile scoring contract', changedFiles: 1, files: [{ filename: 'README.md', status: 'modified', additions: 2, deletions: 0, patch: '+ # Profile scoring\n+ The score describes the sampled change surface.' }] }),
+      commit({ sha: 'three', message: 'fix: handle missing profile data\n\nBecause an empty profile needs an explicit neutral state.', changedFiles: 1, files: [{ filename: 'src/profile-state.ts', status: 'modified', additions: 1, deletions: 0, patch: '+ // Preserve a neutral state until profile evidence is available' }] }),
+    ], 2)
+    orientedHistory.prs = orientedHistory.prs.map(pullRequest => ({ ...pullRequest, reviewCount: 1 }))
+    orientedHistory.repositories = [{ repo: 'flame/example', defaultBranch: 'main', isFork: false, isArchived: false, size: 100, stars: 0, rootEntries: ['README.md', 'docs', 'examples'] }]
+
     const undocumentedHistory = context([
-      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1 }),
-      commit({ sha: 'two', message: 'fix: handle missing profile data', changedFiles: 1 }),
-      commit({ sha: 'three', message: 'refactor: extract profile mapper', changedFiles: 1 }),
+      commit({ sha: 'one', message: 'feat: introduce profile summary', changedFiles: 1, files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileSummary = buildProfileSummary(input)\n+ return profileSummary' }] }),
+      commit({ sha: 'two', message: 'fix: handle missing profile data', changedFiles: 1, files: [{ filename: 'src/profile-state.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const nextState = resolveProfileState(input)\n+ return nextState' }] }),
+      commit({ sha: 'three', message: 'refactor: replace profile mapper', changedFiles: 1, files: [{ filename: 'src/profile-mapper.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileMapper = createProfileMapper(input)\n+ return profileMapper' }] }),
     ], 0)
     const vagueHistory = context(Array.from({ length: 3 }, (_, index) => commit({
       sha: `vague-${index}`,
       message: 'update',
-      changedFiles: 2,
-      files: [{ filename: `app/file-${index}.ts`, status: 'modified', additions: 4, deletions: 1 }],
+      changedFiles: 1,
+      files: [{ filename: `app/file-${index}.ts`, status: 'modified', additions: 2, deletions: 0, patch: '+ const x = data\n+ return x' }],
     })), 0)
 
-    expect(scoreDashboardContext(deriveDashboardMetrics(orientedHistory))).toBeGreaterThan(75)
-    expect(scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory))).toBeGreaterThan(50)
-    expect(scoreDashboardContext(deriveDashboardMetrics(orientedHistory))).toBeGreaterThan(scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory)))
-    expect(scoreDashboardContext(deriveDashboardMetrics(vagueHistory))).toBeLessThan(45)
+    const orientedScore = scoreDashboardContext(deriveDashboardMetrics(orientedHistory))
+    const undocumentedScore = scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory))
+    const vagueScore = scoreDashboardContext(deriveDashboardMetrics(vagueHistory))
+
+    expect(orientedScore).toBe(90)
+    expect(undocumentedScore).toBe(65)
+    expect(orientedScore).toBeGreaterThan(75)
+    expect(undocumentedScore).toBeGreaterThanOrEqual(50)
+    expect(orientedScore).toBeGreaterThan(undocumentedScore)
+    expect(vagueScore).toBe(60)
+  })
+
+  it('keeps Context neutral when only file names or generated release artifacts are visible', () => {
+    const history = context(Array.from({ length: 3 }, (_, index) => commit({
+      sha: `release-${index}`,
+      message: 'chore: publish package',
+      changedFiles: 1,
+      files: [{ filename: 'CHANGELOG.md', status: 'modified', additions: 8, deletions: 2 }],
+    })), 0)
+    history.repositories = [{ repo: 'flame/example', defaultBranch: 'main', isFork: false, isArchived: false, size: 100, stars: 0, rootEntries: ['CHANGELOG.md', 'src'] }]
+
+    const metrics = deriveDashboardMetrics(history)
+    const breakdown = getDashboardContextScoreBreakdown(metrics)
+
+    expect(breakdown.orientationArtifactSignal).toBe(50)
+    expect(breakdown.repositoryOrientationSignal).toBe(50)
+    expect(scoreDashboardContext(metrics)).toBe(60)
   })
 
   it('keeps Context neutral when there are fewer than three personal commits', () => {
@@ -468,6 +494,7 @@ describe('dashboard profile scoring', () => {
     expect(metrics.riskyFileRatio).toBe(50)
     expect(metrics.defensivePatchRatio).toBe(100)
     expect(metrics.riskyPatchRatio).toBe(0)
+    expect(metrics.safetyPatchCommitRatio).toBe(50)
   })
 
   it('uses the no-evidence fallback when no patch can be inspected', () => {
@@ -486,8 +513,64 @@ describe('dashboard profile scoring', () => {
     const risky = scoreDashboardProfile(context([commit({
       files: [{ filename: 'app/render.ts', status: 'modified', additions: 8, deletions: 1, patch: '+ element.innerHTML = input' }],
     })], 0))
-    expect(defensive.scores.safety).toBeGreaterThan(65)
-    expect(risky.scores.safety).toBe(65)
+    expect(defensive.scores.safety).toBe(95)
+    expect(risky.scores.safety).toBe(70)
+  })
+
+  it('lets grounded AI defense findings lift a safety-relevant patch without owning the score', () => {
+    const sample = context([
+      commit({ sha: 'auth', files: [{ filename: 'app/auth.ts', status: 'modified', additions: 4, deletions: 1, patch: '+ if (!authorize(user)) throw new Error("unauthorized")' }] }),
+      commit({ sha: 'validation', files: [{ filename: 'app/validation.ts', status: 'modified', additions: 4, deletions: 1, patch: '+ const parsed = validate(input)' }] }),
+      commit({ sha: 'database', files: [{ filename: 'app/database.ts', status: 'modified', additions: 4, deletions: 1, patch: '+ const query = input' }] }),
+    ], 0)
+    const baseline = scoreDashboardProfile(sample)
+    const reviewed = scoreDashboardProfile(sample, {
+      confidence: 90,
+      signals: [
+        { category: 'auth', verdict: 'safe', impact: 'introduced', severity: 'low', commitSha: 'auth', filename: 'app/auth.ts', evidence: 'changed lines authorize before access' },
+        { category: 'validation', verdict: 'safe', impact: 'introduced', severity: 'low', commitSha: 'validation', filename: 'app/validation.ts', evidence: 'changed lines validate input' },
+      ],
+      status: 'assessed',
+    })
+
+    expect(reviewed.derivedMetrics.safetySurfaceFileRatio).toBe(100)
+    expect(reviewed.derivedMetrics.safetySurfaceLineRatio).toBe(100)
+    expect(reviewed.derivedMetrics.safetyDefenseCoverage).toBe(67)
+    expect(reviewed.safetyAiDefenseBonus).toBe(8)
+    expect(reviewed.scores.safety).toBeGreaterThan(baseline.scores.safety)
+    expect(reviewed.scores.safety).toBeLessThanOrEqual(95)
+  })
+
+  it('limits the defensive bonus when only a sparse part of the sample has patches', () => {
+    const sparsePatchHistory = Array.from({ length: 10 }, (_, index) => commit({
+      sha: `sparse-${index}`,
+      files: index === 0
+        ? [{ filename: 'src/input.ts', status: 'modified', additions: 8, deletions: 1, patch: '+ try { validate(input) } catch (error) { throw new Error() }' }]
+        : [{ filename: `src/file-${index}.ts`, status: 'modified', additions: 8, deletions: 1 }],
+      changedFiles: 1,
+    }))
+    const assessment = scoreDashboardProfile(context(sparsePatchHistory, 0))
+
+    expect(assessment.derivedMetrics.safetyPatchCommitRatio).toBe(10)
+    expect(assessment.derivedMetrics.defensivePatchRatio).toBe(100)
+    expect(assessment.scores.safety).toBe(84)
+  })
+
+  it('does not turn test files or PR coverage into a Safety bonus', () => {
+    const plain = scoreDashboardProfile(context([commit({
+      files: [{ filename: 'src/input.ts', status: 'modified', additions: 8, deletions: 1, patch: '+ const value = input' }],
+      changedFiles: 1,
+    })], 0))
+    const processSignals = scoreDashboardProfile(context([commit({
+      files: [
+        { filename: 'src/input.ts', status: 'modified', additions: 8, deletions: 1, patch: '+ const value = input' },
+        { filename: 'tests/input.test.ts', status: 'added', additions: 12, deletions: 0 },
+      ],
+      changedFiles: 2,
+    })], 1))
+
+    expect(plain.scores.safety).toBe(70)
+    expect(processSignals.scores.safety).toBe(70)
   })
 
   it('applies only introduced AI risks to the deterministic Safety score', () => {
@@ -519,12 +602,12 @@ describe('dashboard profile scoring', () => {
       status: 'assessed',
     })
 
-    expect(base.scores.safety).toBe(65)
-    expect(fixed.scores.safety).toBe(65)
-    expect(unclear.scores.safety).toBe(65)
-    expect(introduced.scores.safety).toBe(50)
-    expect(ungrounded.scores.safety).toBe(65)
-    expect(unsupported.scores.safety).toBe(65)
+    expect(base.scores.safety).toBe(70)
+    expect(fixed.scores.safety).toBe(70)
+    expect(unclear.scores.safety).toBe(70)
+    expect(introduced.scores.safety).toBe(55)
+    expect(ungrounded.scores.safety).toBe(70)
+    expect(unsupported.scores.safety).toBe(70)
   })
 
   it('keeps repository-specific negative probes low and paired fixes unpenalized', () => {
@@ -547,7 +630,8 @@ describe('dashboard profile scoring', () => {
         status: 'assessed',
       })
 
-      expect(assessment.scores.safety, probe.id).toBe(65 - probe.expectedPenalty)
+      const expectedScore = probe.kind === 'fix' ? 95 : 70 - probe.expectedPenalty
+      expect(assessment.scores.safety, probe.id).toBe(expectedScore)
     }
   })
 
@@ -571,7 +655,7 @@ describe('dashboard profile scoring', () => {
         status: 'assessed',
       })
 
-      expect(assessment.scores.safety, probe.sourceUrl).toBe(65 - probe.expectedPenalty)
+      expect(assessment.scores.safety, probe.sourceUrl).toBe(70 - probe.expectedPenalty)
     }
   })
 
@@ -583,7 +667,7 @@ describe('dashboard profile scoring', () => {
       status: 'assessed',
     })
 
-    expect(assessment.scores.safety).toBe(15)
+    expect(assessment.scores.safety).toBe(20)
   })
 
   it('applies only bounded, grounded AI adjustments to non-safety axes', () => {
@@ -668,7 +752,7 @@ describe('dashboard profile scoring', () => {
     expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({})
   })
 
-  it('selects at most the newest, largest, and most relevant commits', () => {
+  it('selects the newest, a typical, and the most relevant commits', () => {
     const commits = [
       commit({ sha: 'old', committedAt: '2026-08-01T00:00:00Z', additions: 10, deletions: 1, files: [{ filename: 'app/example.ts', status: 'modified', additions: 10, deletions: 1, patch: '+ const value = 1' }] }),
       commit({ sha: 'latest', committedAt: '2026-08-03T00:00:00Z', additions: 12, deletions: 1, files: [{ filename: 'app/example.ts', status: 'modified', additions: 12, deletions: 1, patch: '+ const latest = 1' }] }),
@@ -676,7 +760,7 @@ describe('dashboard profile scoring', () => {
       commit({ sha: 'relevant', committedAt: '2026-07-30T00:00:00Z', additions: 20, deletions: 5, files: [{ filename: 'app/validators/input.ts', status: 'modified', additions: 20, deletions: 5, patch: '+ validate(input)' }] }),
     ]
 
-    expect(selectSafetyCommits(commits).map(selected => selected.sha)).toEqual(['latest', 'largest', 'relevant'])
+    expect(selectSafetyCommits(commits).map(selected => selected.sha)).toEqual(['latest', 'old', 'relevant'])
   })
 
   it('classifies Safety roles only when the sample has enough patch evidence', () => {

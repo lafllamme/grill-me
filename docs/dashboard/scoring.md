@@ -1,8 +1,8 @@
 # Dashboard Scoring Contract
 
-**Version:** 1.0.0
+**Version:** 1.2.0
 **Status:** active
-**Updated:** 2026-09-01
+**Updated:** 2026-09-02
 
 This document owns the shared rules. Individual formulas live in
 [category documents](./categories/), so a category can be changed and
@@ -28,13 +28,44 @@ score or compensate for missing evidence.
 | Axis | Question | Canonical formula |
 | --- | --- | --- |
 | Clarity | Can another developer understand the intent and local shape? | [Clarity](./categories/clarity.md) |
-| Safety | Do changed lines visibly introduce concrete safety risks? | [Safety](./categories/safety.md) |
+| Safety | What does the visible safety-relevant code protect, and do changed lines introduce concrete risks? | [Safety](./categories/safety.md) |
 | Workflow | Does work arrive in understandable, reviewable slices? | [Workflow](./categories/workflow.md) |
 | Complexity | Is the observed change surface controlled? | [Complexity](./categories/complexity.md) |
 | Context | Does the project explain its intent and next safe change? | [Context](./categories/context.md) |
 
 All values point in the same direction: 100 is a strong signal. Complexity
 therefore means complexity control, not more complexity.
+
+## Current implementation status
+
+All five categories now have a deterministic score owner and one combined AI
+second check. The AI never supplies a replacement number. It can only provide
+grounded interpretation within the limits listed below.
+
+| Category | Version | Numeric owner | AI influence | Current state |
+| --- | --- | --- | --- | --- |
+| Clarity | v3 | deterministic formula | bounded adjustment up to ±4 | calibrated |
+| Safety | v4 | deterministic surface/defense formula | verified defense lift up to +8; verified introduced-risk penalty | calibrated |
+| Workflow | v3 | deterministic delivery-hygiene formula | bounded adjustment up to ±4 | calibrated |
+| Complexity | v2 | deterministic effective-change-surface formula | bounded adjustment up to ±4 | calibrated |
+| Context | v4 | deterministic explanation/orientation formula | bounded adjustment up to ±4 | calibrated |
+
+Safety has an explicit boundary check rather than one expected score:
+
+| Safety probe | Observed result | Meaning |
+| --- | ---: | --- |
+| no patch evidence | 50 | insufficient; do not rank |
+| ordinary patch | 70 | neutral; no safety claim |
+| sparse defensive patch | 84 | limited positive evidence |
+| fully defensive patch | 95 | strong visible defense, capped |
+| medium introduced risk | 55 | grounded penalty |
+| high `eval` risk | 40 | grounded high-severity penalty |
+| secret/auth bypass | 20 | dedicated critical penalty |
+
+This confirms that the current model is not fixed in the normal range. The
+named six-profile run remains a calibration sample, not a reputation ranking;
+its Safety values are intentionally narrower when no concrete defensive or
+introduced-risk patch is visible.
 
 ## Evidence gate and neutral fallback
 
@@ -68,8 +99,9 @@ The AI owns:
 - roast wording and constructive feedback.
 
 For non-Safety axes, a grounded review can apply only the documented bounded
-adjustment. For Safety, only an independently verified introduced risk can
-apply a severity penalty. See [AI review](./ai-review.md).
+adjustment. For Safety, an independently verified defensive signal may apply a
+small bounded lift, while only a verified introduced risk can apply a severity
+penalty. See [AI review](./ai-review.md).
 
 ## Overall grade
 
@@ -103,3 +135,11 @@ pattern; the grade describes the whole profile.
 | Repository Anatomy | file/directory aggregation and hotspots |
 
 No chart may create a random quality value just to fill visual space.
+
+## Remaining work
+
+The five formulas and their AI contracts are implemented and regression-tested.
+The remaining work is calibration against more representative patch samples,
+role-threshold tuning, and eventual persistence. None of those should change
+the rule that missing evidence is reported as insufficient or neutral rather
+than invented quality.

@@ -24,6 +24,7 @@ export interface DashboardDerivedMetrics {
   averageFilesPerCommit: number
   workflowCommitCount: number
   workflowPatchCommitCount: number
+  safetyPatchCommitRatio: number
   workflowAverageFilesPerCommit: number
   workflowMedianFilesPerCommit: number
   workflowP75FilesPerCommit: number
@@ -35,7 +36,16 @@ export interface DashboardDerivedMetrics {
   clarityStructureSignal: number
   clarityNamingEvidenceAvailable: boolean
   clarityStructureEvidenceAvailable: boolean
-  contextDocumentationSignal: number
+  contextPatchExplanationSignal: number
+  contextOrientationArtifactSignal: number
+  contextCommitSignal: number
+  contextRepositoryOrientationSignal: number
+  contextHandoffSignal: number
+  contextPatchExplanationEvidenceAvailable: boolean
+  contextOrientationArtifactEvidenceAvailable: boolean
+  contextCommitEvidenceAvailable: boolean
+  contextRepositoryEvidenceAvailable: boolean
+  contextHandoffEvidenceAvailable: boolean
   complexityEffectiveFilesP75: number
   complexityExcludedFileRatio: number
   complexityRelativeOutlierRatio: number
@@ -50,6 +60,9 @@ export interface DashboardDerivedMetrics {
   testFileRatio: number
   ciFileRatio: number
   validationFileRatio: number
+  safetySurfaceFileRatio: number
+  safetySurfaceLineRatio: number
+  safetyDefenseCoverage: number
   pullRequestCoverage: number
   deletionRatio: number
   workflowDeletionRatio: number
@@ -92,6 +105,7 @@ export interface DashboardProfileAssessment {
   roleStatus: DashboardProfileRoleStatus
   derivedMetrics: DashboardDerivedMetrics
   confidence: number
+  safetyAiDefenseBonus: number
   aiSafety?: {
     confidence: number
     status: string
@@ -101,6 +115,7 @@ export interface DashboardProfileAssessment {
       impact: 'introduced' | 'fixed' | 'unclear'
       severity: 'low' | 'medium' | 'high'
       commitSha: string
+      filename?: string
       evidence: string
     }[]
   }

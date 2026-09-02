@@ -189,6 +189,14 @@ describe('dashboard AI review contract', () => {
     const prompt = buildDashboardReviewPrompt(sample, selection, {
       scores: { clarity: 80, safety: 75, workflow: 72, complexity: 76, context: 70 },
       questions: dashboardCategoryQuestions,
+      safety: {
+        surfaceFileRatio: 25,
+        surfaceLineRatio: 18,
+        defenseCoverage: 64,
+        patchCommitRatio: 100,
+        validationFileRatio: 33,
+        ciFileRatio: 0,
+      },
       clarity: {
         messageSignal: 82,
         conventionalMessageRatio: 67,
@@ -225,12 +233,26 @@ describe('dashboard AI review contract', () => {
         outlierSignal: 88,
         churnSignal: 100,
       },
+      context: {
+        patchExplanationSignal: 68,
+        orientationArtifactSignal: 72,
+        commitContextSignal: 64,
+        repositoryOrientationSignal: 66,
+        handoffSignal: 58,
+        patchExplanationEvidenceAvailable: true,
+        orientationArtifactEvidenceAvailable: true,
+        commitContextEvidenceAvailable: true,
+        repositoryEvidenceAvailable: true,
+        handoffEvidenceAvailable: true,
+      },
     })
 
     expect(prompt).toContain('README.md')
     expect(prompt).toContain('"complexity":76')
     expect(prompt).toContain('"averageFilesPerCommit":3.5')
     expect(prompt).toContain('Are broad changes coherent and controlled')
+    expect(prompt).toContain('"patchExplanationSignal":68')
+    expect(prompt).toContain('"repositoryOrientationSignal":66')
     expect(prompt).not.toContain('999')
     expect(prompt.length).toBeLessThan(20_000)
   })

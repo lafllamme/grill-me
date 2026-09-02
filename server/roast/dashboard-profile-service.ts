@@ -3,7 +3,7 @@ import type { DashboardAiReviewAssessment, DashboardAiReviewBaseline } from './d
 import type { GithubCollectionProgress, GithubContext } from './github-collector'
 import { assessDashboardProfileWithAi, dashboardCategoryQuestions, toDashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import { toDashboardEvidence } from './dashboard-profile-evidence'
-import { getDashboardClarityScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreDashboardProfile } from './dashboard-profile-scoring'
+import { getDashboardClarityScoreBreakdown, getDashboardContextScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreDashboardProfile } from './dashboard-profile-scoring'
 import { collectDashboardGithubContext } from './github-collector'
 
 export interface DashboardProfileAnalysisInput {
@@ -56,10 +56,19 @@ export async function runDashboardProfileAnalysis(
   await hooks?.onDeterministicScores?.(deterministicAssessment)
   const workflowBreakdown = getDashboardWorkflowScoreBreakdown(deterministicAssessment.derivedMetrics)
   const clarityBreakdown = getDashboardClarityScoreBreakdown(deterministicAssessment.derivedMetrics)
+  const contextBreakdown = getDashboardContextScoreBreakdown(deterministicAssessment.derivedMetrics)
 
   const aiBaseline: DashboardAiReviewBaseline = {
     scores: deterministicAssessment.scores,
     questions: dashboardCategoryQuestions,
+    safety: {
+      surfaceFileRatio: deterministicAssessment.derivedMetrics.safetySurfaceFileRatio,
+      surfaceLineRatio: deterministicAssessment.derivedMetrics.safetySurfaceLineRatio,
+      defenseCoverage: deterministicAssessment.derivedMetrics.safetyDefenseCoverage,
+      patchCommitRatio: deterministicAssessment.derivedMetrics.safetyPatchCommitRatio,
+      validationFileRatio: deterministicAssessment.derivedMetrics.validationFileRatio,
+      ciFileRatio: deterministicAssessment.derivedMetrics.ciFileRatio,
+    },
     clarity: {
       messageSignal: clarityBreakdown.messageSignal,
       conventionalMessageRatio: clarityBreakdown.conventionalMessageRatio,
@@ -95,6 +104,18 @@ export async function runDashboardProfileAnalysis(
       scopeSignal: deterministicAssessment.derivedMetrics.complexityScopeSignal,
       outlierSignal: deterministicAssessment.derivedMetrics.complexityOutlierSignal,
       churnSignal: deterministicAssessment.derivedMetrics.complexityChurnSignal,
+    },
+    context: {
+      patchExplanationSignal: contextBreakdown.patchExplanationSignal,
+      orientationArtifactSignal: contextBreakdown.orientationArtifactSignal,
+      commitContextSignal: contextBreakdown.commitContextSignal,
+      repositoryOrientationSignal: contextBreakdown.repositoryOrientationSignal,
+      handoffSignal: contextBreakdown.handoffSignal,
+      patchExplanationEvidenceAvailable: contextBreakdown.patchExplanationEvidenceAvailable,
+      orientationArtifactEvidenceAvailable: contextBreakdown.orientationArtifactEvidenceAvailable,
+      commitContextEvidenceAvailable: contextBreakdown.commitContextEvidenceAvailable,
+      repositoryEvidenceAvailable: contextBreakdown.repositoryEvidenceAvailable,
+      handoffEvidenceAvailable: contextBreakdown.handoffEvidenceAvailable,
     },
   }
 

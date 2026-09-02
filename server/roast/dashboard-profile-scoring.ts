@@ -2,7 +2,8 @@ import type { DashboardAiReviewAssessment, DashboardAiReviewEvidence, DashboardA
 import type { DashboardProfileRole, DashboardRoleClassification } from './dashboard-profile-roles'
 import type { GithubCommit, GithubCommitFile, GithubContext } from './github-collector'
 import { resolveDashboardProfileRole } from './dashboard-profile-roles'
-import { hasConfirmedRiskEvidence } from './dashboard-safety-evidence'
+import { confirmedDefensivePatchPattern, hasConfirmedDefensiveEvidence, hasConfirmedRiskEvidence } from './dashboard-safety-evidence'
+import { safetySurfaceFilePattern, safetySurfacePatchPattern } from './dashboard-safety-selection'
 
 export type DashboardProfileAxis = 'clarity' | 'safety' | 'workflow' | 'complexity' | 'context'
 
@@ -30,6 +31,7 @@ export interface DashboardDerivedMetrics {
   averageFilesPerCommit: number
   workflowCommitCount: number
   workflowPatchCommitCount: number
+  safetyPatchCommitRatio: number
   workflowAverageFilesPerCommit: number
   workflowMedianFilesPerCommit: number
   workflowP75FilesPerCommit: number
@@ -41,7 +43,16 @@ export interface DashboardDerivedMetrics {
   clarityStructureSignal: number
   clarityNamingEvidenceAvailable: boolean
   clarityStructureEvidenceAvailable: boolean
-  contextDocumentationSignal: number
+  contextPatchExplanationSignal: number
+  contextOrientationArtifactSignal: number
+  contextCommitSignal: number
+  contextRepositoryOrientationSignal: number
+  contextHandoffSignal: number
+  contextPatchExplanationEvidenceAvailable: boolean
+  contextOrientationArtifactEvidenceAvailable: boolean
+  contextCommitEvidenceAvailable: boolean
+  contextRepositoryEvidenceAvailable: boolean
+  contextHandoffEvidenceAvailable: boolean
   complexityEffectiveFilesP75: number
   complexityExcludedFileRatio: number
   complexityRelativeOutlierRatio: number
@@ -56,6 +67,9 @@ export interface DashboardDerivedMetrics {
   testFileRatio: number
   ciFileRatio: number
   validationFileRatio: number
+  safetySurfaceFileRatio: number
+  safetySurfaceLineRatio: number
+  safetyDefenseCoverage: number
   pullRequestCoverage: number
   deletionRatio: number
   workflowDeletionRatio: number
@@ -77,6 +91,7 @@ export interface DashboardProfileAssessment {
   roleStatus: DashboardRoleClassification['status']
   derivedMetrics: DashboardDerivedMetrics
   confidence: number
+  safetyAiDefenseBonus: number
   aiSafety?: DashboardAiSafetyAssessment
   aiReview?: DashboardAiReviewAssessment
   aiAdjustments: Partial<Record<DashboardProfileAxis, number>>
@@ -105,6 +120,12 @@ const complexityExcludedFilePattern = /(?:^|\/)(?:node_modules|vendor|dist|build
 const complexityTestFilePattern = /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i
 const complexityDocumentationFilePattern = /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i
 const complexityNonCodeFilePattern = /(?:^|\/)[^/]+\.kicad_block(?:\/|$)|\.(?:kicad_pcb|kicad_prl|kicad_pro|kicad_sch|pcb|sch|brd|dsn|gbr|step|stp|stl|iges|wrl|svg|png|jpe?g|gif|webp|ico|pdf|zip|tar|gz|bin|hex|uf2)$/i
+const contextGeneratedArtifactPattern = /(?:^|\/)(?:CHANGELOG(?:\.[^/]+)?|release-notes(?:\.[^/]+)?|generated[^/]*)$/i
+const contextOrientationArtifactPattern = /^(?:README(?:\.[^/]+)?|CONTRIBUTING(?:\.[^/]+)?|docs?|documentation|examples?|architecture|adrs?)(?:\/|\.|$)/i
+const contextExplanationLinePattern = /^\s*(?:\/\/|\/\*|\*|#\s|<!--|'''|""")|\s(?:\/\/|\/\*).*\S/
+const contextIntentPattern = /\b(?:because|so that|in order to|why|reason|instead of|to avoid|to allow|to support|migration|migrate|breaking change|backward compatible|follow[- ]?up|related to|document(?:ed|ation)?|explain(?:s|ed|ation)?)\b|(?:fixes?|closes?|resolves?)\s+#\d+/
+const contextSubjectActionPattern = /\b(?:add|allow|change|extract|fix|handle|improve|introduce|migrate|prevent|refactor|remove|rename|replace|split|support|update)\b/
+const contextGenericSubjectPattern = /^(?:fix|changes?|stuff|update|wip|misc|asdf|test)$/
 const clarityDeclarationPattern = /^(?:export(?:\s+default)?\s+)?(?:async\s+)?(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/
 const clarityGenericIdentifierPattern = /^(?:[xyzijkn]|data|item|value|thing|stuff|tmp|temp|obj|res|result|foo|bar|baz|misc)$/i
 
@@ -177,19 +198,123 @@ export function confirmedRiskPenalty(aiSafety: DashboardAiSafetyAssessment | und
   }, 0)
 }
 
-export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: readonly GithubCommit[], aiSafety?: DashboardAiSafetyAssessment): number {
+export interface DashboardSafetyScoreBreakdown {
+  evidenceStatus: 'insufficient' | 'neutral' | 'surface-observed'
+  surfaceFileRatio: number
+  surfaceLineRatio: number
+  defenseCoverage: number
+  deterministicDefenseBonus: number
+  aiDefenseBonus: number
+  processBonus: number
+  riskPenalty: number
+  rawScore: number
+}
+
+const safetyTestFilePattern = /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i
+
+function addedPatchLinesFromFile(file: GithubCommitFile): string[] {
+  return file.patch
+    ?.split('\n')
+    .filter(line => line.startsWith('+') && !line.startsWith('+++'))
+    .map(line => line.slice(1))
+    .filter(line => line.trim())
+    ?? []
+}
+
+function isSafetySurfaceFile(file: GithubCommitFile): boolean {
+  return !safetyTestFilePattern.test(file.filename) && safetySurfaceFilePattern.test(file.filename)
+}
+
+function getDashboardSafetySurfaceMetrics(commits: readonly GithubCommit[]): Pick<DashboardDerivedMetrics, 'safetySurfaceFileRatio' | 'safetySurfaceLineRatio' | 'safetyDefenseCoverage'> {
+  const patchFiles = commits.flatMap(commit => commit.files).filter(file => Boolean(file.patch?.trim()))
+  const surfaceFiles = patchFiles.filter((file) => {
+    if (isSafetySurfaceFile(file))
+      return true
+
+    return addedPatchLinesFromFile(file).some(line => safetySurfacePatchPattern.test(line))
+  })
+  const surfaceLines = patchFiles.flatMap((file) => {
+    const addedLines = addedPatchLinesFromFile(file)
+    if (isSafetySurfaceFile(file))
+      return addedLines
+
+    return addedLines.filter(line => safetySurfacePatchPattern.test(line))
+  })
+  const defensiveSurfaceFiles = surfaceFiles.filter(file => addedPatchLinesFromFile(file).some(line => confirmedDefensivePatchPattern.test(line)))
+  const defensiveSurfaceLines = surfaceLines.filter(line => confirmedDefensivePatchPattern.test(line))
+  const fileCoverage = ratio(defensiveSurfaceFiles.length, surfaceFiles.length)
+  const lineCoverage = ratio(defensiveSurfaceLines.length, surfaceLines.length)
+
+  return {
+    safetySurfaceFileRatio: Math.round(ratio(surfaceFiles.length, patchFiles.length) * 100),
+    safetySurfaceLineRatio: Math.round(ratio(surfaceLines.length, patchFiles.flatMap(addedPatchLinesFromFile).length) * 100),
+    safetyDefenseCoverage: Math.round((fileCoverage * 0.6 + lineCoverage * 0.4) * 100),
+  }
+}
+
+export function confirmedDefensivePatchBonus(aiSafety: DashboardAiSafetyAssessment | undefined, commits: readonly GithubCommit[]): number {
+  if (!aiSafety || aiSafety.status !== 'assessed' || aiSafety.confidence < 70)
+    return 0
+
+  const groundedSignals = aiSafety.signals.filter(signal => (
+    signal.verdict === 'safe'
+    && (signal.impact === 'introduced' || signal.impact === 'fixed')
+    && Boolean(signal.evidence.trim())
+    && isKnownCommitSha(signal.commitSha, commits)
+    && hasConfirmedDefensiveEvidence(signal, commits)
+  ))
+  const distinctSignals = new Set(groundedSignals.map(signal => `${signal.commitSha}:${signal.filename ?? signal.category}`))
+  return Math.min(8, distinctSignals.size * 4)
+}
+
+export function getDashboardSafetyScoreBreakdown(metrics: DashboardDerivedMetrics, commits: readonly GithubCommit[], aiSafety?: DashboardAiSafetyAssessment): DashboardSafetyScoreBreakdown {
   const personalCommits = commits.filter(commit => !isMergeCommit(commit))
   const hasPatchEvidence = personalCommits.some(commit => commit.files.some(file => Boolean(file.patch?.trim())))
-  if (!hasPatchEvidence)
-    return 50
+  if (!hasPatchEvidence) {
+    return {
+      evidenceStatus: 'insufficient',
+      surfaceFileRatio: metrics.safetySurfaceFileRatio,
+      surfaceLineRatio: metrics.safetySurfaceLineRatio,
+      defenseCoverage: metrics.safetyDefenseCoverage,
+      deterministicDefenseBonus: 0,
+      aiDefenseBonus: 0,
+      processBonus: 0,
+      riskPenalty: 0,
+      rawScore: 50,
+    }
+  }
 
-  return clamp(65
-    + metrics.defensivePatchRatio * 0.20
-    + metrics.testFileRatio * 0.15
-    + metrics.ciFileRatio * 0.15
-    + metrics.validationFileRatio * 0.10
-    + metrics.pullRequestCoverage * 0.10
-    - confirmedRiskPenalty(aiSafety, personalCommits))
+  const hasSafetySurface = metrics.safetySurfaceFileRatio > 0 || metrics.safetySurfaceLineRatio > 0
+  const patchCoverageMultiplier = 0.5 + (metrics.safetyPatchCommitRatio / 100) * 0.5
+  const riskPenalty = confirmedRiskPenalty(aiSafety, personalCommits)
+  const aiDefenseBonus = confirmedDefensivePatchBonus(aiSafety, personalCommits) * patchCoverageMultiplier
+  const processBonus = hasSafetySurface
+    ? Math.min(5, metrics.validationFileRatio * 0.03 + metrics.ciFileRatio * 0.02)
+    : 0
+  const deterministicDefenseBonus = hasSafetySurface
+    ? metrics.safetyDefenseCoverage * 0.25 * patchCoverageMultiplier
+    : 0
+  // A safety-relevant surface is not itself a failure. Without a confirmed
+  // risk or visible defensive evidence, it stays at the same neutral baseline
+  // as an ordinary patch instead of turning missing proof into a penalty.
+  const baseScore = 70
+  const rawScore = baseScore + deterministicDefenseBonus + aiDefenseBonus + processBonus - riskPenalty
+
+  return {
+    evidenceStatus: hasSafetySurface ? 'surface-observed' : 'neutral',
+    surfaceFileRatio: metrics.safetySurfaceFileRatio,
+    surfaceLineRatio: metrics.safetySurfaceLineRatio,
+    defenseCoverage: metrics.safetyDefenseCoverage,
+    deterministicDefenseBonus,
+    aiDefenseBonus,
+    processBonus,
+    riskPenalty,
+    rawScore: clamp(Math.min(95, rawScore)),
+  }
+}
+
+export function scoreDashboardSafety(metrics: DashboardDerivedMetrics, commits: readonly GithubCommit[], aiSafety?: DashboardAiSafetyAssessment): number {
+  return getDashboardSafetyScoreBreakdown(metrics, commits, aiSafety).rawScore
 }
 
 /**
@@ -218,6 +343,20 @@ export interface DashboardClarityScoreBreakdown {
   structureSignal: number
   namingEvidenceAvailable: boolean
   structureEvidenceAvailable: boolean
+  rawScore: number
+}
+
+export interface DashboardContextScoreBreakdown {
+  patchExplanationSignal: number
+  orientationArtifactSignal: number
+  commitContextSignal: number
+  repositoryOrientationSignal: number
+  handoffSignal: number
+  patchExplanationEvidenceAvailable: boolean
+  orientationArtifactEvidenceAvailable: boolean
+  commitContextEvidenceAvailable: boolean
+  repositoryEvidenceAvailable: boolean
+  handoffEvidenceAvailable: boolean
   rawScore: number
 }
 
@@ -339,6 +478,47 @@ export function getDashboardClarityScoreBreakdown(metrics: DashboardDerivedMetri
   }
 }
 
+export function getDashboardContextScoreBreakdown(metrics: DashboardDerivedMetrics): DashboardContextScoreBreakdown {
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3) {
+    return {
+      patchExplanationSignal: 50,
+      orientationArtifactSignal: 50,
+      commitContextSignal: 50,
+      repositoryOrientationSignal: 50,
+      handoffSignal: 50,
+      patchExplanationEvidenceAvailable: false,
+      orientationArtifactEvidenceAvailable: false,
+      commitContextEvidenceAvailable: false,
+      repositoryEvidenceAvailable: false,
+      handoffEvidenceAvailable: false,
+      rawScore: 50,
+    }
+  }
+
+  const rawScore = clamp(
+    60
+    + (metrics.contextPatchExplanationSignal - 50) * 0.35
+    + (metrics.contextOrientationArtifactSignal - 50) * 0.20
+    + (metrics.contextCommitSignal - 50) * 0.35
+    + (metrics.contextRepositoryOrientationSignal - 50) * 0.05
+    + (metrics.contextHandoffSignal - 50) * 0.05,
+  )
+
+  return {
+    patchExplanationSignal: metrics.contextPatchExplanationSignal,
+    orientationArtifactSignal: metrics.contextOrientationArtifactSignal,
+    commitContextSignal: metrics.contextCommitSignal,
+    repositoryOrientationSignal: metrics.contextRepositoryOrientationSignal,
+    handoffSignal: metrics.contextHandoffSignal,
+    patchExplanationEvidenceAvailable: metrics.contextPatchExplanationEvidenceAvailable,
+    orientationArtifactEvidenceAvailable: metrics.contextOrientationArtifactEvidenceAvailable,
+    commitContextEvidenceAvailable: metrics.contextCommitEvidenceAvailable,
+    repositoryEvidenceAvailable: metrics.contextRepositoryEvidenceAvailable,
+    handoffEvidenceAvailable: metrics.contextHandoffEvidenceAvailable,
+    rawScore,
+  }
+}
+
 /**
  * Scores Complexity v2 from effective personal change surface. This is a
  * GitHub-observable proxy, not a claim about cyclomatic complexity or AST
@@ -356,21 +536,13 @@ export function scoreDashboardComplexity(metrics: DashboardDerivedMetrics): numb
 }
 
 /**
- * Scores project context from personal intent, observed documentation work,
- * and review evidence. Missing documentation or PRs stay neutral because the
- * public commit sample cannot prove that either is absent from the repository.
+ * Scores project context from visible explanations, orientation artifacts,
+ * commit bodies, repository affordances, and handoff evidence. Missing
+ * documentation or PRs stay neutral because the public sample cannot prove
+ * that either is absent from the repository.
  */
 export function scoreDashboardContext(metrics: DashboardDerivedMetrics): number {
-  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
-    return 50
-
-  const reviewSignal = metrics.pullRequestCoverage > 0 ? metrics.pullRequestCoverage : 50
-
-  return clamp(
-    metrics.workflowMessageQuality * 0.50
-    + metrics.contextDocumentationSignal * 0.30
-    + reviewSignal * 0.20,
-  )
+  return getDashboardContextScoreBreakdown(metrics).rawScore
 }
 
 export function scoreCommitMessage(message: string): number {
@@ -400,8 +572,17 @@ function fileSignal(commits: readonly GithubCommit[], pattern: RegExp): number {
   return ratio(files.filter(file => pattern.test(file.filename)).length, files.length)
 }
 
-function patchSignal(commits: readonly GithubCommit[], pattern: RegExp): number {
-  const patches = commits.flatMap(commit => commit.files).map(file => file.patch).filter((patch): patch is string => Boolean(patch))
+function addedPatchSignal(commits: readonly GithubCommit[], pattern: RegExp): number {
+  const patches = commits
+    .flatMap(commit => commit.files)
+    .map(file => file.patch)
+    .filter((patch): patch is string => Boolean(patch))
+    .map(patch => patch
+      .split('\n')
+      .filter(line => line.startsWith('+') && !line.startsWith('+++'))
+      .join('\n'))
+    .filter(Boolean)
+
   return ratio(patches.filter(patch => pattern.test(patch)).length, patches.length)
 }
 
@@ -443,6 +624,111 @@ function clarityStructureSignal(commits: readonly GithubCommit[]): { signal: num
   }
 }
 
+function contextVisiblePatchFiles(commits: readonly GithubCommit[]): GithubCommitFile[] {
+  return commits
+    .flatMap(commit => commit.files)
+    .filter(file => Boolean(file.patch?.trim()))
+}
+
+function contextPatchExplanationSignal(commits: readonly GithubCommit[]): { signal: number, evidenceAvailable: boolean } {
+  const addedLines = commits
+    .flatMap(commit => commit.files)
+    .filter(file => !contextOrientationArtifactPattern.test(file.filename) && !contextGeneratedArtifactPattern.test(file.filename))
+    .flatMap(file => file.patch?.split('\n') ?? [])
+    .filter(line => line.startsWith('+') && !line.startsWith('+++'))
+    .map(line => line.slice(1))
+    .filter(line => line.trim())
+
+  if (!addedLines.length)
+    return { signal: 50, evidenceAvailable: false }
+
+  const explanatoryLineRatio = ratio(addedLines.filter(line => contextExplanationLinePattern.test(line)).length, addedLines.length)
+  return { signal: clamp(50 + explanatoryLineRatio * 40), evidenceAvailable: true }
+}
+
+function contextOrientationArtifactWeight(filename: string): number {
+  if (contextGeneratedArtifactPattern.test(filename))
+    return 0
+  if (/^README(?:\.[^/]+)?$/i.test(filename) || /^CONTRIBUTING(?:\.[^/]+)?$/i.test(filename))
+    return 1
+  if (/^(?:docs?|documentation)(?:\/|\.|$)/i.test(filename))
+    return 0.8
+  if (/^(?:examples?|architecture|adrs?)(?:\/|\.|$)/i.test(filename))
+    return 0.6
+  return 0
+}
+
+function contextOrientationArtifactSignal(commits: readonly GithubCommit[]): { signal: number, evidenceAvailable: boolean } {
+  const files = contextVisiblePatchFiles(commits)
+  if (!files.length)
+    return { signal: 50, evidenceAvailable: false }
+
+  const orientationWeight = files.reduce((sum, file) => sum + contextOrientationArtifactWeight(file.filename), 0)
+  if (!orientationWeight)
+    return { signal: 50, evidenceAvailable: false }
+
+  return {
+    signal: clamp(50 + Math.min(orientationWeight / files.length, 1) * 40),
+    evidenceAvailable: true,
+  }
+}
+
+function contextCommitSignal(commits: readonly GithubCommit[]): { signal: number, evidenceAvailable: boolean } {
+  if (!commits.length)
+    return { signal: 50, evidenceAvailable: false }
+
+  const commitSignals = commits.map((commit) => {
+    const [subject = '', ...bodyLines] = commit.message.split('\n')
+    const body = bodyLines.join(' ').trim()
+    const hasMeaningfulBody = body.length >= 20
+    const hasExplicitContext = contextIntentPattern.test(commit.message.toLowerCase())
+
+    const normalizedSubject = subject.trim().toLowerCase()
+    const subjectWords = normalizedSubject.split(/\s+/).filter(Boolean)
+    const subjectWithoutPrefix = normalizedSubject.replace(/^(?:feat|fix|refactor|docs|test|chore|perf|build|ci|style)(?:\([^)]*\))?:\s*/, '')
+    const hasSpecificSubject = subjectWords.length >= 3
+      && contextSubjectActionPattern.test(normalizedSubject)
+      && !contextGenericSubjectPattern.test(subjectWithoutPrefix)
+
+    let signal = 50
+    if (hasSpecificSubject)
+      signal += 15
+    if (hasMeaningfulBody)
+      signal += 15
+    if (hasExplicitContext)
+      signal += 10
+    return clamp(signal)
+  })
+
+  return {
+    signal: clamp(average(commitSignals)),
+    evidenceAvailable: commitSignals.some(signal => signal > 50),
+  }
+}
+
+function contextRepositoryOrientationSignal(repositories: GithubContext['repositories']): { signal: number, evidenceAvailable: boolean } {
+  const rootEntries = repositories?.flatMap(repository => repository.rootEntries) ?? []
+  if (!rootEntries.length)
+    return { signal: 50, evidenceAvailable: false }
+
+  const orientationWeight = rootEntries.reduce((sum, entry) => sum + contextOrientationArtifactWeight(entry), 0)
+  return {
+    signal: orientationWeight ? clamp(50 + Math.min(orientationWeight * 8, 30)) : 50,
+    evidenceAvailable: true,
+  }
+}
+
+function contextHandoffSignal(metrics: Pick<DashboardDerivedMetrics, 'pullRequestCoverage'>, pullRequests: number, reviewedPullRequests: number): { signal: number, evidenceAvailable: boolean } {
+  if (!pullRequests)
+    return { signal: 50, evidenceAvailable: false }
+
+  const reviewedRatio = ratio(reviewedPullRequests, pullRequests)
+  return {
+    signal: clamp(50 + metrics.pullRequestCoverage * 0.20 + reviewedRatio * 20),
+    evidenceAvailable: true,
+  }
+}
+
 function isMergeCommit(commit: GithubCommit): boolean {
   return commit.isMerge ?? (commit.parentCount !== undefined
     ? commit.parentCount > 1
@@ -469,6 +755,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const complexityOutlierCommitCount = complexityEffectiveFileCounts.filter(effectiveFileCount => effectiveFileCount >= 12).length
   const workflowAdditions = workflowCommits.reduce((sum, commit) => sum + commit.additions, 0)
   const workflowDeletions = workflowCommits.reduce((sum, commit) => sum + commit.deletions, 0)
+  const workflowPatchCommitCount = workflowCommits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length
   const commitDates = commits.map(commit => commit.committedAt ? new Date(commit.committedAt) : null).filter((date): date is Date => Boolean(date && !Number.isNaN(date.getTime())))
   const dayKeys = new Set(commitDates.map(date => date.toISOString().slice(0, 10)))
   const sortedDayKeys = [...dayKeys].sort()
@@ -482,6 +769,13 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const workflowDeletionRatio = Math.round(ratio(workflowDeletions, workflowAdditions + workflowDeletions) * 100)
   const namingSignal = clarityNamingSignal(workflowCommits)
   const structureSignal = clarityStructureSignal(workflowCommits)
+  const contextPatchExplanation = contextPatchExplanationSignal(workflowCommits)
+  const contextOrientationArtifact = contextOrientationArtifactSignal(workflowCommits)
+  const contextCommit = contextCommitSignal(workflowCommits)
+  const contextRepositoryOrientation = contextRepositoryOrientationSignal(context.repositories)
+  const pullRequestCoverage = Math.round(Math.min(1, ratio(context.prs.length, workflowCommits.length)) * 100)
+  const reviewedPullRequestCount = context.prs.filter(pullRequest => (pullRequest.reviewCount ?? 0) > 0 || (pullRequest.reviewCommentCount ?? 0) > 0 || (pullRequest.commentCount ?? 0) > 0).length
+  const contextHandoff = contextHandoffSignal({ pullRequestCoverage }, context.prs.length, reviewedPullRequestCount)
   const complexityEffectiveFilesP75 = workflowCommits.length ? Number(percentile(complexityEffectiveFileCounts, 75).toFixed(1)) : 50
   const complexityRelativeOutlierRatio = workflowCommits.length ? Math.round(ratio(complexityOutlierCommitCount, workflowCommits.length) * 100) : 50
   const complexityScopeSignal = workflowCommits.length
@@ -489,6 +783,7 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     : 50
   const complexityOutlierSignal = workflowCommits.length ? 100 - complexityRelativeOutlierRatio : 50
   const complexityChurnSignal = clamp(100 - Math.max(0, workflowDeletionRatio - 50) * 0.5)
+  const safetySurface = getDashboardSafetySurfaceMetrics(workflowCommits)
 
   return {
     commitCount: commits.length,
@@ -505,7 +800,8 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     commitsPer30Days: spanDays ? Number((commits.length / spanDays * 30).toFixed(1)) : 0,
     averageFilesPerCommit: Number(average(commits.map(commit => commit.changedFiles)).toFixed(1)),
     workflowCommitCount: workflowCommits.length,
-    workflowPatchCommitCount: workflowCommits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
+    workflowPatchCommitCount,
+    safetyPatchCommitRatio: Math.round(ratio(workflowPatchCommitCount, workflowCommits.length) * 100),
     workflowAverageFilesPerCommit: workflowCommits.length ? Number(average(workflowFileCounts).toFixed(1)) : 0,
     workflowMedianFilesPerCommit: workflowCommits.length ? Number(percentile(workflowFileCounts, 50).toFixed(1)) : 0,
     workflowP75FilesPerCommit: workflowCommits.length ? Number(percentile(workflowFileCounts, 75).toFixed(1)) : 0,
@@ -517,7 +813,16 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     clarityStructureSignal: structureSignal.signal,
     clarityNamingEvidenceAvailable: namingSignal.evidenceAvailable,
     clarityStructureEvidenceAvailable: structureSignal.evidenceAvailable,
-    contextDocumentationSignal: documentationFileRatio > 0 ? clamp(50 + Math.min(documentationFileRatio * 2, 30)) : 50,
+    contextPatchExplanationSignal: contextPatchExplanation.signal,
+    contextOrientationArtifactSignal: contextOrientationArtifact.signal,
+    contextCommitSignal: contextCommit.signal,
+    contextRepositoryOrientationSignal: contextRepositoryOrientation.signal,
+    contextHandoffSignal: contextHandoff.signal,
+    contextPatchExplanationEvidenceAvailable: contextPatchExplanation.evidenceAvailable,
+    contextOrientationArtifactEvidenceAvailable: contextOrientationArtifact.evidenceAvailable,
+    contextCommitEvidenceAvailable: contextCommit.evidenceAvailable,
+    contextRepositoryEvidenceAvailable: contextRepositoryOrientation.evidenceAvailable,
+    contextHandoffEvidenceAvailable: contextHandoff.evidenceAvailable,
     complexityEffectiveFilesP75,
     complexityExcludedFileRatio: excludedComplexityFileRatio(workflowCommits),
     complexityRelativeOutlierRatio,
@@ -532,12 +837,15 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     testFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i) * 100),
     ciFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:\.github\/workflows|\.circleci|\.buildkite)(?:\/|$)|(?:^|\/)(?:Jenkinsfile|azure-pipelines\.ya?ml)$/i) * 100),
     validationFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:schemas?|validators?|validation|middleware|guards?)(?:\/|$)|(?:schema|validator|validation|guard)[^/]*\.[^.]+$/i) * 100),
-    pullRequestCoverage: Math.round(Math.min(1, ratio(context.prs.length, workflowCommits.length)) * 100),
+    safetySurfaceFileRatio: safetySurface.safetySurfaceFileRatio,
+    safetySurfaceLineRatio: safetySurface.safetySurfaceLineRatio,
+    safetyDefenseCoverage: safetySurface.safetyDefenseCoverage,
+    pullRequestCoverage,
     deletionRatio: Math.round(ratio(deletions, additions + deletions) * 100),
     workflowDeletionRatio,
     riskyFileRatio: Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:auth|security|permissions?|secrets?|database|db|payments?)(?:\/|$)|(?:auth|security|permission|secret|database|payment)[^/]*\.[^.]+$/i) * 100),
-    defensivePatchRatio: Math.round(patchSignal(workflowCommits, /\b(?:try\s*\{|catch\s*\(|validate|sanitize|escape|authorize|permission|fallback|throw new)\b/i) * 100),
-    riskyPatchRatio: Math.round(patchSignal(workflowCommits, /\b(?:eval\s*\(|innerHTML\s*=|dangerouslySetInnerHTML|child_process|exec\s*\(|spawn\s*\(|SELECT[^;\n]{0,120}(?:\+|\$\{|format\s*\()|(?:api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{16,}['"])/i) * 100),
+    defensivePatchRatio: Math.round(addedPatchSignal(workflowCommits, /\b(?:try\s*\{|catch\s*\(|validate|sanitize|escape|authorize|permission|fallback|throw new)\b/i) * 100),
+    riskyPatchRatio: Math.round(addedPatchSignal(workflowCommits, /\b(?:eval\s*\(|innerHTML\s*=|dangerouslySetInnerHTML|child_process|exec\s*\(|spawn\s*\(|SELECT[^;\n]{0,120}(?:\+|\$\{|format\s*\()|(?:api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{16,}['"])/i) * 100),
     mergeCommitRatio: Math.round(ratio(commits.filter(isMergeCommit).length, commits.length) * 100),
     largeCommitRatio: Math.round(ratio(largeCommitCount, commits.length) * 100),
   }
@@ -628,9 +936,10 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
   const metrics = deriveDashboardMetrics(context)
   const empty = metrics.commitCount === 0
   const aiAdjustments = computeDashboardAiAdjustments(aiReview, context.commits)
+  const safetyBreakdown = getDashboardSafetyScoreBreakdown(metrics, context.commits, aiSafety)
   const scores: DashboardProfileScores = {
     clarity: scoreDashboardClarity(metrics),
-    safety: scoreDashboardSafety(metrics, context.commits, aiSafety),
+    safety: safetyBreakdown.rawScore,
     workflow: scoreDashboardWorkflow(metrics),
     complexity: scoreDashboardComplexity(metrics),
     context: scoreDashboardContext(metrics),
@@ -671,6 +980,7 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
     roleStatus: roleClassification.status,
     derivedMetrics: metrics,
     confidence,
+    safetyAiDefenseBonus: Math.round(safetyBreakdown.aiDefenseBonus),
     ...(aiSafety ? { aiSafety } : {}),
     ...(aiReview ? { aiReview } : {}),
     aiAdjustments,
