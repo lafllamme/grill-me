@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardClarityScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 import { dashboardSafetyProbeSet, dashboardSafetyRepositoryProbeSet } from '../fixtures/dashboard-safety-probes'
 
@@ -105,21 +105,53 @@ describe('dashboard profile scoring', () => {
     expect(scoreCommitMessage('feat(auth): rotate session tokens')).toBeGreaterThan(70)
   })
 
-  it('scores Clarity from personal intent, conventional messages, and reviewable scope', () => {
+  it('scores Clarity from intent, visible naming, and local patch structure', () => {
     const clearHistory = context([
-      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1 }),
-      commit({ sha: 'two', message: 'fix: handle missing profile data', changedFiles: 2 }),
-      commit({ sha: 'three', message: 'refactor: extract profile score mapper', changedFiles: 1 }),
+      commit({ sha: 'one', message: 'feat: add profile summary', changedFiles: 1, files: [{ filename: 'src/profileSummary.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileSummary = buildProfileSummary(input)\n+ return profileSummary' }] }),
+      commit({ sha: 'two', message: 'fix: handle missing profile data', changedFiles: 1, files: [{ filename: 'src/profileValidation.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const validationResult = validateProfile(input)\n+ return validationResult' }] }),
+      commit({ sha: 'three', message: 'refactor: extract profile score mapper', changedFiles: 1, files: [{ filename: 'src/profileScoreMapper.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileScore = mapProfileScore(profile)\n+ return profileScore' }] }),
     ], 0)
     const unclearHistory = context(Array.from({ length: 3 }, (_, index) => commit({
       sha: `unclear-${index}`,
       message: 'update',
-      changedFiles: 20,
-      files: [{ filename: `app/file-${index}.ts`, status: 'modified', additions: 800, deletions: 200 }],
+      changedFiles: 2,
+      files: [{ filename: `app/file-${index}.ts`, status: 'modified', additions: 4, deletions: 0, patch: '+ const x = data\n+             if (x) {\n+               return x\n+             }' }],
     })), 0)
 
-    expect(scoreDashboardClarity(deriveDashboardMetrics(clearHistory))).toBeGreaterThan(85)
-    expect(scoreDashboardClarity(deriveDashboardMetrics(unclearHistory))).toBeLessThan(35)
+    const clearMetrics = deriveDashboardMetrics(clearHistory)
+    const unclearMetrics = deriveDashboardMetrics(unclearHistory)
+    expect(clearMetrics.clarityNamingSignal).toBe(100)
+    expect(clearMetrics.clarityStructureSignal).toBe(100)
+    expect(scoreDashboardClarity(clearMetrics)).toBeGreaterThan(85)
+    expect(unclearMetrics.clarityNamingSignal).toBe(0)
+    expect(unclearMetrics.clarityStructureSignal).toBeLessThan(60)
+    expect(scoreDashboardClarity(unclearMetrics)).toBeLessThan(45)
+  })
+
+  it('exposes Clarity component signals and neutral patch evidence explicitly', () => {
+    const metrics = deriveDashboardMetrics(context([
+      commit({ sha: 'one', message: 'feat: add profile summary', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0 }] }),
+      commit({ sha: 'two', message: 'fix: handle missing profile data', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0 }] }),
+      commit({ sha: 'three', message: 'refactor: extract profile mapper', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0 }] }),
+    ], 0))
+
+    expect(getDashboardClarityScoreBreakdown(metrics)).toMatchObject({
+      namingSignal: 50,
+      structureSignal: 50,
+      namingEvidenceAvailable: false,
+      structureEvidenceAvailable: false,
+    })
+  })
+
+  it('does not use Conventional Commit syntax as a Clarity proxy', () => {
+    const metrics = deriveDashboardMetrics(context([
+      commit({ sha: 'one', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileSummary = buildProfileSummary(input)' }] }),
+      commit({ sha: 'two', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileValidation = validateProfile(input)' }] }),
+      commit({ sha: 'three', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0, patch: '+ const profileScore = mapProfileScore(profile)' }] }),
+    ], 0))
+
+    expect(scoreDashboardClarity({ ...metrics, workflowConventionalMessageRatio: 0 }))
+      .toBe(scoreDashboardClarity({ ...metrics, workflowConventionalMessageRatio: 100 }))
   })
 
   it('keeps Clarity neutral when the sample has no personal evidence', () => {

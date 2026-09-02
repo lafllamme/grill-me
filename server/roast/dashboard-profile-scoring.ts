@@ -37,6 +37,10 @@ export interface DashboardDerivedMetrics {
   workflowConventionalMessageRatio: number
   workflowLargeCommitRatio: number
   clarityScopeSignal: number
+  clarityNamingSignal: number
+  clarityStructureSignal: number
+  clarityNamingEvidenceAvailable: boolean
+  clarityStructureEvidenceAvailable: boolean
   contextDocumentationSignal: number
   complexityEffectiveFilesP75: number
   complexityExcludedFileRatio: number
@@ -101,6 +105,8 @@ const complexityExcludedFilePattern = /(?:^|\/)(?:node_modules|vendor|dist|build
 const complexityTestFilePattern = /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i
 const complexityDocumentationFilePattern = /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i
 const complexityNonCodeFilePattern = /(?:^|\/)[^/]+\.kicad_block(?:\/|$)|\.(?:kicad_pcb|kicad_prl|kicad_pro|kicad_sch|pcb|sch|brd|dsn|gbr|step|stp|stl|iges|wrl|svg|png|jpe?g|gif|webp|ico|pdf|zip|tar|gz|bin|hex|uf2)$/i
+const clarityDeclarationPattern = /^(?:export(?:\s+default)?\s+)?(?:async\s+)?(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/
+const clarityGenericIdentifierPattern = /^(?:[xyzijkn]|data|item|value|thing|stuff|tmp|temp|obj|res|result|foo|bar|baz|misc)$/i
 
 function percentile(values: readonly number[], percentileValue: number): number {
   if (!values.length)
@@ -205,6 +211,16 @@ export interface DashboardWorkflowScoreBreakdown {
   rawScore: number
 }
 
+export interface DashboardClarityScoreBreakdown {
+  messageSignal: number
+  conventionalMessageRatio: number
+  namingSignal: number
+  structureSignal: number
+  namingEvidenceAvailable: boolean
+  structureEvidenceAvailable: boolean
+  rawScore: number
+}
+
 export function getDashboardWorkflowEvidenceCap(metrics: DashboardDerivedMetrics): number {
   if (metrics.workflowCommitCount < 3)
     return 50
@@ -293,10 +309,34 @@ export function scoreDashboardClarity(metrics: DashboardDerivedMetrics): number 
     return 50
 
   return clamp(
-    metrics.workflowMessageQuality * 0.55
-    + metrics.workflowConventionalMessageRatio * 0.15
-    + metrics.clarityScopeSignal * 0.30,
+    metrics.workflowMessageQuality * 0.35
+    + metrics.clarityNamingSignal * 0.30
+    + metrics.clarityStructureSignal * 0.35,
   )
+}
+
+export function getDashboardClarityScoreBreakdown(metrics: DashboardDerivedMetrics): DashboardClarityScoreBreakdown {
+  if (metrics.workflowCommitCount === 0) {
+    return {
+      messageSignal: 50,
+      conventionalMessageRatio: 50,
+      namingSignal: 50,
+      structureSignal: 50,
+      namingEvidenceAvailable: false,
+      structureEvidenceAvailable: false,
+      rawScore: 50,
+    }
+  }
+
+  return {
+    messageSignal: metrics.workflowMessageQuality,
+    conventionalMessageRatio: metrics.workflowConventionalMessageRatio,
+    namingSignal: metrics.clarityNamingSignal,
+    structureSignal: metrics.clarityStructureSignal,
+    namingEvidenceAvailable: metrics.clarityNamingEvidenceAvailable,
+    structureEvidenceAvailable: metrics.clarityStructureEvidenceAvailable,
+    rawScore: scoreDashboardClarity(metrics),
+  }
 }
 
 /**
@@ -365,6 +405,44 @@ function patchSignal(commits: readonly GithubCommit[], pattern: RegExp): number 
   return ratio(patches.filter(patch => pattern.test(patch)).length, patches.length)
 }
 
+function addedPatchLines(commits: readonly GithubCommit[]): string[] {
+  return commits
+    .flatMap(commit => commit.files)
+    .flatMap(file => file.patch?.split('\n') ?? [])
+    .filter(line => line.startsWith('+') && !line.startsWith('+++'))
+    .map(line => line.slice(1))
+}
+
+function clarityNamingSignal(commits: readonly GithubCommit[]): { signal: number, evidenceAvailable: boolean } {
+  const declarations = addedPatchLines(commits)
+    .map(line => line.trim().match(clarityDeclarationPattern)?.[1])
+    .filter((name): name is string => Boolean(name))
+
+  if (!declarations.length)
+    return { signal: 50, evidenceAvailable: false }
+
+  const descriptiveRatio = ratio(
+    declarations.filter(name => !clarityGenericIdentifierPattern.test(name)).length,
+    declarations.length,
+  )
+  return { signal: clamp(descriptiveRatio * 100), evidenceAvailable: true }
+}
+
+function clarityStructureSignal(commits: readonly GithubCommit[]): { signal: number, evidenceAvailable: boolean } {
+  const codeLines = addedPatchLines(commits)
+    .filter(line => line.trim() && !/^\s*(?:\/\/|\/\*|\*|#)/.test(line))
+
+  if (!codeLines.length)
+    return { signal: 50, evidenceAvailable: false }
+
+  const longLineRatio = ratio(codeLines.filter(line => line.trimEnd().length > 120).length, codeLines.length)
+  const deeplyIndentedRatio = ratio(codeLines.filter(line => /^\s{12,}/.test(line) || /^\t{3,}/.test(line)).length, codeLines.length)
+  return {
+    signal: clamp(100 - longLineRatio * 45 - deeplyIndentedRatio * 55),
+    evidenceAvailable: true,
+  }
+}
+
 function isMergeCommit(commit: GithubCommit): boolean {
   return commit.isMerge ?? (commit.parentCount !== undefined
     ? commit.parentCount > 1
@@ -402,6 +480,8 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
   const emptyMessages = commits.filter(commit => !commit.message.split('\n')[0]?.trim()).length
   const documentationFileRatio = Math.round(fileSignal(workflowCommits, /(?:^|\/)(?:readme|docs?)(?:\.|\/|$)|\.md$/i) * 100)
   const workflowDeletionRatio = Math.round(ratio(workflowDeletions, workflowAdditions + workflowDeletions) * 100)
+  const namingSignal = clarityNamingSignal(workflowCommits)
+  const structureSignal = clarityStructureSignal(workflowCommits)
   const complexityEffectiveFilesP75 = workflowCommits.length ? Number(percentile(complexityEffectiveFileCounts, 75).toFixed(1)) : 50
   const complexityRelativeOutlierRatio = workflowCommits.length ? Math.round(ratio(complexityOutlierCommitCount, workflowCommits.length) * 100) : 50
   const complexityScopeSignal = workflowCommits.length
@@ -433,6 +513,10 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     workflowConventionalMessageRatio: Math.round(ratio(workflowConventionalMessages, workflowCommits.length) * 100),
     workflowLargeCommitRatio: workflowCommits.length ? Math.round(ratio(workflowLargeCommitCount, workflowCommits.length) * 100) : 50,
     clarityScopeSignal: workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 1) * 7) : 50,
+    clarityNamingSignal: namingSignal.signal,
+    clarityStructureSignal: structureSignal.signal,
+    clarityNamingEvidenceAvailable: namingSignal.evidenceAvailable,
+    clarityStructureEvidenceAvailable: structureSignal.evidenceAvailable,
     contextDocumentationSignal: documentationFileRatio > 0 ? clamp(50 + Math.min(documentationFileRatio * 2, 30)) : 50,
     complexityEffectiveFilesP75,
     complexityExcludedFileRatio: excludedComplexityFileRatio(workflowCommits),

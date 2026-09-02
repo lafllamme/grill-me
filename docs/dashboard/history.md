@@ -46,6 +46,51 @@ The Kent retry returned a grounded `supports` review at 75% axis confidence,
 so the 57 remained unchanged. This validates the AI response path; it does not
 turn the bounded Workflow sample into a general engineering ranking.
 
+## Clarity v2 live probe
+
+This run exercised the new Clarity formula against the same six public profiles.
+The server used visible added patch lines for naming and local structure, while
+the combined AI review was limited to a second check. A missing signal means
+that the selected patch sample did not expose the relevant code shape; it was
+kept neutral at 50 rather than treated as a failure.
+
+| Profile | Clarity | Message | Conventional | Naming | Structure | AI adjustment | AI status | Interpretation |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| lafllamme | 98 | 95 | 100 | 100 | 98 | 0 | assessed | strong intent and clear visible patch structure |
+| danielroe | 86 | 96 | 100 | 50* | 99 | 0 | assessed | strong intent and structure; no declaration signal in the selected patches |
+| torvalds | 72 | 68 | 0 | 100 | 93 | 0 | invalid-response | clear visible names/structure, weaker sampled intent metadata |
+| sindresorhus | 74 | 70 | 0 | 100 | 96 | 0 | assessed | strong patch signals, weaker sampled intent metadata |
+| antfu | 94 | 88 | 100 | 100 | 94 | 0 | assessed | consistently strong intent and visible patch signals |
+| kentcdodds | 72 | 68 | 0 | 100 | 93 | 0 | assessed | clear visible structure, weaker sampled intent metadata |
+
+\* `50` is the neutral naming fallback because the selected patch sample did
+not contain a declaration that the heuristic could inspect. These values are
+calibration evidence for a bounded public sample, not engineering rankings.
+The AI returned `supports` for the assessed Clarity reviews, so no ±4
+adjustment was eligible. Torvalds' invalid AI response also left the
+deterministic score untouched.
+
+## Clarity v3 live probe
+
+Clarity v3 removes Conventional Commit syntax from the score because it is a
+Workflow signal. The run below uses the fixed six-profile regression set and
+the visible patch sample returned at run time. Patch selection can change as
+GitHub history changes, so this remains calibration evidence rather than a
+ranking.
+
+| Profile | Clarity | Message | Conventional* | Naming | Structure | AI adjustment | AI status | Interpretation |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| lafllamme | 98 | 95 | 100 | 100 | 98 | 0 | assessed | strong intent and clear visible patch structure |
+| danielroe | 98 | 96 | 100 | 100 | 98 | 0 | assessed | strong intent, names, and visible patch structure |
+| torvalds | 86 | 68 | 0 | 100 | 93 | 0 | assessed | strong visible patch clarity; message syntax no longer drags it down |
+| sindresorhus | 77 | 54 | 0 | 97 | 84 | 0 | assessed | clear names, with weaker sampled intent and local structure signals |
+| antfu | 94 | 87 | 100 | 100 | 96 | 0 | assessed | consistently strong intent and visible patch signals |
+| kentcdodds | 86 | 71 | 0 | 100 | 90 | 0 | assessed | clear visible structure; message syntax is not a penalty |
+
+\* Conventional syntax is retained as a diagnostic value for Workflow only;
+it is not included in the Clarity calculation. All six AI responses supported
+the deterministic Clarity result, so no ±4 adjustment was eligible.
+
 ## Previous six-profile audit
 
 | Profile | Clarity | Safety | Workflow | Complexity | Context | Overall | Main limitation |

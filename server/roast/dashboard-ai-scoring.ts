@@ -287,6 +287,15 @@ export interface DashboardAiAxisReview {
 export interface DashboardAiReviewBaseline {
   scores: Record<DashboardReviewAxis, number>
   questions: Record<DashboardReviewAxis, string>
+  clarity: {
+    messageSignal: number
+    /** Diagnostic workflow context; not a Clarity score input. */
+    conventionalMessageRatio: number
+    namingSignal: number
+    structureSignal: number
+    namingEvidenceAvailable: boolean
+    structureEvidenceAvailable: boolean
+  }
   workflow: {
     personalCommitCount: number
     patchCommitCount: number
@@ -650,7 +659,7 @@ export async function assessDashboardProfileWithAi(input: {
         'Use positive for a concrete quality signal added by the changed lines, negative for a concrete problem introduced by the changed lines, and mixed or unclear when the excerpt cannot establish a reliable direction.',
         'Use impact introduced only for a newly added behavior, fixed only when the changed lines clearly repair an existing problem, and unclear otherwise. A fixed or unclear finding must never be treated as a penalty.',
         'For safety, classify only validation, auth, error-handling, secrets, or dependency. Only a safety finding with verdict negative and impact introduced may lower Safety, and the server independently verifies the evidence.',
-        'For clarity inspect naming, structure, and intent. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context inspect comments, documentation, examples, and explanatory intent that are actually present.',
+        'For clarity use the supplied clarity breakdown to inspect naming, local structure, and intent in the changed lines; conventionalMessageRatio is diagnostic workflow context, not a Clarity input. Do not treat commit count, file count, repository size, or missing patch evidence as clarity evidence. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context inspect comments, documentation, examples, and explanatory intent that are actually present.',
         'Return one compact axisReview for each axis. Use supports when the deterministic result fits the visible patches, softens when the result is too strict because broad changes are visibly coherent, contradicts when the patches show a material issue the baseline misses, and insufficient when the selected excerpts cannot support a reliable judgment. Use an empty evidence array for supports or insufficient. A softens or contradicts review must cite at least two exact supplied patch files in its evidence array.',
         'Use the exact short commit SHA and exact filename supplied with each patch. Evidence must be a short concrete explanation of visible changed lines. Do not invent a SHA or filename.',
         'Return compact JSON only. Keep every observation and finding evidence under 160 characters. Return exactly one JSON object with this schema: {"confidence":60,"axisReviews":[{"axis":"complexity","verdict":"softens","confidence":78,"evidence":[{"commitSha":"abc1234","filename":"src/one.ts","observation":"focused refactor keeps the boundary explicit"},{"commitSha":"abc1234","filename":"src/two.ts","observation":"second file follows the same boundary"}]}],"findings":[]}',

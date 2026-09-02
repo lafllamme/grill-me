@@ -189,6 +189,14 @@ describe('dashboard AI review contract', () => {
     const prompt = buildDashboardReviewPrompt(sample, selection, {
       scores: { clarity: 80, safety: 75, workflow: 72, complexity: 76, context: 70 },
       questions: dashboardCategoryQuestions,
+      clarity: {
+        messageSignal: 82,
+        conventionalMessageRatio: 67,
+        namingSignal: 90,
+        structureSignal: 88,
+        namingEvidenceAvailable: true,
+        structureEvidenceAvailable: true,
+      },
       workflow: {
         personalCommitCount: 3,
         patchCommitCount: 3,

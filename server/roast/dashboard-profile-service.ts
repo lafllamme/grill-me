@@ -3,7 +3,7 @@ import type { DashboardAiReviewAssessment, DashboardAiReviewBaseline } from './d
 import type { GithubCollectionProgress, GithubContext } from './github-collector'
 import { assessDashboardProfileWithAi, dashboardCategoryQuestions, toDashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import { toDashboardEvidence } from './dashboard-profile-evidence'
-import { getDashboardWorkflowScoreBreakdown, scoreDashboardProfile } from './dashboard-profile-scoring'
+import { getDashboardClarityScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreDashboardProfile } from './dashboard-profile-scoring'
 import { collectDashboardGithubContext } from './github-collector'
 
 export interface DashboardProfileAnalysisInput {
@@ -55,10 +55,19 @@ export async function runDashboardProfileAnalysis(
   const deterministicAssessment = scoreDashboardProfile(context)
   await hooks?.onDeterministicScores?.(deterministicAssessment)
   const workflowBreakdown = getDashboardWorkflowScoreBreakdown(deterministicAssessment.derivedMetrics)
+  const clarityBreakdown = getDashboardClarityScoreBreakdown(deterministicAssessment.derivedMetrics)
 
   const aiBaseline: DashboardAiReviewBaseline = {
     scores: deterministicAssessment.scores,
     questions: dashboardCategoryQuestions,
+    clarity: {
+      messageSignal: clarityBreakdown.messageSignal,
+      conventionalMessageRatio: clarityBreakdown.conventionalMessageRatio,
+      namingSignal: clarityBreakdown.namingSignal,
+      structureSignal: clarityBreakdown.structureSignal,
+      namingEvidenceAvailable: clarityBreakdown.namingEvidenceAvailable,
+      structureEvidenceAvailable: clarityBreakdown.structureEvidenceAvailable,
+    },
     workflow: {
       personalCommitCount: deterministicAssessment.derivedMetrics.workflowCommitCount,
       patchCommitCount: deterministicAssessment.derivedMetrics.workflowPatchCommitCount,

@@ -31,6 +31,10 @@ export interface DashboardDerivedMetrics {
   workflowConventionalMessageRatio: number
   workflowLargeCommitRatio: number
   clarityScopeSignal: number
+  clarityNamingSignal: number
+  clarityStructureSignal: number
+  clarityNamingEvidenceAvailable: boolean
+  clarityStructureEvidenceAvailable: boolean
   contextDocumentationSignal: number
   complexityEffectiveFilesP75: number
   complexityExcludedFileRatio: number

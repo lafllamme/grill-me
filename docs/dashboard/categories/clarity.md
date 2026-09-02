@@ -1,51 +1,76 @@
 # Clarity Scoring
 
-**Version:** 1.0.0
-**Status:** baseline
+**Version:** 3.0.0<br>
+**Status:** calibrated<br>
 **Updated:** 2026-09-02
 
 ## Question
 
-Can another developer understand the intent and local shape of the sampled work?
+Can another developer understand the intent, names, and local shape of the
+sampled changes?
 
-Clarity is not a claim about the complete AST or every variable name. The
-current public evidence measures communicated intent and reviewable scope.
+Clarity is about the communication surface of a change. It is not a claim
+about the complete AST, every file in a repository, or the developer's overall
+ability. Merge commits are excluded because their messages and patches usually
+describe integration work rather than the author's own change.
 
 ## Deterministic formula
 
 ~~~text
-Clarity = workflowMessageQuality * 0.55
-        + workflowConventionalMessageRatio * 0.15
-        + clarityScopeSignal * 0.30
-
-clarityScopeSignal
-  = 100 - max(0, workflowAverageFilesPerCommit - 1) * 7
+Clarity = messageSignal * 0.35
+        + namingSignal * 0.30
+        + structureSignal * 0.35
 ~~~
 
-All terms are clamped to 0–100. Messages are scored for specificity, action
-language, and conventional prefixes. Generic subjects score low. Scope is a
-reviewability proxy, not a code-quality verdict.
+All terms are clamped to 0–100. The score requires at least three sampled
+commits and three personal non-merge commits. Otherwise it returns neutral 50
+with insufficient evidence.
 
-The score requires at least three sampled commits and three personal non-merge
-commits. Otherwise it returns neutral 50 with insufficient evidence.
+### Signals
+
+| Signal | How it is derived | Why it belongs here |
+| --- | --- | --- |
+| `messageSignal` | Information density of personal commit subjects: specificity, action language, and conventional prefixes | Measures whether the change intention is communicated before reading the patch |
+| `conventionalMessageRatio` | Share of personal commit subjects using a recognized conventional prefix and non-empty subject | Diagnostic workflow context only; it is deliberately not a Clarity input |
+| `namingSignal` | Added patch declarations with descriptive identifiers; generic names such as `x`, `data`, `item`, `tmp`, or `result` lower the signal | Answers whether the visible names help a new reader understand the change |
+| `structureSignal` | Added non-comment code lines; lines longer than 120 characters and deeply indented additions lower the signal | Uses only visible local structure instead of guessing from repository size |
+
+If no added declaration or code line is present in the selected patches, that
+component is neutral 50 and marked as unavailable. Missing patch evidence is a
+coverage limitation, not a quality penalty.
+
+File count, commit size, change volume, repository popularity, and conventional
+commit syntax are not Clarity inputs. Conventional syntax belongs to Workflow;
+the other signals are intentionally left to Workflow and Complexity so one
+large repository cannot be penalized twice.
 
 ## AI second check
 
-The combined AI request may explain or qualify the result using selected patch
-excerpts. It cannot replace the deterministic score. A grounded axis review
-needs confidence ≥70 and two distinct patch references before the bounded
-adjustment is accepted.
+The combined AI request receives the same bounded patch sample as the other
+categories plus the deterministic Clarity breakdown. It is asked to inspect
+semantic naming, local structure, and intent that are visible in the supplied
+changed lines. It must not infer Clarity from commit count, file count,
+repository size, or missing excerpts.
+
+The AI cannot replace the deterministic score. A grounded axis review needs
+confidence ≥70 and two distinct patch references before the server accepts a
+bounded adjustment of at most ±4. A support or insufficient review changes
+nothing; a softening or contradicting review is ignored unless its references
+are grounded in the selected patches.
 
 ## Validation
 
 | Scenario | Expected |
 | --- | --- |
-| three small, explicit, conventional commits | above 85 |
-| generic messages across broad changes | below 35 |
-| one or two personal commits | neutral 50 |
-| merge-only sample | neutral 50 |
+| Three explicit conventional commits with descriptive names and short local code | Strong Clarity signal, typically above 85 |
+| Generic subjects with vague names and deeply indented additions | Low Clarity signal, typically below 45 |
+| Clear messages but no usable patch excerpts | Message signal remains visible, naming and structure stay neutral 50 |
+| One or two personal commits | Neutral 50 because evidence is insufficient |
+| Merge-only sample | Neutral 50 because no personal evidence survives filtering |
 
-## Limitation
+## Known limits
 
-A clear commit message can describe a poor implementation. Patch-level evidence
-must remain separate from message clarity.
+The naming and structure checks are intentionally small heuristics over visible
+added patch lines. They do not parse a complete AST, understand every naming
+convention, or prove that a short line is good code. The AI second check adds
+semantic context but remains bounded by the same patch and evidence limits.
