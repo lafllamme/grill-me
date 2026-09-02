@@ -84,6 +84,7 @@ describe('dashboard AI review contract', () => {
         axis: 'complexity',
         verdict: 'softens',
         confidence: 80,
+        summary: 'The visible change stays coherent despite touching a broad surface.',
         evidence: [
           { commitSha: 'abcdef1', filename: 'src/not-sent.ts', observation: 'not part of the selected patch sample' },
         ],
@@ -100,7 +101,8 @@ describe('dashboard AI review contract', () => {
       timeoutMs: 1000,
     })
 
-    expect(result.axisReviews).toEqual([{ axis: 'complexity', verdict: 'softens', confidence: 80, evidence: [] }])
+    expect(result.axisReviews).toEqual([])
+    expect(result.parseWarnings).toContain('axisReviews-ungrounded:1')
   })
 
   it('parses grounded multi-axis findings and maps safety vocabulary', () => {
@@ -110,6 +112,7 @@ describe('dashboard AI review contract', () => {
         axis: 'complexity',
         verdict: 'softens',
         confidence: 78,
+        summary: 'The visible change stays coherent despite touching a broad surface.',
         evidence: [
           { commitSha: 'abcdef1', filename: 'src/validation.ts', observation: 'the focused patch keeps the boundary explicit' },
           { commitSha: 'abcdef1', filename: 'src/validation.ts', observation: 'the validation change remains local' },
@@ -148,9 +151,10 @@ describe('dashboard AI review contract', () => {
           axis: 'workflow',
           verdict: 'supports',
           confidence: 80,
+          summary: 'The visible change is focused and easy to review.',
           evidence: [{ commitSha: 'abcdef1', filename: 'src/validation.ts', observation: 'focused change' }],
         },
-        { axis: 'not-an-axis', verdict: 'supports', confidence: 80, evidence: [] },
+        { axis: 'not-an-axis', verdict: 'supports', confidence: 80, summary: 'Invalid axis', evidence: [] },
       ],
       findings: [
         { axis: 'safety', verdict: 'positive', impact: 'introduced', severity: 'low', category: 'validation', commitSha: 'abcdef1', filename: 'src/validation.ts', evidence: 'validates input' },
@@ -169,7 +173,7 @@ describe('dashboard AI review contract', () => {
   it('accepts an axis-only response with a reduced confidence warning', () => {
     const parsed = parseDashboardReview(JSON.stringify({
       confidence: 90,
-      axisReviews: [{ axis: 'context', verdict: 'insufficient', confidence: 40, evidence: [] }],
+      axisReviews: [{ axis: 'context', verdict: 'insufficient', confidence: 40, summary: 'The selected excerpts do not show enough context to judge this axis.', evidence: [] }],
     }))
 
     expect(parsed).toMatchObject({
@@ -204,6 +208,7 @@ describe('dashboard AI review contract', () => {
         structureSignal: 88,
         namingEvidenceAvailable: true,
         structureEvidenceAvailable: true,
+        evidenceCap: 90,
       },
       workflow: {
         personalCommitCount: 3,

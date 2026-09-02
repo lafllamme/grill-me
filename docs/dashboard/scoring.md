@@ -1,6 +1,6 @@
 # Dashboard Scoring Contract
 
-**Version:** 1.2.0
+**Version:** 1.4.0
 **Status:** active
 **Updated:** 2026-09-02
 
@@ -44,11 +44,11 @@ grounded interpretation within the limits listed below.
 
 | Category | Version | Numeric owner | AI influence | Current state |
 | --- | --- | --- | --- | --- |
-| Clarity | v3 | deterministic formula | bounded adjustment up to ±4 | calibrated |
+| Clarity | v4 | deterministic formula with evidence ceiling | bounded adjustment up to ±4, then server cap | calibrated |
 | Safety | v4 | deterministic surface/defense formula | verified defense lift up to +8; verified introduced-risk penalty | calibrated |
 | Workflow | v3 | deterministic delivery-hygiene formula | bounded adjustment up to ±4 | calibrated |
 | Complexity | v2 | deterministic effective-change-surface formula | bounded adjustment up to ±4 | calibrated |
-| Context | v4 | deterministic explanation/orientation formula | bounded adjustment up to ±4 | calibrated |
+| Context | v5 | neutral 70, direct context evidence, weak metadata proxies | bounded adjustment up to ±4 | calibrated |
 
 Safety has an explicit boundary check rather than one expected score:
 

@@ -1,6 +1,6 @@
 # Context Scoring
 
-**Version:** 4.0.0
+**Version:** 5.0.0
 **Status:** calibrated
 **Updated:** 2026-09-02
 
@@ -17,22 +17,24 @@ understand why the change exists and where to continue.
 ## Deterministic formula
 
 ~~~text
-Context = 60
-        + (patchExplanationSignal - 50)    * 0.35
-        + (orientationArtifactSignal - 50) * 0.20
-        + (commitContextSignal - 50)       * 0.35
+Context = 70
+        + (patchExplanationSignal - 50)    * 0.22
+        + (orientationArtifactSignal - 50) * 0.10
+        + (commitContextSignal - 50)       * 0.28
         + (repositoryOrientation - 50)    * 0.05
         + (handoffSignal - 50)             * 0.05
 ~~~
 
 All signals are clamped to 0–100. The score requires at least three sampled
 commits and three personal non-merge commits. Otherwise it returns 50 with
-insufficient evidence. With enough evidence, 60 is the neutral midpoint:
-missing context evidence is not treated as a defect, but it also does not
-create a high score. The two direct evidence signals — patch explanations and
-commit context — now contribute 70% of the movement around neutral. Repository
-root entries and handoff metadata contribute only 10% together because they
-are weaker proxies and overlap with other categories.
+insufficient evidence. With enough evidence, 70 is the neutral midpoint:
+missing context evidence is not treated as a defect and does not quietly push
+an otherwise credible profile into the low 60s. Direct patch explanations and
+commit context drive 50% of the movement around neutral. Orientation files,
+repository metadata, and handoff metadata are deliberately weak proxies and
+contribute 20% together. A generic or empty commit subject is direct negative
+context evidence; it can lower the score, while missing docs or comments alone
+cannot.
 
 ### Signals
 
@@ -40,7 +42,7 @@ are weaker proxies and overlap with other categories.
 | --- | --- | --- |
 | `patchExplanationSignal` | `50 + explanatoryAddedLineRatio * 40` for added comments/docstrings in visible non-documentation patches | Detects explanations attached to the changed code, not comments guessed from filenames |
 | `orientationArtifactSignal` | `50 + min(weightedOrientationFiles / visiblePatchFiles, 1) * 40` | Rewards visible README, CONTRIBUTING, docs, examples, architecture, or ADR changes |
-| `commitContextSignal` | Per personal commit: start at 50; add 15 for a specific three-word subject with an action and 15 for a meaningful body; add 10 for explicit rationale or references; then average and clamp | Measures what/why context without rewarding Conventional Commit syntax alone |
+| `commitContextSignal` | Per personal commit: start at 50; subtract 20 for an empty subject or 15 for a generic subject; add 15 for a specific three-word subject with an action, 15 for a meaningful body, and 10 for explicit rationale or references; then average and clamp | Measures what/why context without rewarding Conventional Commit syntax alone |
 | `repositoryOrientation` | `50 + min(orientationEntryWeight * 8, 30)` from root entries only | Weakly recognizes orientation affordances already present in the repository |
 | `handoffSignal` | `50 + pullRequestCoverage * 0.20 + reviewedPullRequestRatio * 20` when PR evidence exists; otherwise 50 | Adds a small review/handoff signal without treating PR count as documentation quality |
 
@@ -60,11 +62,11 @@ object. Generic subjects such as `update`, `stuff`, or `wip` remain at 50.
 | Score | Meaning |
 | ---: | --- |
 | 50 | insufficient evidence; do not classify the profile |
-| 60–64 | neutral sampled context; no strong positive or negative signal |
-| 65–72 | usable context with some specific intent or orientation |
-| 73–82 | good visible context across multiple evidence types |
-| 83–90 | very strong context with broad, consistent evidence |
-| 90+ | exceptional sampled evidence; requires several strong signals, not seniority or commit volume |
+| 60–69 | weak visible context, usually driven by vague or empty subjects |
+| 70–76 | neutral/usable sampled context; missing artifacts are not a penalty |
+| 77–85 | good visible context across multiple evidence types |
+| 86–94 | very strong context with broad, consistent evidence |
+| 95 | exceptional sampled evidence; capped and never inferred from seniority or commit volume |
 
 ## AI second check
 
@@ -85,9 +87,9 @@ are grounded in the selected patches.
 | Scenario | Expected |
 | --- | --- |
 | visible code explanations, orientation artifacts, and reviewed PRs | above 75 when the signals are broad and consistent |
-| normal feature patches with no explanation evidence | around neutral 60–64, not an automatic failure |
-| vague commits with no visible context | neutral 60 once the sample is sufficient |
-| generated changelog-only work | neutral 60; release artifacts are not orientation proof |
+| normal feature patches with no explanation evidence | around neutral 70–76, not an automatic failure |
+| vague commits with no visible context | around 60–69 because generic subjects are direct evidence |
+| generated changelog-only work | neutral 70; release artifacts are not orientation proof |
 | root README exists but no relevant patch is visible | only a small lift from repository orientation |
 | fewer than three personal commits | neutral 50 because evidence is insufficient |
 

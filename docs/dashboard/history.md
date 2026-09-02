@@ -185,6 +185,28 @@ ranking.
 it is not included in the Clarity calculation. All six AI responses supported
 the deterministic Clarity result, so no ±4 adjustment was eligible.
 
+## Clarity v4 implementation probe
+
+Clarity v4 keeps the v3 signal weights unchanged and adds an evidence ceiling
+after the deterministic score and any eligible AI adjustment. The live run
+below confirms that the two near-ceiling results from v3 are now shown as 95,
+while the rest of the six-profile calibration set keeps its signal-driven
+result. Every profile had enough evidence for the broad-sample cap; this does
+not turn the named developers into a ranking.
+
+| Profile | Clarity v4 | Evidence cap | Personal commits | Patch commits | AI adjustment | Interpretation |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| lafllamme | 95 | 95 | 17 | 17 | 0 | broad visible sample; previous near-ceiling score capped |
+| danielroe | 95 | 95 | 18 | 18 | 0 | broad visible sample; previous near-ceiling score capped |
+| torvalds | 86 | 95 | 11 | 11 | 0 | signal-driven result remains unchanged |
+| sindresorhus | 86 | 95 | 18 | 18 | 0 | signal-driven result remains unchanged |
+| antfu | 94 | 95 | 18 | 18 | 0 | strong result remains below the ceiling |
+| kentcdodds | 86 | 95 | 18 | 18 | 0 | signal-driven result remains unchanged |
+
+The AI review was assessed for all six profiles and accepted no Clarity
+adjustment. The cap is applied server-side after the AI step, so an eligible
+positive review cannot bypass it.
+
 ## Context v4 live probe
 
 This rerun used the same six-profile set after reducing incidental metadata
@@ -207,6 +229,29 @@ sample contains the strongest explanation signal; Kent remains above neutral
 because commit context is strong. No profile receives a high score from
 repository presence or commit volume alone. All six AI reviews were assessed
 with 60% global confidence and produced no accepted Context adjustment.
+
+## Context v5 live probe
+
+Context v5 was checked against the same six public profiles after moving the
+sufficient-evidence midpoint to 70. This prevents a profile from looking weak
+merely because the bounded patch sample contains no README or explanatory
+comment. Directly vague or empty commit subjects remain a real negative signal.
+
+| Profile | Context v5 | Patch explanation | Orientation artifact | Commit context | Repository orientation | Handoff | Personal commits | AI adjustment |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| lafllamme | 75 | 52 | 61 | 57 | 80 | 50 | 17 | 0 |
+| danielroe | 76 | 52 | 51 | 65 | 74 | 51 | 18 | 0 |
+| torvalds | 85 | 85 | 51 | 71 | 80 | 50 | 11 | 0 |
+| sindresorhus | 75 | 52 | 58 | 58 | 80 | 53 | 18 | 0 |
+| antfu | 74 | 52 | 52 | 56 | 80 | 50 | 18 | 0 |
+| kentcdodds | 81 | 53 | 60 | 74 | 80 | 67 | 18 | 0 |
+
+The result is a more honest spread: the ordinary profiles now sit around the
+neutral/usable band, while Torvalds and Kent receive a higher Context score
+only because the visible sample contains stronger explanatory or handoff
+signals. No score was raised from reputation or commit volume, and no Context
+AI adjustment was accepted. The AI still reviewed the combined patch payload;
+the server remains the numeric owner.
 
 ## Context v3 live probe
 

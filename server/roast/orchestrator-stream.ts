@@ -2,7 +2,7 @@ import type { RoastResponse, RoastStreamEvent, RoastStreamEvidenceEvent } from '
 import type { RoastOrchestratorInput, RoastSyncHooks } from './orchestrator-common'
 import { createError } from 'h3'
 import { runAiStream } from './ai-client'
-import { logServerDebug } from './debug'
+import { logServerDebug, logServerError } from './debug'
 import {
   assertCanonicalRoastOutput,
   isCanonicalRoastOutputComplete,
@@ -377,6 +377,21 @@ export async function runRoastStreamPipeline(
     assertCanonicalRoastOutput(canonical)
   }
   catch {
+    logServerError('stream-output-validation', {
+      parserPath: resolvedParserPath,
+      rawTextLength: rawText.length,
+      streamTitle: Boolean(canonicalFromStream.title),
+      streamRoastLineCount: canonicalFromStream.roastLines.length,
+      streamFeedbackCount: canonicalFromStream.feedback.length,
+      rawTitle: Boolean(canonicalFromRawText.title),
+      rawRoastLineCount: canonicalFromRawText.roastLines.length,
+      rawFeedbackCount: canonicalFromRawText.feedback.length,
+      missingFields: [
+        ...(!canonical.title ? ['title'] : []),
+        ...(canonical.roastLines.length === 0 ? ['roastLines'] : []),
+        ...(canonical.feedback.length === 0 ? ['feedback'] : []),
+      ],
+    })
     throw createError({
       statusCode: 502,
       statusMessage: 'Cloudflare AI returned incomplete structured output',

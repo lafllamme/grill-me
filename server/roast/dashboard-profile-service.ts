@@ -76,6 +76,7 @@ export async function runDashboardProfileAnalysis(
       structureSignal: clarityBreakdown.structureSignal,
       namingEvidenceAvailable: clarityBreakdown.namingEvidenceAvailable,
       structureEvidenceAvailable: clarityBreakdown.structureEvidenceAvailable,
+      evidenceCap: clarityBreakdown.evidenceCap,
     },
     workflow: {
       personalCommitCount: deterministicAssessment.derivedMetrics.workflowCommitCount,

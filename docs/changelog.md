@@ -36,6 +36,12 @@
 - recorded the Safety v4 positive/neutral/negative boundary run; controlled
   probes now demonstrate the range from insufficient 50 through neutral 70 and
   capped positive 95 down to confirmed critical-risk 20
+- calibrated Clarity v4 with an evidence ceiling: thin samples cap at 90 and
+  broad patch-backed samples cap at 95, while the existing signal weights and
+  grounded AI adjustment remain unchanged
+- recalibrated Context v5 around a neutral 70 for sufficient samples; generic
+  or empty commit subjects now count as direct negative context evidence, while
+  missing documentation, comments, PRs, or patch text remain neutral
 
 ## 2026-05-14
 
@@ -83,3 +89,6 @@
 - canonical roast results should gain durable intensity data before the next frontend pass
 - stream transport should stay stable while frontend reveal timing gets orchestrated later
 - future implementation should start with backend/prompt and result choreography before decorative exploration
+- Dashboard AI reviews now carry grounded axis summaries and patch evidence
+  through the live model into the Profile panel; Clarity signal components and
+  its evidence cap are shown alongside the deterministic score.

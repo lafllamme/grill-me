@@ -1,7 +1,7 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardClarityScoreBreakdown, getDashboardContextScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
+import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardClarityEvidenceCap, getDashboardClarityScoreBreakdown, getDashboardContextScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
 import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
 import { dashboardSafetyProbeSet, dashboardSafetyRepositoryProbeSet } from '../fixtures/dashboard-safety-probes'
 
@@ -122,10 +122,59 @@ describe('dashboard profile scoring', () => {
     const unclearMetrics = deriveDashboardMetrics(unclearHistory)
     expect(clearMetrics.clarityNamingSignal).toBe(100)
     expect(clearMetrics.clarityStructureSignal).toBe(100)
+    expect(clearMetrics.clarityEvidenceCap).toBe(90)
     expect(scoreDashboardClarity(clearMetrics)).toBeGreaterThan(85)
     expect(unclearMetrics.clarityNamingSignal).toBe(0)
     expect(unclearMetrics.clarityStructureSignal).toBeLessThan(60)
     expect(scoreDashboardClarity(unclearMetrics)).toBeLessThan(45)
+  })
+
+  it('caps near-perfect Clarity when the visible sample is still thin', () => {
+    const thinHistory = context(Array.from({ length: 3 }, (_, index) => commit({
+      sha: `thin-${index}`,
+      message: 'feat: implement explicit profile state validation',
+      changedFiles: 1,
+      files: [{ filename: `src/profile-${index}.ts`, status: 'modified', additions: 2, deletions: 0, patch: '+ const profileState = buildProfileState(input)\n+ return profileState' }],
+    })), 0)
+    const metrics = deriveDashboardMetrics(thinHistory)
+    const breakdown = getDashboardClarityScoreBreakdown(metrics)
+
+    expect(breakdown.evidenceCap).toBe(90)
+    expect(scoreDashboardClarity(metrics)).toBe(90)
+
+    const reviewed = scoreDashboardProfile(thinHistory, undefined, {
+      confidence: 90,
+      status: 'assessed',
+      selectedCommitCount: 3,
+      patchCount: 3,
+      patchChars: 180,
+      axisReviews: [{
+        axis: 'clarity',
+        verdict: 'softens',
+        confidence: 90,
+        summary: 'The visible patches are clearer than the baseline suggests.',
+        evidence: [
+          { commitSha: 'thin-0', filename: 'src/profile-0.ts', observation: 'the name explains the state' },
+          { commitSha: 'thin-1', filename: 'src/profile-1.ts', observation: 'the same naming pattern is visible' },
+        ],
+      }],
+      findings: [],
+    })
+
+    expect(reviewed.scores.clarity).toBe(90)
+  })
+
+  it('allows a strong Clarity score only after a broader patch-backed sample', () => {
+    const broadHistory = context(Array.from({ length: 10 }, (_, index) => commit({
+      sha: `broad-${index}`,
+      message: 'feat: implement explicit profile state validation',
+      changedFiles: 1,
+      files: [{ filename: `src/profile-${index}.ts`, status: 'modified', additions: 2, deletions: 0, patch: '+ const profileState = buildProfileState(input)\n+ return profileState' }],
+    })), 0)
+    const metrics = deriveDashboardMetrics(broadHistory)
+
+    expect(getDashboardClarityEvidenceCap(metrics)).toBe(95)
+    expect(scoreDashboardClarity(metrics)).toBe(95)
   })
 
   it('exposes Clarity component signals and neutral patch evidence explicitly', () => {
@@ -296,12 +345,12 @@ describe('dashboard profile scoring', () => {
     const undocumentedScore = scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory))
     const vagueScore = scoreDashboardContext(deriveDashboardMetrics(vagueHistory))
 
-    expect(orientedScore).toBe(90)
-    expect(undocumentedScore).toBe(65)
+    expect(orientedScore).toBe(91)
+    expect(undocumentedScore).toBe(74)
     expect(orientedScore).toBeGreaterThan(75)
     expect(undocumentedScore).toBeGreaterThanOrEqual(50)
     expect(orientedScore).toBeGreaterThan(undocumentedScore)
-    expect(vagueScore).toBe(60)
+    expect(vagueScore).toBe(66)
   })
 
   it('keeps Context neutral when only file names or generated release artifacts are visible', () => {
@@ -318,7 +367,7 @@ describe('dashboard profile scoring', () => {
 
     expect(breakdown.orientationArtifactSignal).toBe(50)
     expect(breakdown.repositoryOrientationSignal).toBe(50)
-    expect(scoreDashboardContext(metrics)).toBe(60)
+    expect(scoreDashboardContext(metrics)).toBe(70)
   })
 
   it('keeps Context neutral when there are fewer than three personal commits', () => {
@@ -686,6 +735,7 @@ describe('dashboard profile scoring', () => {
         axis: 'clarity' as const,
         verdict: 'softens' as const,
         confidence: 90,
+        summary: 'The visible patches are clearer than the baseline suggests.',
         evidence: [
           { commitSha: 'one', filename: 'src/one.ts', observation: 'the name explains the value' },
           { commitSha: 'two', filename: 'src/two.ts', observation: 'the second name follows the same clear pattern' },
@@ -701,7 +751,7 @@ describe('dashboard profile scoring', () => {
     expect(computeDashboardAiAdjustments(review, sample.commits)).toEqual({ clarity: 4 })
     const base = scoreDashboardProfile(sample)
     const adjusted = scoreDashboardProfile(sample, undefined, review)
-    expect(adjusted.scores.clarity).toBe(Math.min(100, base.scores.clarity + 4))
+    expect(adjusted.scores.clarity).toBe(Math.min(getDashboardClarityEvidenceCap(deriveDashboardMetrics(sample)), base.scores.clarity + 4))
     expect(adjusted.scores.safety).toBe(base.scores.safety)
     expect(adjusted.aiAdjustments).toEqual({ clarity: 4 })
   })
@@ -744,6 +794,7 @@ describe('dashboard profile scoring', () => {
         axis: 'complexity' as const,
         verdict: 'softens' as const,
         confidence: 80,
+        summary: 'The visible patches keep the broad change coherent.',
         evidence: [{ commitSha: 'not-present', filename: 'src/nope.ts', observation: 'not grounded' }],
       }],
       findings: [],

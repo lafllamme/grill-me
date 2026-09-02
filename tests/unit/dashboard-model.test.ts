@@ -52,6 +52,24 @@ describe('dashboard model', () => {
 
   it('maps live assessment scores and evidence into chart-specific slices', () => {
     const liveResponse = responseFor([commit(1), commit(2), commit(3)])
+    liveResponse.assessment.aiReview = {
+      confidence: 86,
+      status: 'assessed',
+      selectedCommitCount: 3,
+      patchCount: 3,
+      patchChars: 420,
+      axisReviews: [{
+        axis: 'clarity',
+        verdict: 'supports',
+        confidence: 86,
+        summary: 'The visible patches use clear names and keep the local data flow readable.',
+        evidence: [{
+          commitSha: 'commit-1',
+          filename: 'app/components/slice-1.vue',
+          observation: 'The component name and state flow are explicit.',
+        }],
+      }],
+    }
     const model = buildLiveDashboardModel(liveResponse, dashboardMockProfiles[0]!)
 
     expect(model.source).toBe('live')
@@ -61,5 +79,7 @@ describe('dashboard model', () => {
     expect(model.charts.changeVolume).toHaveLength(3)
     expect(model.charts.commitRhythm).toHaveLength(3)
     expect(model.evidence.commits).toHaveLength(3)
+    expect(model.aiReview?.axisReviews?.[0]?.summary).toContain('clear names')
+    expect(model.profile.clarityBreakdown).toMatchObject({ evidenceCap: 90 })
   })
 })

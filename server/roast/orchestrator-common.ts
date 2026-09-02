@@ -398,6 +398,18 @@ export async function finalizeFromRawText(
   }
 
   if (!parsed.title || parsed.roastLines.length === 0 || parsed.feedback.length === 0) {
+    logServerDebug('ai-output-validation', {
+      parserPath: input.debug.parserPath,
+      rawTextLength: rawText.length,
+      hasTitle: Boolean(parsed.title),
+      roastLineCount: parsed.roastLines.length,
+      feedbackCount: parsed.feedback.length,
+      missingFields: [
+        ...(!parsed.title ? ['title'] : []),
+        ...(parsed.roastLines.length === 0 ? ['roastLines'] : []),
+        ...(parsed.feedback.length === 0 ? ['feedback'] : []),
+      ],
+    })
     throw createError({
       statusCode: 502,
       statusMessage: 'Cloudflare AI returned incomplete structured output',

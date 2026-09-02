@@ -1,6 +1,6 @@
 # Dashboard AI Review
 
-**Version:** 1.3.0
+**Version:** 1.5.0
 **Status:** active
 **Updated:** 2026-09-02
 
@@ -64,6 +64,7 @@ interface DashboardAiAxisReview {
   axis: 'clarity' | 'safety' | 'workflow' | 'complexity' | 'context'
   verdict: 'supports' | 'softens' | 'contradicts' | 'insufficient'
   confidence: number
+  summary: string
   evidence: Array<{
     commitSha: string
     filename: string
@@ -73,6 +74,9 @@ interface DashboardAiAxisReview {
 ~~~
 
 Every accepted finding must point to an exact selected filename and commit SHA.
+Every axis review also carries a short human-readable `summary`. A `supports`
+review needs at least one grounded patch reference; `softens` and `contradicts`
+need two distinct grounded patch references. Only `insufficient` may be empty.
 Missing tests, CI, documentation, unfamiliar code, frequency, popularity, and
 truncated context are not negative evidence.
 
@@ -87,10 +91,13 @@ confidence by a small bounded amount; they never create a score adjustment.
 This prevents one malformed model item from hiding otherwise grounded evidence
 without turning malformed output into trusted data.
 
-The prompt asks for compact JSON, at most six findings, and short evidence.
-`supports` and `insufficient` axis reviews may use an empty evidence array;
-`softens` and `contradicts` still need two grounded patch references before the
-server can change a deterministic score.
+The prompt asks for compact JSON, at most six findings, short summaries, and
+short evidence. The server grounds every axis review again after parsing. An
+ungrounded or under-evidenced review is omitted and reported as a parse warning;
+it cannot appear in the UI or change a score. For Clarity, the deterministic
+breakdown also includes an evidence ceiling; the server reapplies that ceiling
+after the bounded AI adjustment, so a thin sample cannot be upgraded into an
+exceptional score.
 
 For Safety, only verdict negative plus impact introduced can enter the
 confirmed-risk path, and the server independently verifies the pattern. A
@@ -110,8 +117,10 @@ only with confidence ≥70 and two grounded patch references.
 | unavailable | upstream AI request failed; deterministic scores remain |
 | invalid-response | response violated the contract; deterministic scores remain |
 
-The API exposes selected evidence, collection counts, and AI status so the UI
-can distinguish a measured score from a neutral score.
+The API exposes selected evidence, collection counts, AI status, and the
+grounded axis reviews. The Profile panel renders the deterministic Clarity
+signals and cap next to the AI summary and the exact patch filenames, so a
+reader can distinguish the number from the explanation that supports it.
 
 ## Implementation
 

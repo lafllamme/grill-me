@@ -55,6 +55,8 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
           :style="{ transitionDelay: '0ms' }"
           class="lg:col-span-6"
           :data="renderModel.charts.radar"
+          :clarity-breakdown="renderModel.profile.clarityBreakdown"
+          :ai-review="renderModel.aiReview"
           :panel-class="panelClass"
           :muted-class="mutedClass"
         />

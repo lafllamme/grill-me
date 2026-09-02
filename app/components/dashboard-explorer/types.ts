@@ -29,7 +29,14 @@ export interface DashboardExplorerModel {
     overallScore?: number
     grade: string
     role: string
+    clarityBreakdown?: {
+      messageSignal: number
+      namingSignal: number
+      structureSignal: number
+      evidenceCap: number
+    }
   }
+  aiReview?: DashboardProfileAssessment['aiReview']
   verdict: {
     grade: string
     growthLevel: string

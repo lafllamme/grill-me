@@ -173,7 +173,14 @@ export function buildLiveDashboardModel(response: DashboardProfileResponse, fall
       overallScore: assessment.overallScore,
       grade: assessment.grade,
       role: assessment.role,
+      clarityBreakdown: {
+        messageSignal: assessment.derivedMetrics.messageQuality ?? scores.clarity,
+        namingSignal: assessment.derivedMetrics.clarityNamingSignal ?? scores.clarity,
+        structureSignal: assessment.derivedMetrics.clarityStructureSignal ?? scores.clarity,
+        evidenceCap: assessment.derivedMetrics.clarityEvidenceCap ?? 95,
+      },
     },
+    aiReview: assessment.aiReview,
     verdict: {
       grade: assessment.grade,
       growthLevel: 'Live profile',

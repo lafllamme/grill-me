@@ -34,6 +34,7 @@ export interface DashboardDerivedMetrics {
   clarityScopeSignal: number
   clarityNamingSignal: number
   clarityStructureSignal: number
+  clarityEvidenceCap: number
   clarityNamingEvidenceAvailable: boolean
   clarityStructureEvidenceAvailable: boolean
   contextPatchExplanationSignal: number
@@ -126,6 +127,17 @@ export interface DashboardProfileAssessment {
     selectedCommitCount: number
     patchCount: number
     patchChars: number
+    axisReviews?: readonly {
+      axis: DashboardProfileAxis
+      verdict: 'supports' | 'softens' | 'contradicts' | 'insufficient'
+      confidence: number
+      summary: string
+      evidence: readonly {
+        commitSha: string
+        filename: string
+        observation: string
+      }[]
+    }[]
   }
   aiAdjustments: Partial<Record<DashboardProfileAxis, number>>
   evidenceWindow: {

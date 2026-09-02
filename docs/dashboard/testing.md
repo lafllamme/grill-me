@@ -1,6 +1,6 @@
 # Dashboard Validation
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Status:** active
 **Updated:** 2026-09-02
 
@@ -72,6 +72,18 @@ tests/fixtures/dashboard-safety-probes.ts.
 Repository probes are not assigned to a username score. They validate the
 Safety contract for a supplied owner/repository and immutable commit.
 
+### Latest Clarity boundary run
+
+The Clarity v4 controls keep the existing message, naming, and structure
+signals but prevent thin evidence from looking exceptional:
+
+| Control | Expected behavior |
+| --- | --- |
+| three clear commits with visible patches | raw near-perfect signal is capped at 90 |
+| six or more personal commits with at least three visible patches | strong evidence can reach 95, never 100 |
+| generic names and deeply indented additions | remains a low signal, independent of the cap |
+| fewer than three personal commits | neutral 50 and insufficient evidence |
+
 ### Latest Safety boundary run
 
 The current Safety v4 controls produce a deliberate spread instead of a fixed
@@ -90,6 +102,20 @@ normal value:
 The focused Safety run currently passes 10 tests. These controls validate score
 behavior; they do not turn the six named calibration profiles into a developer
 ranking.
+
+### Latest Context boundary run
+
+Context v5 keeps sufficient samples at a neutral 70 unless the visible evidence
+supports a higher or lower result. It distinguishes missing artifacts from
+directly vague commit subjects:
+
+| Control | Expected behavior |
+| --- | --- |
+| normal feature patches without visible docs/comments | around 70–76; no absence penalty |
+| vague or empty commit subjects | lower 60s when the sample is otherwise sufficient |
+| generated changelog-only work | neutral 70; release artifacts are not orientation proof |
+| visible explanations, orientation artifacts, and reviewed PRs | strong 85+ result |
+| fewer than three personal commits | neutral 50 and insufficient evidence |
 
 ## Evidence review
 

@@ -284,6 +284,7 @@ export interface DashboardAiAxisReview {
   axis: DashboardReviewAxis
   verdict: DashboardAiAxisReviewVerdict
   confidence: number
+  summary: string
   evidence: DashboardAiReviewEvidence[]
 }
 
@@ -306,6 +307,7 @@ export interface DashboardAiReviewBaseline {
     structureSignal: number
     namingEvidenceAvailable: boolean
     structureEvidenceAvailable: boolean
+    evidenceCap: number
   }
   workflow: {
     personalCommitCount: number
@@ -409,13 +411,15 @@ function parseAxisReview(item: unknown): DashboardAiAxisReview | null {
   const axis = typeof review.axis === 'string' ? review.axis : ''
   const verdict = typeof review.verdict === 'string' ? review.verdict : ''
   const confidence = typeof review.confidence === 'number' && Number.isFinite(review.confidence) ? review.confidence : Number.NaN
+  const summary = typeof review.summary === 'string' ? review.summary.trim().slice(0, 360) : ''
   const evidence = Array.isArray(review.evidence)
     ? review.evidence.map(parseAxisReviewEvidence).filter((item): item is DashboardAiReviewEvidence => Boolean(item))
     : []
 
   if (!allowedReviewAxes.has(axis as DashboardReviewAxis)
     || !allowedAxisReviewVerdicts.has(verdict as DashboardAiAxisReviewVerdict)
-    || !Number.isFinite(confidence)) {
+    || !Number.isFinite(confidence)
+    || !summary) {
     return null
   }
 
@@ -423,6 +427,7 @@ function parseAxisReview(item: unknown): DashboardAiAxisReview | null {
     axis: axis as DashboardReviewAxis,
     verdict: verdict as DashboardAiAxisReviewVerdict,
     confidence: clamp(confidence),
+    summary,
     evidence: evidence.slice(0, 4),
   }
 }
@@ -613,6 +618,17 @@ function isGroundedAxisReviewEvidence(evidence: DashboardAiReviewEvidence, selec
   ))
 }
 
+function normalizeAxisReviewEvidence(axisReview: DashboardAiAxisReview, selection: DashboardPatchSelection): DashboardAiAxisReview | null {
+  const evidence = axisReview.evidence.filter(evidence => isGroundedAxisReviewEvidence(evidence, selection))
+  const distinctEvidence = new Set(evidence.map(item => `${item.commitSha}:${item.filename}`))
+  const minimumEvidence = axisReview.verdict === 'supports' ? 1 : axisReview.verdict === 'insufficient' ? 0 : 2
+
+  if (distinctEvidence.size < minimumEvidence)
+    return null
+
+  return { ...axisReview, evidence }
+}
+
 function fallbackReview(status: DashboardAiReviewAssessment['status'], selection: DashboardPatchSelection): DashboardAiReviewAssessment {
   return {
     confidence: 0,
@@ -683,24 +699,28 @@ export async function assessDashboardProfileWithAi(input: {
         'Use positive for a concrete quality signal added by the changed lines, negative for a concrete problem introduced by the changed lines, and mixed or unclear when the excerpt cannot establish a reliable direction.',
         'Use impact introduced only for a newly added behavior, fixed only when the changed lines clearly repair an existing problem, and unclear otherwise. A fixed or unclear finding must never be treated as a penalty.',
         'For safety, classify only validation, auth, error-handling, secrets, or dependency. A positive safety finding is allowed only for a visible defensive safeguard and may provide a small bounded lift after server verification. Only a safety finding with verdict negative and impact introduced may lower Safety, and the server independently verifies the evidence.',
-        'For clarity use the supplied clarity breakdown to inspect naming, local structure, and intent in the changed lines; conventionalMessageRatio is diagnostic workflow context, not a Clarity input. Do not treat commit count, file count, repository size, or missing patch evidence as clarity evidence. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context use the supplied context breakdown and inspect only actual explanatory additions, orientation artifacts, commit bodies, examples, and visible handoff evidence. A README or docs entry in repository metadata is weak orientation evidence, not proof of documentation quality; missing docs, missing PRs, missing comments, and truncated patches are neutral rather than negative.',
-        'Return one compact axisReview for each axis. Use supports when the deterministic result fits the visible patches, softens when the result is too strict because broad changes are visibly coherent, contradicts when the patches show a material issue the baseline misses, and insufficient when the selected excerpts cannot support a reliable judgment. Use an empty evidence array for supports or insufficient. A softens or contradicts review must cite at least two exact supplied patch files in its evidence array.',
+        'For clarity use the supplied clarity breakdown to inspect naming, local structure, and intent in the changed lines; conventionalMessageRatio is diagnostic workflow context, not a Clarity input. Respect the supplied clarity evidenceCap: the server applies it after any bounded adjustment, so do not upgrade a thin sample beyond that ceiling. Do not treat commit count, file count, repository size, or missing patch evidence as clarity evidence. For workflow use the supplied workflow breakdown to inspect delivery granularity and intent, prefer median and p75 scope signals over the raw average alone, then use the patches to decide whether broad changes are coherent and reviewable. The server applies a conservative evidence cap: do not upgrade a limited sample into a strong score, and do not treat the cap as evidence that the developer is bad. A neutral review signal, merge ratio, missing PRs, commit frequency, repository size, and raw output volume are context limitations, not automatic workflow failures. For complexity inspect visible coupling, indirection, duplication, nesting, and change surface in the changed lines; do not infer complexity from repository size, raw file count, package breadth, release files, or commit volume. For context use the supplied context breakdown and inspect only actual explanatory additions, orientation artifacts, commit bodies, examples, and visible handoff evidence. A README or docs entry in repository metadata is weak orientation evidence, not proof of documentation quality; missing docs, missing PRs, missing comments, and truncated patches are neutral rather than negative.',
+        'Return one compact axisReview for each axis. Use supports when the deterministic result fits the visible patches, softens when the result is too strict because broad changes are visibly coherent, contradicts when the patches show a material issue the baseline misses, and insufficient when the selected excerpts cannot support a reliable judgment. Every axisReview must include a short summary that explains the judgment. A supports review must cite at least one exact supplied patch file. A softens or contradicts review must cite at least two distinct exact supplied patch files. Only insufficient may use an empty evidence array.',
         'Use the exact short commit SHA and exact filename supplied with each patch. Evidence must be a short concrete explanation of visible changed lines. Do not invent a SHA or filename.',
-        'Return compact JSON only. Keep every observation and finding evidence under 160 characters. Return exactly one JSON object with this schema: {"confidence":60,"axisReviews":[{"axis":"complexity","verdict":"softens","confidence":78,"evidence":[{"commitSha":"abc1234","filename":"src/one.ts","observation":"focused refactor keeps the boundary explicit"},{"commitSha":"abc1234","filename":"src/two.ts","observation":"second file follows the same boundary"}]}],"findings":[]}',
-        'Every axisReview must contain axis, verdict, confidence, and an evidence array. Every evidence item must contain commitSha, filename, and observation. Every finding must contain axis, verdict, impact, severity, commitSha, filename, and evidence. Safety findings must also contain category. Non-safety findings must omit category. Return at most five axisReviews and six findings. Do not repeat metadata, baseline values, or patch text. No markdown, prose, code fences, or extra keys.',
+        'Return compact JSON only. Keep every summary, observation, and finding evidence under 240 characters. Return exactly one JSON object with this schema: {"confidence":60,"axisReviews":[{"axis":"clarity","verdict":"supports","confidence":86,"summary":"The visible patches use clear state names and keep the local data flow readable.","evidence":[{"commitSha":"abc1234","filename":"src/profile.ts","observation":"profileState and validationResult make the data flow explicit"}]}],"findings":[]}',
+        'Every axisReview must contain axis, verdict, confidence, summary, and an evidence array. Every evidence item must contain commitSha, filename, and observation. Every finding must contain axis, verdict, impact, severity, commitSha, filename, and evidence. Safety findings must also contain category. Non-safety findings must omit category. Return at most five axisReviews and six findings. Do not repeat metadata, baseline values, or patch text. No markdown, prose, code fences, or extra keys.',
       ].join(' '),
       userPrompt: `${buildDashboardReviewPrompt(input.context, selection, input.baseline)}\n/no_think`,
     })
     const extracted = extractModelText(response)
     const parsedResponse = parseDashboardReviewResponse(response, extracted, selection)
     if (parsedResponse) {
+      const normalizedAxisReviews = parsedResponse.parsed.axisReviews?.map(axisReview => normalizeAxisReviewEvidence(axisReview, selection)).filter((axisReview): axisReview is DashboardAiAxisReview => Boolean(axisReview))
+      const droppedAxisReviewCount = (parsedResponse.parsed.axisReviews?.length ?? 0) - (normalizedAxisReviews?.length ?? 0)
+      const parseWarnings = droppedAxisReviewCount > 0
+        ? [...(parsedResponse.parsed.parseWarnings ?? []), `axisReviews-ungrounded:${droppedAxisReviewCount}`]
+        : parsedResponse.parsed.parseWarnings
+
       return {
         ...parsedResponse.parsed,
         findings: parsedResponse.parsed.findings.filter(finding => isGroundedFinding(finding, selection)),
-        axisReviews: parsedResponse.parsed.axisReviews?.map(axisReview => ({
-          ...axisReview,
-          evidence: axisReview.evidence.filter(evidence => isGroundedAxisReviewEvidence(evidence, selection)),
-        })),
+        axisReviews: normalizedAxisReviews,
+        ...(parseWarnings?.length ? { parseWarnings } : {}),
         status: 'assessed',
         responsePath: parsedResponse.path,
         selectedCommitCount: selection.commits.length,

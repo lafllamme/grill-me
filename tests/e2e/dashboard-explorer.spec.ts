@@ -52,7 +52,20 @@ test.describe('dashboard explorer analysis states', () => {
       scores: { ...deterministicAssessment.scores, complexity: 80 },
       overallScore: 75,
       aiAdjustments: { complexity: 4 },
-      aiReview: { confidence: 60, status: 'assessed', selectedCommitCount: 2, patchCount: 2, patchChars: 1200 },
+      aiReview: {
+        confidence: 86,
+        status: 'assessed',
+        selectedCommitCount: 2,
+        patchCount: 2,
+        patchChars: 1200,
+        axisReviews: [{
+          axis: 'clarity',
+          verdict: 'supports',
+          confidence: 86,
+          summary: 'The visible patches keep names and local structure readable.',
+          evidence: [{ commitSha: 'commit-1', filename: 'app/profile.ts', observation: 'The state names explain the data flow.' }],
+        }],
+      },
     }
 
     await page.addInitScript(({ deterministic, final }) => {
@@ -92,5 +105,7 @@ test.describe('dashboard explorer analysis states', () => {
     const complexityRow = page.locator('.legend-container > div').filter({ hasText: 'Complexity' })
     await expect(complexityRow).toContainText('80')
     await expect(complexityRow).not.toContainText('76')
+    await expect(page.getByText('The visible patches keep names and local structure readable.')).toBeVisible()
+    await expect(page.getByText('app/profile.ts')).toBeVisible()
   })
 })

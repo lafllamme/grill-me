@@ -41,6 +41,7 @@ export interface DashboardDerivedMetrics {
   clarityScopeSignal: number
   clarityNamingSignal: number
   clarityStructureSignal: number
+  clarityEvidenceCap: number
   clarityNamingEvidenceAvailable: boolean
   clarityStructureEvidenceAvailable: boolean
   contextPatchExplanationSignal: number
@@ -343,6 +344,7 @@ export interface DashboardClarityScoreBreakdown {
   structureSignal: number
   namingEvidenceAvailable: boolean
   structureEvidenceAvailable: boolean
+  evidenceCap: number
   rawScore: number
 }
 
@@ -371,6 +373,21 @@ export function getDashboardWorkflowEvidenceCap(metrics: DashboardDerivedMetrics
     return 84
   if (metrics.workflowCommitCount < 10)
     return 89
+  return 95
+}
+
+/**
+ * Keeps a thin visible sample from producing a near-perfect Clarity score.
+ * This is an evidence ceiling, not a quality penalty: the existing signal
+ * weights still decide the score below the ceiling.
+ */
+export function getDashboardClarityEvidenceCap(metrics: Pick<DashboardDerivedMetrics, 'commitCount' | 'workflowCommitCount' | 'workflowPatchCommitCount'>): number {
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
+    return 50
+
+  if (metrics.workflowPatchCommitCount < 3 || metrics.workflowCommitCount < 6)
+    return 90
+
   return 95
 }
 
@@ -447,15 +464,17 @@ export function scoreDashboardClarity(metrics: DashboardDerivedMetrics): number 
   if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3)
     return 50
 
-  return clamp(
+  const rawScore = clamp(
     metrics.workflowMessageQuality * 0.35
     + metrics.clarityNamingSignal * 0.30
     + metrics.clarityStructureSignal * 0.35,
   )
+
+  return Math.min(rawScore, getDashboardClarityEvidenceCap(metrics))
 }
 
 export function getDashboardClarityScoreBreakdown(metrics: DashboardDerivedMetrics): DashboardClarityScoreBreakdown {
-  if (metrics.workflowCommitCount === 0) {
+  if (metrics.commitCount < 3 || metrics.workflowCommitCount < 3) {
     return {
       messageSignal: 50,
       conventionalMessageRatio: 50,
@@ -463,6 +482,7 @@ export function getDashboardClarityScoreBreakdown(metrics: DashboardDerivedMetri
       structureSignal: 50,
       namingEvidenceAvailable: false,
       structureEvidenceAvailable: false,
+      evidenceCap: 50,
       rawScore: 50,
     }
   }
@@ -474,6 +494,7 @@ export function getDashboardClarityScoreBreakdown(metrics: DashboardDerivedMetri
     structureSignal: metrics.clarityStructureSignal,
     namingEvidenceAvailable: metrics.clarityNamingEvidenceAvailable,
     structureEvidenceAvailable: metrics.clarityStructureEvidenceAvailable,
+    evidenceCap: getDashboardClarityEvidenceCap(metrics),
     rawScore: scoreDashboardClarity(metrics),
   }
 }
@@ -496,10 +517,10 @@ export function getDashboardContextScoreBreakdown(metrics: DashboardDerivedMetri
   }
 
   const rawScore = clamp(
-    60
-    + (metrics.contextPatchExplanationSignal - 50) * 0.35
-    + (metrics.contextOrientationArtifactSignal - 50) * 0.20
-    + (metrics.contextCommitSignal - 50) * 0.35
+    70
+    + (metrics.contextPatchExplanationSignal - 50) * 0.22
+    + (metrics.contextOrientationArtifactSignal - 50) * 0.10
+    + (metrics.contextCommitSignal - 50) * 0.28
     + (metrics.contextRepositoryOrientationSignal - 50) * 0.05
     + (metrics.contextHandoffSignal - 50) * 0.05,
   )
@@ -691,6 +712,10 @@ function contextCommitSignal(commits: readonly GithubCommit[]): { signal: number
       && !contextGenericSubjectPattern.test(subjectWithoutPrefix)
 
     let signal = 50
+    if (!subject.trim())
+      signal -= 20
+    if (contextGenericSubjectPattern.test(subjectWithoutPrefix))
+      signal -= 15
     if (hasSpecificSubject)
       signal += 15
     if (hasMeaningfulBody)
@@ -811,6 +836,11 @@ export function deriveDashboardMetrics(context: GithubContext): DashboardDerived
     clarityScopeSignal: workflowCommits.length ? clamp(100 - Math.max(0, average(workflowFileCounts) - 1) * 7) : 50,
     clarityNamingSignal: namingSignal.signal,
     clarityStructureSignal: structureSignal.signal,
+    clarityEvidenceCap: getDashboardClarityEvidenceCap({
+      commitCount: commits.length,
+      workflowCommitCount: workflowCommits.length,
+      workflowPatchCommitCount,
+    }),
     clarityNamingEvidenceAvailable: namingSignal.evidenceAvailable,
     clarityStructureEvidenceAvailable: structureSignal.evidenceAvailable,
     contextPatchExplanationSignal: contextPatchExplanation.signal,
@@ -957,6 +987,8 @@ export function scoreDashboardProfile(context: GithubContext, aiSafety?: Dashboa
     scores[axis] = clamp(scores[axis] + adjustment)
     if (axis === 'workflow')
       scores[axis] = Math.min(scores[axis], getDashboardWorkflowEvidenceCap(metrics))
+    if (axis === 'clarity')
+      scores[axis] = Math.min(scores[axis], getDashboardClarityEvidenceCap(metrics))
   }
 
   const overallScore = clamp(axisWeights.reduce((sum, [axis, weight]) => sum + scores[axis] * weight, 0))
