@@ -7,6 +7,7 @@ import CommitTimelinePanel from './commit-timeline/CommitTimelinePanel.vue'
 import DashboardExplorerState from './DashboardExplorerState.vue'
 import EvidenceRingPanel from './evidence-ring/EvidenceRingPanel.vue'
 import ProfileRadarPanel from './profile-radar/ProfileRadarPanel.vue'
+import ProfileReviewPanel from './profile-review/ProfileReviewPanel.vue'
 import RepositorySunburstPanel from './repository-sunburst/RepositorySunburstPanel.vue'
 import VerdictPanel from './verdict/VerdictPanel.vue'
 
@@ -55,8 +56,6 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
           :style="{ transitionDelay: '0ms' }"
           class="lg:col-span-6"
           :data="renderModel.charts.radar"
-          :clarity-breakdown="renderModel.profile.clarityBreakdown"
-          :ai-review="renderModel.aiReview"
           :panel-class="panelClass"
           :muted-class="mutedClass"
         />
@@ -114,6 +113,17 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
           :style="{ transitionDelay: '420ms' }"
           :data="renderModel.charts.repositoryAnatomy"
           :description="renderModel.source === 'live' ? 'Files and folders are sized by changed lines in the enriched GitHub sample.' : 'Repository folders and file hotspots derived from the selected mock profile.'"
+          :is-live="renderModel.source === 'live'"
+          :panel-class="panelClass"
+          :muted-class="mutedClass"
+        />
+        <ProfileReviewPanel
+          v-if="renderModel.profile.clarityBreakdown || renderModel.aiReview"
+          :key="`${renderModel.key}-review`"
+          :style="{ transitionDelay: '490ms' }"
+          class="lg:col-span-12"
+          :clarity-breakdown="renderModel.profile.clarityBreakdown"
+          :ai-review="renderModel.aiReview"
           :is-live="renderModel.source === 'live'"
           :panel-class="panelClass"
           :muted-class="mutedClass"

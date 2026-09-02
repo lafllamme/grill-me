@@ -1,9 +1,9 @@
 import type { DashboardEvidence, DashboardProfileAssessment, DashboardProfileResponse, DashboardProfileStreamPhase } from '~~/shared/dashboard/contracts'
-import type { DashboardAiReviewAssessment, DashboardAiReviewBaseline } from './dashboard-ai-scoring'
+import type { DashboardAiReviewAssessment } from './dashboard/ai-review'
 import type { GithubCollectionProgress, GithubContext } from './github-collector'
-import { assessDashboardProfileWithAi, dashboardCategoryQuestions, toDashboardAiSafetyAssessment } from './dashboard-ai-scoring'
 import { toDashboardEvidence } from './dashboard-profile-evidence'
-import { getDashboardClarityScoreBreakdown, getDashboardContextScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreDashboardProfile } from './dashboard-profile-scoring'
+import { assessDashboardProfileWithAi, buildDashboardAiReviewBaseline, toDashboardAiSafetyAssessment } from './dashboard/ai-review'
+import { scoreDashboardProfile } from './dashboard/profile-scoring'
 import { collectDashboardGithubContext } from './github-collector'
 
 export interface DashboardProfileAnalysisInput {
@@ -54,71 +54,7 @@ export async function runDashboardProfileAnalysis(
   await hooks?.onStatus?.('scoring', 'Calculating deterministic profile signals...')
   const deterministicAssessment = scoreDashboardProfile(context)
   await hooks?.onDeterministicScores?.(deterministicAssessment)
-  const workflowBreakdown = getDashboardWorkflowScoreBreakdown(deterministicAssessment.derivedMetrics)
-  const clarityBreakdown = getDashboardClarityScoreBreakdown(deterministicAssessment.derivedMetrics)
-  const contextBreakdown = getDashboardContextScoreBreakdown(deterministicAssessment.derivedMetrics)
-
-  const aiBaseline: DashboardAiReviewBaseline = {
-    scores: deterministicAssessment.scores,
-    questions: dashboardCategoryQuestions,
-    safety: {
-      surfaceFileRatio: deterministicAssessment.derivedMetrics.safetySurfaceFileRatio,
-      surfaceLineRatio: deterministicAssessment.derivedMetrics.safetySurfaceLineRatio,
-      defenseCoverage: deterministicAssessment.derivedMetrics.safetyDefenseCoverage,
-      patchCommitRatio: deterministicAssessment.derivedMetrics.safetyPatchCommitRatio,
-      validationFileRatio: deterministicAssessment.derivedMetrics.validationFileRatio,
-      ciFileRatio: deterministicAssessment.derivedMetrics.ciFileRatio,
-    },
-    clarity: {
-      messageSignal: clarityBreakdown.messageSignal,
-      conventionalMessageRatio: clarityBreakdown.conventionalMessageRatio,
-      namingSignal: clarityBreakdown.namingSignal,
-      structureSignal: clarityBreakdown.structureSignal,
-      namingEvidenceAvailable: clarityBreakdown.namingEvidenceAvailable,
-      structureEvidenceAvailable: clarityBreakdown.structureEvidenceAvailable,
-      evidenceCap: clarityBreakdown.evidenceCap,
-    },
-    workflow: {
-      personalCommitCount: deterministicAssessment.derivedMetrics.workflowCommitCount,
-      patchCommitCount: deterministicAssessment.derivedMetrics.workflowPatchCommitCount,
-      messageQuality: workflowBreakdown.messageSignal,
-      conventionalMessageRatio: deterministicAssessment.derivedMetrics.workflowConventionalMessageRatio,
-      averageFilesPerCommit: deterministicAssessment.derivedMetrics.workflowAverageFilesPerCommit,
-      medianFilesPerCommit: deterministicAssessment.derivedMetrics.workflowMedianFilesPerCommit,
-      p75FilesPerCommit: deterministicAssessment.derivedMetrics.workflowP75FilesPerCommit,
-      largeCommitRatio: deterministicAssessment.derivedMetrics.workflowLargeCommitRatio,
-      medianScopeSignal: workflowBreakdown.medianScopeSignal,
-      p75ScopeSignal: workflowBreakdown.p75ScopeSignal,
-      fileScopeSignal: workflowBreakdown.fileScopeSignal,
-      outlierSignal: workflowBreakdown.outlierSignal,
-      granularitySignal: workflowBreakdown.granularitySignal,
-      reviewSignal: workflowBreakdown.reviewSignal,
-      reviewEvidenceAvailable: workflowBreakdown.reviewEvidenceAvailable,
-      evidenceCap: workflowBreakdown.evidenceCap,
-      evidenceQuality: workflowBreakdown.evidenceQuality,
-      mergeCommitRatio: deterministicAssessment.derivedMetrics.mergeCommitRatio,
-    },
-    complexity: {
-      effectiveFilesP75: deterministicAssessment.derivedMetrics.complexityEffectiveFilesP75,
-      excludedFileRatio: deterministicAssessment.derivedMetrics.complexityExcludedFileRatio,
-      relativeOutlierRatio: deterministicAssessment.derivedMetrics.complexityRelativeOutlierRatio,
-      scopeSignal: deterministicAssessment.derivedMetrics.complexityScopeSignal,
-      outlierSignal: deterministicAssessment.derivedMetrics.complexityOutlierSignal,
-      churnSignal: deterministicAssessment.derivedMetrics.complexityChurnSignal,
-    },
-    context: {
-      patchExplanationSignal: contextBreakdown.patchExplanationSignal,
-      orientationArtifactSignal: contextBreakdown.orientationArtifactSignal,
-      commitContextSignal: contextBreakdown.commitContextSignal,
-      repositoryOrientationSignal: contextBreakdown.repositoryOrientationSignal,
-      handoffSignal: contextBreakdown.handoffSignal,
-      patchExplanationEvidenceAvailable: contextBreakdown.patchExplanationEvidenceAvailable,
-      orientationArtifactEvidenceAvailable: contextBreakdown.orientationArtifactEvidenceAvailable,
-      commitContextEvidenceAvailable: contextBreakdown.commitContextEvidenceAvailable,
-      repositoryEvidenceAvailable: contextBreakdown.repositoryEvidenceAvailable,
-      handoffEvidenceAvailable: contextBreakdown.handoffEvidenceAvailable,
-    },
-  }
+  const aiBaseline = buildDashboardAiReviewBaseline(deterministicAssessment.scores, deterministicAssessment.derivedMetrics)
 
   await hooks?.onStatus?.('reviewing-ai', 'Reviewing selected patch evidence with AI...')
   const aiStartedAt = Date.now()

@@ -1,0 +1,12 @@
+export const contextGeneratedArtifactPattern = /(?:^|\/)(?:CHANGELOG(?:\.[^/]+)?|release-notes(?:\.[^/]+)?|generated[^/]*)$/i
+export const contextOrientationArtifactPattern = /^(?:README(?:\.[^/]+)?|CONTRIBUTING|docs?|documentation|examples?|architecture|adrs?)(?:\/|\.|$)/i
+export const contextExplanationLinePattern = /^\s*(?:\/\/|\/\*|\*|#\s|<!--|'''|""")|\s(?:\/\/|\/\*).*\S/
+export const contextIntentPattern = /\b(?:because|so that|in order to|why|reason|instead of|to avoid|to allow|to support|migration|migrate|breaking change|backward compatible|follow[- ]?up|related to|document(?:ed|ation)?|explain(?:s|ed|ation)?)\b|(?:fixes?|closes?|resolves?)\s+#\d+/i
+export const contextSubjectActionPattern = /\b(?:add|allow|change|extract|fix|handle|improve|introduce|migrate|prevent|refactor|remove|rename|replace|split|support|update)\b/i
+export const contextSubjectPrefixPattern = /^(?:feat|fix|refactor|docs|test|chore|perf|build|ci|style)(?:\([^)]*\))?:\s*/
+export const contextSubjectWordPattern = /\s+/
+export const contextGenericSubjectPattern = /^(?:fix|changes?|stuff|update|wip|misc|asdf|test)$/i
+export const contextReadmePattern = /^README(?:\.[^/]+)?$/i
+export const contextContributingPattern = /^CONTRIBUTING(?:\.[^/]+)?$/i
+export const contextDocsDirectoryPattern = /^(?:docs?|documentation)(?:\/|\.|$)/i
+export const contextExampleDirectoryPattern = /^(?:examples?|architecture|adrs?)(?:\/|\.|$)/i

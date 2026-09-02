@@ -3,6 +3,11 @@
 ## 2026-09-02
 
 ### Dashboard documentation
+- moved dashboard scoring implementation behind category, AI-review,
+  patch-selection, shared, and role modules under `server/roast/dashboard/`
+  while preserving the flat import facades and all public contracts
+- added code-folder READMEs and calibration/category indexes so formulas,
+  ownership, evidence limits, and historical probes have one navigable home
 - consolidated the dashboard architecture, scoring, AI review, chart contract,
   testing rules, roles, and calibration history under docs/dashboard/
 - split category formulas into focused documents so each scoring axis has one

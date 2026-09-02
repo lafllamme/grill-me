@@ -4,6 +4,10 @@ The profile radar presents the user's five-dimensional repository profile.
 The panel owns the dashboard-specific red palette mapping; `BklitRadarChart`
 remains the reusable chart implementation.
 
+Secondary score evidence and AI review details belong to the sibling
+`profile-review` panel so this card stays focused on the profile shape and its
+legend.
+
 ## Data contract
 
 The component accepts the existing `radarProfile` fixture shape: metric

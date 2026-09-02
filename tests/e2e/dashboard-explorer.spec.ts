@@ -105,6 +105,8 @@ test.describe('dashboard explorer analysis states', () => {
     const complexityRow = page.locator('.legend-container > div').filter({ hasText: 'Complexity' })
     await expect(complexityRow).toContainText('80')
     await expect(complexityRow).not.toContainText('76')
+    await expect(page.getByTestId('profile-radar-panel')).not.toContainText('AI second read')
+    await expect(page.getByTestId('profile-review-panel')).toContainText('AI second read')
     await expect(page.getByText('The visible patches keep names and local structure readable.')).toBeVisible()
     await expect(page.getByText('app/profile.ts')).toBeVisible()
   })

@@ -57,4 +57,4 @@ repository size, popularity, commit count, or truncated context.
 
 For lafllamme, the deterministic baseline was 76; the grounded AI second check
 applied +4, producing final Complexity 80. The breakdown is kept in
-[History](../history.md), not repeated in every implementation note.
+[calibration history](../calibration/history.md), not repeated in every implementation note.

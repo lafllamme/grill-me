@@ -103,7 +103,7 @@ documented or that the developer communicates well in every project.
 
 ## Implementation and tests
 
-- Formula and breakdown: `server/roast/dashboard-profile-scoring.ts`
-- AI baseline wiring: `server/roast/dashboard-profile-service.ts`
-- AI contract: `server/roast/dashboard-ai-scoring.ts`
+- Formula and breakdown: `server/roast/dashboard/categories/context/`
+- AI baseline wiring: `server/roast/dashboard/ai-review/prompt.ts`
+- AI contract: `server/roast/dashboard/ai-review/`
 - Regression coverage: `tests/unit/dashboard-profile-scoring.test.ts`

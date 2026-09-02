@@ -7,7 +7,7 @@ Existing links are kept for compatibility; use the canonical documents below:
 - [Shared scoring contract](./dashboard/scoring.md)
 - [Category formulas](./dashboard/categories/)
 - [AI review contract](./dashboard/ai-review.md)
-- [Calibration history](./dashboard/history.md)
+- [Calibration history](./dashboard/calibration/history.md)
 
 The old monolithic scoring document is intentionally no longer a second source
 of truth.

@@ -1,0 +1,5 @@
+export { buildContextAiContext, contextQuestion } from './ai-context'
+export { CONTEXT_COMMIT_RULES, CONTEXT_EVIDENCE_RULES, CONTEXT_SCORE_BASELINE, CONTEXT_SCORE_DEFAULT, CONTEXT_SCORE_WEIGHTS, CONTEXT_SIGNAL_RULES } from './constants'
+export { contextCommitSignal, contextHandoffSignal, contextOrientationArtifactSignal, contextPatchExplanationSignal, contextRepositoryOrientationSignal, deriveContextMetrics } from './metrics'
+export { getDashboardContextScoreBreakdown, scoreDashboardContext } from './score'
+export type { ContextCommitRules, ContextEvidenceRules, ContextScoreInput, ContextScoreWeights, ContextSignal, ContextSignalRules, DashboardContextScoreBreakdown } from './types'
