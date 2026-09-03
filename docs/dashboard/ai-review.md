@@ -51,9 +51,8 @@ deterministic scores.
 
 - bounded sampler: [`patch-selection/`](../../server/roast/dashboard/patch-selection/)
 - combined request: [`ai-review/service.ts`](../../server/roast/dashboard/ai-review/service.ts)
-- score composition: [`profile-scoring.ts`](../../server/roast/dashboard/profile-scoring.ts)
+- score composition: [`scoring.ts`](../../server/roast/dashboard/scoring.ts)
 - API boundary: [`dashboard-profile.post.ts`](../../server/api/dashboard-profile.post.ts)
 
 The public response, JSON schema, SSE events, Cloudflare limits, and score
-values remain unchanged by the folder migration. The former flat AI file is a
-compatibility facade.
+values remain unchanged by the folder migration.

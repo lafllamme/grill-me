@@ -1,8 +1,10 @@
 import type { DashboardProfileStreamEvent } from '~~/shared/dashboard/contracts'
 import { randomUUID } from 'node:crypto'
 import { getRequestIP, readBody, setResponseStatus } from 'h3'
+import { createDashboardTrace, resolveDashboardTraceLevel } from '~~/shared/dashboard/trace'
 import { validateGithubUsername } from '../../roast/contracts-adapter'
-import { runDashboardProfileAnalysis } from '../../roast/dashboard-profile-service'
+import { runDashboardProfileAnalysis } from '../../roast/dashboard'
+import { createDashboardTraceFileSink } from '../../roast/dashboard/trace-file'
 import { toErrorBody, toHandledError } from '../../roast/orchestrator'
 import { checkRateLimit } from '../../roast/rate-limit'
 
@@ -37,6 +39,20 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig(event)
   const encoder = new TextEncoder()
+  const traceLevel = resolveDashboardTraceLevel(config.dashboardTraceLevel)
+  const traceFile = createDashboardTraceFileSink({
+    directory: config.dashboardTraceFileDir,
+    requestId,
+    username,
+    level: traceLevel,
+  })
+  const trace = createDashboardTrace({
+    requestId,
+    username,
+    source: 'server',
+    level: traceLevel,
+    onRender: traceFile?.onRender,
+  })
 
   const stream = new ReadableStream<Uint8Array>({
     start: async (controller) => {
@@ -56,6 +72,7 @@ export default defineEventHandler(async (event) => {
           githubTimeoutMs: Number(config.githubTimeoutMs) || 12_000,
           aiTimeoutMs: Number(config.cfAiTimeoutMs) || 30_000,
           aiMaxTokens: Number(config.cfAiMaxTokens) || 2200,
+          trace,
         }, {
           onStatus: (phase, message) => writeEvent({ type: 'status', phase, message }),
           onGithubProgress: (progress) => {

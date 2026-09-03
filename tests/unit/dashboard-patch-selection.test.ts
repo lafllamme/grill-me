@@ -1,6 +1,6 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
-import { DASHBOARD_AI_REVIEW_LIMITS, selectDashboardPatchEvidence } from '../../server/roast/dashboard-patch-selection'
+import { DASHBOARD_AI_REVIEW_LIMITS, selectDashboardPatchEvidence } from '../../server/roast/dashboard/patch-selection'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {
   return {

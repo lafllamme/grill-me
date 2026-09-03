@@ -10,7 +10,7 @@ metric calculation and scoring are separate from the AI context contract.
 `selection.ts` is retained for the legacy standalone Safety reviewer.
 
 The public score remains compatible with
-`server/roast/dashboard-profile-scoring.ts`. This folder is the implementation
+`server/roast/dashboard/scoring.ts`. This folder is the implementation
 source for new dashboard code during the migration.
 
 ## Formula

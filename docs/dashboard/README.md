@@ -13,12 +13,13 @@ review, and the final roast dashboard.
 | Concern | Canonical document | Implementation | Validation |
 | --- | --- | --- | --- |
 | System flow, loading, streaming, ownership, quota | [Architecture](./architecture.md) | app/composables/useDashboardAnalysis.ts | tests/e2e/dashboard-explorer.spec.ts |
-| Shared score contract, grades, evidence gates | [Scoring](./scoring.md) | server/roast/dashboard/profile-scoring.ts | tests/unit/dashboard-profile-scoring.test.ts |
+| Shared score contract, grades, evidence gates | [Scoring](./scoring.md) | server/roast/dashboard/scoring.ts | tests/unit/dashboard-profile-scoring.test.ts |
 | One AI request, patch selection, payload limits | [AI review](./ai-review.md) | server/roast/dashboard/ai-review/ and patch-selection/ | tests/unit/dashboard-ai-scoring.test.ts |
 | Category formulas | [Categories](./categories/README.md) | server/roast/dashboard/categories/ | category tests in the scoring suite |
 | Role matrix and resolver rules | [Roles](./roles.md) | server/roast/dashboard/roles/ | scoring and model tests |
 | Chart meaning and Bklit parity | [Charts](./charts.md) | app/components/dashboard-explorer/ | browser checks and E2E |
 | Cross-category checks and probe set | [Testing](./testing.md) | tests/ | lint, typecheck, unit, E2E |
+| Trace, logging, payload observability, module ownership | [Dashboard module README](../../server/roast/dashboard/README.md) | shared/dashboard/trace.ts | trace unit tests and dashboard stream checks |
 | Historical calibrations and limitations | [Calibration archive](./calibration/history.md) | — | reviewed before formula changes |
 
 The individual role cards remain in [docs/profiles](../profiles/). Active
@@ -56,9 +57,8 @@ interprets selected code and writes grounded explanations; it does not invent
 numeric scores. The client renders one normalized dashboard model and never
 starts a request per chart.
 
-During the migration, the original flat server paths remain compatibility
-facades. New imports should use the folder structure above; the public API
-response and shared contracts do not change.
+The dashboard implementation is exposed through `server/roast/dashboard/index.ts`.
+The public API response and shared contracts do not change.
 
 ## Documentation checks
 

@@ -1,6 +1,7 @@
 import type { DashboardProfileStreamEvent, DashboardProfileStreamGithubProgressEvent } from '~~/shared/dashboard/contracts'
 import type { DashboardAnalysisPhase, DashboardApiResponse } from '~/components/dashboard-explorer/types'
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { createDashboardTrace, resolveDashboardTraceLevel } from '~~/shared/dashboard/trace'
 import { requestDashboardProfileStream } from '~/utils/dashboard-api'
 
 function getErrorMessage(error: unknown): string {
@@ -18,6 +19,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function useDashboardAnalysis() {
+  const runtimeConfig = useRuntimeConfig()
   const githubUsername = ref('lafllamme')
   const assessment = ref<DashboardApiResponse['assessment'] | null>(null)
   const evidence = ref<DashboardApiResponse['evidence'] | null>(null)
@@ -51,22 +53,36 @@ export function useDashboardAnalysis() {
     githubProgress.value = null
     errorMessage.value = ''
     phase.value = 'collecting-github'
+    const trace = createDashboardTrace({
+      requestId: `client-${Date.now()}`,
+      username: normalizedUsername,
+      source: 'client',
+      level: resolveDashboardTraceLevel(runtimeConfig.public.dashboardTraceLevel),
+    })
+    trace.log('ui', 'stream-start')
 
     try {
       let hasCompleted = false
       const handleStreamEvent = (event: DashboardProfileStreamEvent): void => {
         if (event.type === 'status') {
           phase.value = event.phase
+          trace.log('ui', 'stream-event', { type: event.type, phase: event.phase, message: event.message })
           return
         }
 
         if (event.type === 'evidence') {
           evidence.value = event.evidence
+          trace.log('ui', 'stream-event', {
+            type: event.type,
+            commitCount: event.evidence.commits.length,
+            pullRequestCount: event.evidence.pullRequests.length,
+          })
           return
         }
 
         if (event.type === 'github_progress') {
           githubProgress.value = event
+          trace.log('github', 'progress', { phase: event.phase, ...event.counts })
           return
         }
 
@@ -76,6 +92,7 @@ export function useDashboardAnalysis() {
           // remains part of the stream contract, but rendering it here makes
           // the user see a score that changes again when `done` arrives.
           phase.value = 'reviewing-ai'
+          trace.log('ui', 'stream-event', { type: event.type, overallScore: event.assessment.overallScore })
           return
         }
 
@@ -84,11 +101,18 @@ export function useDashboardAnalysis() {
           evidence.value = event.data.evidence
           phase.value = 'ready'
           hasCompleted = true
+          trace.log('ui', 'stream-complete', {
+            overallScore: event.data.assessment.overallScore,
+            grade: event.data.assessment.grade,
+            role: event.data.assessment.role,
+          })
           return
         }
 
-        if (event.type === 'error')
+        if (event.type === 'error') {
+          trace.log('ui', 'stream-error', { code: event.error.code, message: event.error.message })
           throw new Error(event.error.message)
+        }
       }
 
       await requestDashboardProfileStream(normalizedUsername, handleStreamEvent, controller.signal)

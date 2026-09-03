@@ -7,6 +7,37 @@ vi.mock('h3', () => ({
 vi.mock('consola', () => ({ consola: { info: vi.fn(), error: vi.fn() } }))
 
 describe('cloudflare AI request limits', () => {
+  it('reports serialized request size and prompt estimates before sending', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ choices: [] }), {
+      headers: { 'Content-Type': 'application/json' },
+    }))
+    const onRequestMetrics = vi.fn()
+
+    await runAiSync({
+      accountId: 'account',
+      apiToken: 'token',
+      model: '@cf/qwen/qwen3-30b-a3b-fp8',
+      timeoutMs: 1000,
+      maxTokens: 1000,
+      temperature: 0,
+      topP: 0.1,
+      systemPrompt: 'system prompt',
+      userPrompt: 'user prompt',
+      onRequestMetrics,
+    })
+
+    const metrics = onRequestMetrics.mock.calls[0]?.[0]
+    expect(metrics).toMatchObject({
+      systemPromptCharacters: 13,
+      userPromptCharacters: 11,
+      estimatedInputTokens: 6,
+      maxOutputTokens: 1000,
+    })
+    expect(metrics?.bodyBytes).toBeGreaterThan(0)
+    expect(fetchSpy).toHaveBeenCalledOnce()
+    fetchSpy.mockRestore()
+  })
+
   it('rejects an oversized serialized request before network execution', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     const result = runAiSync({

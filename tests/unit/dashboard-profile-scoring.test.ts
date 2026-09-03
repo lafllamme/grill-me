@@ -1,8 +1,13 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
-import { resolveDashboardProfileRole } from '../../server/roast/dashboard-profile-roles'
-import { computeDashboardAiAdjustments, deriveDashboardMetrics, getDashboardClarityEvidenceCap, getDashboardClarityScoreBreakdown, getDashboardContextScoreBreakdown, getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardClarity, scoreDashboardComplexity, scoreDashboardContext, scoreDashboardProfile, scoreDashboardWorkflow } from '../../server/roast/dashboard-profile-scoring'
-import { selectSafetyCommits } from '../../server/roast/dashboard-safety-selection'
+import { computeDashboardAiAdjustments } from '../../server/roast/dashboard/ai-review/adjustments'
+import { getDashboardClarityEvidenceCap, getDashboardClarityScoreBreakdown, scoreDashboardClarity } from '../../server/roast/dashboard/categories/clarity'
+import { scoreDashboardComplexity } from '../../server/roast/dashboard/categories/complexity'
+import { getDashboardContextScoreBreakdown, scoreDashboardContext } from '../../server/roast/dashboard/categories/context'
+import { selectSafetyCommits } from '../../server/roast/dashboard/categories/safety'
+import { getDashboardWorkflowScoreBreakdown, scoreCommitMessage, scoreDashboardWorkflow } from '../../server/roast/dashboard/categories/workflow'
+import { resolveDashboardProfileRole } from '../../server/roast/dashboard/roles'
+import { deriveDashboardMetrics, scoreDashboardProfile } from '../../server/roast/dashboard/scoring'
 import { dashboardSafetyProbeSet, dashboardSafetyRepositoryProbeSet } from '../fixtures/dashboard-safety-probes'
 
 function commit(overrides: Partial<GithubCommit> = {}): GithubCommit {

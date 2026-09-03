@@ -2,7 +2,7 @@ import type { GithubCommit, GithubContext } from '../../server/roast/github-coll
 import { describe, expect, it } from 'vitest'
 import { buildLiveDashboardModel, buildMockDashboardModel } from '../../app/components/dashboard-explorer/dashboard-model'
 import { dashboardMockProfiles } from '../../app/data/dashboard-mock-profiles'
-import { scoreDashboardProfile } from '../../server/roast/dashboard-profile-scoring'
+import { scoreDashboardProfile } from '../../server/roast/dashboard/scoring'
 
 function commit(index: number): GithubCommit {
   return {

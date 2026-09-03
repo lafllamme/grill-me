@@ -1,7 +1,7 @@
 import type { GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it } from 'vitest'
 import { consumeDashboardProfileSse } from '../../app/utils/dashboard-api'
-import { toDashboardEvidence } from '../../server/roast/dashboard-profile-evidence'
+import { toDashboardEvidence } from '../../server/roast/dashboard/evidence'
 
 describe('dashboard profile stream contract', () => {
   it('parses events when SSE blocks arrive across multiple chunks', async () => {

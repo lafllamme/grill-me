@@ -31,9 +31,10 @@ the UI progressively, but it must not fabricate scores or evidence.
 | AI review | prompt, parser, grounding, bounded adjustments, explanation |
 | server service | GitHub → score → one review → final response |
 
-The migration boundary is
-[`server/roast/dashboard/`](../../server/roast/dashboard/). The old flat server
-modules remain compatibility facades until all consumers can use the folders.
+The dashboard boundary is [`server/roast/dashboard/`](../../server/roast/dashboard/).
+Its [`index.ts`](../../server/roast/dashboard/index.ts) is the public server
+entry point. The module and trace contract are documented in the dashboard
+[README](../../server/roast/dashboard/README.md).
 
 ## Normalized boundary
 
@@ -70,4 +71,5 @@ that is later replaced by the final one.
 
 Detailed chart behavior remains in the existing chart contract; formula details
 belong to the category READMEs and dated calibration evidence belongs in
-[`calibration/history.md`](./calibration/history.md).
+[`calibration/history.md`](./calibration/history.md). Runtime trace behavior,
+redaction, and payload observability belong to the module README.

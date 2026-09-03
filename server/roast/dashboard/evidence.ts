@@ -1,5 +1,5 @@
 import type { DashboardEvidence } from '~~/shared/dashboard/contracts'
-import type { GithubContext } from './github-collector'
+import type { GithubContext } from '../github-collector'
 
 export function toDashboardEvidence(context: GithubContext): DashboardEvidence {
   return {

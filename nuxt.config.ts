@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -60,6 +62,8 @@ export default defineNuxtConfig({
     // NUXT_CF_ACCOUNT_ID, NUXT_CF_API_TOKEN, NUXT_CF_AI_MODEL, NUXT_GITHUB_TOKEN,
     // NUXT_GITHUB_TIMEOUT_MS, NUXT_CF_AI_TIMEOUT_MS, NUXT_CF_AI_MAX_TOKENS,
     // NUXT_CF_AI_TEMPERATURE, NUXT_CF_AI_TOP_P, NUXT_ROAST_DEBUG, NUXT_ROAST_DEBUG_LEVEL, NUXT_ROAST_VARIATION_MODE,
+    // NUXT_DASHBOARD_TRACE_LEVEL=off|summary|full,
+    // NUXT_DASHBOARD_TRACE_FILE_DIR=logs/dashboard (empty disables file output),
     // NUXT_DATABASE_URL, NUXT_ROAST_RECEIPT_SECRET
     cfAccountId: '',
     cfApiToken: '',
@@ -72,12 +76,16 @@ export default defineNuxtConfig({
     roastDebug: 'false',
     roastDebugLevel: 'minimal',
     roastVariationMode: 'moderate',
+    dashboardTraceLevel: process.env.NODE_ENV === 'production' ? 'off' : 'summary',
+    dashboardTraceFileDir: process.env.NODE_ENV === 'production' ? '' : 'logs/dashboard',
     githubToken: '',
     databaseUrl: '',
     roastReceiptSecret: 'dev-roast-receipt-secret-change-me-in-prod',
     public: {
       // NUXT_PUBLIC_ROAST_DEBUG=true enables roast debug logs in browser.
+      // NUXT_PUBLIC_DASHBOARD_TRACE_LEVEL=off|summary (full is server-only).
       roastDebug: 'false',
+      dashboardTraceLevel: process.env.NODE_ENV === 'production' ? 'off' : 'summary',
     },
     oauth: {
       github: {

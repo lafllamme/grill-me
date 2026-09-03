@@ -54,6 +54,19 @@ Every category must have:
 6. a documented AI second-check rule, if AI is used;
 7. a note explaining known bias and what the number does not claim.
 
+Dashboard runtime tracing is checked separately from product output. In
+development, `NUXT_DASHBOARD_TRACE_LEVEL=summary` shows request-scoped phase,
+count, timing, payload-size, and token-estimate entries in the server console;
+`NUXT_PUBLIC_DASHBOARD_TRACE_LEVEL=summary` shows the client stream lifecycle.
+Summary mode must not expose prompt text, patch bodies, or raw model output.
+Server traces are also written as one Markdown file per analysis to
+`logs/dashboard/` in development. Set `NUXT_DASHBOARD_TRACE_FILE_DIR=` to
+disable file output; use `full` only for local inspection because those files
+contain the prompt and model response.
+Playwright's web server forces colored output; its configured Nuxt command
+removes the inherited `NO_COLOR` flag so Node does not report a conflicting
+`NO_COLOR`/`FORCE_COLOR` pair. This only affects test-server output.
+
 ## Safety controls
 
 Safety also uses repository-scoped immutable commit probes. The current

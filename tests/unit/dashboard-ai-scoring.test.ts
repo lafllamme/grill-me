@@ -1,8 +1,8 @@
 import type { GithubCommit, GithubContext } from '../../server/roast/github-collector'
 import { describe, expect, it, vi } from 'vitest'
 import { runAiSync } from '../../server/roast/ai-client'
-import { assessDashboardProfileWithAi, buildDashboardReviewPrompt, dashboardCategoryQuestions, parseDashboardReview, toDashboardAiSafetyAssessment } from '../../server/roast/dashboard-ai-scoring'
-import { selectDashboardPatchEvidence } from '../../server/roast/dashboard-patch-selection'
+import { assessDashboardProfileWithAi, buildDashboardReviewPrompt, dashboardCategoryQuestions, parseDashboardReview, toDashboardAiSafetyAssessment } from '../../server/roast/dashboard/ai-review'
+import { selectDashboardPatchEvidence } from '../../server/roast/dashboard/patch-selection'
 
 vi.mock('h3', () => ({ createError: (input: unknown) => input }))
 vi.mock('consola', () => ({ consola: { info: vi.fn(), error: vi.fn() } }))

@@ -14,6 +14,15 @@ export interface AiRequestInput {
   systemPrompt: string
   userPrompt: string
   debug?: RoastDebug
+  onRequestMetrics?: (metrics: AiRequestMetrics) => void
+}
+
+export interface AiRequestMetrics {
+  bodyBytes: number
+  systemPromptCharacters: number
+  userPromptCharacters: number
+  estimatedInputTokens: number
+  maxOutputTokens: number
 }
 
 export const AI_REQUEST_LIMITS = {
@@ -124,6 +133,16 @@ function buildAiRequestBody(input: AiRequestInput, stream = false): string {
   return serialized
 }
 
+function reportRequestMetrics(input: AiRequestInput, serializedBody: string): void {
+  input.onRequestMetrics?.({
+    bodyBytes: new TextEncoder().encode(serializedBody).byteLength,
+    systemPromptCharacters: input.systemPrompt.length,
+    userPromptCharacters: input.userPrompt.length,
+    estimatedInputTokens: Math.ceil((input.systemPrompt.length + input.userPrompt.length) / 4),
+    maxOutputTokens: input.maxTokens,
+  })
+}
+
 /**
  * Sends a synchronous Cloudflare Workers AI request.
  *
@@ -142,13 +161,15 @@ export async function runAiSync(input: AiRequestInput): Promise<any> {
   const startedAt = Date.now()
 
   try {
+    const requestBody = buildAiRequestBody(input)
+    reportRequestMetrics(input, requestBody)
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${input.apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: buildAiRequestBody(input),
+      body: requestBody,
       signal: controller.signal,
     })
 
@@ -219,13 +240,15 @@ export async function runAiStream(input: AiRequestInput, onChunk: (chunk: string
   const startedAt = Date.now()
 
   try {
+    const requestBody = buildAiRequestBody(input, true)
+    reportRequestMetrics(input, requestBody)
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${input.apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: buildAiRequestBody(input, true),
+      body: requestBody,
       signal: controller.signal,
     })
 

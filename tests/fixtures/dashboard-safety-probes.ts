@@ -1,4 +1,4 @@
-import type { DashboardSafetyCategory, DashboardSafetyImpact, DashboardSafetySeverity } from '../../server/roast/dashboard-ai-scoring'
+import type { DashboardSafetyCategory, DashboardSafetyImpact, DashboardSafetySeverity } from '../../server/roast/dashboard/ai-review'
 
 export interface DashboardSafetyProbe {
   id: string

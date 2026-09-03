@@ -61,7 +61,7 @@ Roles describe a dominant pattern; unmatched or insufficient evidence remains
 | Activity charts | factual commit, change, rhythm, and repository metrics |
 
 The composition owner is
-[`profile-scoring.ts`](../../server/roast/dashboard/profile-scoring.ts).
+[`scoring.ts`](../../server/roast/dashboard/scoring.ts).
 The former flat server file is a compatibility facade.
 
 For calibration and limitations, use the
