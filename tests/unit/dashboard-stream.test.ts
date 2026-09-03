@@ -59,4 +59,24 @@ describe('dashboard profile stream contract', () => {
     })
     expect(evidence.commits[0]?.files[0]).not.toHaveProperty('patch')
   })
+
+  it('keeps the internal sampling ledger out of the public evidence contract', () => {
+    const evidence = toDashboardEvidence({
+      username: 'torvalds',
+      commits: [],
+      prs: [],
+      sampling: {
+        candidateRefs: 30,
+        integrationSkipped: 18,
+        personalRefs: 12,
+        detailsFetched: 16,
+        personalWithPatch: 12,
+        backfilled: 12,
+        evidenceState: 'expanded-window',
+        perRepository: {},
+      },
+    })
+
+    expect(evidence).not.toHaveProperty('sampling')
+  })
 })

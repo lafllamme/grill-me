@@ -1,8 +1,8 @@
 # Safety Scoring
 
-**Version:** 4.0.0
+**Version:** 4.3.0
 **Status:** calibrated
-**Updated:** 2026-09-02
+**Updated:** 2026-09-03
 
 ## Question
 
@@ -90,17 +90,27 @@ does not dominate the second check. Its Safety response is:
     severity: 'low' | 'medium' | 'high'
     commitSha: string
     filename?: string
+    riskScope: 'production' | 'test' | 'docs' | 'generated' | 'unknown'
     evidence: string
   }]
 }
 ~~~
 
-Only risk + introduced, with a known commit SHA, non-empty evidence, and a
-confirmed patch pattern, can lower Safety. A safe finding may provide a bounded
-positive lift of at most eight points, but only when the AI points to a known
-commit and filename and the server independently confirms a defensive pattern
-in the added lines. Fixed, unclear, removed, or unverified findings never
-lower Safety; a verified fix may receive the same small positive lift.
+Only risk + introduced, from an assessed review with at least 70 confidence,
+with a known commit SHA, an exact filename, non-empty evidence, a `production`
+scope, and a confirmed patch pattern, can lower Safety. A commit-level risk
+claim without the exact changed filename is discarded for scoring; it is not
+specific enough to justify a deduction.
+The AI must classify every finding as one of `production`, `test`, `docs`,
+`generated`, or `unknown`. Test fixtures, documentation examples, generated
+artifacts, and unknown scope are context only; they never lower Safety. The
+server also classifies the exact filename and rejects a model-provided
+`production` scope for a test, docs, or generated path. A safe
+finding may provide a bounded positive lift of at most eight points, but only
+when the AI points to a known commit and filename and the server independently
+confirms a defensive pattern in the added lines. Fixed, unclear, removed, or
+unverified findings never lower Safety; a verified fix may receive the same
+small positive lift.
 
 ## Repository-backed negative controls
 

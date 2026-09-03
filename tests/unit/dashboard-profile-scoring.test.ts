@@ -182,6 +182,35 @@ describe('dashboard profile scoring', () => {
     expect(scoreDashboardClarity(metrics)).toBe(95)
   })
 
+  it('keeps the Complexity evidence cap after a grounded AI adjustment', () => {
+    const history = context(Array.from({ length: 4 }, (_, index) => commit({
+      sha: `complexity-${index}`,
+      changedFiles: 1,
+      files: [{ filename: `src/complexity-${index}.ts`, status: 'modified', additions: 12, deletions: 0, patch: '+ const focusedChange = true' }],
+    })), 0)
+    const reviewed = scoreDashboardProfile(history, undefined, {
+      confidence: 90,
+      status: 'assessed',
+      selectedCommitCount: 3,
+      patchCount: 3,
+      patchChars: 90,
+      axisReviews: [{
+        axis: 'complexity',
+        verdict: 'softens',
+        confidence: 90,
+        summary: 'The visible focused changes remain coherent.',
+        evidence: [
+          { commitSha: 'complexity-0', filename: 'src/complexity-0.ts', observation: 'the change stays local' },
+          { commitSha: 'complexity-1', filename: 'src/complexity-1.ts', observation: 'the second change stays local' },
+        ],
+      }],
+      findings: [],
+    })
+
+    expect(reviewed.aiAdjustments).toEqual({ complexity: 4 })
+    expect(reviewed.scores.complexity).toBe(92)
+  })
+
   it('exposes Clarity component signals and neutral patch evidence explicitly', () => {
     const metrics = deriveDashboardMetrics(context([
       commit({ sha: 'one', message: 'feat: add profile summary', files: [{ filename: 'src/profile.ts', status: 'modified', additions: 2, deletions: 0 }] }),
@@ -256,7 +285,7 @@ describe('dashboard profile scoring', () => {
 
     const focusedScore = scoreDashboardComplexity(deriveDashboardMetrics(focusedHistory))
 
-    expect(focusedScore).toBeGreaterThan(80)
+    expect(focusedScore).toBe(92)
     expect(scoreDashboardComplexity(deriveDashboardMetrics(broadHistory))).toBeLessThanOrEqual(45)
     expect(scoreDashboardComplexity(deriveDashboardMetrics(mergeHeavyHistory))).toBe(focusedScore)
   })
@@ -299,7 +328,7 @@ describe('dashboard profile scoring', () => {
     expect(metrics.complexityEffectiveFilesP75).toBe(0)
     expect(metrics.complexityExcludedFileRatio).toBe(100)
     expect(metrics.complexityScopeSignal).toBe(100)
-    expect(scoreDashboardComplexity(metrics)).toBe(100)
+    expect(scoreDashboardComplexity(metrics)).toBe(92)
   })
 
   it('does not turn raw line volume into complexity when the effective surface stays focused', () => {
@@ -313,7 +342,21 @@ describe('dashboard profile scoring', () => {
     const metrics = deriveDashboardMetrics(history)
 
     expect(metrics.complexityRelativeOutlierRatio).toBe(0)
-    expect(scoreDashboardComplexity(metrics)).toBe(100)
+    expect(metrics.complexityChurnSignal).toBe(81)
+    expect(scoreDashboardComplexity(metrics)).toBe(92)
+  })
+
+  it('keeps Complexity below a perfect score when the authored evidence window is limited', () => {
+    const history = context(Array.from({ length: 4 }, (_, index) => commit({
+      sha: `focused-${index}`,
+      changedFiles: 1,
+      files: [{ filename: `src/focused-${index}.ts`, status: 'modified', additions: 12, deletions: 0 }],
+    })), 0)
+    const metrics = deriveDashboardMetrics(history)
+
+    expect(metrics.complexityScopeSignal).toBe(100)
+    expect(metrics.complexityOutlierSignal).toBe(100)
+    expect(scoreDashboardComplexity(metrics)).toBe(92)
   })
 
   it('keeps Complexity neutral when personal evidence is insufficient', () => {
@@ -350,12 +393,12 @@ describe('dashboard profile scoring', () => {
     const undocumentedScore = scoreDashboardContext(deriveDashboardMetrics(undocumentedHistory))
     const vagueScore = scoreDashboardContext(deriveDashboardMetrics(vagueHistory))
 
-    expect(orientedScore).toBe(91)
-    expect(undocumentedScore).toBe(74)
+    expect(orientedScore).toBe(97)
+    expect(undocumentedScore).toBe(75)
     expect(orientedScore).toBeGreaterThan(75)
     expect(undocumentedScore).toBeGreaterThanOrEqual(50)
     expect(orientedScore).toBeGreaterThan(undocumentedScore)
-    expect(vagueScore).toBe(66)
+    expect(vagueScore).toBe(65)
   })
 
   it('keeps Context neutral when only file names or generated release artifacts are visible', () => {
@@ -642,7 +685,7 @@ describe('dashboard profile scoring', () => {
     })
     const introduced = scoreDashboardProfile(sample, {
       confidence: 90,
-      signals: [{ category: 'validation', verdict: 'risk', impact: 'introduced', severity: 'medium', commitSha: 'risk', evidence: 'the changed line writes untrusted input to innerHTML' }],
+      signals: [{ category: 'validation', verdict: 'risk', impact: 'introduced', severity: 'medium', commitSha: 'risk', filename: 'app/render.ts', evidence: 'the changed line writes untrusted input to innerHTML' }],
       status: 'assessed',
     })
     const ungrounded = scoreDashboardProfile(sample, {
@@ -655,6 +698,11 @@ describe('dashboard profile scoring', () => {
       signals: [{ category: 'dependency', verdict: 'risk', impact: 'introduced', severity: 'high', commitSha: 'plain', evidence: 'the dependency may be unsafe, but the patch has no direct risk evidence' }],
       status: 'assessed',
     })
+    const missingFilename = scoreDashboardProfile(sample, {
+      confidence: 95,
+      signals: [{ category: 'validation', verdict: 'risk', impact: 'introduced', severity: 'high', commitSha: 'risk', evidence: 'the changed line writes untrusted input to innerHTML' }],
+      status: 'assessed',
+    })
 
     expect(base.scores.safety).toBe(70)
     expect(fixed.scores.safety).toBe(70)
@@ -662,6 +710,78 @@ describe('dashboard profile scoring', () => {
     expect(introduced.scores.safety).toBe(55)
     expect(ungrounded.scores.safety).toBe(70)
     expect(unsupported.scores.safety).toBe(70)
+    expect(missingFilename.scores.safety).toBe(70)
+  })
+
+  it('does not penalize a confirmed risk that is scoped to tests, docs, or generated output', () => {
+    const scopedCases = [
+      { filename: 'tests/render.test.ts', riskScope: 'production' as const },
+      { filename: 'docs/security-example.md', riskScope: 'production' as const },
+      { filename: 'src/generated/client.ts', riskScope: 'production' as const },
+    ]
+
+    for (const scopedCase of scopedCases) {
+      const sample = context([commit({
+        sha: `scoped-${scopedCase.riskScope}`,
+        files: [{ filename: scopedCase.filename, status: 'modified', additions: 8, deletions: 1, patch: '+ element.innerHTML = input' }],
+      })], 0)
+      const assessment = scoreDashboardProfile(sample, {
+        confidence: 90,
+        signals: [{
+          category: 'validation',
+          verdict: 'risk',
+          impact: 'introduced',
+          severity: 'medium',
+          commitSha: `scoped-${scopedCase.riskScope}`,
+          filename: scopedCase.filename,
+          riskScope: scopedCase.riskScope,
+          evidence: 'the changed line writes untrusted input to innerHTML',
+        }],
+        status: 'assessed',
+      })
+
+      expect(assessment.scores.safety, scopedCase.riskScope).toBe(70)
+    }
+
+    const inferredTestSample = context([commit({
+      sha: 'inferred-test',
+      files: [{ filename: 'specs/render.spec.ts', status: 'modified', additions: 8, deletions: 1, patch: '+ eval(input)' }],
+    })], 0)
+    expect(scoreDashboardProfile(inferredTestSample, {
+      confidence: 90,
+      signals: [{
+        category: 'validation',
+        verdict: 'risk',
+        impact: 'introduced',
+        severity: 'high',
+        commitSha: 'inferred-test',
+        filename: 'specs/render.spec.ts',
+        evidence: 'the test executes a deliberately dynamic fixture',
+      }],
+      status: 'assessed',
+    }).scores.safety).toBe(70)
+  })
+
+  it('does not let a low-confidence AI review lower Safety', () => {
+    const sample = context([commit({
+      sha: 'low-confidence-risk',
+      files: [{ filename: 'app/render.ts', status: 'modified', additions: 8, deletions: 1, patch: '+ element.innerHTML = input' }],
+    })], 0)
+
+    expect(scoreDashboardProfile(sample, {
+      confidence: 69,
+      signals: [{
+        category: 'validation',
+        verdict: 'risk',
+        impact: 'introduced',
+        severity: 'medium',
+        commitSha: 'low-confidence-risk',
+        filename: 'app/render.ts',
+        riskScope: 'production',
+        evidence: 'the changed line writes untrusted input to innerHTML',
+      }],
+      status: 'assessed',
+    }).scores.safety).toBe(70)
   })
 
   it('keeps repository-specific negative probes low and paired fixes unpenalized', () => {
@@ -679,6 +799,7 @@ describe('dashboard profile scoring', () => {
           impact: probe.impact,
           severity: probe.severity,
           commitSha: probe.id,
+          filename: probe.filename,
           evidence: `${probe.repository} controlled ${probe.kind} probe`,
         }],
         status: 'assessed',
@@ -704,6 +825,7 @@ describe('dashboard profile scoring', () => {
           impact: probe.impact,
           severity: probe.severity,
           commitSha: probe.commitSha,
+          filename: probe.filename,
           evidence: `${probe.repository} commit ${probe.commitSha.slice(0, 7)} adds the visible risky line`,
         }],
         status: 'assessed',
@@ -717,7 +839,7 @@ describe('dashboard profile scoring', () => {
     const sample = context([commit({ sha: 'secret', files: [{ filename: 'app/auth.ts', status: 'modified', additions: 4, deletions: 0, patch: '+ bypassAuthorization(input)' }] })], 0)
     const assessment = scoreDashboardProfile(sample, {
       confidence: 95,
-      signals: [{ category: 'auth', verdict: 'risk', impact: 'introduced', severity: 'high', commitSha: 'secret', evidence: 'the changed line bypasses authorization' }],
+      signals: [{ category: 'auth', verdict: 'risk', impact: 'introduced', severity: 'high', commitSha: 'secret', filename: 'app/auth.ts', evidence: 'the changed line bypasses authorization' }],
       status: 'assessed',
     })
 
@@ -858,5 +980,16 @@ describe('dashboard profile scoring', () => {
     expect(classification.candidates).toContain('Ungrillable')
     expect(classification.candidates).toContain('Human Compiler')
     expect(classification.candidates).toContain('Edge-Case Sheriff')
+  })
+
+  it('prefers a specific dominant-axis role over Human Compiler', () => {
+    const classification = resolveDashboardProfileRole({
+      scores: { clarity: 90, safety: 71, workflow: 82, complexity: 98, context: 75 },
+      commitCount: 12,
+      hasPatchEvidence: true,
+    })
+
+    expect(classification.primary).toBe('Dependency Detective')
+    expect(classification.candidates).toContain('Human Compiler')
   })
 })

@@ -1,6 +1,7 @@
 import type { SafetyScoreInput } from './types'
+import { SAFETY_AI_QUESTION } from './constants'
 
-export const safetyQuestion = 'Do the changed lines introduce a concrete validation, auth, error-handling, secret, or dependency risk?'
+export const safetyQuestion = SAFETY_AI_QUESTION
 
 export function buildSafetyAiContext(metrics: SafetyScoreInput) {
   return {

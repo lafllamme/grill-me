@@ -170,6 +170,15 @@ export async function assessDashboardProfileWithAi(input: {
       patchCharacters: file.patch.length,
       reason: file.reason,
     })),
+    ...(input.context.sampling
+      ? {
+          sampling: {
+            ...input.context.sampling,
+            aiSelected: selection.commits.length,
+            aiSelectedFiles: selection.files.length,
+          },
+        }
+      : {}),
   })
   if (!selection.files.length) {
     const review = fallbackReview('no-evidence', selection)

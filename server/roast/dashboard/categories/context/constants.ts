@@ -2,11 +2,12 @@ import type { ContextCommitRules, ContextEvidenceRules, ContextScoreWeights, Con
 
 export const CONTEXT_SCORE_DEFAULT = 50
 export const CONTEXT_SCORE_BASELINE = 70
+export const CONTEXT_AI_QUESTION = 'Do the changed lines provide enough comments, documentation, examples, or explanatory intent to orient the next contributor?'
 
 export const CONTEXT_SCORE_WEIGHTS = {
-  patchExplanation: 0.22,
-  orientationArtifact: 0.10,
-  commitContext: 0.28,
+  patchExplanation: 0.30,
+  orientationArtifact: 0.15,
+  commitContext: 0.35,
   repositoryOrientation: 0.05,
   handoff: 0.05,
 } as const satisfies ContextScoreWeights

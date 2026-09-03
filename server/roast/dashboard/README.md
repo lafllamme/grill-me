@@ -45,6 +45,28 @@ There is one AI request per analysis. The client does not start requests per
 chart and does not render the temporary deterministic score while the AI
 review is still in flight.
 
+### Evidence lifecycle
+
+The collection trace must distinguish the raw activity window from the
+personal evidence window. A merge-heavy history is allowed to expand within a
+bounded repository and history budget before it becomes insufficient. The
+collector reports candidate references, integration commits skipped, personal
+references, detailed commits fetched, personal commits with usable patches,
+backfilled candidates, and commits selected for AI. The active policy is
+documented in the [authored evidence window decision](../../../decisions/active/2026-09-03-dashboard-authored-evidence-window.md).
+
+The repository snapshot is supplemental context for Context and Repository
+Anatomy. It is never used as a substitute for a user's missing authored patch.
+
+The pure selection helpers live in
+[`shared/evidence-window.ts`](shared/evidence-window.ts). They keep one recent
+authored reference per repository before recency fill, prioritize authored refs
+over integrations inside the candidate cap, and describe whether the final
+window was sufficient, expanded, or limited. The collector can activate at
+most two additional owned repositories and one extra history page per active
+repository. Detail enrichment remains capped at 18 commits, so backfill does
+not silently expand the GitHub request budget.
+
 ## Trace logging
 
 Tracing is controlled by `NUXT_DASHBOARD_TRACE_LEVEL` on the server and
@@ -93,7 +115,8 @@ selected commit/file lists; prompt and response events print only sizes in
 [GitHub] update collection · lafllamme · bcf2d4cb · server · +513ms
   phase: commits · enrich commit patches
   repositories: 3
-  commits: 18
+  candidate refs: 30 · integration skipped: 11
+  personal refs: 19 · details fetched: 18 · personal with patch: 12
 [Grill] calculate baseline · lafllamme · bcf2d4cb · server · +642ms
   scores: clarity=95 · safety=78 · workflow=72 · complexity=64 · context=74
   overall score: 77
@@ -125,6 +148,11 @@ returns provider usage in a future transport update, that actual usage can be
 added alongside the estimate; the application does not invent token costs or
 “neuron” counts.
 
+`trace-checker.ts` contains the pure Markdown log checker used by the unit
+tests. It verifies the required lifecycle, sampling fields, score summary, AI
+events when requested, and chronological order. This is intentionally a
+diagnostic contract rather than a second runtime logger.
+
 ### Redaction
 
 Summary tracing never prints prompt text, patch bodies, code changes, or raw
@@ -135,10 +163,11 @@ logging.
 
 ## Cleanup policy
 
-The former flat dashboard modules were removed after the internal import and
-documentation audit. New server code imports from `server/roast/dashboard` or
-one of its owning subfolders. No database migration, API migration, or public
-contract change is part of this cleanup.
+The former flat dashboard modules remain as compatibility façades where they
+are still part of the internal import surface. New behavior belongs in the
+owning category, AI-review, patch-selection, or shared module; a façade may
+only re-export or compose that behavior. No database migration, API migration,
+or public contract change is part of this cleanup.
 
 ## Validation
 

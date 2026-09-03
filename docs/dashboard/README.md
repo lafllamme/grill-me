@@ -13,6 +13,7 @@ review, and the final roast dashboard.
 | Concern | Canonical document | Implementation | Validation |
 | --- | --- | --- | --- |
 | System flow, loading, streaming, ownership, quota | [Architecture](./architecture.md) | app/composables/useDashboardAnalysis.ts | tests/e2e/dashboard-explorer.spec.ts |
+| Authored evidence window, merge filtering, bounded fallback | [Architecture](./architecture.md) and [active decision](../../decisions/active/2026-09-03-dashboard-authored-evidence-window.md) | server/roast/github-collector.ts and patch-selection/ | sampling controls in [Testing](./testing.md) |
 | Shared score contract, grades, evidence gates | [Scoring](./scoring.md) | server/roast/dashboard/scoring.ts | tests/unit/dashboard-profile-scoring.test.ts |
 | One AI request, patch selection, payload limits | [AI review](./ai-review.md) | server/roast/dashboard/ai-review/ and patch-selection/ | tests/unit/dashboard-ai-scoring.test.ts |
 | Category formulas | [Categories](./categories/README.md) | server/roast/dashboard/categories/ | category tests in the scoring suite |

@@ -5,7 +5,7 @@ export const DASHBOARD_ROLE_EVIDENCE_RULES = {
 } as const satisfies DashboardRoleEvidenceRules
 
 export const DASHBOARD_ROLE_THRESHOLDS = {
-  'Ungrillable': { allAxesMinimum: 75 },
+  'Ungrillable': { allAxesMinimum: 80 },
   'Edge-Case Sheriff': {
     axes: {
       safety: { minimum: 85 },

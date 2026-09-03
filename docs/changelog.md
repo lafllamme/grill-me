@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-09-03
+
+### Dashboard evidence window
+- made dashboard collection merge-aware before detail enrichment so integration
+  commits cannot consume the personal evidence budget
+- added deterministic authored-reference ordering with one recent ref per
+  repository before recency fill
+- added bounded fallback to up to two discovered owned repositories and one
+  additional history page per active repository, while keeping detail calls
+  capped at 18
+- added an internal sampling ledger for candidate refs, skipped integrations,
+  personal refs, detailed commits, usable patches, and backfilled evidence;
+  public dashboard contracts remain unchanged
+- added a Markdown trace checker and tests for lifecycle order, sampling
+  fields, and optional AI provider events
+
+### Dashboard scoring guardrails
+- added typed Safety risk scopes so test, docs, generated, and unknown paths
+  remain context instead of becoming production penalties
+- added a 70% AI confidence gate and exact filename grounding for Safety risk
+  deductions; low-confidence or speculative findings cannot lower the score
+- prioritized dominant-axis roles before the generic Human Compiler label and
+  reserved Ungrillable for profiles scoring at least 80 on every axis
+- recalibrated Complexity so scope and outliers carry the signal, deletion churn
+  stays a weak pressure indicator, and bounded samples cannot score as perfect
+- recalibrated Context to weight direct patch explanations and commit intent
+  above repository metadata and handoff proxies
+- tightened Safety risk deductions so a commit-level AI claim without an exact
+  changed filename cannot lower the score
+
 ## 2026-09-02
 
 ### Dashboard documentation

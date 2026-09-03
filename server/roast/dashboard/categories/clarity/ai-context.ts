@@ -1,7 +1,8 @@
 import type { ClarityScoreInput } from './types'
+import { CLARITY_AI_QUESTION } from './constants'
 import { getDashboardClarityEvidenceCap } from './score'
 
-export const clarityQuestion = 'Do the changed lines make names, structure, and intent easier or harder for a new reader to understand?'
+export const clarityQuestion = CLARITY_AI_QUESTION
 
 export function buildClarityAiContext(metrics: ClarityScoreInput) {
   return {

@@ -1,8 +1,8 @@
 import type { ContextScoreInput, DashboardContextScoreBreakdown } from './types'
 import { clamp } from '../../shared/math'
-import { CONTEXT_EVIDENCE_RULES, CONTEXT_SCORE_BASELINE, CONTEXT_SCORE_DEFAULT, CONTEXT_SCORE_WEIGHTS } from './constants'
+import { CONTEXT_AI_QUESTION, CONTEXT_EVIDENCE_RULES, CONTEXT_SCORE_BASELINE, CONTEXT_SCORE_DEFAULT, CONTEXT_SCORE_WEIGHTS } from './constants'
 
-export const contextQuestion = 'Do the changed lines provide enough comments, documentation, examples, or explanatory intent to orient the next contributor?'
+export const contextQuestion = CONTEXT_AI_QUESTION
 
 export function scoreDashboardContext(metrics: ContextScoreInput): number {
   return getDashboardContextScoreBreakdown(metrics).rawScore

@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { validateDashboardTraceMarkdown } from '../../server/roast/dashboard/trace-checker'
 import { createDashboardTraceFileSink } from '../../server/roast/dashboard/trace-file'
 import { createDashboardTrace } from '../../shared/dashboard/trace'
 
@@ -80,5 +81,58 @@ describe('dashboard trace file sink', () => {
     })
 
     expect(sink).toBeUndefined()
+  })
+
+  it('checks a rendered trace file against the full lifecycle contract', () => {
+    const directory = createTemporaryDirectory()
+    const sink = createDashboardTraceFileSink({
+      directory,
+      requestId: 'req-checker',
+      username: 'torvalds',
+      level: 'summary',
+    })
+    if (!sink)
+      throw new Error('Expected a trace file sink')
+
+    const trace = createDashboardTrace({
+      requestId: 'req-checker',
+      username: 'torvalds',
+      source: 'server',
+      level: 'summary',
+      onRender: sink.onRender,
+    })
+    trace.log('grill', 'request-start')
+    trace.log('github', 'fetch-start')
+    trace.log('github', 'collection-complete', {
+      sampling: {
+        candidateRefs: 30,
+        integrationSkipped: 18,
+        personalRefs: 12,
+        detailsFetched: 16,
+        personalWithPatch: 12,
+        backfilled: 12,
+      },
+    })
+    trace.log('github', 'evidence-ready')
+    trace.log('grill', 'scores-calculated', { scores: { safety: 86 }, overallScore: 84 })
+    trace.log('ai', 'patch-selection-complete', {
+      commitCount: 3,
+      fileCount: 8,
+      patchCharacters: 4200,
+      sampling: { aiSelected: 3 },
+    })
+    trace.log('ai', 'prompt-prepared', { systemPrompt: 'system', userPrompt: 'user' })
+    trace.log('ai', 'request-metrics', { requestBytes: 4200 })
+    trace.log('ai', 'response-received', { parserPath: 'choices[0].message.content', rawResponse: '{"confidence":80}' })
+    trace.log('ai', 'review-complete', { status: 'assessed', confidence: 80 })
+    trace.log('grill', 'finalized', { overallScore: 84, grade: 'B+', role: 'Human Compiler' })
+
+    const content = readFileSync(sink.filePath, 'utf8')
+    expect(validateDashboardTraceMarkdown(content, { requireAiLifecycle: true })).toMatchObject({
+      ok: true,
+      missingEvents: [],
+      missingFields: [],
+      orderValid: true,
+    })
   })
 })

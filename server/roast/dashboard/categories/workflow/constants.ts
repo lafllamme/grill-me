@@ -1,6 +1,7 @@
 import type { WorkflowEvidenceRules, WorkflowMessageScoringRules, WorkflowScopeRules, WorkflowScoreWeights } from './types'
 
 export const WORKFLOW_SCORE_DEFAULT = 50
+export const WORKFLOW_AI_QUESTION = 'Does the observed delivery pattern represent focused, reviewable work with a clear change intent?'
 
 export const WORKFLOW_MESSAGE_SCORING = {
   emptyMessageScore: 15,

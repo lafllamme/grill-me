@@ -19,6 +19,28 @@ The server phases are sequential. The client exposes honest progress and
 renders evidence only after its phase is available. A loading state may reveal
 the UI progressively, but it must not fabricate scores or evidence.
 
+## Authored evidence window
+
+The product target is the developer's current authored work. Integration and
+merge commits are collected as context but must not consume the personal
+evidence window before filtering. The collector therefore builds a bounded
+candidate pool, classifies integrations as early as authoritative GitHub
+metadata allows, and replenishes personal candidates from the discovered
+repositories when the first recent window is merge-heavy.
+
+The replenishment is bounded: it may use fallback repositories already found
+in the repository discovery response and one additional history page per
+selected repository. It stops at the target personal evidence count or the
+hard GitHub request budget. A fresh account with too little authored history
+remains `limited-history` and receives category defaults; a merge-heavy account
+may become `expanded-window` and still receive a normal score when enough
+personal patches are found.
+
+Repository metadata can support Context and Repository Anatomy. It cannot
+stand in for a user's missing patch when making a code-quality claim. The
+active decision and migration details are in
+[`2026-09-03-dashboard-authored-evidence-window.md`](../../decisions/active/2026-09-03-dashboard-authored-evidence-window.md).
+
 ## Ownership
 
 | Layer | Owns |
@@ -28,6 +50,7 @@ the UI progressively, but it must not fabricate scores or evidence.
 | dashboard composition | grid, panels, normalized view model |
 | category modules | metrics, formulas, evidence gates, category AI context |
 | patch selection | deterministic sample and payload budget |
+| evidence window | authored-reference ordering, merge classification, bounded repository/history backfill |
 | AI review | prompt, parser, grounding, bounded adjustments, explanation |
 | server service | GitHub → score → one review → final response |
 
@@ -65,6 +88,8 @@ that is later replaced by the final one.
 - one analysis request per user action;
 - no database migration or API response change;
 - no AI call without the bounded patch budget;
+- AI patch selection starts from the final personal evidence pool, not from
+  merge-heavy raw activity;
 - no score adjustment without grounded evidence;
 - no role assignment when evidence is insufficient;
 - no automatic commit or push during the migration.

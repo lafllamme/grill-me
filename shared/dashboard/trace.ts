@@ -264,6 +264,10 @@ function formatTracePayload(event: DashboardTraceEvent, payload: Record<string, 
     }
     if (payload.collection && isRecord(payload.collection))
       lines.push(`collection: ${formatRecordLines(payload.collection, '').join(' · ')}`)
+    if (payload.sampling && isRecord(payload.sampling)) {
+      lines.push('sampling:')
+      lines.push(...formatRecordLines(payload.sampling, '  '))
+    }
     if (payload.commits)
       lines.push(`commits:\n  ${formatCommitRows(payload.commits).join('\n  ')}`)
     return lines.join('\n  ')
@@ -278,6 +282,10 @@ function formatTracePayload(event: DashboardTraceEvent, payload: Record<string, 
       lines.push(`selected commits:\n  ${formatCommitRows(payload.commits).join('\n  ')}`)
     if (payload.files)
       lines.push(`selected files:\n  ${formatFileRows(payload.files).join('\n  ')}`)
+    if (payload.sampling && isRecord(payload.sampling)) {
+      lines.push('sampling:')
+      lines.push(...formatRecordLines(payload.sampling, '  '))
+    }
     return lines.join('\n  ')
   }
 

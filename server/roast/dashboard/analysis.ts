@@ -68,6 +68,7 @@ export async function runDashboardProfileAnalysis(
       trace?.log('github', 'progress', {
         phase: progress.phase,
         ...contextCounts(progress.context),
+        ...(progress.context.sampling ? { sampling: progress.context.sampling } : {}),
       })
       return hooks?.onGithubProgress?.(progress)
     },
@@ -77,6 +78,7 @@ export async function runDashboardProfileAnalysis(
     durationMs: githubDurationMs,
     ...contextCounts(context),
     collection: context.collection,
+    sampling: context.sampling,
     commits: context.commits.map(commit => ({
       repo: commit.repo,
       sha: commit.sha,

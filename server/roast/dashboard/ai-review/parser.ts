@@ -1,4 +1,4 @@
-import type { DashboardAiAxisReview, DashboardAiAxisReviewVerdict, DashboardAiReviewAssessment, DashboardAiReviewEvidence, DashboardAiReviewFinding, DashboardAiSafetyAssessment, DashboardReviewAxis, DashboardReviewVerdict, DashboardSafetyCategory, DashboardSafetyImpact, DashboardSafetySeverity, DashboardSafetySignal, DashboardSafetyVerdict } from './types'
+import type { DashboardAiAxisReview, DashboardAiAxisReviewVerdict, DashboardAiReviewAssessment, DashboardAiReviewEvidence, DashboardAiReviewFinding, DashboardAiSafetyAssessment, DashboardReviewAxis, DashboardReviewVerdict, DashboardSafetyCategory, DashboardSafetyImpact, DashboardSafetyRiskScope, DashboardSafetySeverity, DashboardSafetySignal, DashboardSafetyVerdict } from './types'
 import { clamp } from '../shared/math'
 import { AI_REVIEW_PARSER_LIMITS } from './constants'
 
@@ -6,6 +6,7 @@ const ALLOWED_SEVERITIES = new Set<DashboardSafetySeverity>(['low', 'medium', 'h
 const ALLOWED_VERDICTS = new Set<DashboardSafetyVerdict>(['safe', 'risk', 'unclear'])
 const ALLOWED_IMPACTS = new Set<DashboardSafetyImpact>(['introduced', 'fixed', 'unclear'])
 const ALLOWED_CATEGORIES = new Set<DashboardSafetyCategory>(['validation', 'auth', 'error-handling', 'secrets', 'dependency'])
+const ALLOWED_RISK_SCOPES = new Set<DashboardSafetyRiskScope>(['production', 'test', 'docs', 'generated', 'unknown'])
 const ALLOWED_REVIEW_AXES = new Set<DashboardReviewAxis>(['clarity', 'safety', 'workflow', 'complexity', 'context'])
 const ALLOWED_REVIEW_VERDICTS = new Set<DashboardReviewVerdict>(['positive', 'mixed', 'negative', 'unclear'])
 const ALLOWED_AXIS_REVIEW_VERDICTS = new Set<DashboardAiAxisReviewVerdict>(['supports', 'softens', 'contradicts', 'insufficient'])
@@ -21,6 +22,9 @@ export function parseSignal(item: unknown): DashboardSafetySignal | null {
   const severity = typeof signal.severity === 'string' ? signal.severity : ''
   const commitSha = typeof signal.commitSha === 'string' ? signal.commitSha.trim().slice(0, AI_REVIEW_PARSER_LIMITS.maxCommitShaCharacters) : ''
   const filename = typeof signal.filename === 'string' ? signal.filename.trim().slice(0, AI_REVIEW_PARSER_LIMITS.maxFilenameCharacters) : undefined
+  const riskScope = typeof signal.riskScope === 'string' && ALLOWED_RISK_SCOPES.has(signal.riskScope as DashboardSafetyRiskScope)
+    ? signal.riskScope as DashboardSafetyRiskScope
+    : undefined
   const evidence = typeof signal.evidence === 'string' ? signal.evidence.trim().slice(0, AI_REVIEW_PARSER_LIMITS.maxEvidenceCharacters) : ''
 
   if (!ALLOWED_CATEGORIES.has(category as DashboardSafetyCategory)
@@ -39,6 +43,7 @@ export function parseSignal(item: unknown): DashboardSafetySignal | null {
     severity: severity as DashboardSafetySeverity,
     commitSha,
     ...(filename ? { filename } : {}),
+    ...(riskScope ? { riskScope } : {}),
     evidence,
   }
 }
@@ -162,6 +167,9 @@ function parseReviewFinding(item: unknown): DashboardAiReviewFinding | null {
   const filename = typeof finding.filename === 'string' ? finding.filename.trim().slice(0, AI_REVIEW_PARSER_LIMITS.maxFilenameCharacters) : ''
   const evidence = typeof finding.evidence === 'string' ? finding.evidence.trim().slice(0, AI_REVIEW_PARSER_LIMITS.maxEvidenceCharacters) : ''
   const category = typeof finding.category === 'string' ? finding.category : undefined
+  const riskScope = typeof finding.riskScope === 'string' && ALLOWED_RISK_SCOPES.has(finding.riskScope as DashboardSafetyRiskScope)
+    ? finding.riskScope as DashboardSafetyRiskScope
+    : undefined
 
   if (!ALLOWED_REVIEW_AXES.has(axis as DashboardReviewAxis)
     || !ALLOWED_REVIEW_VERDICTS.has(verdict as DashboardReviewVerdict)
@@ -183,6 +191,7 @@ function parseReviewFinding(item: unknown): DashboardAiReviewFinding | null {
     filename,
     evidence,
     ...(category && ALLOWED_CATEGORIES.has(category as DashboardSafetyCategory) ? { category: category as DashboardSafetyCategory } : {}),
+    ...(riskScope ? { riskScope } : {}),
   }
 }
 

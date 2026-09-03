@@ -1,5 +1,5 @@
 export { buildClarityAiContext, clarityQuestion } from './ai-context'
-export { CLARITY_EVIDENCE_RULES, CLARITY_SCORE_DEFAULT, CLARITY_SCORE_WEIGHTS, CLARITY_SIGNAL_RULES } from './constants'
+export { CLARITY_AI_QUESTION, CLARITY_EVIDENCE_RULES, CLARITY_SCORE_DEFAULT, CLARITY_SCORE_WEIGHTS, CLARITY_SIGNAL_RULES } from './constants'
 export { clarityNamingSignal, clarityStructureSignal, deriveClarityMetrics } from './metrics'
 export { getDashboardClarityEvidenceCap, getDashboardClarityScoreBreakdown, scoreDashboardClarity } from './score'
 export type { ClarityEvidenceRules, ClarityScoreInput, ClarityScoreWeights, ClaritySignal, ClaritySignalRules, DashboardClarityScoreBreakdown } from './types'

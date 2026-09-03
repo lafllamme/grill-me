@@ -1,6 +1,7 @@
 import type { ComplexityScoreInput } from './types'
+import { COMPLEXITY_AI_QUESTION } from './constants'
 
-export const complexityQuestion = 'Are broad changes coherent and controlled, or do the changed lines introduce unnecessary coupling, indirection, duplication, or nesting?'
+export const complexityQuestion = COMPLEXITY_AI_QUESTION
 
 export function buildComplexityAiContext(metrics: ComplexityScoreInput) {
   return {

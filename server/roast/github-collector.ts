@@ -1,6 +1,8 @@
 import type { RoastDebug, RoastDebugLevel } from '~~/shared/roast/contracts'
+import type { DashboardCommitRef, DashboardRepositorySamplingSummary, DashboardSamplingSummary } from './dashboard/shared/evidence-window'
 import { createError } from 'h3'
 import { ROAST_DEFAULTS, ROAST_LIMITS } from '~~/shared/roast/contracts'
+import { commitRefKey, deriveDashboardEvidenceState, isIntegrationCommitRef, selectDashboardCandidateRefs } from './dashboard/shared/evidence-window'
 import { ENABLE_ROAST_DEBUG, logServerDebug, pushDebugRequest } from './debug'
 
 export interface GithubCommitFile {
@@ -79,6 +81,8 @@ export interface GithubContext {
   repositories?: GithubRepositoryEvidence[]
   checks?: GithubCheckSummary[]
   collection?: GithubCollectionSummary
+  /** Internal collection ledger. It is intentionally omitted from public evidence. */
+  sampling?: DashboardSamplingSummary
 }
 
 export type GithubCollectionProgressPhase = 'profile' | 'repositories' | 'history' | 'commits' | 'pull-requests' | 'checks'
@@ -88,23 +92,18 @@ export interface GithubCollectionProgress {
   context: GithubContext
 }
 
-interface GithubCommitRef {
-  repo: string
-  sha: string
-  message: string
-  committedAt?: string
-  authorLogin?: string
-  committerLogin?: string
-  parentCount?: number
-  isMerge?: boolean
-}
-
 export const DASHBOARD_GITHUB_LIMITS = {
   maxRepositories: 3,
   maxRepositoryCandidates: 5,
   maxHistoryCommitsPerRepository: 12,
   maxCandidateCommits: 30,
   maxDetailedCommits: 18,
+  maxIntegrationDetails: 4,
+  maxHistoryPagesPerRepository: 2,
+  maxFallbackRepositories: 2,
+  targetPersonalCommits: 12,
+  minimumPersonalCommits: 3,
+  minimumPersonalPatchCommits: 1,
   maxAssociatedPullRequestCommits: 6,
   maxPullRequests: 6,
   maxReviewRequests: 3,
@@ -252,7 +251,7 @@ export async function collectGithubContext(username: string, githubToken: string
     'github_events',
   )
 
-  const commitRefs = new Map<string, GithubCommitRef>()
+  const commitRefs = new Map<string, DashboardCommitRef>()
   const prs: GithubPullRequest[] = []
 
   let pushEventCount = 0
@@ -447,7 +446,7 @@ function parseRepositoryEvidence(raw: any): GithubRepositoryEvidence | null {
   }
 }
 
-function parseCommitRef(raw: any, repo: string, username: string): GithubCommitRef | null {
+function parseCommitRef(raw: any, repo: string, username: string): DashboardCommitRef | null {
   const sha = typeof raw?.sha === 'string' ? raw.sha : ''
   if (!sha)
     return null
@@ -470,7 +469,7 @@ function parseCommitRef(raw: any, repo: string, username: string): GithubCommitR
   }
 }
 
-function enrichDashboardCommit(details: any, ref: GithubCommitRef, username: string): GithubCommit | null {
+function enrichDashboardCommit(details: any, ref: DashboardCommitRef, username: string): GithubCommit | null {
   const authorLogin = typeof details?.author?.login === 'string' ? details.author.login : ref.authorLogin
   const committerLogin = typeof details?.committer?.login === 'string' ? details.committer.login : ref.committerLogin
   if (authorLogin && !sameLogin(authorLogin, username) && committerLogin && !sameLogin(committerLogin, username))
@@ -538,13 +537,6 @@ function parseCheckSummary(raw: any, repo: string, sha: string): GithubCheckSumm
   }
 }
 
-function commitTimestamp(value?: string): number {
-  if (!value)
-    return 0
-  const timestamp = Date.parse(value)
-  return Number.isFinite(timestamp) ? timestamp : 0
-}
-
 /**
  * Collects a bounded repository-first evidence pack for dashboard scoring.
  * Repository metadata is a sampling scope only; it is never a quality score.
@@ -591,48 +583,105 @@ export async function collectDashboardGithubContext(username: string, githubToke
     'github_repositories',
   )
   const rawRepositories = Array.isArray(repositoryResponse) ? repositoryResponse : []
-  const selectedRawRepositories = rawRepositories
+  const availableRawRepositories = rawRepositories
     .filter(repository => !repository?.fork && !repository?.archived)
-    .slice(0, DASHBOARD_GITHUB_LIMITS.maxRepositories)
-  const repositories = selectedRawRepositories
+    .slice(0, DASHBOARD_GITHUB_LIMITS.maxRepositoryCandidates)
+  const availableRepositories = availableRawRepositories
     .map(parseRepositoryEvidence)
     .filter((repository): repository is GithubRepositoryEvidence => Boolean(repository))
-  await options?.onProgress?.({
-    phase: 'repositories',
-    context: {
-      username: canonicalLogin,
-      commits: [],
-      prs: [],
-      repositories,
-      checks: [],
-      collection: {
-        mode: 'dashboard',
-        repositories: repositories.length,
-        candidateCommits: 0,
-        enrichedCommits: 0,
-        usablePatches: 0,
-        associatedPullRequests: 0,
-        checkSummaries: 0,
-      },
-    },
-  })
+  const repositories = availableRepositories.slice(0, DASHBOARD_GITHUB_LIMITS.maxRepositories)
+  const fallbackRepositories = availableRepositories.slice(
+    DASHBOARD_GITHUB_LIMITS.maxRepositories,
+    DASHBOARD_GITHUB_LIMITS.maxRepositories + DASHBOARD_GITHUB_LIMITS.maxFallbackRepositories,
+  )
+  const repositoryOrder = (): string[] => repositories.map(repository => repository.repo)
+  const commitRefs = new Map<string, DashboardCommitRef>()
+  const historyPages = new Map<string, number>()
+  const backfilledRefs = new Set<string>()
+  const detailFetchedRefs = new Set<string>()
+  const samplingByRepository = new Map<string, DashboardRepositorySamplingSummary>()
+  const commits: GithubCommit[] = []
+  let integrationDetails = 0
 
-  const commitRefs = new Map<string, GithubCommitRef>()
-  for (const repository of repositories) {
-    const history = await getGithubJson(
-      `https://api.github.com/repos/${repository.repo}/commits?author=${encodeURIComponent(canonicalLogin)}&per_page=${DASHBOARD_GITHUB_LIMITS.maxHistoryCommitsPerRepository}`,
-      githubToken,
-      githubTimeoutMs,
-      debug,
-      'github_history',
-    )
+  const getRepositorySampling = (repo: string): DashboardRepositorySamplingSummary => {
+    const existing = samplingByRepository.get(repo)
+    if (existing)
+      return existing
 
-    for (const rawCommit of Array.isArray(history) ? history : []) {
-      const ref = parseCommitRef(rawCommit, repository.repo, canonicalLogin)
-      if (ref)
-        commitRefs.set(`${ref.repo}:${ref.sha}`, ref)
+    const summary: DashboardRepositorySamplingSummary = {
+      candidateRefs: 0,
+      personalRefs: 0,
+      detailsFetched: 0,
+      personalWithPatch: 0,
     }
+    samplingByRepository.set(repo, summary)
+    return summary
+  }
 
+  const hasUsablePatch = (commit: GithubCommit): boolean => commit.files.some(file => Boolean(file.patch?.trim()))
+  const isPersonalCommit = (commit: GithubCommit): boolean => !isIntegrationCommitRef({
+    repo: commit.repo,
+    sha: commit.sha,
+    message: commit.message,
+    parentCount: commit.parentCount,
+    isMerge: commit.isMerge,
+  })
+  const currentCandidateRefs = (): DashboardCommitRef[] => selectDashboardCandidateRefs(
+    Array.from(commitRefs.values()),
+    repositoryOrder(),
+    DASHBOARD_GITHUB_LIMITS.maxCandidateCommits,
+  )
+  const currentPersonalRefs = (): DashboardCommitRef[] => currentCandidateRefs().filter(ref => !isIntegrationCommitRef(ref))
+  const currentPersonalCommits = (): GithubCommit[] => commits.filter(isPersonalCommit)
+  const currentPersonalPatchCount = (): number => currentPersonalCommits().filter(hasUsablePatch).length
+  const samplingSummary = (): DashboardSamplingSummary => {
+    const candidates = currentCandidateRefs()
+    const personalRefs = candidates.filter(ref => !isIntegrationCommitRef(ref)).length
+    const personalWithPatch = currentPersonalPatchCount()
+    const perRepository = Object.fromEntries(Array.from(samplingByRepository.entries()).map(([repo, summary]) => [repo, {
+      ...summary,
+      personalRefs: candidates.filter(ref => ref.repo === repo && !isIntegrationCommitRef(ref)).length,
+    }]))
+    return {
+      candidateRefs: candidates.length,
+      integrationSkipped: candidates.filter(isIntegrationCommitRef).length,
+      personalRefs,
+      detailsFetched: detailFetchedRefs.size,
+      personalWithPatch,
+      backfilled: backfilledRefs.size,
+      evidenceState: deriveDashboardEvidenceState({
+        personalRefs,
+        personalWithPatch,
+        targetPersonalRefs: DASHBOARD_GITHUB_LIMITS.targetPersonalCommits,
+        minimumPersonalRefs: DASHBOARD_GITHUB_LIMITS.minimumPersonalCommits,
+        minimumPersonalPatches: DASHBOARD_GITHUB_LIMITS.minimumPersonalPatchCommits,
+        backfilled: backfilledRefs.size,
+      }),
+      perRepository,
+    }
+  }
+  const collectionSummary = (pullRequests: readonly GithubPullRequest[] = [], checkSummaries: readonly GithubCheckSummary[] = []): GithubCollectionSummary => ({
+    mode: 'dashboard',
+    repositories: repositories.length,
+    candidateCommits: currentCandidateRefs().length,
+    enrichedCommits: commits.length,
+    usablePatches: commits.filter(hasUsablePatch).length,
+    associatedPullRequests: pullRequests.length,
+    checkSummaries: checkSummaries.length,
+  })
+  const progressContext = (pullRequests: GithubPullRequest[] = [], checkSummaries: GithubCheckSummary[] = []): GithubContext => ({
+    username: canonicalLogin,
+    commits,
+    prs: pullRequests,
+    repositories,
+    checks: checkSummaries,
+    collection: collectionSummary(pullRequests, checkSummaries),
+    sampling: samplingSummary(),
+  })
+  const emitProgress = async (phase: GithubCollectionProgressPhase, pullRequests: GithubPullRequest[] = [], checkSummaries: GithubCheckSummary[] = []): Promise<void> => {
+    await options?.onProgress?.({ phase, context: progressContext(pullRequests, checkSummaries) })
+  }
+  const fetchRepositoryRoot = async (repository: GithubRepositoryEvidence): Promise<void> => {
     try {
       const rootContents = await getGithubJson(
         `https://api.github.com/repos/${repository.repo}/contents?ref=${encodeURIComponent(repository.defaultBranch)}`,
@@ -650,32 +699,38 @@ export async function collectDashboardGithubContext(username: string, githubToke
       repository.rootEntries = []
     }
   }
+  const fetchHistoryPage = async (repository: GithubRepositoryEvidence, page: number, isBackfill: boolean): Promise<void> => {
+    const history = await getGithubJson(
+      `https://api.github.com/repos/${repository.repo}/commits?author=${encodeURIComponent(canonicalLogin)}&per_page=${DASHBOARD_GITHUB_LIMITS.maxHistoryCommitsPerRepository}&page=${page}`,
+      githubToken,
+      githubTimeoutMs,
+      debug,
+      'github_history',
+    )
+    historyPages.set(repository.repo, Math.max(historyPages.get(repository.repo) ?? 0, page))
+    const repositorySampling = getRepositorySampling(repository.repo)
+    for (const rawCommit of Array.isArray(history) ? history : []) {
+      const ref = parseCommitRef(rawCommit, repository.repo, canonicalLogin)
+      if (!ref)
+        continue
 
-  await options?.onProgress?.({
-    phase: 'history',
-    context: {
-      username: canonicalLogin,
-      commits: [],
-      prs: [],
-      repositories,
-      checks: [],
-      collection: {
-        mode: 'dashboard',
-        repositories: repositories.length,
-        candidateCommits: commitRefs.size,
-        enrichedCommits: 0,
-        usablePatches: 0,
-        associatedPullRequests: 0,
-        checkSummaries: 0,
-      },
-    },
-  })
+      const key = commitRefKey(ref)
+      if (commitRefs.has(key))
+        continue
 
-  const candidateRefs = Array.from(commitRefs.values())
-    .sort((left, right) => commitTimestamp(right.committedAt) - commitTimestamp(left.committedAt) || right.sha.localeCompare(left.sha))
-    .slice(0, DASHBOARD_GITHUB_LIMITS.maxCandidateCommits)
-  const commits: GithubCommit[] = []
-  for (const ref of candidateRefs.slice(0, DASHBOARD_GITHUB_LIMITS.maxDetailedCommits)) {
+      commitRefs.set(key, ref)
+      repositorySampling.candidateRefs += 1
+      if (isBackfill)
+        backfilledRefs.add(key)
+    }
+  }
+  const fetchCommitDetails = async (ref: DashboardCommitRef): Promise<void> => {
+    const key = commitRefKey(ref)
+    if (detailFetchedRefs.has(key) || detailFetchedRefs.size >= DASHBOARD_GITHUB_LIMITS.maxDetailedCommits)
+      return
+
+    detailFetchedRefs.add(key)
+    getRepositorySampling(ref.repo).detailsFetched += 1
     try {
       const details = await getGithubJson(
         `https://api.github.com/repos/${ref.repo}/commits/${ref.sha}`,
@@ -685,37 +740,80 @@ export async function collectDashboardGithubContext(username: string, githubToke
         'github_commit',
       )
       const commit = enrichDashboardCommit(details, ref, canonicalLogin)
-      if (commit)
-        commits.push(commit)
+      if (!commit)
+        return
+
+      commits.push(commit)
+      if (isPersonalCommit(commit) && hasUsablePatch(commit))
+        getRepositorySampling(ref.repo).personalWithPatch += 1
     }
     catch {
-      continue
+      // A single inaccessible commit must not discard the rest of the evidence window.
+    }
+  }
+  const enrichPersonalEvidence = async (): Promise<void> => {
+    const refs = currentPersonalRefs()
+    for (const ref of refs) {
+      if (currentPersonalCommits().length >= DASHBOARD_GITHUB_LIMITS.targetPersonalCommits)
+        break
+      await fetchCommitDetails(ref)
+    }
+  }
+  const needsMorePersonalEvidence = (): boolean => currentPersonalCommits().length < DASHBOARD_GITHUB_LIMITS.targetPersonalCommits
+
+  await options?.onProgress?.({
+    phase: 'repositories',
+    context: progressContext(),
+  })
+  for (const repository of repositories) {
+    await fetchHistoryPage(repository, 1, false)
+    await fetchRepositoryRoot(repository)
+  }
+
+  await emitProgress('history')
+  await enrichPersonalEvidence()
+
+  for (const repository of fallbackRepositories) {
+    if (!needsMorePersonalEvidence())
+      break
+
+    repositories.push(repository)
+    await fetchHistoryPage(repository, 1, true)
+    await fetchRepositoryRoot(repository)
+    await emitProgress('repositories')
+    await enrichPersonalEvidence()
+  }
+
+  if (needsMorePersonalEvidence()) {
+    for (const repository of repositories) {
+      if (!needsMorePersonalEvidence() || detailFetchedRefs.size >= DASHBOARD_GITHUB_LIMITS.maxDetailedCommits)
+        break
+      if ((historyPages.get(repository.repo) ?? 0) >= DASHBOARD_GITHUB_LIMITS.maxHistoryPagesPerRepository)
+        continue
+
+      try {
+        await fetchHistoryPage(repository, 2, true)
+      }
+      catch {
+        continue
+      }
+      await enrichPersonalEvidence()
     }
   }
 
-  await options?.onProgress?.({
-    phase: 'commits',
-    context: {
-      username: canonicalLogin,
-      commits,
-      prs: [],
-      repositories,
-      checks: [],
-      collection: {
-        mode: 'dashboard',
-        repositories: repositories.length,
-        candidateCommits: candidateRefs.length,
-        enrichedCommits: commits.length,
-        usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
-        associatedPullRequests: 0,
-        checkSummaries: 0,
-      },
-    },
-  })
+  const candidateRefs = currentCandidateRefs()
+  for (const ref of candidateRefs.filter(isIntegrationCommitRef)) {
+    if (integrationDetails >= DASHBOARD_GITHUB_LIMITS.maxIntegrationDetails || detailFetchedRefs.size >= DASHBOARD_GITHUB_LIMITS.maxDetailedCommits)
+      break
+    integrationDetails += 1
+    await fetchCommitDetails(ref)
+  }
+
+  await emitProgress('commits')
 
   const prsByKey = new Map<string, GithubPullRequest>()
   const checks: GithubCheckSummary[] = []
-  for (const commit of commits.slice(0, DASHBOARD_GITHUB_LIMITS.maxAssociatedPullRequestCommits)) {
+  for (const commit of currentPersonalCommits().slice(0, DASHBOARD_GITHUB_LIMITS.maxAssociatedPullRequestCommits)) {
     try {
       const associated = await getGithubJson(
         `https://api.github.com/repos/${commit.repo}/commits/${commit.sha}/pulls`,
@@ -752,27 +850,9 @@ export async function collectDashboardGithubContext(username: string, githubToke
     }
   }
 
-  await options?.onProgress?.({
-    phase: 'pull-requests',
-    context: {
-      username: canonicalLogin,
-      commits,
-      prs,
-      repositories,
-      checks: [],
-      collection: {
-        mode: 'dashboard',
-        repositories: repositories.length,
-        candidateCommits: candidateRefs.length,
-        enrichedCommits: commits.length,
-        usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
-        associatedPullRequests: prs.length,
-        checkSummaries: 0,
-      },
-    },
-  })
+  await emitProgress('pull-requests', prs)
 
-  for (const commit of commits.slice(0, DASHBOARD_GITHUB_LIMITS.maxCheckRequests)) {
+  for (const commit of currentPersonalCommits().slice(0, DASHBOARD_GITHUB_LIMITS.maxCheckRequests)) {
     try {
       const checkResponse = await getGithubJson(
         `https://api.github.com/repos/${commit.repo}/commits/${commit.sha}/check-runs?per_page=20`,
@@ -788,25 +868,7 @@ export async function collectDashboardGithubContext(username: string, githubToke
     }
   }
 
-  await options?.onProgress?.({
-    phase: 'checks',
-    context: {
-      username: canonicalLogin,
-      commits,
-      prs,
-      repositories,
-      checks,
-      collection: {
-        mode: 'dashboard',
-        repositories: repositories.length,
-        candidateCommits: candidateRefs.length,
-        enrichedCommits: commits.length,
-        usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
-        associatedPullRequests: prs.length,
-        checkSummaries: checks.length,
-      },
-    },
-  })
+  await emitProgress('checks', prs, checks)
 
   return {
     username: canonicalLogin,
@@ -814,14 +876,7 @@ export async function collectDashboardGithubContext(username: string, githubToke
     prs,
     repositories,
     checks,
-    collection: {
-      mode: 'dashboard',
-      repositories: repositories.length,
-      candidateCommits: candidateRefs.length,
-      enrichedCommits: commits.length,
-      usablePatches: commits.filter(commit => commit.files.some(file => Boolean(file.patch?.trim()))).length,
-      associatedPullRequests: prs.length,
-      checkSummaries: checks.length,
-    },
+    collection: collectionSummary(prs, checks),
+    sampling: samplingSummary(),
   }
 }

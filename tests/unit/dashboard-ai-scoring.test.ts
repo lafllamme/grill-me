@@ -119,7 +119,7 @@ describe('dashboard AI review contract', () => {
         ],
       }],
       findings: [
-        { axis: 'safety', verdict: 'positive', impact: 'introduced', severity: 'low', category: 'validation', commitSha: 'abcdef1', filename: 'src/validation.ts', evidence: 'input is validated before processing' },
+        { axis: 'safety', verdict: 'positive', impact: 'introduced', severity: 'low', category: 'validation', commitSha: 'abcdef1', filename: 'src/validation.ts', riskScope: 'production', evidence: 'input is validated before processing' },
         { axis: 'clarity', verdict: 'negative', impact: 'introduced', severity: 'low', commitSha: 'abcdef1', filename: 'src/validation.ts', evidence: 'the changed name hides the value meaning' },
       ],
     }))
@@ -133,7 +133,34 @@ describe('dashboard AI review contract', () => {
       patchCount: 1,
       patchChars: 17,
     })
-    expect(safety.signals[0]).toMatchObject({ category: 'validation', verdict: 'safe', impact: 'introduced' })
+    expect(safety.signals[0]).toMatchObject({ category: 'validation', verdict: 'safe', impact: 'introduced', riskScope: 'production' })
+  })
+
+  it('preserves the Safety risk scope from the AI contract', () => {
+    const parsed = parseDashboardReview(JSON.stringify({
+      confidence: 84,
+      findings: [{
+        axis: 'safety',
+        verdict: 'negative',
+        impact: 'introduced',
+        severity: 'medium',
+        category: 'secrets',
+        riskScope: 'test',
+        commitSha: 'abcdef1',
+        filename: 'tests/fixtures.test.ts',
+        evidence: 'the fixture contains a deliberately fake token',
+      }],
+    }))
+
+    expect(parsed?.findings[0]).toMatchObject({ axis: 'safety', riskScope: 'test' })
+    const safety = toDashboardAiSafetyAssessment({
+      ...parsed!,
+      status: 'assessed',
+      selectedCommitCount: 1,
+      patchCount: 1,
+      patchChars: 17,
+    })
+    expect(safety.signals[0]).toMatchObject({ riskScope: 'test', filename: 'tests/fixtures.test.ts' })
   })
 
   it('rejects a safety finding without a valid safety category', () => {

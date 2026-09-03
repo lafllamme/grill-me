@@ -1,8 +1,8 @@
 # Context Scoring
 
-**Version:** 5.0.0
+**Version:** 5.1.0
 **Status:** calibrated
-**Updated:** 2026-09-02
+**Updated:** 2026-09-03
 
 ## Question
 
@@ -18,9 +18,9 @@ understand why the change exists and where to continue.
 
 ~~~text
 Context = 70
-        + (patchExplanationSignal - 50)    * 0.22
-        + (orientationArtifactSignal - 50) * 0.10
-        + (commitContextSignal - 50)       * 0.28
+        + (patchExplanationSignal - 50)    * 0.30
+        + (orientationArtifactSignal - 50) * 0.15
+        + (commitContextSignal - 50)       * 0.35
         + (repositoryOrientation - 50)    * 0.05
         + (handoffSignal - 50)             * 0.05
 ~~~
@@ -30,11 +30,11 @@ commits and three personal non-merge commits. Otherwise it returns 50 with
 insufficient evidence. With enough evidence, 70 is the neutral midpoint:
 missing context evidence is not treated as a defect and does not quietly push
 an otherwise credible profile into the low 60s. Direct patch explanations and
-commit context drive 50% of the movement around neutral. Orientation files,
-repository metadata, and handoff metadata are deliberately weak proxies and
-contribute 20% together. A generic or empty commit subject is direct negative
-context evidence; it can lower the score, while missing docs or comments alone
-cannot.
+commit context drive 65% of the movement around neutral. Orientation files add
+supporting evidence, while repository metadata and handoff metadata remain
+deliberately weak proxies at 10% together. A generic or empty commit subject is
+direct negative context evidence; it can lower the score, while missing docs or
+comments alone cannot.
 
 ### Signals
 

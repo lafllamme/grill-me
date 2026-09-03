@@ -1,5 +1,5 @@
 export { buildWorkflowAiContext, workflowQuestion } from './ai-context'
-export { WORKFLOW_EVIDENCE_RULES, WORKFLOW_MESSAGE_SCORING, WORKFLOW_SCOPE_RULES, WORKFLOW_SCORE_DEFAULT, WORKFLOW_SCORE_WEIGHTS } from './constants'
+export { WORKFLOW_AI_QUESTION, WORKFLOW_EVIDENCE_RULES, WORKFLOW_MESSAGE_SCORING, WORKFLOW_SCOPE_RULES, WORKFLOW_SCORE_DEFAULT, WORKFLOW_SCORE_WEIGHTS } from './constants'
 export { deriveWorkflowMetrics, scoreCommitMessage } from './metrics'
 export { getDashboardWorkflowEvidenceCap, getDashboardWorkflowScoreBreakdown, scoreDashboardWorkflow } from './score'
 export type { DashboardWorkflowScoreBreakdown, WorkflowEvidenceRules, WorkflowMessageScoringRules, WorkflowMetrics, WorkflowScopeRules, WorkflowScoreInput, WorkflowScoreWeights } from './types'

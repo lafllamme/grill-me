@@ -1,6 +1,6 @@
 # Dashboard scoring contract
 
-**Version:** 1.4.0
+**Version:** 1.6.0
 **Status:** active
 **Updated:** 2026-09-03
 
@@ -29,16 +29,34 @@ never replaces a numeric score.
 | Context | Does the change explain itself and leave orientation? | [category README](../../server/roast/dashboard/categories/context/README.md) |
 
 All scores are bounded to `0–100`; higher always means a stronger signal.
-Merge commits are excluded from personal category evidence. Fewer than three
+Merge commits are excluded from personal category evidence and must not fill
+the detailed personal evidence window before that exclusion. Fewer than three
 personal commits, or missing category-specific evidence, returns neutral `50`
-and marks the evidence insufficient. The score is not a reputation ranking.
+and marks the evidence insufficient. A merge-heavy history may use bounded
+fallback repositories or older history to replenish personal evidence; a
+genuinely young or sparse account remains insufficient. The score is not a
+reputation ranking.
 
 ## AI boundary
 
 The combined review receives the same bounded patch selection for all five
 axes. Grounded non-Safety reviews may adjust the deterministic value only
-within the shared small cap. Safety accepts only independently verified
-introduced risks or defensive evidence. See the [AI review overview](./ai-review.md).
+within the shared small cap. Safety accepts only independently verified,
+production-scoped introduced risks or defensive evidence, and ignores risk
+penalties from reviews below 70% confidence. See the [AI review overview](./ai-review.md).
+
+Patterns are evidence locators, not universal score modifiers. Commit-message
+patterns may contribute to Workflow or Context because the message is itself
+the observed artifact. File and patch patterns only nominate changed code for
+closer inspection; they must not turn a filename or keyword into an automatic
+code-quality claim.
+
+Current calibration guardrails: Complexity weights change surface and outliers
+more heavily than deletion churn and caps a bounded sample below a perfect
+score. Context weights direct patch explanations and commit intent more heavily
+than repository metadata. Safety deductions require an assessed, high-confidence
+AI signal grounded to the exact changed filename and a server-confirmed
+introduced production risk.
 
 ## Overall result
 

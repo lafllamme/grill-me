@@ -52,7 +52,10 @@ export function deriveComplexityMetrics(workflowCommits: readonly GithubCommit[]
     outlierSignal: workflowCommits.length ? COMPLEXITY_SCORING_RULES.maximumSignal - relativeOutlierRatio : COMPLEXITY_SCORE_DEFAULT,
     churnSignal: clamp(
       COMPLEXITY_SCORING_RULES.maximumSignal
-      - Math.max(DASHBOARD_METRIC_RULES.emptyValue, workflowDeletionRatio - COMPLEXITY_SCORING_RULES.deletionBaselineRatio) * COMPLEXITY_SCORING_RULES.deletionPenaltyPerPoint,
+      - Math.min(
+        COMPLEXITY_SCORING_RULES.maximumChurnPenalty,
+        Math.max(DASHBOARD_METRIC_RULES.emptyValue, workflowDeletionRatio - COMPLEXITY_SCORING_RULES.deletionBaselineRatio) * COMPLEXITY_SCORING_RULES.deletionPenaltyPerPoint,
+      ),
     ),
   }
 }

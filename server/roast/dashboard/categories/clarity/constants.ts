@@ -1,6 +1,7 @@
 import type { ClarityEvidenceRules, ClarityScoreWeights, ClaritySignalRules } from './types'
 
 export const CLARITY_SCORE_DEFAULT = 50
+export const CLARITY_AI_QUESTION = 'Do the changed lines make names, structure, and intent easier or harder for a new reader to understand?'
 
 export const CLARITY_SCORE_WEIGHTS = {
   message: 0.35,

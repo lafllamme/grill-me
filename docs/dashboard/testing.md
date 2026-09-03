@@ -2,7 +2,7 @@
 
 **Version:** 1.2.0
 **Status:** active
-**Updated:** 2026-09-02
+**Updated:** 2026-09-03
 
 The dashboard is accepted only when the number, its evidence, and the visible
 story agree. A passing parser test alone is not enough.
@@ -32,6 +32,32 @@ lafllamme, danielroe, torvalds, sindresorhus, antfu, and kentcdodds.
 These are evidence probes, not a ranking of engineering ability. The sample is
 bounded, merge-aware, and may be Unclassified when too little personal work
 survives filtering.
+
+### Evidence-window controls
+
+The sampling implementation must also be checked with these controls:
+
+| Control | Expected behavior |
+| --- | --- |
+| merge-heavy maintainer | integration commits are reported, skipped for personal scoring, and personal candidates are replenished within the hard budget |
+| multiple active repositories | the personal pool contains current authored work from more than one repository when available; one repository cannot silently consume the whole sample |
+| fresh account | no bounded refill invents evidence; category defaults and `Unclassified` remain visible |
+| authored commits without patches | Workflow/Context may use observed metadata, while patch-dependent categories remain insufficient |
+| pattern-only match | safe-list or negative-list match prioritizes evidence but does not become semantic proof by itself |
+| no usable personal patch | AI returns a no-evidence result and no repository snapshot is presented as authored code |
+
+The trace must expose `candidateRefs`, `integrationSkipped`, `personalRefs`,
+`detailsFetched`, `personalWithPatch`, `backfilled`, and `aiSelected` so each
+run can be reviewed without guessing what the score actually saw.
+
+The Markdown trace checker is exercised by
+`tests/unit/dashboard-trace-checker.test.ts`. A complete local AI trace must
+contain the collection ledger, patch selection, prompt, request metrics,
+response, review, and finalization events in that order. A no-AI/local fallback
+trace is checked with the provider events optional, but it still needs the
+collection ledger and final score lifecycle.
+
+### Named probe set
 
 | Probe | Control |
 | --- | --- |

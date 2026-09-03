@@ -1,7 +1,7 @@
 import type { ContextScoreInput } from './types'
-import { contextQuestion } from './score'
+import { CONTEXT_AI_QUESTION } from './constants'
 
-export { contextQuestion }
+export const contextQuestion = CONTEXT_AI_QUESTION
 
 export function buildContextAiContext(metrics: ContextScoreInput) {
   return {

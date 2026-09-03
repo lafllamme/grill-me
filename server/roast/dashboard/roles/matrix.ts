@@ -27,9 +27,9 @@ function matchesRole(scores: DashboardProfileScores, role: keyof typeof DASHBOAR
 export const dashboardRoleRules: readonly DashboardRoleRule[] = [
   { role: 'Ungrillable', matches: scores => matchesRole(scores, 'Ungrillable') },
   { role: 'Edge-Case Sheriff', matches: scores => matchesRole(scores, 'Edge-Case Sheriff') },
-  { role: 'Human Compiler', matches: scores => matchesRole(scores, 'Human Compiler') },
   { role: 'Dependency Detective', matches: scores => matchesRole(scores, 'Dependency Detective') },
   { role: 'Git Gardener', matches: scores => matchesRole(scores, 'Git Gardener') },
+  { role: 'Human Compiler', matches: scores => matchesRole(scores, 'Human Compiler') },
   { role: 'Freddy Spaghetti', matches: scores => matchesRole(scores, 'Freddy Spaghetti') },
   { role: 'Risk Runner', matches: scores => matchesRole(scores, 'Risk Runner') },
   { role: 'Careful Squasher', matches: scores => matchesRole(scores, 'Careful Squasher') },

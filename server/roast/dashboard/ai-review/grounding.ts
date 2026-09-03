@@ -46,6 +46,7 @@ export function toDashboardAiSafetyAssessment(review: DashboardAiReviewAssessmen
       severity: finding.severity,
       commitSha: finding.commitSha,
       filename: finding.filename,
+      riskScope: finding.riskScope,
       evidence: finding.evidence,
     }))
 

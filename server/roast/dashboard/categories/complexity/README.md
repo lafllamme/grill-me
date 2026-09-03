@@ -11,13 +11,18 @@ according to the active Complexity v2 contract.
 effectiveFiles = runtime * 1 + tests * .5 + docs * .25
                + generated/lock/vendor/build/non-code * 0
                + omitted * average(visible weights)
-Complexity = scopeSignal * .50 + outlierSignal * .30 + churnSignal * .20
+churnSignal = 100 - min((deletionRatio - 10) * .5, 35)
+Complexity = scopeSignal * .55 + outlierSignal * .35 + churnSignal * .10
 ```
 
 The p75 effective file surface and the relative outlier ratio prevent one
-large or generated-only change from defining the profile. Fewer than three
-total or personal commits returns neutral `50`. AI may only apply the shared
-grounded `±4` second-check adjustment.
+large or generated-only change from defining the profile. Deletion-heavy churn
+is a weak supporting signal, not a proxy for intrinsic complexity. Fewer than
+three total or personal commits returns neutral `50`; three to seven personal
+commits cap the observed score at `92`, and broader evidence caps it at
+`95`. This prevents a small, focused sample from being presented as
+mathematically perfect. AI may only apply the shared grounded `±4` second-
+check adjustment.
 
 `constants.ts` owns the typed file weights, thresholds, and score weights so
 the formula code contains no category-specific magic numbers.

@@ -26,8 +26,21 @@ Safety = 70
 
 No personal patch evidence returns `50 / insufficient`; ordinary patch-backed
 evidence stays at neutral `70`. Process evidence is capped at five points.
-Only a grounded, server-confirmed introduced risk can subtract points.
+Only a grounded, server-confirmed introduced production risk from an assessed
+AI review at or above the 70% confidence gate can subtract points. Test, docs,
+generated, and unknown scope are retained as context and do not subtract
+points. The signal must carry the exact changed filename; a commit-level claim
+is too broad to deduct.
 
 `constants.ts` owns the typed Safety score rules, severity penalties, metric
 weights, and standalone selection limits. The pattern catalog remains in
 `patterns.ts`, separate from scoring.
+
+## AI risk scope
+
+AI findings carry a typed `riskScope`. The server resolves missing scope from
+the exact filename for backward compatibility, then requires `production`
+scope before applying a penalty. The filename classification is authoritative
+over model output, and low-confidence reviews can never lower the score. This
+prevents a deliberately unsafe test fixture, docs example, or generated
+artifact from being misread as a production vulnerability.

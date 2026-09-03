@@ -28,6 +28,7 @@ export interface ComplexityScoringRules {
   maximumScopePenalty: number
   deletionBaselineRatio: number
   deletionPenaltyPerPoint: number
+  maximumChurnPenalty: number
   scopeWeight: number
   outlierWeight: number
   churnWeight: number
@@ -37,6 +38,9 @@ export interface ComplexityScoringRules {
 export interface ComplexityEvidenceRules {
   minimumTotalCommits: number
   minimumWorkflowCommits: number
+  limitedEvidenceCommitThreshold: number
+  limitedEvidenceCap: number
+  broadEvidenceCap: number
 }
 
 export type ComplexityScoreInput = Pick<DashboardDerivedMetrics, | 'commitCount'

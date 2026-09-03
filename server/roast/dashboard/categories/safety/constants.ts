@@ -2,6 +2,7 @@ import type { DashboardAiSafetyAssessment } from '../../ai-review/types'
 import type { SafetyMetricRules, SafetyScoringRules, SafetySelectionRules } from './types'
 
 export const SAFETY_SCORE_DEFAULT = 50
+export const SAFETY_AI_QUESTION = 'Do the changed lines introduce a concrete validation, auth, error-handling, secret, or dependency risk?'
 
 export const SAFETY_SCORE_RULES = {
   insufficientScore: SAFETY_SCORE_DEFAULT,

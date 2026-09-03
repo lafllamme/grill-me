@@ -2,7 +2,7 @@ import type { DashboardDerivedMetrics, DashboardProfileAssessment, DashboardProf
 import type { DashboardAiReviewAssessment, DashboardAiSafetyAssessment } from './ai-review'
 import { computeDashboardAiAdjustments } from './ai-review/adjustments'
 import { getDashboardClarityEvidenceCap, scoreDashboardClarity } from './categories/clarity'
-import { scoreDashboardComplexity } from './categories/complexity'
+import { getDashboardComplexityEvidenceCap, scoreDashboardComplexity } from './categories/complexity'
 import { getDashboardContextScoreBreakdown, scoreDashboardContext } from './categories/context'
 import { getDashboardSafetyScoreBreakdown } from './categories/safety'
 import { getDashboardWorkflowEvidenceCap, scoreDashboardWorkflow } from './categories/workflow'
@@ -82,6 +82,8 @@ export function scoreDashboardProfile(context: import('../github-collector').Git
       scores[axis] = Math.min(scores[axis], getDashboardWorkflowEvidenceCap(metrics))
     if (axis === 'clarity')
       scores[axis] = Math.min(scores[axis], getDashboardClarityEvidenceCap(metrics))
+    if (axis === 'complexity')
+      scores[axis] = Math.min(scores[axis], getDashboardComplexityEvidenceCap(metrics))
   }
 
   const overallScore = clamp(Object.entries(DASHBOARD_PROFILE_AXIS_WEIGHTS).reduce((sum, [axis, weight]) => sum + scores[axis as DashboardProfileAxis] * weight, 0))

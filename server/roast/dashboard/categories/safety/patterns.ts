@@ -4,5 +4,6 @@ export const safetySurfacePatchPattern = /(?:\b(?:eval|child_process|exec|spawn)
 export const confirmedRiskPatchPattern = /(?:\b(?:eval|child_process|exec|spawn)\s*\(|\binnerHTML\s*=|dangerouslySetInnerHTML|\b[\w$]*(?:api[_-]?key|secret|password|token)\s*[:=]|\b(?:bypassAuthorization|bypassAuth|skipAuthorization|skipAuth)\s*\(|\bSELECT[^;\n]{0,120}(?:\+|\.|\$\{|format\s*\())/i
 export const confirmedDefensivePatchPattern = /(?:real_escape_string|\b(?:validate|sanitize|escape|authorize|permission|fallback|rateLimit|csrf|safeParse|parseInt|parseFloat|getenv|process\.env)\b|\b(?:try|catch)\s*\{|\bthrow\s+new\b)/i
 export const safetyPatchPattern = safetySurfacePatchPattern
-export const safetyTestFilePattern = /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i
+export const safetyTestFilePattern = /(?:^|\/)(?:__tests__|tests?|specs?)(?:\/|$)|(?:^|\/)(?:test|spec)[-_][^/]+$|\.(?:test|spec)\.[^.]+$/i
+export const safetyDocumentationFilePattern = /(?:^|\/)(?:docs?|documentation|guides?)(?:\/|$)|(?:^|\/)(?:readme|changelog|contributing)(?:\.[^.]+)?$/i
 export const generatedSafetyFilePattern = /(?:^|\/)(?:node_modules|vendor|dist|build|coverage|\.next|\.nuxt)(?:\/|$)|(?:^|\/)(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb|minified|generated)/i

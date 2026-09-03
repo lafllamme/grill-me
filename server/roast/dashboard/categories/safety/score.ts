@@ -4,10 +4,10 @@ import { isMergeCommit } from '../../shared/commits'
 import { DASHBOARD_METRIC_RULES } from '../../shared/constants'
 import { clamp } from '../../shared/math'
 import { SAFETY_SCORE_DEFAULT, SAFETY_SCORE_RULES, SAFETY_SEVERITY_PENALTIES } from './constants'
-import { hasConfirmedDefensiveEvidence, hasConfirmedRiskEvidence } from './evidence'
+import { hasConfirmedDefensiveEvidence, hasConfirmedRiskEvidence, isProductionSafetyRisk } from './evidence'
 
 export function confirmedRiskPenalty(aiSafety: DashboardAiSafetyAssessment | undefined, commits: readonly GithubCommit[]): number {
-  if (!aiSafety)
+  if (!aiSafety || aiSafety.status !== 'assessed' || aiSafety.confidence < SAFETY_SCORE_RULES.aiConfidenceThreshold)
     return 0
 
   return aiSafety.signals.reduce((penalty, signal) => {
@@ -16,6 +16,7 @@ export function confirmedRiskPenalty(aiSafety: DashboardAiSafetyAssessment | und
       || signal.impact !== 'introduced'
       || !signal.evidence.trim()
       || !knownCommit
+      || !isProductionSafetyRisk(signal)
       || !hasConfirmedRiskEvidence(signal, commits)) {
       return penalty
     }

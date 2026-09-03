@@ -1,8 +1,9 @@
 import type { WorkflowScoreInput } from './types'
 import { DASHBOARD_METRIC_RULES } from '../../shared/constants'
+import { WORKFLOW_AI_QUESTION } from './constants'
 import { getDashboardWorkflowEvidenceCap, getDashboardWorkflowScoreBreakdown } from './score'
 
-export const workflowQuestion = 'Does the observed delivery pattern represent focused, reviewable work with a clear change intent?'
+export const workflowQuestion = WORKFLOW_AI_QUESTION
 
 export function buildWorkflowAiContext(metrics: WorkflowScoreInput) {
   const breakdown = getDashboardWorkflowScoreBreakdown(metrics)

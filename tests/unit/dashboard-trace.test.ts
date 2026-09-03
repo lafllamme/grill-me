@@ -63,6 +63,29 @@ describe('dashboard trace', () => {
     expect(box.mock.calls.at(-1)?.[1]).toBeUndefined()
   })
 
+  it('formats the authored evidence ledger in summary mode', () => {
+    createDashboardTrace({ requestId: 'req-sampling', username: 'torvalds', source: 'server', level: 'summary' })
+      .log('github', 'collection-complete', {
+        repositories: 4,
+        commits: 16,
+        collection: { candidateCommits: 30, enrichedCommits: 16 },
+        sampling: {
+          candidateRefs: 30,
+          integrationSkipped: 18,
+          personalRefs: 12,
+          detailsFetched: 16,
+          personalWithPatch: 12,
+          backfilled: 12,
+          evidenceState: 'expanded-window',
+        },
+      })
+
+    const output = info.mock.calls.at(-1)?.[0] as string
+    expect(output).toContain('sampling:')
+    expect(output).toContain('integration skipped: 18')
+    expect(output).toContain('evidence state: expanded-window')
+  })
+
   it('formats fenced model JSON and wraps long response metadata', () => {
     createDashboardTrace({ requestId: 'req-model-format', username: 'lafllamme', source: 'server', level: 'full' })
       .log('ai', 'response-received', {

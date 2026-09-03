@@ -4,6 +4,7 @@ export type DashboardSafetyCategory = 'validation' | 'auth' | 'error-handling' |
 export type DashboardSafetyVerdict = 'safe' | 'risk' | 'unclear'
 export type DashboardSafetyImpact = 'introduced' | 'fixed' | 'unclear'
 export type DashboardSafetySeverity = 'low' | 'medium' | 'high'
+export type DashboardSafetyRiskScope = 'production' | 'test' | 'docs' | 'generated' | 'unknown'
 
 export interface DashboardSafetySignal {
   category: DashboardSafetyCategory
@@ -12,6 +13,7 @@ export interface DashboardSafetySignal {
   severity: DashboardSafetySeverity
   commitSha: string
   filename?: string
+  riskScope?: DashboardSafetyRiskScope
   evidence: string
 }
 
@@ -114,6 +116,7 @@ export interface DashboardAiReviewFinding {
   filename: string
   evidence: string
   category?: DashboardSafetyCategory
+  riskScope?: DashboardSafetyRiskScope
 }
 
 export interface DashboardAiReviewAssessment {

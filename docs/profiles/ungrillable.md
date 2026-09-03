@@ -6,11 +6,11 @@ Positiv · Gesamtprofil
 
 ## Scoring
 
-- Clarity: `≥75`
-- Safety: `≥75`
-- Workflow: `≥75`
-- Complexity: `≥75`
-- Context: `≥75`
+- Clarity: `≥80`
+- Safety: `≥80`
+- Workflow: `≥80`
+- Complexity: `≥80`
+- Context: `≥80`
 
 ## Profil
 

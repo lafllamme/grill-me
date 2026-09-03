@@ -1,8 +1,8 @@
 # Complexity Scoring
 
-**Version:** 2.0.0
+**Version:** 2.1.0
 **Status:** calibrated
-**Updated:** 2026-09-02
+**Updated:** 2026-09-03
 
 ## Question
 
@@ -26,14 +26,20 @@ effectiveFilesP75 = p75(effectiveFiles(personal commits))
 scopeSignal = 100 - clamp((effectiveFilesP75 - 2) * 5, 0, 60)
 outlierSignal = 100 - broadOrRelativeOutlierRatio
 
-Complexity = scopeSignal * 0.50
-           + outlierSignal * 0.30
-           + churnSignal * 0.20
+churnSignal = 100 - min((deletionRatio - 10) * 0.5, 35)
+Complexity = scopeSignal * 0.55
+           + outlierSignal * 0.35
+           + churnSignal * 0.10
 ~~~
 
-The 75th percentile prevents one release commit from defining the profile.
-Merge commits are excluded before calculation. Fewer than three total or three
-personal commits returns neutral 50.
+The active weights are `scope 0.55`, `outlier 0.35`, and `churn 0.10`.
+Deletion-heavy churn is a weak pressure signal; low deletion volume is not
+treated as proof of simple code. The 75th percentile prevents one release
+commit from defining the profile. Merge commits are excluded before
+calculation. Fewer than three total or three personal commits returns neutral
+50. Three to seven personal commits cap the observed score at 92; eight or
+more cap it at 95 because a bounded patch window cannot prove intrinsic
+complexity is absent.
 
 ## AI second check
 

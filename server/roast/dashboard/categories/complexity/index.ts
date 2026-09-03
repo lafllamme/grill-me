@@ -1,5 +1,5 @@
 export { buildComplexityAiContext, complexityQuestion } from './ai-context'
-export { COMPLEXITY_EVIDENCE_RULES, COMPLEXITY_FILE_WEIGHTS, COMPLEXITY_SCORE_DEFAULT, COMPLEXITY_SCORING_RULES } from './constants'
+export { COMPLEXITY_AI_QUESTION, COMPLEXITY_EVIDENCE_RULES, COMPLEXITY_FILE_WEIGHTS, COMPLEXITY_SCORE_DEFAULT, COMPLEXITY_SCORING_RULES } from './constants'
 export { deriveComplexityMetrics, effectiveComplexityFiles } from './metrics'
-export { getDashboardComplexityScoreBreakdown, scoreDashboardComplexity } from './score'
+export { getDashboardComplexityEvidenceCap, getDashboardComplexityScoreBreakdown, scoreDashboardComplexity } from './score'
 export type { ComplexityEvidenceRules, ComplexityFileWeights, ComplexityMetrics, ComplexityScoreInput, ComplexityScoringRules, DashboardComplexityScoreBreakdown } from './types'
