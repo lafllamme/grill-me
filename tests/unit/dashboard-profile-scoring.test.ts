@@ -359,6 +359,19 @@ describe('dashboard profile scoring', () => {
     expect(scoreDashboardComplexity(metrics)).toBe(92)
   })
 
+  it('keeps breadth dominant while using churn as a small supporting signal', () => {
+    expect(scoreDashboardComplexity({
+      commitCount: 12,
+      workflowCommitCount: 12,
+      complexityEffectiveFilesP75: 13.1,
+      complexityExcludedFileRatio: 6,
+      complexityRelativeOutlierRatio: 42,
+      complexityScopeSignal: 45,
+      complexityOutlierSignal: 58,
+      complexityChurnSignal: 89,
+    })).toBe(56)
+  })
+
   it('keeps Complexity neutral when personal evidence is insufficient', () => {
     const thinHistory = context([
       commit({ sha: 'one', changedFiles: 1 }),

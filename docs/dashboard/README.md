@@ -1,8 +1,8 @@
 # Dashboard Documentation
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Status:** active
-**Updated:** 2026-09-03
+**Updated:** 2026-09-04
 
 This is the entry point for the GrillMe dashboard contract. It describes how
 one bounded GitHub analysis becomes an evidence-backed profile, one combined AI
@@ -34,7 +34,7 @@ are linked from the relevant canonical document instead of copied here.
 | Clarity | v4 | message intent, visible naming, local patch structure, evidence ceiling | explain grounded patch evidence within the server cap | calibrated |
 | Safety | v4 | safety-surface and defensive-coverage signals with patch-coverage scaling, bounded AI defense lift, and confirmed introduced-risk penalties | verify grounded defensive signals and risks; never return a number | calibrated |
 | Workflow | v3 | median/p75 delivery scope, outliers, message quality | bounded second check | calibrated |
-| Complexity | v2 | weighted effective change surface, outliers, churn | bounded second check | calibrated |
+| Complexity | v2.2 | weighted effective change surface, outliers, churn | bounded second check | calibrated |
 | Context | v5 | neutral 70, direct context evidence, lighter orientation and handoff signals | bounded second check | calibrated |
 
 The versions describe behavior contracts, not every wording edit. A formula,

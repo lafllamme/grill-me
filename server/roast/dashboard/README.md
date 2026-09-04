@@ -1,7 +1,7 @@
 # Dashboard module
 
 **Status:** active
-**Updated:** 2026-09-03
+**Updated:** 2026-09-04
 
 This folder owns the dashboard analysis from bounded GitHub evidence to the
 final profile response. `index.ts` is the only public server entry point. The

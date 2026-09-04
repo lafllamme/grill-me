@@ -1,8 +1,8 @@
 # Dashboard scoring contract
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Status:** active
-**Updated:** 2026-09-03
+**Updated:** 2026-09-04
 
 This page is the shared overview. The executable formula and evidence rules
 live in the README of each category folder.
@@ -51,12 +51,12 @@ the observed artifact. File and patch patterns only nominate changed code for
 closer inspection; they must not turn a filename or keyword into an automatic
 code-quality claim.
 
-Current calibration guardrails: Complexity weights change surface and outliers
-more heavily than deletion churn and caps a bounded sample below a perfect
-score. Context weights direct patch explanations and commit intent more heavily
-than repository metadata. Safety deductions require an assessed, high-confidence
-AI signal grounded to the exact changed filename and a server-confirmed
-introduced production risk.
+Current calibration guardrails: Complexity v2.2 weights scope at `0.50`, outliers
+at `0.35`, and deletion churn at `0.15`; breadth remains primary and a bounded
+sample is capped below a perfect score. Context weights direct patch
+explanations and commit intent more heavily than repository metadata. Safety
+deductions require an assessed, high-confidence AI signal grounded to the exact
+changed filename and a server-confirmed introduced production risk.
 
 ## Overall result
 

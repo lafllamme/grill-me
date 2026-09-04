@@ -19,9 +19,9 @@ export const COMPLEXITY_SCORING_RULES = {
   deletionBaselineRatio: 10,
   deletionPenaltyPerPoint: 0.5,
   maximumChurnPenalty: 35,
-  scopeWeight: 0.55,
+  scopeWeight: 0.50,
   outlierWeight: 0.35,
-  churnWeight: 0.10,
+  churnWeight: 0.15,
   maximumSignal: 100,
 } as const satisfies ComplexityScoringRules
 

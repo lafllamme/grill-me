@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-04
+
+### Dashboard Complexity v2.2
+- reduced the overlapping scope weight from 0.55 to 0.50
+- restored a small churn contribution from 0.10 to 0.15 while keeping scope and
+  outliers as the dominant signals
+- kept the 92/95 evidence caps, AI adjustment limit, public contracts, and UI
+  output unchanged
+- recorded a same-dataset six-profile replay to verify the correction does not
+  create broad score inflation
+
 ## 2026-09-03
 
 ### Dashboard evidence window

@@ -1,11 +1,15 @@
 # Dashboard Scoring History
 
 **Status:** calibration record
-**Updated:** 2026-09-02
+**Updated:** 2026-09-04
 
 This file contains calibration evidence that should not be mixed into the
 active formula contract. The values describe a bounded public sample, not a
 general ranking of the named developers.
+
+The current Complexity v2.2 replay is recorded with the active category
+contract in [categories/complexity.md](../categories/complexity.md); this
+archive intentionally does not duplicate that table.
 
 ## Safety v4 live probe
 
