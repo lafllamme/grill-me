@@ -9,6 +9,28 @@ test.describe('dashboard explorer analysis states', () => {
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0)
   })
 
+  test('previews the loading layout without starting an API request', async ({ page }) => {
+    let analysisRequestCount = 0
+    page.on('request', (request) => {
+      if (request.url().endsWith('/api/dashboard-profile/stream'))
+        analysisRequestCount += 1
+    })
+
+    await page.goto('/dashboard-explorer')
+    // Wait for the chart-heavy page to hydrate before exercising the local
+    // preview control.
+    await page.waitForTimeout(2000)
+    await page.getByTestId('dashboard-loading-preview-toggle').click()
+
+    await expect(page.getByTestId('dashboard-analysis-state')).toHaveAttribute('data-state', 'loading')
+    await expect(page.getByTestId('dashboard-loading-grid')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Exit loading preview' })).toBeVisible()
+    expect(analysisRequestCount).toBe(0)
+
+    await page.getByRole('button', { name: 'Exit loading preview' }).click()
+    await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0)
+  })
+
   test('uses an honest loading state and exposes a retryable error', async ({ page }) => {
     await page.goto('/dashboard-explorer', { waitUntil: 'domcontentloaded' })
     // The dashboard page includes a large client-side chart surface. Give Nuxt

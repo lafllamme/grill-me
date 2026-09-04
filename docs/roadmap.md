@@ -1,5 +1,10 @@
 # Roadmap
 
+The dashboard-specific execution sequence is maintained in
+[`docs/dashboard/roadmap.md`](dashboard/roadmap.md). This document remains the
+broad product roadmap for the landing page, result experience, and later
+retention loops.
+
 ## Goal
 
 Move from current landing + terminal-era prototype toward a premium roast engine experience with:

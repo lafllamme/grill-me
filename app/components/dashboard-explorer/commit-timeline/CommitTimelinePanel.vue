@@ -13,7 +13,7 @@ const markers = computed(() => props.markers ?? defaultMarkers)
 </script>
 
 <template>
-  <article :class="props.panelClass" class="p-6 rounded-[28px] min-w-0 w-full transition-colors duration-300 box-border sm:p-8 lg:col-span-6">
+  <article :class="props.panelClass" class="p-6 rounded-[28px] min-h-[26.75rem] min-w-0 w-full transition-colors duration-300 box-border sm:p-8 lg:col-span-6">
     <div class="flex flex-wrap gap-4 items-end justify-between">
       <h2 class="text-2xl tracking-[-0.05em] font-display">
         Commit rhythm

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DashboardAnalysisPhase } from '~/components/dashboard-explorer/types'
 import { computed, ref } from 'vue'
 import { useHead, useSeoMeta } from '#imports'
 import { buildLiveDashboardModel, buildMockDashboardModel } from '~/components/dashboard-explorer/dashboard-model'
@@ -31,9 +32,12 @@ const activeMockProfileIndex = ref(0)
 const { githubUsername, assessment: realAssessment, evidence: realEvidence, phase: analysisPhase, githubProgress, errorMessage: realAssessmentError, isLoading: isLoadingRealAssessment, analyze: analyzeGithubProfile, reset: resetAnalysis } = useDashboardAnalysis()
 const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
 const mockProfileCount = dashboardMockProfiles.length
+const isLoadingPreview = ref(false)
 const dashboardModel = computed(() => realAssessment.value && realEvidence.value
   ? buildLiveDashboardModel({ assessment: realAssessment.value, evidence: realEvidence.value }, activeMockProfile.value)
   : buildMockDashboardModel(activeMockProfile.value))
+const dashboardPhase = computed<DashboardAnalysisPhase>(() => isLoadingPreview.value ? 'collecting-github' : analysisPhase.value)
+const dashboardModelForRender = computed(() => isLoadingPreview.value ? null : dashboardModel.value)
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -117,6 +121,7 @@ const chartStyle = computed(() => ({
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
 function shiftMockProfile(direction: -1 | 1) {
+  isLoadingPreview.value = false
   resetAnalysis()
   activeMockProfileIndex.value = (activeMockProfileIndex.value + direction + mockProfileCount) % mockProfileCount
 }
@@ -127,7 +132,15 @@ function setColorMode(mode: ColorMode) {
 }
 
 function submitAnalysis() {
+  isLoadingPreview.value = false
   void analyzeGithubProfile()
+}
+
+function toggleLoadingPreview() {
+  if (isLoadingRealAssessment.value)
+    return
+
+  isLoadingPreview.value = !isLoadingPreview.value
 }
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
@@ -150,7 +163,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
           <legend :class="currentColorProfile.mutedClass" class="text-[10px] tracking-[0.14em] font-meta mb-2 uppercase">
             Color profile
           </legend>
-          <div class="flex gap-2 items-center">
+          <div class="flex gap-2 w-full items-center justify-end">
             <div class="p-1 border-[1px] border-white/10 rounded-[10px] border-solid bg-black/20 flex gap-1 items-center">
               <button
                 :class="activeColorMode === 'dark' ? 'bg-white/15 text-current' : currentColorProfile.mutedClass"
@@ -182,7 +195,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               </div>
             </div>
           </div>
-          <div class="mt-4 flex gap-3 items-center sm:justify-end" role="group" aria-label="Browse mock dashboard profiles">
+          <div class="mt-4 flex gap-3 w-full items-center sm:justify-end" role="group" aria-label="Browse mock dashboard profiles">
             <button
               :class="currentColorProfile.mutedClass"
               class="border-[1px] border-current/30 rounded-[8px] border-solid inline-flex h-9 w-9 transition-colors items-center justify-center focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10"
@@ -213,7 +226,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               <Icon name="ph:caret-right" aria-hidden="true" />
             </button>
           </div>
-          <form class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end" @submit.prevent="submitAnalysis">
+          <form class="mt-5 flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-end" @submit.prevent="submitAnalysis">
             <label :class="currentColorProfile.mutedClass" class="sr-only" for="github-profile">Analyze GitHub profile</label>
             <div class="px-3 border-[1px] border-current/20 rounded-[8px] bg-black/10 flex h-9 min-w-56 items-center">
               <span :class="currentColorProfile.mutedClass" class="text-xs font-meta mr-1">github.com/</span>
@@ -235,6 +248,19 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               {{ isLoadingRealAssessment ? 'Analyzing…' : 'Analyze live' }}
             </button>
           </form>
+          <div class="mt-4 flex w-full justify-end">
+            <button
+              :class="isLoadingPreview ? 'bg-primary text-black border-primary' : currentColorProfile.mutedClass"
+              class="text-[10px] tracking-[0.08em] font-meta px-3 border-[1px] border-current rounded-[8px] h-8 uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              :aria-pressed="isLoadingPreview"
+              :disabled="isLoadingRealAssessment"
+              data-testid="dashboard-loading-preview-toggle"
+              @click="toggleLoadingPreview"
+            >
+              {{ isLoadingPreview ? 'Exit loading preview' : 'Preview loading state' }}
+            </button>
+          </div>
           <p v-if="realAssessmentError" class="text-xs text-primary mt-2 sm:text-right" role="alert">
             {{ realAssessmentError }}
           </p>
@@ -242,8 +268,8 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       </header>
 
       <DashboardExplorer
-        :model="dashboardModel"
-        :phase="analysisPhase"
+        :model="dashboardModelForRender"
+        :phase="dashboardPhase"
         :progress="githubProgress"
         :username="githubUsername"
         :error-message="realAssessmentError"

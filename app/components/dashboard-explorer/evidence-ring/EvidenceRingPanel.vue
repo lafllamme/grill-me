@@ -25,7 +25,7 @@ const brandedData = computed(() => props.data.map((item, index) => ({
 </script>
 
 <template>
-  <article :class="props.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 sm:p-8 lg:col-span-8">
+  <article :class="props.panelClass" class="p-6 rounded-[28px] min-h-[44.5rem] transition-colors duration-300 sm:p-8 lg:col-span-8 lg:min-h-[31rem]">
     <div class="flex items-center justify-between">
       <h2 class="text-2xl tracking-[-0.04em] font-body">
         Evidence

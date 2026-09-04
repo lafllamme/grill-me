@@ -19,6 +19,11 @@ The server phases are sequential. The client exposes honest progress and
 renders evidence only after its phase is available. A loading state may reveal
 the UI progressively, but it must not fabricate scores or evidence.
 
+The concrete implementation order for the Explorer is tracked in the
+[dashboard execution roadmap](./roadmap.md). In particular, the loading shell
+must share the final panel geometry before the existing phases are promoted to
+panel-level streaming updates.
+
 ## Authored evidence window
 
 The product target is the developer's current authored work. Integration and

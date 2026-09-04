@@ -17,7 +17,7 @@ const brandedData = computed(() => props.data.data.map((item, index) => ({
 </script>
 
 <template>
-  <article :class="props.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8" data-testid="profile-radar-panel">
+  <article :class="props.panelClass" class="p-6 rounded-[28px] min-h-[31.5rem] transition-colors duration-300 lg:p-8 sm:p-8 lg:min-h-[29.5rem]" data-testid="profile-radar-panel">
     <h2 class="text-2xl tracking-[-0.04em] font-body">
       Profile
     </h2>

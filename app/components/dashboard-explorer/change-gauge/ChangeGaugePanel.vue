@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<ChangeGaugePanelProps>(), {
 </script>
 
 <template>
-  <article :class="props.panelClass" class="p-6 rounded-[28px] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-4">
+  <article :class="props.panelClass" class="p-6 rounded-[28px] min-h-[31rem] min-w-0 transition-colors duration-300 sm:p-8 lg:col-span-4">
     <div class="flex gap-4 items-center justify-between">
       <h2 class="text-2xl tracking-[-0.05em] font-display">
         Commit frequency

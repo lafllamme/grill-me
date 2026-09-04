@@ -12,6 +12,7 @@ review, and the final roast dashboard.
 
 | Concern | Canonical document | Implementation | Validation |
 | --- | --- | --- | --- |
+| Dashboard execution order and current work | [Roadmap](./roadmap.md) | app/components/dashboard-explorer/ and app/composables/useDashboardAnalysis.ts | dashboard state and browser checks |
 | System flow, loading, streaming, ownership, quota | [Architecture](./architecture.md) | app/composables/useDashboardAnalysis.ts | tests/e2e/dashboard-explorer.spec.ts |
 | Authored evidence window, merge filtering, bounded fallback | [Architecture](./architecture.md) and [active decision](../../decisions/active/2026-09-03-dashboard-authored-evidence-window.md) | server/roast/github-collector.ts and patch-selection/ | sampling controls in [Testing](./testing.md) |
 | Shared score contract, grades, evidence gates | [Scoring](./scoring.md) | server/roast/dashboard/scoring.ts | tests/unit/dashboard-profile-scoring.test.ts |
@@ -40,6 +41,15 @@ are linked from the relevant canonical document instead of copied here.
 The versions describe behavior contracts, not every wording edit. A formula,
 evidence gate, payload shape, or role threshold change requires a versioned
 changelog entry and a focused validation run.
+
+## Current execution focus
+
+The five scoring categories, evidence window, AI second review, and role
+resolution are ready for UI integration. The next change is loading-state
+parity: the first frame should already use the final Bento geometry, while
+GitHub facts and the final reviewed profile become ready in honest stages.
+Streaming follows only after that render contract is stable. The active
+sequence and acceptance criteria live in the [Dashboard execution roadmap](./roadmap.md).
 
 ## One analysis, five views
 

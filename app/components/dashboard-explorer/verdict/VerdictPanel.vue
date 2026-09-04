@@ -6,7 +6,7 @@ const props = defineProps<VerdictPanelProps>()
 </script>
 
 <template>
-  <article :class="props.panelClass" class="p-6 rounded-[28px] transition-colors duration-300 lg:p-8 sm:p-8">
+  <article :class="props.panelClass" class="p-6 rounded-[28px] min-h-[29.5rem] transition-colors duration-300 lg:p-8 sm:p-8">
     <div class="flex gap-4 items-start justify-between">
       <h2 class="text-2xl tracking-[-0.04em] font-body">
         Verdict
