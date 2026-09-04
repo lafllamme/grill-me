@@ -42,9 +42,31 @@ export interface SunburstGeometry {
 
 const hoverGrowRingBudget = 0.28
 const hoverGrowSegmentCap = 0.1
+const drilldownCenterScale = 0.65
+const sunburstLabelCharacterWidth = 6.5
+const sunburstLabelGutter = 10
+const minimumSunburstLabelCharacters = 4
 
 const fullCircle = Math.PI * 2
 const topAngle = -Math.PI / 2
+
+export function getSunburstDisplayLabel(name: string, availableLength: number): string {
+  const maximumCharacters = Math.floor(Math.max(0, availableLength - sunburstLabelGutter) / sunburstLabelCharacterWidth)
+  if (maximumCharacters < minimumSunburstLabelCharacters) {
+    return ''
+  }
+  if (name.length <= maximumCharacters) {
+    return name
+  }
+  return `${name.slice(0, maximumCharacters - 1)}…`
+}
+
+export function getSunburstCenterRadius(radius: number, fromFocusArc: SunburstArc | null, toFocusArc: SunburstArc | null, progress: number): number {
+  const clampedProgress = Math.max(0, Math.min(1, progress))
+  const fromRadius = fromFocusArc?.depth ? radius * drilldownCenterScale : 0
+  const toRadius = toFocusArc?.depth ? radius * drilldownCenterScale : 0
+  return fromRadius + (toRadius - fromRadius) * clampedProgress
+}
 
 function nodeValue(node: SunburstNode): number {
   if (node.children?.length) {
@@ -128,7 +150,7 @@ export function buildHoverGeometry(arcs: readonly SunburstArc[], hoveredId: stri
   const focusDepth = focusId ? (arcs.find(arc => arc.id === focusId)?.depth ?? 0) : 0
   const visibleRingCount = Math.max(1, maxDepth - focusDepth)
   const totalRadius = maxDepth * radius
-  const centerRadius = focusDepth === 0 ? 0 : radius * 0.65
+  const centerRadius = focusDepth === 0 ? 0 : radius * drilldownCenterScale
   const ringWidth = (totalRadius - centerRadius) / visibleRingCount
   const pathLength = Math.max(1, hoveredArc.depth - focusDepth)
   const grow = Math.min(
@@ -216,7 +238,7 @@ export function getSunburstGeometry(arc: SunburstArc, focusArc: SunburstArc | nu
     return null
   }
   const totalRadius = maxDepth * radius
-  const centerRadius = focusDepth === 0 ? 0 : radius * 0.65
+  const centerRadius = focusDepth === 0 ? 0 : radius * drilldownCenterScale
   const ringCount = Math.max(1, maxDepth - focusDepth)
   const ringWidth = (totalRadius - centerRadius) / ringCount
   const focusStart = focusArc?.startAngle ?? topAngle

@@ -110,4 +110,19 @@ test.describe('dashboard explorer analysis states', () => {
     await expect(page.getByText('The visible patches keep names and local structure readable.')).toBeVisible()
     await expect(page.getByText('app/profile.ts')).toBeVisible()
   })
+
+  test('keeps sunburst drill-down focused without a mouse focus rectangle', async ({ page }) => {
+    await page.goto('/dashboard-explorer', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(2000)
+
+    await page.getByRole('button', { name: 'app, 114 changes' }).click()
+
+    await expect(page.getByRole('button', { name: 'Zoom out to Repository' })).toBeVisible()
+    await expect(page.locator('.sunburst-center-hub')).toBeVisible()
+    await expect(page.locator('path.sunburst-hit-area:focus')).toHaveCount(0)
+    const sunburst = page.locator('svg[aria-label="Repository hierarchy sunburst"]')
+    await sunburst.click({ position: { x: 8, y: 8 } })
+    await expect(sunburst).not.toBeFocused()
+    await expect(page.locator('svg[aria-label="Repository hierarchy sunburst"]')).toContainText('dashboard-explorer.vue')
+  })
 })

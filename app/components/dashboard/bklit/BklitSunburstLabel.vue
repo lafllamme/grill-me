@@ -5,6 +5,7 @@ import { computed } from 'vue'
 const props = defineProps<{
   arc: SunburstArc
   geometry: SunburstGeometry
+  label: string
   hoverGrow: number
   hoverOffset: number
   reducedMotion: boolean
@@ -48,6 +49,7 @@ const rotation = computed(() => {
     stroke-width="2.5"
     :transform="`rotate(${rotation} ${position.x} ${position.y})`"
   >
-    {{ props.arc.name }}
+    <title>{{ props.arc.name }}</title>
+    {{ props.label }}
   </text>
 </template>

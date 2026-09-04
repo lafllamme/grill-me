@@ -3,9 +3,10 @@ import type { SunburstArc, SunburstNode } from './sunburst'
 import { usePreferredReducedMotion } from '@vueuse/core'
 import { animate, motionValue } from 'motion-v'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import BklitSunburstCenter from './BklitSunburstCenter.vue'
 import BklitSunburstLabel from './BklitSunburstLabel.vue'
 import BklitSunburstSegment from './BklitSunburstSegment.vue'
-import { buildHoverGeometry, buildSunburstLayout, getBreadcrumbIds, getSegmentColor, isDescendant, maxHoverSegmentThickness, transitionSunburstGeometry } from './sunburst'
+import { buildHoverGeometry, buildSunburstLayout, getBreadcrumbIds, getSegmentColor, getSunburstCenterRadius, getSunburstDisplayLabel, isDescendant, maxHoverSegmentThickness, transitionSunburstGeometry } from './sunburst'
 import { useBklitEnter } from './use-bklit-enter'
 
 const props = withDefaults(defineProps<{
@@ -36,6 +37,11 @@ const visibleArcs = computed(() => layout.value.arcs.filter((arc) => {
 const renderArcs = computed(() => [...layout.value.arcs].sort((a, b) => b.depth - a.depth || b.arcIndex - a.arcIndex))
 const previousFocusArc = computed(() => layout.value.arcs.find(arc => arc.id === previousFocusId.value) ?? null)
 const currentFocusArc = computed(() => layout.value.arcs.find(arc => arc.id === focusId.value) ?? null)
+const centerRadius = computed(() => getSunburstCenterRadius(radius.value, previousFocusArc.value, currentFocusArc.value, zoomProgress.value))
+const centerColor = computed(() => {
+  const centerArc = currentFocusArc.value ?? previousFocusArc.value
+  return centerArc ? getSegmentColor(centerArc, arcIndex(centerArc)) : 'var(--chart-background, var(--color-chart-background))'
+})
 const arcGeometries = computed(() => new Map(renderArcs.value.map(arc => [arc.id, transitionSunburstGeometry(arc, previousFocusArc.value, currentFocusArc.value, layout.value.maxDepth, radius.value, zoomProgress.value)])))
 const targetHoverGeometries = computed(() => buildHoverGeometry(renderArcs.value, hoveredId.value, radius.value, layout.value.maxDepth, focusId.value === layout.value.rootId ? null : focusId.value))
 const animatedHoverGeometries = ref(new Map<string, { grow: number, offset: number }>())
@@ -177,10 +183,10 @@ function startHoverTransition() {
   stopHoverAnimation = () => controls.stop()
 }
 
-function labelVisible(arc: SunburstArc) {
+function labelText(arc: SunburstArc) {
   const geometry = arcGeometries.value.get(arc.id)
   if (!geometry) {
-    return false
+    return ''
   }
   const hover = hoverGeometry(arc)
   const labelRadius = (geometry.innerRadius + geometry.outerRadius) / 2 + hover.offset + hover.grow / 2
@@ -188,8 +194,12 @@ function labelVisible(arc: SunburstArc) {
   const radialSpace = geometry.outerRadius - geometry.innerRadius + hover.grow - 6
 
   // Bklit uses the geometric label gate: every segment gets a label when the
-  // available arc length and ring width can hold it without collision.
-  return angularSpace >= 26 && radialSpace >= 16
+  // available arc length and ring width can hold it without collision. Long
+  // repository paths are shortened to the space available in the segment.
+  if (angularSpace < 26 || radialSpace < 16) {
+    return ''
+  }
+  return getSunburstDisplayLabel(arc.name, angularSpace)
 }
 </script>
 
@@ -212,10 +222,11 @@ function labelVisible(arc: SunburstArc) {
 
     <div class="mx-auto flex w-full justify-center relative overflow-visible" :style="{ minHeight: `${props.size + 44}px` }">
       <svg
-        class="h-auto max-w-full overflow-visible"
+        class="h-auto max-w-full overflow-visible focus:outline-none"
         :style="{ width: `${props.size}px`, opacity: prefersReducedMotion === 'reduce' ? 1 : chartOpacity }"
         :viewBox="`${-props.size / 2} ${-props.size / 2} ${props.size} ${props.size}`"
         :aria-label="`${props.data.name} hierarchy sunburst`"
+        @mousedown.prevent
         @focusout="handleChartFocusOut"
         @pointerleave="hoveredId = null"
       >
@@ -239,16 +250,23 @@ function labelVisible(arc: SunburstArc) {
           <g :style="{ opacity: labelsProgress }" pointer-events="none">
             <template v-for="arc in renderArcs" :key="`${props.replayKey}-label-${arc.id}`">
               <BklitSunburstLabel
-                v-if="labelVisible(arc) && isRelated(arc) && arcGeometries.get(arc.id)"
+                v-if="labelText(arc) && isRelated(arc) && arcGeometries.get(arc.id)"
                 :arc="arc"
                 :geometry="arcGeometries.get(arc.id)!"
+                :label="labelText(arc)"
                 :hover-grow="hoverGeometry(arc).grow"
                 :hover-offset="hoverGeometry(arc).offset"
                 :reduced-motion="prefersReducedMotion === 'reduce'"
               />
             </template>
           </g>
-          <circle v-if="focusId !== layout.rootId" class="cursor-pointer fill-current/8 stroke-current/20" :r="Math.max(radius * 0.9, 20)" stroke-width="1" @click="zoomOut" />
+          <BklitSunburstCenter
+            v-if="centerRadius > 0.5"
+            :fill="centerColor"
+            :label="`Zoom out to ${focusArc?.parentId?.replaceAll(' / ', ' › ') ?? props.data.name}`"
+            :radius="centerRadius"
+            @activate="zoomOut"
+          />
         </g>
       </svg>
     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHoverGeometry, buildSunburstLayout, createSunburstPath, getBreadcrumbIds, isDescendant } from '../../app/components/dashboard/bklit/sunburst'
+import { buildHoverGeometry, buildSunburstLayout, createSunburstPath, getBreadcrumbIds, getSunburstCenterRadius, getSunburstDisplayLabel, isDescendant } from '../../app/components/dashboard/bklit/sunburst'
 
 describe('sunburst layout', () => {
   const data = {
@@ -44,5 +44,20 @@ describe('sunburst layout', () => {
     expect(geometry.get(layout.arcs[1]!.id)).toEqual({ grow: 0, offset: 8 })
     expect(geometry.get(layout.arcs[2]!.id)).toEqual({ grow: 0, offset: 8 })
     expect(geometry.get(layout.arcs[3]!.id)).toBeUndefined()
+  })
+
+  it('shortens long labels to the available arc length', () => {
+    expect(getSunburstDisplayLabel('DashboardExplorerLoadingGrid.vue', 80)).toMatch(/…$/)
+    expect(getSunburstDisplayLabel('app', 80)).toBe('app')
+    expect(getSunburstDisplayLabel('README.md', 20)).toBe('')
+  })
+
+  it('animates the drill-down center from the current focus state', () => {
+    const layout = buildSunburstLayout(data)
+    const appArc = layout.arcs[0]!
+
+    expect(getSunburstCenterRadius(80, null, appArc, 0)).toBe(0)
+    expect(getSunburstCenterRadius(80, null, appArc, 0.5)).toBe(26)
+    expect(getSunburstCenterRadius(80, appArc, null, 1)).toBe(0)
   })
 })

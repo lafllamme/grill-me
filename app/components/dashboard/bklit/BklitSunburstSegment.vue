@@ -36,11 +36,13 @@ const visualPath = computed(() => props.geometry
   >
     <title>{{ props.arc.name }} · {{ props.arc.value }} changes</title>
     <path
+      class="sunburst-hit-area"
       :d="hitPath"
       fill="transparent"
       tabindex="0"
       :aria-label="`${props.arc.name}, ${props.arc.value} changes`"
       role="button"
+      @mousedown.prevent
       @click="emit('select')"
       @keydown.enter="emit('select')"
       @keydown.space.prevent="emit('select')"
@@ -56,3 +58,14 @@ const visualPath = computed(() => props.geometry
     />
   </g>
 </template>
+
+<style scoped>
+.sunburst-hit-area:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.sunburst-hit-area:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+</style>
