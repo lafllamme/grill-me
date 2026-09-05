@@ -74,6 +74,7 @@ const LOADING_PREVIEW_STEPS = [
   },
 ] as const satisfies readonly DashboardProfileStreamGithubProgressEvent[]
 const isLoadingPreview = ref(false)
+const isPersistentLoadingPreview = ref(false)
 const loadingPreviewStepIndex = ref(0)
 let loadingPreviewTimeout: ReturnType<typeof setTimeout> | undefined
 let loadingPreviewInterval: ReturnType<typeof setInterval> | undefined
@@ -187,13 +188,15 @@ function exitLoadingPreview() {
   clearLoadingPreviewTimeout()
   clearLoadingPreviewInterval()
   isLoadingPreview.value = false
+  isPersistentLoadingPreview.value = false
 }
 
-function startLoadingPreview() {
+function startLoadingPreview({ shouldPersist = false }: { shouldPersist?: boolean } = {}) {
   clearLoadingPreviewTimeout()
   clearLoadingPreviewInterval()
   loadingPreviewStepIndex.value = 0
   isLoadingPreview.value = true
+  isPersistentLoadingPreview.value = shouldPersist
   loadingPreviewInterval = setInterval(() => {
     if (loadingPreviewStepIndex.value >= LOADING_PREVIEW_STEPS.length - 1) {
       clearLoadingPreviewInterval()
@@ -201,11 +204,13 @@ function startLoadingPreview() {
     }
     loadingPreviewStepIndex.value += 1
   }, LOADING_PREVIEW_STEP_DURATION_MS)
-  loadingPreviewTimeout = setTimeout(() => {
-    clearLoadingPreviewInterval()
-    isLoadingPreview.value = false
-    loadingPreviewTimeout = undefined
-  }, LOADING_PREVIEW_DURATION_MS)
+  if (!shouldPersist) {
+    loadingPreviewTimeout = setTimeout(() => {
+      clearLoadingPreviewInterval()
+      isLoadingPreview.value = false
+      loadingPreviewTimeout = undefined
+    }, LOADING_PREVIEW_DURATION_MS)
+  }
 }
 
 function shiftMockProfile(direction: -1 | 1) {
@@ -234,6 +239,18 @@ function toggleLoadingPreview() {
   }
 
   startLoadingPreview()
+}
+
+function togglePersistentLoadingPreview() {
+  if (isLoadingRealAssessment.value)
+    return
+
+  if (isLoadingPreview.value && isPersistentLoadingPreview.value) {
+    exitLoadingPreview()
+    return
+  }
+
+  startLoadingPreview({ shouldPersist: true })
 }
 
 onBeforeUnmount(() => {
@@ -346,7 +363,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               {{ isLoadingRealAssessment ? 'Analyzing…' : 'Analyze live' }}
             </button>
           </form>
-          <div class="mt-4 flex w-full justify-end">
+          <div class="mt-4 flex flex-wrap gap-2 w-full justify-end">
             <button
               :class="isLoadingPreview ? 'bg-primary text-black border-primary' : currentColorProfile.mutedClass"
               class="text-[10px] tracking-[0.08em] font-meta px-3 border-[1px] border-current rounded-[8px] h-8 uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -357,6 +374,17 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
               @click="toggleLoadingPreview"
             >
               {{ isLoadingPreview ? 'Exit loading preview' : 'Preview loading state' }}
+            </button>
+            <button
+              :class="isPersistentLoadingPreview ? 'bg-primary text-black border-primary' : currentColorProfile.mutedClass"
+              class="text-[9px] tracking-[0.08em] font-meta px-2 border-[1px] border-current rounded-[8px] h-7 uppercase transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              :aria-pressed="isPersistentLoadingPreview"
+              :disabled="isLoadingRealAssessment"
+              data-testid="dashboard-loading-persistent-preview-toggle"
+              @click="togglePersistentLoadingPreview"
+            >
+              {{ isPersistentLoadingPreview ? 'Release loading' : 'Hold loading' }}
             </button>
           </div>
           <p v-if="realAssessmentError" class="text-xs text-primary mt-2 sm:text-right" role="alert">

@@ -45,6 +45,32 @@ test.describe('dashboard explorer analysis states', () => {
     expect(analysisRequestCount).toBe(0)
   })
 
+  test('can hold the loading preview beyond its automatic duration', async ({ page }) => {
+    let analysisRequestCount = 0
+    page.on('request', (request) => {
+      if (request.url().endsWith('/api/dashboard-profile/stream'))
+        analysisRequestCount += 1
+    })
+
+    await page.goto('/dashboard-explorer')
+    await page.waitForTimeout(2000)
+    await page.getByTestId('dashboard-loading-persistent-preview-toggle').click()
+
+    await expect(page.getByTestId('dashboard-analysis-state')).toHaveAttribute('data-state', 'loading')
+    await expect(page.getByTestId('dashboard-loading-persistent-preview-toggle')).toHaveText('Release loading')
+    await expect(page.getByTestId('dashboard-loading-progress')).toHaveAttribute('style', /width: 8%/)
+
+    await page.waitForTimeout(6500)
+
+    await expect(page.getByTestId('dashboard-analysis-state')).toHaveAttribute('data-state', 'loading')
+    await expect(page.getByTestId('dashboard-loading-progress')).toHaveAttribute('style', /width: 62%/)
+    await expect(page.getByRole('button', { name: 'Release loading' })).toBeVisible()
+    expect(analysisRequestCount).toBe(0)
+
+    await page.getByRole('button', { name: 'Release loading' }).click()
+    await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0)
+  })
+
   test('uses an honest loading state and exposes a retryable error', async ({ page }) => {
     await page.goto('/dashboard-explorer', { waitUntil: 'domcontentloaded' })
     // The dashboard page includes a large client-side chart surface. Give Nuxt
