@@ -26,7 +26,10 @@ test.describe('dashboard explorer analysis states', () => {
     await expect(page.getByTestId('dashboard-loading-grid')).toBeVisible()
     const profileLoadingCard = page.getByTestId('dashboard-loading-card-profile')
     await expect(profileLoadingCard.getByTestId('dashboard-loading-siri-orb')).toBeVisible()
-    await expect(profileLoadingCard).toContainText('lafllamme')
+    const profileHeadline = page.getByTestId('dashboard-profile-headline')
+    await expect(profileHeadline).toHaveCount(1)
+    await expect(profileHeadline).toHaveText('lafllamme')
+    await expect(profileLoadingCard).not.toContainText('lafllamme')
     await expect(profileLoadingCard).toContainText('Finding the public trail')
     await expect(profileLoadingCard).not.toContainText('01 / GitHub pass')
     await expect(profileLoadingCard).not.toContainText('github pass · live')
@@ -42,7 +45,9 @@ test.describe('dashboard explorer analysis states', () => {
 
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0, { timeout: 8000 })
     await expect(page.getByRole('button', { name: 'Preview loading state' })).toBeVisible()
-    await expect(page.getByTestId('profile-radar-panel')).toContainText('lafllamme')
+    await expect(profileHeadline).toHaveCount(1)
+    await expect(profileHeadline).toHaveText('lafllamme')
+    await expect(page.getByTestId('profile-radar-panel')).not.toContainText('lafllamme')
     expect(analysisRequestCount).toBe(0)
   })
 

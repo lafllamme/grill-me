@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DashboardExplorerProps } from './types'
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ChangeGaugePanel from './change-gauge/ChangeGaugePanel.vue'
 import ChangeVolumePanel from './change-volume/ChangeVolumePanel.vue'
 import CommitTimelinePanel from './commit-timeline/CommitTimelinePanel.vue'
@@ -20,24 +20,249 @@ const profileUsername = computed(() => props.username?.trim() || renderModel.val
 const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai', 'finalizing'].includes(props.phase))
 const shouldShowState = computed(() => !renderModel.value || (renderModel.value.source === 'mock' && props.phase !== 'idle' && props.phase !== 'ready'))
 const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loading' : 'ready')
+
+const HANDOFF_DURATION_MS = 720
+const isLoadingStateVisible = ref(false)
+const isLoadingStateHandoff = ref(false)
+const lastLoadingProgress = ref(props.progress ?? null)
+const hasProfileHeadlineHandoff = ref(false)
+const dashboardExplorerRoot = ref<HTMLElement | null>(null)
+const profileHeadlineElement = ref<HTMLElement | null>(null)
+const profileHeadlineStyle = ref<Record<string, string>>({
+  opacity: '0',
+  transform: 'translate3d(0, 0, 0) scale(1)',
+  transformOrigin: 'top left',
+})
+const isProfileHeadlineTransitioning = ref(false)
+let handoffTimeout: ReturnType<typeof setTimeout> | undefined
+let profileHeadlineEnableFrame: number | undefined
+let profileHeadlineResizeFrame: number | undefined
+
+function clearHandoffTimeout() {
+  if (handoffTimeout === undefined)
+    return
+
+  clearTimeout(handoffTimeout)
+  handoffTimeout = undefined
+}
+
+function syncLoadingStateVisibility(nextShouldShowState: boolean) {
+  if (nextShouldShowState) {
+    clearHandoffTimeout()
+    hasProfileHeadlineHandoff.value = false
+    isLoadingStateVisible.value = true
+    isLoadingStateHandoff.value = false
+    return
+  }
+
+  if (!isLoadingStateVisible.value)
+    return
+
+  clearHandoffTimeout()
+  hasProfileHeadlineHandoff.value = true
+  isLoadingStateHandoff.value = true
+  handoffTimeout = setTimeout(() => {
+    isLoadingStateVisible.value = false
+    isLoadingStateHandoff.value = false
+    handoffTimeout = undefined
+  }, HANDOFF_DURATION_MS)
+}
+
+interface ProfileHeadlineTarget {
+  left: number
+  top: number
+  scale: number
+}
+
+function clearProfileHeadlineEnableFrame() {
+  if (profileHeadlineEnableFrame === undefined)
+    return
+
+  window.cancelAnimationFrame(profileHeadlineEnableFrame)
+  profileHeadlineEnableFrame = undefined
+}
+
+function getCardPadding(card: HTMLElement) {
+  const styles = window.getComputedStyle(card)
+  return {
+    right: Number.parseFloat(styles.paddingRight) || 0,
+    top: Number.parseFloat(styles.paddingTop) || 0,
+  }
+}
+
+function getUntransformedCardRect(card: HTMLElement) {
+  const rect = card.getBoundingClientRect()
+  const transform = window.getComputedStyle(card).transform
+  if (transform === 'none')
+    return rect
+
+  const values = transform.startsWith('matrix3d(')
+    ? transform.slice(9, -1).split(',').map(Number)
+    : transform.slice(7, -1).split(',').map(Number)
+  const translateX = transform.startsWith('matrix3d(') ? values[12] || 0 : values[4] || 0
+  const translateY = transform.startsWith('matrix3d(') ? values[13] || 0 : values[5] || 0
+
+  return {
+    ...rect,
+    left: rect.left - translateX,
+    right: rect.right - translateX,
+    top: rect.top - translateY,
+    bottom: rect.bottom - translateY,
+  }
+}
+
+async function syncProfileHeadline() {
+  await nextTick()
+
+  const root = dashboardExplorerRoot.value
+  const headline = profileHeadlineElement.value
+  if (!root || !headline)
+    return
+
+  const rootRect = root.getBoundingClientRect()
+  const naturalWidth = headline.offsetWidth
+  const loadingAnchor = root.querySelector<HTMLElement>('[data-testid="dashboard-loading-profile-headline-anchor"]')
+  const loadingCard = root.querySelector<HTMLElement>('[data-testid="dashboard-loading-card-profile"]')
+  const finalCard = root.querySelector<HTMLElement>('[data-testid="profile-radar-panel"]')
+  let target: ProfileHeadlineTarget | undefined
+
+  if (isLoadingStateVisible.value && loadingAnchor && loadingCard && !isLoadingStateHandoff.value) {
+    const anchorRect = loadingAnchor.getBoundingClientRect()
+    const anchorStyles = window.getComputedStyle(loadingAnchor)
+    const loadingScale = 0.72
+    const scaledWidth = naturalWidth * loadingScale
+    const left = anchorStyles.textAlign === 'center'
+      ? anchorRect.left + (anchorRect.width - scaledWidth) / 2
+      : anchorRect.left
+
+    target = {
+      left: left - rootRect.left,
+      top: anchorRect.top - rootRect.top,
+      scale: loadingScale,
+    }
+  }
+
+  if (isLoadingStateHandoff.value && loadingCard) {
+    const cardRect = getUntransformedCardRect(loadingCard)
+    const padding = getCardPadding(loadingCard)
+    target = {
+      left: cardRect.right - padding.right - naturalWidth - rootRect.left,
+      top: cardRect.top + padding.top - rootRect.top,
+      scale: 1,
+    }
+  }
+
+  if (!target && finalCard && !hasProfileHeadlineHandoff.value) {
+    const cardRect = getUntransformedCardRect(finalCard)
+    const padding = getCardPadding(finalCard)
+    target = {
+      left: cardRect.right - padding.right - naturalWidth - rootRect.left,
+      top: cardRect.top + padding.top - rootRect.top,
+      scale: 1,
+    }
+  }
+
+  clearProfileHeadlineEnableFrame()
+  if (!target) {
+    if (hasProfileHeadlineHandoff.value && profileHeadlineStyle.value.opacity === '1') {
+      isProfileHeadlineTransitioning.value = true
+      return
+    }
+
+    isProfileHeadlineTransitioning.value = false
+    profileHeadlineStyle.value = {
+      opacity: '0',
+      transform: 'translate3d(0, 0, 0) scale(1)',
+      transformOrigin: 'top left',
+    }
+    return
+  }
+
+  const wasVisible = profileHeadlineStyle.value.opacity === '1'
+  profileHeadlineStyle.value = {
+    opacity: '1',
+    transform: `translate3d(${target.left}px, ${target.top}px, 0) scale(${target.scale})`,
+    transformOrigin: 'top left',
+  }
+
+  if (wasVisible || isLoadingStateHandoff.value) {
+    isProfileHeadlineTransitioning.value = true
+    return
+  }
+
+  isProfileHeadlineTransitioning.value = false
+  profileHeadlineEnableFrame = window.requestAnimationFrame(() => {
+    isProfileHeadlineTransitioning.value = true
+    profileHeadlineEnableFrame = undefined
+  })
+}
+
+function scheduleProfileHeadlineSync() {
+  if (profileHeadlineResizeFrame !== undefined)
+    return
+
+  profileHeadlineResizeFrame = window.requestAnimationFrame(() => {
+    profileHeadlineResizeFrame = undefined
+    void syncProfileHeadline()
+  })
+}
+
+watch(() => props.progress, (nextProgress) => {
+  if (nextProgress) {
+    lastLoadingProgress.value = nextProgress
+  }
+  else if (shouldShowState.value) {
+    lastLoadingProgress.value = null
+  }
+}, { immediate: true })
+watch(shouldShowState, syncLoadingStateVisibility, { immediate: true })
+watch([isLoadingStateVisible, isLoadingStateHandoff, renderModel, profileUsername], () => {
+  void syncProfileHeadline()
+}, { immediate: true })
+onMounted(() => {
+  void syncProfileHeadline()
+  window.addEventListener('resize', scheduleProfileHeadlineSync)
+})
+onBeforeUnmount(() => {
+  clearHandoffTimeout()
+  clearProfileHeadlineEnableFrame()
+  window.removeEventListener('resize', scheduleProfileHeadlineSync)
+  if (profileHeadlineResizeFrame !== undefined) {
+    window.cancelAnimationFrame(profileHeadlineResizeFrame)
+    profileHeadlineResizeFrame = undefined
+  }
+})
+
+const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? lastLoadingProgress.value : props.progress)
 </script>
 
 <template>
   <div
     id="profile-panel"
-    class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] lg:grid-cols-12"
+    ref="dashboardExplorerRoot"
+    class="mt-8 gap-4 grid grid-cols-[minmax(0,1fr)] relative lg:grid-cols-12"
     :aria-busy="isLoading"
     :data-analysis-phase="phase"
   >
+    <p
+      ref="profileHeadlineElement"
+      data-testid="dashboard-profile-headline"
+      class="text-[clamp(2.5rem,5vw,4.5rem)] leading-[0.92] tracking-[-0.055em] font-body font-light pointer-events-none whitespace-nowrap left-0 top-0 absolute z-20"
+      :class="isProfileHeadlineTransitioning ? 'transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none' : 'transition-none'"
+      :style="profileHeadlineStyle"
+    >
+      {{ profileUsername || 'profile' }}
+    </p>
     <DashboardExplorerState
-      v-if="shouldShowState"
+      v-if="isLoadingStateVisible"
       class="lg:col-span-12"
       :phase="phase"
-      :progress="progress"
+      :progress="displayedLoadingProgress"
       :panel-class="panelClass"
       :muted-class="mutedClass"
       :username="profileUsername"
       :error-message="errorMessage"
+      :is-handoff="isLoadingStateHandoff"
       @retry="emit('retry')"
     />
     <template v-else-if="renderModel">
@@ -57,7 +282,6 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
           :style="{ transitionDelay: '0ms' }"
           class="lg:col-span-6"
           :data="renderModel.charts.radar"
-          :username="profileUsername"
           :panel-class="panelClass"
           :muted-class="mutedClass"
         />

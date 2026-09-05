@@ -24,13 +24,13 @@ interface LoadingCardDefinition {
 const props = withDefaults(defineProps<{
   panelClass: string
   mutedClass: string
-  username?: string
   analysisPhase?: DashboardAnalysisPhase
   progress?: DashboardProfileStreamGithubProgressEvent | null
+  isHandoff?: boolean
 }>(), {
-  username: '',
   analysisPhase: 'collecting-github',
   progress: null,
+  isHandoff: false,
 })
 
 const LOADING_CARD_DEFINITIONS: readonly LoadingCardDefinition[] = [
@@ -125,7 +125,6 @@ const LOADING_TIMELINE_SERIES = [
 
 const currentRank = computed(() => props.progress ? PHASE_RANK[props.progress.phase] : 0)
 const counts = computed(() => props.progress?.counts ?? EMPTY_COLLECTION_COUNTS)
-const profileName = computed(() => props.username || 'profile')
 const activeProcessPhase = computed<Exclude<DashboardAnalysisPhase, 'idle' | 'ready' | 'error'>>(() => props.analysisPhase === 'error' || props.analysisPhase === 'idle' || props.analysisPhase === 'ready'
   ? 'collecting-github'
   : props.analysisPhase)
@@ -179,32 +178,44 @@ function cardStateLabel(state: LoadingCardState): string {
         v-for="(card, index) in LOADING_CARD_DEFINITIONS"
         :key="card.id"
         :style="{ transitionDelay: `${index * 55}ms` }"
-        :class="[props.panelClass, card.layoutClass]"
+        :class="[props.panelClass, card.layoutClass, card.id === 'profile' ? 'relative' : '']"
         class="p-6 rounded-[28px] flex flex-col min-w-0 justify-between sm:p-8"
         :data-testid="`dashboard-loading-card-${card.id}`"
+        :data-handoff="card.id === 'profile' ? props.isHandoff : undefined"
         :aria-label="`${card.label} loading`"
       >
         <template v-if="card.id === 'profile'">
-          <div class="flex gap-4 items-start justify-between">
+          <div>
             <h2 class="text-2xl tracking-[-0.04em] font-body">
               Profile
             </h2>
-            <p class="text-[clamp(2.5rem,5vw,4.5rem)] leading-[0.92] tracking-[-0.055em] font-body font-light text-right max-w-[72%] whitespace-normal break-words [overflow-wrap:anywhere]">
-              {{ profileName }}
-            </p>
           </div>
 
-          <div class="mt-4 flex flex-1 flex-col gap-6 justify-center lg:flex-row lg:gap-12 lg:items-center">
-            <div class="mx-auto flex shrink-0 h-56 w-56 items-center justify-center relative" aria-hidden="true">
+          <div class="mt-4 flex flex-1 flex-col gap-5 justify-center lg:flex-row lg:gap-8 lg:items-center">
+            <div
+              class="mx-auto flex shrink-0 h-52 w-52 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] items-center justify-center relative motion-reduce:transition-none"
+              :style="{ opacity: props.isHandoff ? 0 : 1, transform: props.isHandoff ? 'scale(0.95)' : 'scale(1)' }"
+              aria-hidden="true"
+            >
               <SiriOrb state="thinking" size="192px" />
             </div>
-            <div class="min-w-0 lg:flex-1">
-              <DashboardExplorerKineticText :phrases="processSequence" />
+            <div class="text-center min-w-0 lg:text-left lg:flex-1">
+              <div
+                data-testid="dashboard-loading-profile-headline-anchor"
+                class="text-center h-14 w-full lg:text-left sm:h-16"
+                aria-hidden="true"
+              />
+              <div
+                class="mt-4 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none"
+                :style="{ opacity: props.isHandoff ? 0 : 1, transform: props.isHandoff ? 'translate3d(0, 0.5rem, 0)' : 'translate3d(0, 0, 0)' }"
+              >
+                <DashboardExplorerKineticText :phrases="processSequence" />
+              </div>
             </div>
           </div>
 
           <div>
-            <p data-testid="dashboard-loading-collection-summary" class="sr-only">
+            <p data-testid="dashboard-loading-collection-summary" :class="props.mutedClass" class="text-[10px] tracking-[0.08em] font-meta text-right">
               {{ collectionSummary }}
             </p>
             <div

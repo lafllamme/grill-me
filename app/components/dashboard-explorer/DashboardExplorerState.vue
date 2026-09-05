@@ -11,10 +11,12 @@ const props = withDefaults(defineProps<{
   username?: string
   errorMessage?: string | null
   progress?: DashboardProfileStreamGithubProgressEvent | null
+  isHandoff?: boolean
 }>(), {
   username: '',
   errorMessage: null,
   progress: null,
+  isHandoff: false,
 })
 
 const emit = defineEmits<{
@@ -23,6 +25,8 @@ const emit = defineEmits<{
 
 const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai', 'finalizing'].includes(props.phase))
 const stateKind = computed<'idle' | 'loading' | 'empty' | 'error'>(() => {
+  if (props.isHandoff)
+    return 'loading'
   if (props.phase === 'error')
     return 'error'
   if (isLoading.value)
@@ -31,6 +35,7 @@ const stateKind = computed<'idle' | 'loading' | 'empty' | 'error'>(() => {
     return 'empty'
   return 'idle'
 })
+const loadingPhase = computed<DashboardAnalysisPhase>(() => props.isHandoff ? 'collecting-github' : props.phase)
 const stateCopy = computed(() => {
   if (stateKind.value === 'loading') {
     if (props.phase === 'scoring')
@@ -64,9 +69,9 @@ const statusLabel = computed(() => {
       v-if="stateKind === 'loading'"
       :panel-class="props.panelClass"
       :muted-class="props.mutedClass"
-      :username="props.username"
-      :analysis-phase="props.phase"
+      :analysis-phase="loadingPhase"
       :progress="props.progress"
+      :is-handoff="props.isHandoff"
     />
     <section
       v-else
