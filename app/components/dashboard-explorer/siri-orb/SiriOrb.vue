@@ -38,11 +38,11 @@ const stateMotion = computed(() => getAIStateMotion(props.state))
 let reducedMotionQuery: MediaQueryList | undefined
 
 const defaultColors: Required<SiriOrbColors> = {
-  bg: 'oklch(92% 0.03 300)',
-  c1: 'oklch(68% 0.21 350)',
-  c2: 'oklch(70% 0.18 210)',
-  c3: 'oklch(66% 0.2 285)',
-  c4: 'oklch(72% 0.19 325)',
+  bg: 'var(--color-on-background)',
+  c1: 'var(--color-primary-strong)',
+  c2: 'var(--colors-bone-50, var(--color-on-background))',
+  c3: 'var(--color-primary)',
+  c4: 'var(--color-on-surface-variant)',
 }
 
 const sizeValue = computed(() => {
