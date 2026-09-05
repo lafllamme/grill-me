@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { DashboardProfileStreamGithubProgressEvent } from '~~/shared/dashboard/contracts'
+import type { DashboardAnalysisPhase } from './types'
 import type { BklitBarDatum } from '~/components/dashboard/bklit/bar-context'
 import type { BklitLineSeries } from '~/components/dashboard/bklit/BklitLineChart.vue'
 import type { RoastTimelineDatum } from '~/data/roast-dashboard-explorer'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
@@ -22,9 +23,11 @@ const props = withDefaults(defineProps<{
   panelClass: string
   mutedClass: string
   username?: string
+  analysisPhase?: DashboardAnalysisPhase
   progress?: DashboardProfileStreamGithubProgressEvent | null
 }>(), {
   username: '',
+  analysisPhase: 'collecting-github',
   progress: null,
 })
 
@@ -56,7 +59,79 @@ const EMPTY_COLLECTION_COUNTS = {
   checkSummaries: 0,
 } as const
 
-const RADAR_SKELETON_LEVELS = [1, 2, 3] as const
+type ActiveAnalysisPhase = Exclude<DashboardAnalysisPhase, 'idle' | 'ready' | 'error'>
+
+const LOADING_PROCESS_SEQUENCES: Record<ActiveAnalysisPhase, readonly string[]> = {
+  'collecting-github': [
+    'Finding the public trail',
+    'Checking the repositories',
+    'Reading the commit trail',
+    'Analyzing the changes',
+  ],
+  'scoring': [
+    'Turning evidence into signals',
+    'Checking the profile shape',
+    'Balancing the score',
+  ],
+  'reviewing-ai': [
+    'Checking the selected patches',
+    'Comparing the evidence',
+    'Stress-testing the read',
+  ],
+  'finalizing': [
+    'Preparing the roast',
+    'Filing the final profile',
+  ],
+}
+const PROCESS_ROTATION_INTERVAL_MS = 2_200
+const PROCESS_BAND_SLOT_STYLES = {
+  previous: { left: '-12%', opacity: '0.22', transform: 'translate(-50%, -50%)' },
+  current: { left: '50%', opacity: '1', transform: 'translate(-50%, -50%)' },
+  next: { left: '112%', opacity: '0.22', transform: 'translate(-50%, -50%)' },
+} as const
+
+const GITHUB_PROGRESS_PERCENTAGES: Record<DashboardProfileStreamGithubProgressEvent['phase'], number> = {
+  'profile': 8,
+  'repositories': 22,
+  'history': 36,
+  'commits': 48,
+  'pull-requests': 56,
+  'checks': 62,
+}
+const ANALYSIS_PROGRESS_PERCENTAGES: Partial<Record<DashboardAnalysisPhase, number>> = {
+  'scoring': 70,
+  'reviewing-ai': 84,
+  'finalizing': 94,
+}
+const COLLECTION_PROGRESS_TARGETS = {
+  repositories: 3,
+  enrichedCommits: 12,
+  usablePatches: 6,
+  associatedPullRequests: 1,
+  checkSummaries: 1,
+} as const
+const COLLECTION_PROGRESS_WEIGHTS = {
+  repositories: 10,
+  enrichedCommits: 13,
+  usablePatches: 16,
+  associatedPullRequests: 8,
+  checkSummaries: 7,
+} as const
+const GITHUB_PROGRESS_BASE = 8
+const GITHUB_PROGRESS_CAP = 62
+const RADAR_GRID_POINTS = [
+  '200,60 333,157 282,313 118,313 67,157',
+  '200,95 300,170 262,278 138,278 100,170',
+  '200,130 267,183 241,243 159,243 133,183',
+  '200,165 233,195 220,208 180,208 167,195',
+] as const
+const RADAR_AXIS_POINTS = [
+  { x: 200, y: 60 },
+  { x: 333, y: 157 },
+  { x: 282, y: 313 },
+  { x: 118, y: 313 },
+  { x: 67, y: 157 },
+] as const
 const EMPTY_BAR_DATA: readonly BklitBarDatum[] = []
 const EMPTY_TIMELINE_DATA: readonly RoastTimelineDatum[] = []
 const LOADING_CHART_STATUS = 'loading' as const
@@ -67,24 +142,38 @@ const LOADING_TIMELINE_SERIES = [
 
 const currentRank = computed(() => props.progress ? PHASE_RANK[props.progress.phase] : 0)
 const counts = computed(() => props.progress?.counts ?? EMPTY_COLLECTION_COUNTS)
-const progressTitle = computed(() => {
-  if (!props.progress)
-    return props.username ? `Opening @${props.username}'s public trail.` : 'Opening the public trail.'
+const profileName = computed(() => props.username || 'profile')
+const activeProcessPhase = computed<ActiveAnalysisPhase>(() => props.analysisPhase === 'error' || props.analysisPhase === 'idle' || props.analysisPhase === 'ready'
+  ? 'collecting-github'
+  : props.analysisPhase)
+const processSequence = computed(() => LOADING_PROCESS_SEQUENCES[activeProcessPhase.value])
+const processStepIndex = ref(0)
+const processLabel = computed(() => processSequence.value[processStepIndex.value % processSequence.value.length])
+const processBandItems = computed(() => {
+  const sequence = processSequence.value
+  const sequenceLength = sequence.length
+  const currentIndex = processStepIndex.value % sequenceLength
+  const previousIndex = (currentIndex - 1 + sequenceLength) % sequenceLength
+  const nextIndex = (currentIndex + 1) % sequenceLength
 
-  if (props.progress.phase === 'repositories')
-    return 'Mapping the repository surface.'
-  if (props.progress.phase === 'history')
-    return 'Following the personal commit trail.'
-  if (props.progress.phase === 'commits')
-    return 'Turning commits into evidence.'
-  if (props.progress.phase === 'pull-requests')
-    return 'Adding the review context.'
-  if (props.progress.phase === 'checks')
-    return 'The GitHub pass is complete.'
-  return 'Identity confirmed. Starting the evidence pass.'
+  return [
+    { key: `${activeProcessPhase.value}-${sequence[previousIndex]}`, label: sequence[previousIndex], slot: 'previous' as const },
+    { key: `${activeProcessPhase.value}-${sequence[currentIndex]}`, label: sequence[currentIndex], slot: 'current' as const },
+    { key: `${activeProcessPhase.value}-${sequence[nextIndex]}`, label: sequence[nextIndex], slot: 'next' as const },
+  ]
 })
-const progressMessage = computed(() => props.progress?.message ?? 'GitHub evidence is arriving in bounded stages.')
-const progressLabel = computed(() => props.progress ? `${props.progress.phase.replace('-', ' ')} · live` : 'github pass · live')
+const progressPercentage = computed(() => {
+  if (props.analysisPhase !== 'collecting-github')
+    return ANALYSIS_PROGRESS_PERCENTAGES[props.analysisPhase] ?? 0
+  const collectionProgress = Object.entries(COLLECTION_PROGRESS_WEIGHTS).reduce((progress, [key, weight]) => {
+    const typedKey = key as keyof typeof COLLECTION_PROGRESS_TARGETS
+    const count = counts.value[typedKey]
+    const target = COLLECTION_PROGRESS_TARGETS[typedKey]
+    return progress + Math.min(count / target, 1) * weight
+  }, GITHUB_PROGRESS_BASE)
+  const phaseProgress = props.progress ? GITHUB_PROGRESS_PERCENTAGES[props.progress.phase] : GITHUB_PROGRESS_BASE
+  return Math.min(GITHUB_PROGRESS_CAP, Math.max(phaseProgress, Math.round(collectionProgress)))
+})
 const collectionSummary = computed(() => [
   `${counts.value.repositories} repos`,
   `${counts.value.enrichedCommits} commits`,
@@ -106,6 +195,23 @@ function cardStateLabel(state: LoadingCardState): string {
     return 'next up'
   return 'queued'
 }
+
+let processRotationTimer: ReturnType<typeof setInterval> | undefined
+
+watch(activeProcessPhase, () => {
+  processStepIndex.value = 0
+}, { immediate: true })
+
+onMounted(() => {
+  processRotationTimer = setInterval(() => {
+    processStepIndex.value = (processStepIndex.value + 1) % processSequence.value.length
+  }, PROCESS_ROTATION_INTERVAL_MS)
+})
+
+onBeforeUnmount(() => {
+  if (processRotationTimer)
+    clearInterval(processRotationTimer)
+})
 </script>
 
 <template>
@@ -128,46 +234,62 @@ function cardStateLabel(state: LoadingCardState): string {
         :aria-label="`${card.label} loading`"
       >
         <template v-if="card.id === 'profile'">
-          <div class="flex gap-4 items-start justify-between">
-            <div>
-              <p :class="props.mutedClass" class="text-[10px] tracking-[0.15em] font-meta uppercase">
-                01 / GitHub pass
-              </p>
-              <h2 class="text-2xl tracking-[-0.04em] font-body mt-3">
-                Profile
-              </h2>
-            </div>
-            <span :class="props.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">
-              {{ progressLabel }}
-            </span>
+          <div>
+            <h2 class="text-2xl tracking-[-0.04em] font-body">
+              Profile
+            </h2>
           </div>
 
-          <div class="mt-8 flex flex-col gap-6 items-center lg:flex-row lg:items-center">
-            <div class="mx-auto border-[1px] border-current/10 rounded-full shrink-0 h-56 w-56 relative sm:h-64 sm:w-64" aria-hidden="true">
-              <span v-for="level in RADAR_SKELETON_LEVELS" :key="level" :class="props.mutedClass" class="border-[1px] border-current/10 rounded-full absolute" :style="{ inset: `${level * 16}px` }" />
-              <span :class="props.mutedClass" class="rounded-full bg-current/15 h-2 w-2 left-1/2 top-1/2 absolute -translate-x-1/2 -translate-y-1/2" />
+          <div class="mt-8 flex flex-1 flex-col gap-8 justify-center lg:flex-row lg:items-center">
+            <div class="mx-auto shrink-0 h-56 w-56 relative sm:h-64 sm:w-64" aria-hidden="true">
+              <svg class="text-current h-full w-full" viewBox="0 0 400 400" fill="none">
+                <polygon v-for="points in RADAR_GRID_POINTS" :key="points" :class="props.mutedClass" :points="points" class="opacity-40" stroke="currentColor" stroke-width="1.5" />
+                <line v-for="point in RADAR_AXIS_POINTS" :key="`${point.x}-${point.y}`" :class="props.mutedClass" x1="200" y1="200" :x2="point.x" :y2="point.y" class="opacity-35" stroke="currentColor" stroke-width="1.5" />
+                <polygon :class="props.mutedClass" points="200,60 333,157 282,313 118,313 67,157" class="opacity-50" stroke="currentColor" stroke-width="1.5" />
+              </svg>
             </div>
-            <div class="max-w-[18rem] lg:flex-1">
-              <p class="text-xl leading-[1.05] tracking-[-0.04em] font-display">
-                {{ progressTitle }}
+            <div class="min-w-0 lg:flex-1">
+              <p class="text-[clamp(2.5rem,5vw,4rem)] leading-[0.9] tracking-[-0.06em] font-display max-w-full whitespace-nowrap truncate">
+                {{ profileName }}
               </p>
-              <p :class="props.mutedClass" class="text-sm leading-6 mt-4">
-                {{ progressMessage }}
-              </p>
+              <div class="mt-6 border-y-[1px] border-current/10 h-14 relative overflow-hidden sm:h-16" aria-live="polite" :aria-label="processLabel">
+                <TransitionGroup
+                  tag="div"
+                  class="h-full w-full pointer-events-none relative"
+                  enter-active-class="transition-[opacity,filter] duration-500 ease-out motion-reduce:transition-none"
+                  enter-from-class="opacity-0 blur-[2px]"
+                  enter-to-class="opacity-20 blur-[1px]"
+                  leave-active-class="transition-[opacity,filter] duration-500 ease-in motion-reduce:transition-none"
+                  leave-from-class="opacity-20 blur-[1px]"
+                  leave-to-class="opacity-0 blur-[2px]"
+                >
+                  <span
+                    v-for="item in processBandItems"
+                    :key="item.key"
+                    :class="[
+                      item.slot === 'current'
+                        ? 'text-current font-medium drop-shadow-[0_0_10px_var(--color-primary-soft)]'
+                        : `${props.mutedClass} blur-[1px]`,
+                      item.slot === 'current' ? 'text-center' : 'text-left',
+                    ]"
+                    class="text-[11px] leading-none tracking-[-0.015em] font-body whitespace-nowrap transform-gpu transition-[left,opacity,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] top-1/2 absolute sm:text-xs motion-reduce:transition-none"
+                    :style="PROCESS_BAND_SLOT_STYLES[item.slot]"
+                  >
+                    {{ item.label }}
+                  </span>
+                </TransitionGroup>
+              </div>
             </div>
           </div>
 
           <div>
-            <div class="flex gap-3 items-center justify-between">
-              <p :class="props.mutedClass" class="text-[10px] tracking-[0.12em] font-meta uppercase">
-                Collection scope
-              </p>
-              <p :class="props.mutedClass" class="text-[10px] font-meta">
+            <div class="flex gap-3 items-center justify-end">
+              <p data-testid="dashboard-loading-collection-summary" :class="props.mutedClass" class="text-[10px] font-meta">
                 {{ collectionSummary }}
               </p>
             </div>
             <div class="mt-3 rounded-full bg-current/10 h-1 overflow-hidden" aria-hidden="true">
-              <div :class="props.mutedClass" class="rounded-full bg-current h-full transition-[width] duration-700 ease-out motion-reduce:transition-none" :style="{ width: `${Math.max(10, Math.round((currentRank / 6) * 100))}%` }" />
+              <div data-testid="dashboard-loading-progress" class="rounded-full bg-primary-strong h-full transition-[width] duration-700 ease-out motion-reduce:transition-none" :style="{ width: `${progressPercentage}%` }" />
             </div>
           </div>
         </template>

@@ -24,11 +24,24 @@ test.describe('dashboard explorer analysis states', () => {
 
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveAttribute('data-state', 'loading')
     await expect(page.getByTestId('dashboard-loading-grid')).toBeVisible()
+    const profileLoadingCard = page.getByTestId('dashboard-loading-card-profile')
+    await expect(profileLoadingCard).toContainText('lafllamme')
+    await expect(profileLoadingCard).toContainText('Finding the public trail')
+    await expect(profileLoadingCard).not.toContainText('01 / GitHub pass')
+    await expect(profileLoadingCard).not.toContainText('github pass · live')
+    const loadingProgress = page.getByTestId('dashboard-loading-progress')
+    const collectionSummary = profileLoadingCard.getByTestId('dashboard-loading-collection-summary')
+    await expect(loadingProgress).toHaveAttribute('style', /width: 8%/)
+    await expect(collectionSummary).toHaveText('2 repos  /  4 commits  /  0 patches', { timeout: 3500 })
+    await expect(loadingProgress).toHaveAttribute('style', /width: 36%/)
+    await expect(collectionSummary).toHaveText('3 repos  /  12 commits  /  6 patches', { timeout: 3500 })
+    await expect(loadingProgress).toHaveAttribute('style', /width: 62%/)
     await expect(page.getByRole('button', { name: 'Exit loading preview' })).toBeVisible()
     expect(analysisRequestCount).toBe(0)
 
-    await page.getByRole('button', { name: 'Exit loading preview' }).click()
-    await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0)
+    await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0, { timeout: 8000 })
+    await expect(page.getByRole('button', { name: 'Preview loading state' })).toBeVisible()
+    expect(analysisRequestCount).toBe(0)
   })
 
   test('uses an honest loading state and exposes a retryable error', async ({ page }) => {
@@ -101,7 +114,17 @@ test.describe('dashboard explorer analysis states', () => {
         const encode = (event: unknown) => encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
         const stream = new ReadableStream<Uint8Array>({
           start(controller) {
-            controller.enqueue(encode({ type: 'deterministic_scores', assessment: deterministic }))
+            controller.enqueue(encode({ type: 'status', phase: 'collecting-github', message: 'Collecting public GitHub evidence...' }))
+            controller.enqueue(encode({
+              type: 'github_progress',
+              phase: 'commits',
+              message: 'Commit evidence is ready for scoring.',
+              counts: { repositories: 2, candidateCommits: 12, enrichedCommits: 12, usablePatches: 6, associatedPullRequests: 0, checkSummaries: 0 },
+            }))
+            setTimeout(() => {
+              controller.enqueue(encode({ type: 'status', phase: 'reviewing-ai', message: 'Reviewing selected patch evidence with AI...' }))
+              controller.enqueue(encode({ type: 'deterministic_scores', assessment: deterministic }))
+            }, 300)
             setTimeout(() => {
               controller.enqueue(encode({
                 type: 'done',
@@ -121,6 +144,9 @@ test.describe('dashboard explorer analysis states', () => {
     await page.getByRole('button', { name: 'Analyze live' }).click()
 
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveAttribute('data-state', 'loading')
+    const profileLoadingCard = page.getByTestId('dashboard-loading-card-profile')
+    await expect(profileLoadingCard).toContainText('Checking the selected patches')
+    await expect(profileLoadingCard.getByTestId('dashboard-loading-progress')).toHaveAttribute('style', /width: 84%/)
     await expect(page.locator('.legend-container')).toHaveCount(0)
 
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0)

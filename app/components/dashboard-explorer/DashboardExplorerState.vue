@@ -65,6 +65,7 @@ const statusLabel = computed(() => {
       :panel-class="props.panelClass"
       :muted-class="props.mutedClass"
       :username="props.username"
+      :analysis-phase="props.phase"
       :progress="props.progress"
     />
     <section

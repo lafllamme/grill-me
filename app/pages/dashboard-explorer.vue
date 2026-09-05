@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { DashboardProfileStreamGithubProgressEvent } from '~~/shared/dashboard/contracts'
 import type { DashboardAnalysisPhase } from '~/components/dashboard-explorer/types'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useHead, useSeoMeta } from '#imports'
 import { buildLiveDashboardModel, buildMockDashboardModel } from '~/components/dashboard-explorer/dashboard-model'
 import DashboardExplorer from '~/components/dashboard-explorer/DashboardExplorer.vue'
@@ -32,7 +33,52 @@ const activeMockProfileIndex = ref(0)
 const { githubUsername, assessment: realAssessment, evidence: realEvidence, phase: analysisPhase, githubProgress, errorMessage: realAssessmentError, isLoading: isLoadingRealAssessment, analyze: analyzeGithubProfile, reset: resetAnalysis } = useDashboardAnalysis()
 const activeMockProfile = computed(() => dashboardMockProfiles[activeMockProfileIndex.value]!)
 const mockProfileCount = dashboardMockProfiles.length
+const LOADING_PREVIEW_DURATION_MS = 6_000
+const LOADING_PREVIEW_STEP_DURATION_MS = 900
+const LOADING_PREVIEW_STEPS = [
+  {
+    type: 'github_progress',
+    phase: 'profile',
+    message: 'Profile identified.',
+    counts: { repositories: 0, candidateCommits: 0, enrichedCommits: 0, usablePatches: 0, associatedPullRequests: 0, checkSummaries: 0 },
+  },
+  {
+    type: 'github_progress',
+    phase: 'repositories',
+    message: 'Repository surface mapped.',
+    counts: { repositories: 1, candidateCommits: 0, enrichedCommits: 0, usablePatches: 0, associatedPullRequests: 0, checkSummaries: 0 },
+  },
+  {
+    type: 'github_progress',
+    phase: 'history',
+    message: 'Commit history collected.',
+    counts: { repositories: 2, candidateCommits: 6, enrichedCommits: 4, usablePatches: 0, associatedPullRequests: 0, checkSummaries: 0 },
+  },
+  {
+    type: 'github_progress',
+    phase: 'commits',
+    message: 'Commit patches selected.',
+    counts: { repositories: 3, candidateCommits: 12, enrichedCommits: 8, usablePatches: 2, associatedPullRequests: 0, checkSummaries: 0 },
+  },
+  {
+    type: 'github_progress',
+    phase: 'pull-requests',
+    message: 'Review context added.',
+    counts: { repositories: 3, candidateCommits: 12, enrichedCommits: 12, usablePatches: 5, associatedPullRequests: 1, checkSummaries: 0 },
+  },
+  {
+    type: 'github_progress',
+    phase: 'checks',
+    message: 'GitHub evidence collected.',
+    counts: { repositories: 3, candidateCommits: 12, enrichedCommits: 12, usablePatches: 6, associatedPullRequests: 1, checkSummaries: 1 },
+  },
+] as const satisfies readonly DashboardProfileStreamGithubProgressEvent[]
 const isLoadingPreview = ref(false)
+const loadingPreviewStepIndex = ref(0)
+let loadingPreviewTimeout: ReturnType<typeof setTimeout> | undefined
+let loadingPreviewInterval: ReturnType<typeof setInterval> | undefined
+const loadingPreviewProgress = computed(() => LOADING_PREVIEW_STEPS[loadingPreviewStepIndex.value] ?? null)
+const dashboardProgress = computed(() => isLoadingPreview.value ? loadingPreviewProgress.value : githubProgress.value)
 const dashboardModel = computed(() => realAssessment.value && realEvidence.value
   ? buildLiveDashboardModel({ assessment: realAssessment.value, evidence: realEvidence.value }, activeMockProfile.value)
   : buildMockDashboardModel(activeMockProfile.value))
@@ -120,8 +166,50 @@ const chartStyle = computed(() => ({
   '--chart-4': 'color-mix(in srgb, var(--color-primary) 72%, white)',
   '--chart-5': 'color-mix(in srgb, var(--color-primary) 58%, black)',
 }))
-function shiftMockProfile(direction: -1 | 1) {
+
+function clearLoadingPreviewTimeout() {
+  if (loadingPreviewTimeout === undefined)
+    return
+
+  clearTimeout(loadingPreviewTimeout)
+  loadingPreviewTimeout = undefined
+}
+
+function clearLoadingPreviewInterval() {
+  if (loadingPreviewInterval === undefined)
+    return
+
+  clearInterval(loadingPreviewInterval)
+  loadingPreviewInterval = undefined
+}
+
+function exitLoadingPreview() {
+  clearLoadingPreviewTimeout()
+  clearLoadingPreviewInterval()
   isLoadingPreview.value = false
+}
+
+function startLoadingPreview() {
+  clearLoadingPreviewTimeout()
+  clearLoadingPreviewInterval()
+  loadingPreviewStepIndex.value = 0
+  isLoadingPreview.value = true
+  loadingPreviewInterval = setInterval(() => {
+    if (loadingPreviewStepIndex.value >= LOADING_PREVIEW_STEPS.length - 1) {
+      clearLoadingPreviewInterval()
+      return
+    }
+    loadingPreviewStepIndex.value += 1
+  }, LOADING_PREVIEW_STEP_DURATION_MS)
+  loadingPreviewTimeout = setTimeout(() => {
+    clearLoadingPreviewInterval()
+    isLoadingPreview.value = false
+    loadingPreviewTimeout = undefined
+  }, LOADING_PREVIEW_DURATION_MS)
+}
+
+function shiftMockProfile(direction: -1 | 1) {
+  exitLoadingPreview()
   resetAnalysis()
   activeMockProfileIndex.value = (activeMockProfileIndex.value + direction + mockProfileCount) % mockProfileCount
 }
@@ -132,7 +220,7 @@ function setColorMode(mode: ColorMode) {
 }
 
 function submitAnalysis() {
-  isLoadingPreview.value = false
+  exitLoadingPreview()
   void analyzeGithubProfile()
 }
 
@@ -140,8 +228,18 @@ function toggleLoadingPreview() {
   if (isLoadingRealAssessment.value)
     return
 
-  isLoadingPreview.value = !isLoadingPreview.value
+  if (isLoadingPreview.value) {
+    exitLoadingPreview()
+    return
+  }
+
+  startLoadingPreview()
 }
+
+onBeforeUnmount(() => {
+  clearLoadingPreviewTimeout()
+  clearLoadingPreviewInterval()
+})
 
 useHead({ title: 'Dashboard Explorer · Grillme' })
 useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked profile view for the roast dashboard.' })
@@ -270,7 +368,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       <DashboardExplorer
         :model="dashboardModelForRender"
         :phase="dashboardPhase"
-        :progress="githubProgress"
+        :progress="dashboardProgress"
         :username="githubUsername"
         :error-message="realAssessmentError"
         :panel-class="currentColorProfile.panelClass"
