@@ -4,10 +4,11 @@ import type { DashboardAnalysisPhase } from './types'
 import type { BklitBarDatum } from '~/components/dashboard/bklit/bar-context'
 import type { BklitLineSeries } from '~/components/dashboard/bklit/BklitLineChart.vue'
 import type { RoastTimelineDatum } from '~/data/roast-dashboard-explorer'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
+import DashboardExplorerKineticText from './DashboardExplorerKineticText.vue'
 
 type LoadingCardId = 'profile' | 'verdict' | 'evidence' | 'gauge' | 'volume' | 'rhythm' | 'anatomy'
 type LoadingCardState = 'queued' | 'next' | 'captured'
@@ -83,12 +84,6 @@ const LOADING_PROCESS_SEQUENCES: Record<ActiveAnalysisPhase, readonly string[]> 
     'Filing the final profile',
   ],
 }
-const PROCESS_ROTATION_INTERVAL_MS = 2_200
-const PROCESS_BAND_SLOT_STYLES = {
-  previous: { left: '-12%', opacity: '0.22', transform: 'translate(-50%, -50%)' },
-  current: { left: '50%', opacity: '1', transform: 'translate(-50%, -50%)' },
-  next: { left: '112%', opacity: '0.22', transform: 'translate(-50%, -50%)' },
-} as const
 
 const GITHUB_PROGRESS_PERCENTAGES: Record<DashboardProfileStreamGithubProgressEvent['phase'], number> = {
   'profile': 8,
@@ -143,25 +138,10 @@ const LOADING_TIMELINE_SERIES = [
 const currentRank = computed(() => props.progress ? PHASE_RANK[props.progress.phase] : 0)
 const counts = computed(() => props.progress?.counts ?? EMPTY_COLLECTION_COUNTS)
 const profileName = computed(() => props.username || 'profile')
-const activeProcessPhase = computed<ActiveAnalysisPhase>(() => props.analysisPhase === 'error' || props.analysisPhase === 'idle' || props.analysisPhase === 'ready'
+const activeProcessPhase = computed<Exclude<DashboardAnalysisPhase, 'idle' | 'ready' | 'error'>>(() => props.analysisPhase === 'error' || props.analysisPhase === 'idle' || props.analysisPhase === 'ready'
   ? 'collecting-github'
   : props.analysisPhase)
 const processSequence = computed(() => LOADING_PROCESS_SEQUENCES[activeProcessPhase.value])
-const processStepIndex = ref(0)
-const processLabel = computed(() => processSequence.value[processStepIndex.value % processSequence.value.length])
-const processBandItems = computed(() => {
-  const sequence = processSequence.value
-  const sequenceLength = sequence.length
-  const currentIndex = processStepIndex.value % sequenceLength
-  const previousIndex = (currentIndex - 1 + sequenceLength) % sequenceLength
-  const nextIndex = (currentIndex + 1) % sequenceLength
-
-  return [
-    { key: `${activeProcessPhase.value}-${sequence[previousIndex]}`, label: sequence[previousIndex], slot: 'previous' as const },
-    { key: `${activeProcessPhase.value}-${sequence[currentIndex]}`, label: sequence[currentIndex], slot: 'current' as const },
-    { key: `${activeProcessPhase.value}-${sequence[nextIndex]}`, label: sequence[nextIndex], slot: 'next' as const },
-  ]
-})
 const progressPercentage = computed(() => {
   if (props.analysisPhase !== 'collecting-github')
     return ANALYSIS_PROGRESS_PERCENTAGES[props.analysisPhase] ?? 0
@@ -195,23 +175,6 @@ function cardStateLabel(state: LoadingCardState): string {
     return 'next up'
   return 'queued'
 }
-
-let processRotationTimer: ReturnType<typeof setInterval> | undefined
-
-watch(activeProcessPhase, () => {
-  processStepIndex.value = 0
-}, { immediate: true })
-
-onMounted(() => {
-  processRotationTimer = setInterval(() => {
-    processStepIndex.value = (processStepIndex.value + 1) % processSequence.value.length
-  }, PROCESS_ROTATION_INTERVAL_MS)
-})
-
-onBeforeUnmount(() => {
-  if (processRotationTimer)
-    clearInterval(processRotationTimer)
-})
 </script>
 
 <template>
@@ -234,14 +197,17 @@ onBeforeUnmount(() => {
         :aria-label="`${card.label} loading`"
       >
         <template v-if="card.id === 'profile'">
-          <div>
+          <div class="flex gap-4 items-start justify-between">
             <h2 class="text-2xl tracking-[-0.04em] font-body">
               Profile
             </h2>
+            <p class="text-[clamp(2.5rem,5vw,4.5rem)] leading-[0.92] tracking-[-0.055em] font-body font-light text-right max-w-[72%] whitespace-normal break-words [overflow-wrap:anywhere]">
+              {{ profileName }}
+            </p>
           </div>
 
-          <div class="mt-8 flex flex-1 flex-col gap-8 justify-center lg:flex-row lg:items-center">
-            <div class="mx-auto shrink-0 h-56 w-56 relative sm:h-64 sm:w-64" aria-hidden="true">
+          <div class="mt-4 flex flex-1 flex-col gap-6 justify-center lg:flex-row lg:gap-12 lg:items-center">
+            <div class="mx-auto shrink-0 h-56 w-56 relative lg:h-40 lg:w-40 xl:h-56 xl:w-56" aria-hidden="true">
               <svg class="text-current h-full w-full" viewBox="0 0 400 400" fill="none">
                 <polygon v-for="points in RADAR_GRID_POINTS" :key="points" :class="props.mutedClass" :points="points" class="opacity-40" stroke="currentColor" stroke-width="1.5" />
                 <line v-for="point in RADAR_AXIS_POINTS" :key="`${point.x}-${point.y}`" :class="props.mutedClass" x1="200" y1="200" :x2="point.x" :y2="point.y" class="opacity-35" stroke="currentColor" stroke-width="1.5" />
@@ -249,46 +215,22 @@ onBeforeUnmount(() => {
               </svg>
             </div>
             <div class="min-w-0 lg:flex-1">
-              <p class="text-[clamp(2.5rem,5vw,4rem)] leading-[0.9] tracking-[-0.06em] font-display max-w-full whitespace-nowrap truncate">
-                {{ profileName }}
-              </p>
-              <div class="mt-6 border-y-[1px] border-current/10 h-14 relative overflow-hidden sm:h-16" aria-live="polite" :aria-label="processLabel">
-                <TransitionGroup
-                  tag="div"
-                  class="h-full w-full pointer-events-none relative"
-                  enter-active-class="transition-[opacity,filter] duration-500 ease-out motion-reduce:transition-none"
-                  enter-from-class="opacity-0 blur-[2px]"
-                  enter-to-class="opacity-20 blur-[1px]"
-                  leave-active-class="transition-[opacity,filter] duration-500 ease-in motion-reduce:transition-none"
-                  leave-from-class="opacity-20 blur-[1px]"
-                  leave-to-class="opacity-0 blur-[2px]"
-                >
-                  <span
-                    v-for="item in processBandItems"
-                    :key="item.key"
-                    :class="[
-                      item.slot === 'current'
-                        ? 'text-current font-medium drop-shadow-[0_0_10px_var(--color-primary-soft)]'
-                        : `${props.mutedClass} blur-[1px]`,
-                      item.slot === 'current' ? 'text-center' : 'text-left',
-                    ]"
-                    class="text-[11px] leading-none tracking-[-0.015em] font-body whitespace-nowrap transform-gpu transition-[left,opacity,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] top-1/2 absolute sm:text-xs motion-reduce:transition-none"
-                    :style="PROCESS_BAND_SLOT_STYLES[item.slot]"
-                  >
-                    {{ item.label }}
-                  </span>
-                </TransitionGroup>
-              </div>
+              <DashboardExplorerKineticText :phrases="processSequence" />
             </div>
           </div>
 
           <div>
-            <div class="flex gap-3 items-center justify-end">
-              <p data-testid="dashboard-loading-collection-summary" :class="props.mutedClass" class="text-[10px] font-meta">
-                {{ collectionSummary }}
-              </p>
-            </div>
-            <div class="mt-3 rounded-full bg-current/10 h-1 overflow-hidden" aria-hidden="true">
+            <p data-testid="dashboard-loading-collection-summary" class="sr-only">
+              {{ collectionSummary }}
+            </p>
+            <div
+              class="mt-3 rounded-full bg-current/10 h-1 overflow-hidden"
+              role="progressbar"
+              aria-label="Evidence collection progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              :aria-valuenow="Math.round(progressPercentage)"
+            >
               <div data-testid="dashboard-loading-progress" class="rounded-full bg-primary-strong h-full transition-[width] duration-700 ease-out motion-reduce:transition-none" :style="{ width: `${progressPercentage}%` }" />
             </div>
           </div>

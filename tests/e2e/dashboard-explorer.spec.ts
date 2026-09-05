@@ -41,6 +41,7 @@ test.describe('dashboard explorer analysis states', () => {
 
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveCount(0, { timeout: 8000 })
     await expect(page.getByRole('button', { name: 'Preview loading state' })).toBeVisible()
+    await expect(page.getByTestId('profile-radar-panel')).toContainText('lafllamme')
     expect(analysisRequestCount).toBe(0)
   })
 

@@ -16,6 +16,7 @@ const emit = defineEmits<{
   retry: []
 }>()
 const renderModel = computed(() => props.model)
+const profileUsername = computed(() => props.username?.trim() || renderModel.value?.identity.username || '')
 const isLoading = computed(() => ['collecting-github', 'scoring', 'reviewing-ai', 'finalizing'].includes(props.phase))
 const shouldShowState = computed(() => !renderModel.value || (renderModel.value.source === 'mock' && props.phase !== 'idle' && props.phase !== 'ready'))
 const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loading' : 'ready')
@@ -35,7 +36,7 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
       :progress="progress"
       :panel-class="panelClass"
       :muted-class="mutedClass"
-      :username="username"
+      :username="profileUsername"
       :error-message="errorMessage"
       @retry="emit('retry')"
     />
@@ -56,6 +57,7 @@ const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loadi
           :style="{ transitionDelay: '0ms' }"
           class="lg:col-span-6"
           :data="renderModel.charts.radar"
+          :username="profileUsername"
           :panel-class="panelClass"
           :muted-class="mutedClass"
         />
