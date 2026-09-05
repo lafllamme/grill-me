@@ -9,6 +9,7 @@ import BklitBarChart from '~/components/dashboard/bklit/BklitBarChart.vue'
 import BklitGrid from '~/components/dashboard/bklit/BklitGrid.vue'
 import BklitLineChart from '~/components/dashboard/bklit/BklitLineChart.vue'
 import DashboardExplorerKineticText from './DashboardExplorerKineticText.vue'
+import SiriOrb from './siri-orb/SiriOrb.vue'
 
 type LoadingCardId = 'profile' | 'verdict' | 'evidence' | 'gauge' | 'volume' | 'rhythm' | 'anatomy'
 type LoadingCardState = 'queued' | 'next' | 'captured'
@@ -114,19 +115,6 @@ const COLLECTION_PROGRESS_WEIGHTS = {
 } as const
 const GITHUB_PROGRESS_BASE = 8
 const GITHUB_PROGRESS_CAP = 62
-const RADAR_GRID_POINTS = [
-  '200,60 333,157 282,313 118,313 67,157',
-  '200,95 300,170 262,278 138,278 100,170',
-  '200,130 267,183 241,243 159,243 133,183',
-  '200,165 233,195 220,208 180,208 167,195',
-] as const
-const RADAR_AXIS_POINTS = [
-  { x: 200, y: 60 },
-  { x: 333, y: 157 },
-  { x: 282, y: 313 },
-  { x: 118, y: 313 },
-  { x: 67, y: 157 },
-] as const
 const EMPTY_BAR_DATA: readonly BklitBarDatum[] = []
 const EMPTY_TIMELINE_DATA: readonly RoastTimelineDatum[] = []
 const LOADING_CHART_STATUS = 'loading' as const
@@ -207,12 +195,8 @@ function cardStateLabel(state: LoadingCardState): string {
           </div>
 
           <div class="mt-4 flex flex-1 flex-col gap-6 justify-center lg:flex-row lg:gap-12 lg:items-center">
-            <div class="mx-auto shrink-0 h-56 w-56 relative lg:h-40 lg:w-40 xl:h-56 xl:w-56" aria-hidden="true">
-              <svg class="text-current h-full w-full" viewBox="0 0 400 400" fill="none">
-                <polygon v-for="points in RADAR_GRID_POINTS" :key="points" :class="props.mutedClass" :points="points" class="opacity-40" stroke="currentColor" stroke-width="1.5" />
-                <line v-for="point in RADAR_AXIS_POINTS" :key="`${point.x}-${point.y}`" :class="props.mutedClass" x1="200" y1="200" :x2="point.x" :y2="point.y" class="opacity-35" stroke="currentColor" stroke-width="1.5" />
-                <polygon :class="props.mutedClass" points="200,60 333,157 282,313 118,313 67,157" class="opacity-50" stroke="currentColor" stroke-width="1.5" />
-              </svg>
+            <div class="mx-auto flex shrink-0 h-56 w-56 items-center justify-center relative" aria-hidden="true">
+              <SiriOrb state="thinking" size="192px" />
             </div>
             <div class="min-w-0 lg:flex-1">
               <DashboardExplorerKineticText :phrases="processSequence" />

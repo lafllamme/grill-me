@@ -25,6 +25,7 @@ test.describe('dashboard explorer analysis states', () => {
     await expect(page.getByTestId('dashboard-analysis-state')).toHaveAttribute('data-state', 'loading')
     await expect(page.getByTestId('dashboard-loading-grid')).toBeVisible()
     const profileLoadingCard = page.getByTestId('dashboard-loading-card-profile')
+    await expect(profileLoadingCard.getByTestId('dashboard-loading-siri-orb')).toBeVisible()
     await expect(profileLoadingCard).toContainText('lafllamme')
     await expect(profileLoadingCard).toContainText('Finding the public trail')
     await expect(profileLoadingCard).not.toContainText('01 / GitHub pass')
