@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-05
+
+### Dashboard transition stability
+- kept the normalized result panels mounted underneath the loading shell
+- changed loading completion to remove an overlay instead of remounting the full dashboard
+- stabilized panel identities so live model data updates through props without resetting chart instances
+
 ## 2026-09-04
 
 ### Dashboard Complexity v2.2

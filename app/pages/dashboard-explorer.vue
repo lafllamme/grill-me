@@ -84,7 +84,6 @@ const dashboardModel = computed(() => realAssessment.value && realEvidence.value
   ? buildLiveDashboardModel({ assessment: realAssessment.value, evidence: realEvidence.value }, activeMockProfile.value)
   : buildMockDashboardModel(activeMockProfile.value))
 const dashboardPhase = computed<DashboardAnalysisPhase>(() => isLoadingPreview.value ? 'collecting-github' : analysisPhase.value)
-const dashboardModelForRender = computed(() => isLoadingPreview.value ? null : dashboardModel.value)
 const colorProfiles = {
   void: { label: 'Void Ink', description: 'pure, sharp, cinematic', stageClass: 'bg-[#050505]', panelClass: 'bg-[#151517]', copyClass: 'text-[#f7f3ee]', mutedClass: 'text-[#a9a29b]' },
   graphite: { label: 'Black Graphite', description: 'quiet, premium, focused', stageClass: 'bg-[#080808]', panelClass: 'bg-[#202022]', copyClass: 'text-[#f8f5ef]', mutedClass: 'text-[#aaa5a0]' },
@@ -394,7 +393,7 @@ useSeoMeta({ title: 'Dashboard Explorer · Grillme', description: 'A mocked prof
       </header>
 
       <DashboardExplorer
-        :model="dashboardModelForRender"
+        :model="dashboardModel"
         :phase="dashboardPhase"
         :progress="dashboardProgress"
         :username="githubUsername"

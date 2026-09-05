@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0
 **Status:** active
-**Updated:** 2026-09-03
+**Updated:** 2026-09-05
 
 The dashboard is a reusable result surface. Explorer and the future landing
 page consume the same normalized model; neither owns GitHub calls, formulas,
@@ -23,6 +23,15 @@ The concrete implementation order for the Explorer is tracked in the
 [dashboard execution roadmap](./roadmap.md). In particular, the loading shell
 must share the final panel geometry before the existing phases are promoted to
 panel-level streaming updates.
+
+## Client render lifecycle
+
+The normalized dashboard tree remains mounted while a loading shell is visible.
+The loading shell is an overlay and is removed after handoff; it must not switch
+the result surface through a mutually exclusive `v-if`. Stable panel identities
+allow live model data to update through props without remounting chart panels.
+This preserves chart state and prevents a full-dashboard flash when the stream
+completes.
 
 ## Authored evidence window
 

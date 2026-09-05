@@ -256,7 +256,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
     </p>
     <DashboardExplorerState
       v-if="isLoadingStateVisible"
-      class="lg:col-span-12"
+      :class="renderModel ? 'absolute inset-0 z-30' : ''"
       :phase="phase"
       :progress="displayedLoadingProgress"
       :panel-class="panelClass"
@@ -266,9 +266,11 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
       :is-handoff="isLoadingStateHandoff"
       @retry="emit('retry')"
     />
-    <template v-else-if="renderModel">
+    <template v-if="renderModel">
       <TransitionGroup
         tag="div"
+        :aria-hidden="isLoadingStateVisible ? 'true' : undefined"
+        :class="isLoadingStateVisible ? 'invisible pointer-events-none' : 'visible'"
         class="contents"
         appear
         enter-active-class="transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
@@ -279,7 +281,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
         leave-to-class="opacity-0 translate-y-2 blur-sm"
       >
         <ProfileRadarPanel
-          :key="`${renderModel.key}-radar`"
+          key="profile-radar"
           :style="{ transitionDelay: '0ms' }"
           class="lg:col-span-6"
           :data="renderModel.charts.radar"
@@ -287,7 +289,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
           :muted-class="mutedClass"
         />
         <VerdictPanel
-          :key="`${renderModel.key}-verdict`"
+          key="verdict"
           :style="{ transitionDelay: '70ms' }"
           class="lg:col-span-6"
           :grade="renderModel.verdict.grade"
@@ -298,7 +300,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
           :muted-class="mutedClass"
         />
         <EvidenceRingPanel
-          :key="`${renderModel.key}-ring`"
+          key="evidence-ring"
           :style="{ transitionDelay: '140ms' }"
           :data="renderModel.charts.ring"
           heading="Profile signals"
@@ -308,7 +310,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
           :muted-class="mutedClass"
         />
         <ChangeGaugePanel
-          :key="`${renderModel.key}-gauge`"
+          key="change-gauge"
           :style="{ transitionDelay: '210ms' }"
           :value="renderModel.charts.gauge.value"
           :center-value="renderModel.charts.gauge.centerValue"
@@ -319,7 +321,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
           :muted-class="mutedClass"
         />
         <ChangeVolumePanel
-          :key="`${renderModel.key}-volume`"
+          key="change-volume"
           :style="{ transitionDelay: '280ms' }"
           :data="renderModel.charts.changeVolume"
           :chart-status="chartStatus"
@@ -327,7 +329,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
           :muted-class="mutedClass"
         />
         <CommitTimelinePanel
-          :key="`${renderModel.key}-timeline`"
+          key="commit-timeline"
           :style="{ transitionDelay: '350ms' }"
           :data="renderModel.charts.commitRhythm"
           :markers="renderModel.source === 'live' ? [] : undefined"
@@ -336,7 +338,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
           :muted-class="mutedClass"
         />
         <RepositorySunburstPanel
-          :key="`${renderModel.key}-sunburst`"
+          key="repository-sunburst"
           :style="{ transitionDelay: '420ms' }"
           :data="renderModel.charts.repositoryAnatomy"
           :description="renderModel.source === 'live' ? 'Files and folders are sized by changed lines in the enriched GitHub sample.' : 'Repository folders and file hotspots derived from the selected mock profile.'"
@@ -346,7 +348,7 @@ const displayedLoadingProgress = computed(() => isLoadingStateHandoff.value ? la
         />
         <ProfileReviewPanel
           v-if="renderModel.profile.clarityBreakdown || renderModel.aiReview"
-          :key="`${renderModel.key}-review`"
+          key="profile-review"
           :style="{ transitionDelay: '490ms' }"
           class="lg:col-span-12"
           :clarity-breakdown="renderModel.profile.clarityBreakdown"

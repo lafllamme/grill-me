@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BklitRadarData, BklitRadarMetric, BklitRadarTransition } from './radar-context'
+import type { BklitRadarContext, BklitRadarData, BklitRadarMetric, BklitRadarTransition } from './radar-context'
 import { computed, ref } from 'vue'
 import BklitRadarArea from './BklitRadarArea.vue'
 import BklitRadarAxis from './BklitRadarAxis.vue'
@@ -54,7 +54,25 @@ function setHoveredIndex(index: number | null) {
 
 const enterTransition = computed(() => props.enterTransition ?? { type: 'tween' as const, durationSeconds: props.enterDurationMs / 1000, ease: [0.85, 0, 0.15, 1] as [number, number, number, number] })
 
-provideBklitRadarContext({ data: props.data, metrics: props.metrics, levels: props.levels, animate: props.animate, enterDurationMs: props.enterDurationMs, staggerScale: props.staggerScale, enterTransition: enterTransition.value, motionReplayKey: props.motionReplayKey, radius: radius.value, center: center.value, hoveredIndex: currentHoveredIndex, setHoveredIndex, getPoint, pointsFor, colorFor })
+const radarContext: BklitRadarContext = {
+  get data() { return props.data },
+  get metrics() { return props.metrics },
+  get levels() { return props.levels },
+  get animate() { return props.animate },
+  get enterDurationMs() { return props.enterDurationMs },
+  get staggerScale() { return props.staggerScale },
+  get enterTransition() { return enterTransition.value },
+  get motionReplayKey() { return props.motionReplayKey },
+  get radius() { return radius.value },
+  get center() { return center.value },
+  hoveredIndex: currentHoveredIndex,
+  setHoveredIndex,
+  getPoint,
+  pointsFor,
+  colorFor,
+}
+
+provideBklitRadarContext(radarContext)
 const isReady = computed(() => props.data.length > 0 && props.metrics.length > 2)
 </script>
 
