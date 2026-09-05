@@ -26,6 +26,9 @@ const props = withDefaults(defineProps<SiriOrbProps>(), {
   state: 'idle',
 })
 
+const AMPLITUDE_BLUR_FALLOFF = 0.45
+const AMPLITUDE_SCALE_GAIN = 0.12
+
 const root = ref<HTMLElement | null>(null)
 const isReducedMotion = ref(false)
 const simulatedAmplitude = useSimulatedAmplitude(() => props.state)
@@ -35,11 +38,11 @@ const stateMotion = computed(() => getAIStateMotion(props.state))
 let reducedMotionQuery: MediaQueryList | undefined
 
 const defaultColors: Required<SiriOrbColors> = {
-  bg: 'var(--color-surface-container-lowest, #0f0e0d)',
-  c1: 'var(--color-primary-strong, #f0444d)',
-  c2: 'var(--color-on-background, #fcf7f0)',
-  c3: 'var(--color-primary, #b91f2b)',
-  c4: 'var(--color-on-surface-variant, #d8bfa8)',
+  bg: 'oklch(92% 0.03 300)',
+  c1: 'oklch(68% 0.21 350)',
+  c2: 'oklch(70% 0.18 210)',
+  c3: 'oklch(66% 0.2 285)',
+  c4: 'oklch(72% 0.19 325)',
 }
 
 const sizeValue = computed(() => {
@@ -84,8 +87,11 @@ function syncAmplitude() {
     return
 
   const level = isReducedMotion.value ? 0 : Math.min(1, Math.max(0, amplitude.value))
-  const reactiveScale = stateMotion.value.scale + level * stateMotion.value.reactivity * 0.12
+  const reactivity = isReducedMotion.value ? 0 : stateMotion.value.reactivity
+  const reactiveBlur = blurAmount.value * (1 - level * reactivity * AMPLITUDE_BLUR_FALLOFF)
+  const reactiveScale = stateMotion.value.scale + level * reactivity * AMPLITUDE_SCALE_GAIN
   root.value.style.setProperty('--amplitude', `${level}`)
+  root.value.style.setProperty('--blur-amount', `${reactiveBlur}px`)
   root.value.style.setProperty('--reactive-scale', `${reactiveScale}`)
 }
 
@@ -94,7 +100,7 @@ function updateReducedMotion(event?: MediaQueryListEvent) {
   syncAmplitude()
 }
 
-watch([amplitude, stateMotion, isReducedMotion], syncAmplitude, { immediate: true })
+watch([amplitude, stateMotion, isReducedMotion, blurAmount], syncAmplitude, { immediate: true })
 
 onMounted(() => {
   reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -210,6 +216,7 @@ onBeforeUnmount(() => {
 
 .siri-orb-core::after {
   background-image: radial-gradient(circle at center, var(--bg) var(--dot-size), transparent var(--dot-size));
+  background-repeat: repeat;
   background-size: calc(var(--dot-size) * 2) calc(var(--dot-size) * 2);
   backdrop-filter: blur(calc(var(--blur-amount) * 2)) contrast(calc(var(--contrast-amount) * 2));
   mix-blend-mode: overlay;
