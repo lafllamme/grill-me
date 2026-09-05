@@ -22,6 +22,7 @@ const shouldShowState = computed(() => !renderModel.value || (renderModel.value.
 const chartStatus = computed<'loading' | 'ready'>(() => isLoading.value ? 'loading' : 'ready')
 
 const HANDOFF_DURATION_MS = 720
+const PROFILE_HEADLINE_INK_NUDGE_PX = -3
 const isLoadingStateVisible = ref(false)
 const isLoadingStateHandoff = ref(false)
 const lastLoadingProgress = ref(props.progress ?? null)
@@ -136,7 +137,7 @@ async function syncProfileHeadline() {
       : anchorRect.left
 
     target = {
-      left: left - rootRect.left,
+      left: left - rootRect.left + PROFILE_HEADLINE_INK_NUDGE_PX,
       top: anchorRect.top - rootRect.top,
       scale: loadingScale,
     }

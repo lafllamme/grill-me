@@ -191,9 +191,9 @@ function cardStateLabel(state: LoadingCardState): string {
             </h2>
           </div>
 
-          <div class="mt-4 flex flex-1 flex-col gap-5 justify-center lg:flex-row lg:gap-8 lg:items-center">
+          <div class="mt-4 flex flex-1 flex-col gap-5 justify-center lg:gap-8 lg:grid lg:grid-cols-2 lg:items-center">
             <div
-              class="mx-auto flex shrink-0 h-52 w-52 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] items-center justify-center relative motion-reduce:transition-none"
+              class="mx-auto flex shrink-0 h-52 w-52 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] items-center justify-center relative lg:w-full motion-reduce:transition-none"
               :style="{ opacity: props.isHandoff ? 0 : 1, transform: props.isHandoff ? 'scale(0.95)' : 'scale(1)' }"
               aria-hidden="true"
             >
@@ -206,7 +206,7 @@ function cardStateLabel(state: LoadingCardState): string {
                 aria-hidden="true"
               />
               <div
-                class="mt-4 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none"
+                class="mt-2 transition-[opacity,transform] duration-500 ease-out relative motion-reduce:transition-none -top-4"
                 :style="{ opacity: props.isHandoff ? 0 : 1, transform: props.isHandoff ? 'translate3d(0, 0.5rem, 0)' : 'translate3d(0, 0, 0)' }"
               >
                 <DashboardExplorerKineticText :phrases="processSequence" />
