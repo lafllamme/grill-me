@@ -118,7 +118,7 @@ function wait(controller: KineticController, delay: number): Promise<void> {
 
 function createWord(document: Document, text: string): HTMLSpanElement {
   const word = document.createElement('span')
-  word.className = 'text-xl leading-none tracking-[-0.025em] font-body font-normal flex-none whitespace-nowrap [will-change:transform,opacity,filter] sm:text-2xl'
+  word.className = 'text-lg leading-none tracking-[-0.025em] font-body font-normal flex-none whitespace-nowrap [will-change:transform,opacity,filter] sm:text-xl'
   word.textContent = text
   return word
 }
@@ -137,7 +137,7 @@ function renderReducedMotionPhrase(phrase: string) {
     return
 
   const fallback = document.createElement('span')
-  fallback.className = 'text-xl leading-none tracking-[-0.025em] font-body font-normal sm:text-2xl'
+  fallback.className = 'text-lg leading-none tracking-[-0.025em] font-body font-normal sm:text-xl'
   fallback.textContent = phrase
   stage.value.replaceChildren(fallback)
   announcedPhrase.value = phrase
